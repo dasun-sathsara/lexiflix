@@ -1,0 +1,59 @@
+# -----------------------------
+# Next.js App
+# -----------------------------
+
+# Node / Bun dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Output / build
+.next/
+out/
+dist/
+build/
+.next.cache/
+
+# Debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite
+*.db
+drizzle/*.sqlite
+drizzle/migrations/.cache/
+
+# Coverage / testing
+coverage/
+*.lcov
+.jest/
+.vitest/
+test-output/
+playwright-report/
+test-results/
+
+# TypeScript
+*.tsbuildinfo
+*.d.ts
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini

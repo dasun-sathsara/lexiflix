@@ -1,0 +1,105 @@
+# -----------------------------
+# Python / uv worker project
+# -----------------------------
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.uv/
+.uv-cache/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Celery / task queue
+celerybeat-schedule
+celerybeat.pid
+*.pid
+
+# Logs
+*.log
+logs/
+*.out
+*.err
+
+# Database / cache artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis dump
+dump.rdb
+
+# S3 / artifacts (generated output)
+artifacts/
+*.bin
+*.wav
+*.png
+*.jpg
+*.jsonl
+
+# Local env files
+.env
+.env.*
+*.env
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS / Linux / Windows junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project-specific
+__secrets__/
+.tmp/
