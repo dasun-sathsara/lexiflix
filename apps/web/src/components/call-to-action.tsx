@@ -1,9 +1,20 @@
 "use client";
 
-import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
-import { Button } from "@/components/ui/button";
+/**
+ * @author: @dorian_baffier
+ * @description: Particle Button
+ * @version: 1.0.0
+ * @date: 2025-06-26
+ * @license: MIT
+ * @website: https://kokonutui.com
+ * @github: https://github.com/kokonut-labs/kokonutui
+ */
+
+import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
-import { Sparkles } from "lucide-react";
+
+import { ElegantButton } from "@/components/ui/button";
+import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 
 export function CallToActionSection() {
   return (
@@ -38,8 +49,8 @@ export function CallToActionSection() {
               Prep Mode
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Scan episodes for tricky phrases and cultural references before you
-              hit play.
+              Scan episodes for tricky phrases and cultural references before
+              you hit play.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
@@ -61,28 +72,10 @@ export function CallToActionSection() {
             </p>
           </div>
         </div>
-        <Button
-          size="lg"
-          className="group relative isolate inline-flex h-auto items-center gap-3 overflow-hidden rounded-full border border-slate-800/70 bg-black px-12 py-3.5 text-base font-semibold text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_44px_-20px_rgba(0,0,0,0.75)] focus-visible:ring-offset-2"
-        >
-          <span
-            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.18),transparent_55%)] opacity-60 transition-opacity duration-500 group-hover:opacity-85"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none absolute inset-[-120%] -z-20 bg-[radial-gradient(circle_at_50%_100%,rgba(58,175,169,0.6)_0%,transparent_60%),radial-gradient(circle_at_50%_100%,rgba(255,140,0,0.4)_0%,transparent_70%),radial-gradient(circle_at_50%_100%,rgba(238,130,238,0.3)_0%,transparent_80%)] opacity-70 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
-            aria-hidden="true"
-          />
-          <span
-            className="pointer-events-none absolute inset-0 -z-10 translate-x-[-120%] bg-white/15 transition-transform duration-500 ease-out group-hover:translate-x-0"
-            aria-hidden="true"
-          />
-          <Sparkles
-            aria-hidden="true"
-            className="relative size-5 shrink-0 text-cyan-200 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-2"
-          />
-          <span className="relative">Start Learning Today</span>
-        </Button>
+        <ElegantButton size="elegantLg" className="text-base font-medium">
+          <span>Start Learning Today</span>
+          <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+        </ElegantButton>
       </div>
     </section>
   );

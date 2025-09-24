@@ -1,15 +1,12 @@
 import Link from "next/link";
 
-import { MarketingNavbar } from "@/components/marketing-navbar";
 import { CallToActionSection } from "@/components/call-to-action";
-import { Button } from "@/components/ui/button";
-import { ShapeHero } from "@/components/ui/shape-hero";
-import { FeaturesSection } from "@/components/features";
-import { ContactUsSection } from "@/components/contact-us";
 import { FAQSection } from "@/components/faq";
-import { DotBackground } from "@/components/ui/dot-background";
+import { FeaturesSection } from "@/components/features";
+import { MarketingNavbar } from "@/components/marketing-navbar";
+import { ElegantButton } from "@/components/ui/button";
+import { ShapeHero } from "@/components/ui/shape-hero";
 import { cn } from "@/lib/utils";
-
 
 export default function Home() {
   return (
@@ -26,17 +23,17 @@ export default function Home() {
         }
         cta={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button size="lg" className="px-8 text-base">
+            <ElegantButton size="elegantLg" className="text-base font-medium">
               Get Started Free
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="px-8 text-base"
+            </ElegantButton>
+            <ElegantButton
+              size="elegantLg"
+              variant="elegantSecondary"
+              className="text-base font-medium"
               asChild
             >
               <Link href="#features">How It Works</Link>
-            </Button>
+            </ElegantButton>
           </div>
         }
         footer={
@@ -53,17 +50,14 @@ export default function Home() {
         }
       />
 
-
-
       <FeaturesSection />
 
       <div className="relative flex h-[50rem] w-full items-center justify-center bg-white dark:bg-black">
         <div
           className={cn(
             "absolute inset-0",
-            "[background-size:20px_20px]",
+            "[background-size:18px_18px]",
             "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
-            "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
           )}
         />
         {/* Radial gradient for the container to give a faded look */}
@@ -73,30 +67,7 @@ export default function Home() {
         </p>
       </div>
 
-
-
       <FAQSection />
-
-
-
-      <div className="relative flex h-[50rem] w-full items-center justify-center bg-white dark:bg-black">
-        <div
-          className={cn(
-            "absolute inset-0",
-            "[background-size:20px_20px]",
-            "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
-            "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
-          )}
-        />
-        {/* Radial gradient for the container to give a faded look */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black"></div>
-        <p className="relative z-20 bg-gradient-to-b from-neutral-200 to-neutral-500 bg-clip-text py-8 text-4xl font-bold text-transparent sm:text-7xl">
-          <ContactUsSection />
-        </p>
-      </div>
-
-
-
 
       <footer className="px-6 pb-12 pt-10 text-sm text-muted-foreground">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 rounded-3xl border border-border/60 bg-white/70 px-6 py-6 backdrop-blur-sm dark:border-border/40 dark:bg-slate-950/60 sm:flex-row sm:items-center sm:justify-between">
@@ -118,7 +89,10 @@ export default function Home() {
             <a href="#faq" className="hover:text-foreground">
               FAQ
             </a>
-            <a href="mailto:support@lexiflix.app" className="hover:text-foreground">
+            <a
+              href="mailto:support@lexiflix.app"
+              className="hover:text-foreground"
+            >
               support@lexiflix.app
             </a>
             <a

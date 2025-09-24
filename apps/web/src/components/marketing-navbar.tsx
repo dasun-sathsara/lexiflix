@@ -1,17 +1,18 @@
 "use client";
 
+import Link from "next/link";
+import { type MouseEvent, useState } from "react";
+
+import { ElegantButton } from "@/components/ui/button";
 import {
   MobileNav,
   MobileNavHeader,
   MobileNavMenu,
   MobileNavToggle,
   NavBody,
-  NavItems,
   Navbar,
-  NavbarButton,
+  NavItems,
 } from "@/components/ui/resizable-navbar";
-import Link from "next/link";
-import { type MouseEvent, useState } from "react";
 
 const navItems = [
   {
@@ -71,17 +72,20 @@ export function MarketingNavbar() {
             href="/"
             className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
           >
-            <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
+            <span
+              className="size-8 rounded-full bg-indigo-500/10"
+              aria-hidden="true"
+            />
             <span>LexiFlix</span>
           </Link>
           <NavItems items={navItems} onItemClick={handleNavItemClick} />
           <div className="flex items-center gap-4">
-            <NavbarButton as={Link} href="/login" variant="secondary">
-              Login
-            </NavbarButton>
-            <NavbarButton as={Link} href="/signup" variant="primary">
-              Sign Up
-            </NavbarButton>
+            <ElegantButton asChild size="elegant" variant="elegantSecondary">
+              <Link href="/login">Login</Link>
+            </ElegantButton>
+            <ElegantButton asChild size="elegant" variant="elegant">
+              <Link href="/signup">Sign Up</Link>
+            </ElegantButton>
           </div>
         </NavBody>
 
@@ -91,7 +95,10 @@ export function MarketingNavbar() {
               href="/"
               className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
             >
-              <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
+              <span
+                className="size-8 rounded-full bg-indigo-500/10"
+                aria-hidden="true"
+              />
               <span>LexiFlix</span>
             </Link>
             <MobileNavToggle
@@ -100,7 +107,10 @@ export function MarketingNavbar() {
             />
           </MobileNavHeader>
 
-          <MobileNavMenu isOpen={isMobileMenuOpen} onClose={handleCloseMobileMenu}>
+          <MobileNavMenu
+            isOpen={isMobileMenuOpen}
+            onClose={handleCloseMobileMenu}
+          >
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -112,24 +122,24 @@ export function MarketingNavbar() {
               </Link>
             ))}
             <div className="flex w-full flex-col gap-4">
-              <NavbarButton
-                as={Link}
-                href="/login"
-                variant="secondary"
+              <ElegantButton
+                asChild
+                size="elegant"
+                variant="elegantSecondary"
                 className="w-full"
                 onClick={handleCloseMobileMenu}
               >
-                Login
-              </NavbarButton>
-              <NavbarButton
-                as={Link}
-                href="/signup"
-                variant="primary"
+                <Link href="/login">Login</Link>
+              </ElegantButton>
+              <ElegantButton
+                asChild
+                size="elegant"
+                variant="elegant"
                 className="w-full"
                 onClick={handleCloseMobileMenu}
               >
-                Sign Up
-              </NavbarButton>
+                <Link href="/signup">Sign Up</Link>
+              </ElegantButton>
             </div>
           </MobileNavMenu>
         </MobileNav>
