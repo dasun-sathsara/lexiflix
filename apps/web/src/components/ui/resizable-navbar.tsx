@@ -1,14 +1,9 @@
 "use client";
-import { cn } from "@/lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useMotionValueEvent,
-} from "motion/react";
-
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
+import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 type NavbarProps = Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "children"> & {
   children: React.ReactNode;
@@ -28,10 +23,7 @@ interface NavItemConfig {
 interface NavItemsProps {
   items: NavItemConfig[];
   className?: string;
-  onItemClick?: (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    item: NavItemConfig,
-  ) => void;
+  onItemClick?: (event: React.MouseEvent<HTMLAnchorElement>, item: NavItemConfig) => void;
 }
 
 interface MobileNavProps {
@@ -75,17 +67,11 @@ export const Navbar = ({ children, className, ...props }: NavbarProps) => {
     <motion.div
       ref={ref}
       {...props}
-      className={cn(
-        "fixed inset-x-0 top-6 z-50 w-full px-4 sm:px-6 lg:px-8",
-        className,
-      )}
+      className={cn("fixed inset-x-0 top-6 z-50 w-full px-4 sm:px-6 lg:px-8", className)}
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
-          ? React.cloneElement(
-              child as React.ReactElement<{ visible?: boolean }>,
-              { visible },
-            )
+          ? React.cloneElement(child as React.ReactElement<{ visible?: boolean }>, { visible })
           : child,
       )}
     </motion.div>
@@ -125,10 +111,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
 export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const handleClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    item: NavItemConfig,
-  ) => {
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>, item: NavItemConfig) => {
     onItemClick?.(event, item);
   };
 
@@ -145,7 +128,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
           onMouseEnter={() => setHovered(idx)}
           onClick={(event) => handleClick(event, item)}
           className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300"
-          key={`link-${idx}`}
+          key={item.link}
           href={item.link}
         >
           {hovered === idx && (
@@ -191,28 +174,15 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
   );
 };
 
-export const MobileNavHeader = ({
-  children,
-  className,
-}: MobileNavHeaderProps) => {
+export const MobileNavHeader = ({ children, className }: MobileNavHeaderProps) => {
   return (
-    <div
-      className={cn(
-        "flex w-full flex-row items-center justify-between",
-        className,
-      )}
-    >
+    <div className={cn("flex w-full flex-row items-center justify-between", className)}>
       {children}
     </div>
   );
 };
 
-export const MobileNavMenu = ({
-  children,
-  className,
-  isOpen,
-  onClose,
-}: MobileNavMenuProps) => {
+export const MobileNavMenu = ({ children, className, isOpen }: MobileNavMenuProps) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -232,13 +202,7 @@ export const MobileNavMenu = ({
   );
 };
 
-export const MobileNavToggle = ({
-  isOpen,
-  onClick,
-}: {
-  isOpen: boolean;
-  onClick: () => void;
-}) => {
+export const MobileNavToggle = ({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) => {
   return isOpen ? (
     <IconX className="text-black dark:text-white" onClick={onClick} />
   ) : (
@@ -249,15 +213,10 @@ export const MobileNavToggle = ({
 export const NavbarLogo = () => {
   return (
     <a
-      href="#"
+      href="/"
       className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-normal text-black"
     >
-      <img
-        src="https://assets.aceternity.com/logo-dark.png"
-        alt="logo"
-        width={30}
-        height={30}
-      />
+      <Image src="https://assets.aceternity.com/logo-dark.png" alt="logo" width={30} height={30} />
       <span className="font-medium text-black dark:text-white">Startup</span>
     </a>
   );
@@ -276,10 +235,7 @@ export const NavbarButton = ({
   children: React.ReactNode;
   className?: string;
   variant?: "primary" | "secondary" | "dark" | "gradient";
-} & (
-  | React.ComponentPropsWithoutRef<"a">
-  | React.ComponentPropsWithoutRef<"button">
-)) => {
+} & (React.ComponentPropsWithoutRef<"a"> | React.ComponentPropsWithoutRef<"button">)) => {
   const baseStyles =
     "px-4 py-2 rounded-md bg-white button bg-white text-black text-sm font-bold relative cursor-pointer hover:-translate-y-0.5 transition duration-200 inline-block text-center";
 

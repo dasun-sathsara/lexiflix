@@ -11,8 +11,7 @@ const features = [
     Icon: ListChecks,
     eyebrow: "Start with clarity",
     containerClassName: "col-span-1 lg:col-span-2 min-h-[340px]",
-    className:
-      "flex h-full flex-col justify-between gap-8 px-8 py-14 text-left text-slate-900",
+    className: "flex h-full flex-col justify-between gap-8 px-8 py-14 text-left text-slate-900",
     iconWrapperClass: "bg-white/80 text-slate-900 shadow-indigo-500/30",
     bulletTextClass: "text-slate-700",
     eyebrowClass: "text-slate-600",
@@ -78,8 +77,7 @@ const features = [
     Icon: Repeat,
     eyebrow: "Remember more",
     containerClassName: "col-span-1 md:col-span-1 lg:col-span-2 min-h-[280px]",
-    className:
-      "flex h-full flex-col justify-between gap-8 px-8 py-12 text-left text-slate-900",
+    className: "flex h-full flex-col justify-between gap-8 px-8 py-12 text-left text-slate-900",
     iconWrapperClass: "bg-white/80 text-slate-900 shadow-cyan-400/40",
     bulletTextClass: "text-slate-700",
     eyebrowClass: "text-slate-600",
@@ -99,10 +97,7 @@ const features = [
 
 export function FeaturesSection() {
   return (
-    <section
-      id="features"
-      className="relative bg-white px-6 py-8 dark:bg-slate-950"
-    >
+    <section id="features" className="relative bg-white px-6 py-8 dark:bg-slate-950">
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-transparent [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       <div className="mx-auto flex max-w-6xl flex-col gap-12">
         <div className="mx-auto max-w-3xl text-center">
@@ -110,8 +105,8 @@ export function FeaturesSection() {
             Everything you need to turn screen time into study time
           </h2>
           <p className="mt-4 text-balance text-base text-muted-foreground sm:text-lg">
-            Learn faster with rich context, beautiful visuals, and smart
-            repetition that reinforces what you love to watch.
+            Learn faster with rich context, beautiful visuals, and smart repetition that reinforces
+            what you love to watch.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -157,28 +152,15 @@ export function FeaturesSection() {
                         {eyebrow}
                       </p>
                     ) : null}
-                    <h3 className="text-2xl font-semibold leading-tight">
-                      {title}
-                    </h3>
-                    <p className="text-base/relaxed opacity-90">
-                      {description}
-                    </p>
+                    <h3 className="text-2xl font-semibold leading-tight">{title}</h3>
+                    <p className="text-base/relaxed opacity-90">{description}</p>
                   </div>
                 </div>
                 {bullets?.length ? (
                   <ul className="mt-6 space-y-2 text-sm">
                     {bullets.map((item) => (
-                      <li
-                        key={item}
-                        className={cn(
-                          "flex items-start gap-2",
-                          bulletTextClass,
-                        )}
-                      >
-                        <Check
-                          className="mt-[2px] size-4 shrink-0"
-                          aria-hidden="true"
-                        />
+                      <li key={item} className={cn("flex items-start gap-2", bulletTextClass)}>
+                        <Check className="mt-[2px] size-4 shrink-0" aria-hidden="true" />
                         <span className="leading-relaxed">{item}</span>
                       </li>
                     ))}

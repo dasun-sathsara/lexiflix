@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
+import { AppProviders } from "@/components/providers/app-providers";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({
@@ -49,15 +50,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        inter.className,
-        inter.variable,
-        geist.variable,
-        ubuntuMono.variable,
-      )}
+      className={cn(inter.className, inter.variable, geist.variable, ubuntuMono.variable)}
     >
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

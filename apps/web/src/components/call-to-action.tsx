@@ -38,9 +38,9 @@ export function CallToActionSection() {
             duration={2000}
           />
           <p className="max-w-3xl text-balance text-base text-muted-foreground sm:text-lg">
-            LexiFlix walks you from level check to active recall: choose a title,
-            let our subtitle analysis surface the vocabulary you'll encounter,
-            and master it before the opening credits roll.
+            LexiFlix walks you from level check to active recall: choose a title, let our subtitle
+            analysis surface the vocabulary you'll encounter, and master it before the opening
+            credits roll.
           </p>
         </motion.div>
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
@@ -49,8 +49,8 @@ export function CallToActionSection() {
               Assess &amp; Align
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Complete a CEFR-aware placement check and set preferences so every
-              pack targets the skills you want to strengthen.
+              Complete a CEFR-aware placement check and set preferences so every pack targets the
+              skills you want to strengthen.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
@@ -58,9 +58,8 @@ export function CallToActionSection() {
               Select &amp; Curate
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Browse a rich catalog of movies and shows, pull in matching
-              subtitles automatically, and let LexiFlix spotlight the vocabulary
-              that matters most.
+              Browse a rich catalog of movies and shows, pull in matching subtitles automatically,
+              and let LexiFlix spotlight the vocabulary that matters most.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
@@ -68,8 +67,8 @@ export function CallToActionSection() {
               Study &amp; Review
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Dive into AI-crafted definitions, audio, and images, then reinforce
-              every term with spaced repetition reminders that fit your pace.
+              Dive into AI-crafted definitions, audio, and images, then reinforce every term with
+              spaced repetition reminders that fit your pace.
             </p>
           </div>
         </div>

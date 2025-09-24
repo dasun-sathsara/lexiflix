@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { motion } from "motion/react";
 import type { Variants } from "motion/react";
+import { motion } from "motion/react";
 import { Pacifico } from "next/font/google";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -205,12 +205,7 @@ export function ShapeHero({
       <div className="relative z-10 container mx-auto px-4 md:px-6">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
           {badge && (
-            <motion.div
-              custom={0}
-              initial="hidden"
-              animate="visible"
-              variants={fadeUpVariants}
-            >
+            <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUpVariants}>
               {badge}
             </motion.div>
           )}
@@ -244,7 +239,7 @@ export function ShapeHero({
               variants={fadeUpVariants}
               className="mt-8"
             >
-              <p className="mx-auto max-w-xl px-4 text-lg text-base leading-relaxed text-black/50 dark:text-white/40">
+              <p className="mx-auto max-w-xl px-4 text-lg leading-relaxed text-black/50 dark:text-white/40">
                 {description}
               </p>
             </motion.div>
