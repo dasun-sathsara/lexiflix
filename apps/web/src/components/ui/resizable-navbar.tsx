@@ -10,10 +10,9 @@ import {
 
 import React, { useEffect, useRef, useState } from "react";
 
-interface NavbarProps extends React.HTMLAttributes<HTMLDivElement> {
+type NavbarProps = Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "children"> & {
   children: React.ReactNode;
-  className?: string;
-}
+};
 
 interface NavBodyProps {
   children: React.ReactNode;

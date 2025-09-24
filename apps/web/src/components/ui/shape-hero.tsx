@@ -228,7 +228,7 @@ export function ShapeHero({
               <br />
               <span
                 className={cn(
-                  "bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300",
+                  "inline-block whitespace-nowrap px-[0.45em] tracking-[0.04em] bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300",
                   pacifico.className,
                 )}
               >

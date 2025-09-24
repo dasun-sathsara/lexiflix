@@ -14,7 +14,7 @@ export default function Home() {
       <MarketingNavbar />
       <ShapeHero
         title1="Learn English Naturally from"
-        title2="Movies & TV"
+        title2="Movies & VTV"
         description="LexiFlix transforms your favorite shows into powerful language lessons with AI-powered vocabulary packs, flashcards, and immersive study tools. Prepare in minutes, enjoy every episode, and remember more."
         badge={
           <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-indigo-600 shadow-sm backdrop-blur-sm dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
