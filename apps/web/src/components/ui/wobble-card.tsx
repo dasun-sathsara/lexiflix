@@ -44,13 +44,13 @@ export const WobbleCard = ({
       }}
       className={cn(
         "relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-transparent",
-        containerClassName
+        containerClassName,
       )}
     >
       <div
         className={cn(
           "relative z-10 h-full overflow-hidden sm:mx-0 sm:rounded-2xl",
-          overlayClassName ?? "bg-slate-950"
+          overlayClassName ?? "bg-slate-950",
         )}
       >
         <motion.div

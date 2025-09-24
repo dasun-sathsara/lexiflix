@@ -78,7 +78,7 @@ function ElegantShape({
             "shadow-[0_2px_16px_-2px_rgba(255,255,255,0.04)]",
             "after:absolute after:inset-0",
             "after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.12),transparent_70%)]",
-            "after:rounded-[inherit]"
+            "after:rounded-[inherit]",
           )}
         />
       </motion.div>
@@ -229,7 +229,7 @@ export function ShapeHero({
               <span
                 className={cn(
                   "bg-clip-text text-transparent bg-linear-to-r from-indigo-300 via-black/90 to-rose-300 dark:from-indigo-300 dark:via-white/90 dark:to-rose-300",
-                  pacifico.className
+                  pacifico.className,
                 )}
               >
                 {title2}

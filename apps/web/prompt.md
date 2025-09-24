@@ -1,2 +1,1 @@
--   Refine the 'Login', 'Signup' 'Get Started Free' and 'How It Works' buttons to make them more appealing and user-friendly.
--   It's important they the button styles are consistent with the rest of the website.
+The styles of the 'Elegant Button' sucks. Redesign the button styles to make them more appealing, elegant and modern. Do not invent; Use a established design system.
