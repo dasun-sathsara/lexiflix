@@ -17,22 +17,22 @@ const faqs = [
   {
     question: "How does LexiFlix personalize my study plan?",
     answer:
-      "Our AI scans the subtitles and metadata of each episode you queue up, then curates vocabulary packs and cultural notes that match your CEFR level and current streak goals.",
+      "LexiFlix starts with a CEFR placement check and your stated goals. Every pack is filtered through your level, recent performance, and saved preferences so you always review material that matches your next step forward.",
   },
   {
-    question: "Can I use LexiFlix while I'm watching a show?",
+    question: "How do movies and subtitles get into LexiFlix?",
     answer:
-      "Yes. Enable Watch Mode to surface inline translations, pronunciations, and quick-save flashcards without pausing the action. Everything syncs in real time across devices.",
+      "Search for a title, confirm the right release, and LexiFlix automatically pulls the matching subtitles before turning them into your study pack.",
   },
   {
-    question: "Do you support multiple streaming platforms?",
+    question: "What is included in a study pack?",
     answer:
-      "LexiFlix works with Netflix, Hulu, Prime Video, Disney+, and local files. We're adding more integrations regularly, and you can request a platform directly inside the app.",
+      "Each pack bundles curated vocabulary with CEFR tags, AI-authored definitions and examples, natural-sounding pronunciation audio, and contextual imagery so you can learn the dialogue in advance.",
   },
   {
-    question: "What happens to the decks I build?",
+    question: "How does LexiFlix protect my progress?",
     answer:
-      "Your decks live in the cloud, so you can review on mobile, desktop, or export to Anki. Spaced repetition reminders keep you on track with gentle nudges.",
+      "Your streaks, packs, and roles stay synced to your LexiFlix account with role-based safeguards. Reviews and reminders follow you across devices so you can pick up right where you left off.",
   },
 ];
 
@@ -40,14 +40,14 @@ export function FAQSection() {
   return (
     <section
       id="faq"
-      className="relative overflow-hidden bg-transparent px-6 py-16 sm:py-20"
+      className="relative overflow-hidden bg-transparent px-6 py-8 "
       aria-labelledby="faq-heading"
     >
       <div className="mx-auto max-w-6xl rounded-[2.25rem] px-8 py-12 sm:px-10 lg:px-14">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           {/* Header Content */}
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 shadow-sm backdrop-blur dark:border-indigo-900/40 dark:bg-slate-950/50 dark:text-indigo-200">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 shadow-sm backdrop-blur font-ubuntu-mono dark:border-indigo-900/40 dark:bg-slate-950/50 dark:text-indigo-200">
               FAQ
             </span>
             <h2
@@ -60,7 +60,7 @@ export function FAQSection() {
               Our learners ask smart questions. We built a compact, tappable FAQ
               so you get to the good stuff quickly—no endless scrolling.
             </p>
-            <div className="flex flex-wrap gap-2 text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
+            <div className="flex flex-wrap gap-2 text-xs font-medium uppercase  text-muted-foreground font-ubuntu-mono">
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/50 bg-white/65 px-4 py-1.5 dark:border-indigo-900/50 dark:bg-slate-950/60">
                 <span
                   className="size-2 rounded-full bg-indigo-500"

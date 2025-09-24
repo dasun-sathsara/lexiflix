@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Geist, Inter, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 const inter = Inter({
   variable: "--font-lexiflix-sans",
   subsets: ["latin"],
   display: "swap",
+  preload: true,
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-lexiflix-display",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
+  preload: true,
+});
+
+const ubuntuMono = Ubuntu_Mono({
+  variable: "--font-ubuntu-mono",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
-  title: "LexiFlix | Learn English Naturally from Movies & TV",
+  title: "LexiFlix | Pre-Learn Vocabulary from Movies & TV",
   description:
-    "LexiFlix turns your favorite movies and TV series into immersive English lessons with contextual vocabulary, AI flashcards, and streak-based motivation.",
+    "LexiFlix analyzes subtitles to build CEFR-aligned vocabulary packs, AI study aids, and spaced-repetition reviews so you can watch with confidence.",
   keywords: [
     "LexiFlix",
     "English learning",
@@ -37,10 +47,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-background text-foreground`}
-      >
+    <html
+      lang="en"
+      className={cn(
+        inter.className,
+        inter.variable,
+        geist.variable,
+        ubuntuMono.variable,
+      )}
+    >
+      <body className="font-sans antialiased bg-background text-foreground">
         {children}
       </body>
     </html>

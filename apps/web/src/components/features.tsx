@@ -1,15 +1,15 @@
-import { Check, Clapperboard, Headphones, Repeat, Trophy } from "lucide-react";
+import { Check, Clapperboard, Headphones, ListChecks, Repeat } from "lucide-react";
 
 import { WobbleCard } from "@/components/ui/wobble-card";
 import { cn } from "@/lib/utils";
 
 const features = [
   {
-    title: "Contextual Vocabulary Packs",
+    title: "Level-Aware Onboarding",
     description:
-      "Get personalized word lists, idioms, and slang directly from the subtitles of the shows you love—before you hit play.",
-    Icon: Clapperboard,
-    eyebrow: "Before you watch",
+      "Sign up, take a CEFR placement check, and let LexiFlix tailor every recommendation to your goals before you ever press play.",
+    Icon: ListChecks,
+    eyebrow: "Start with clarity",
     containerClassName: "col-span-1 lg:col-span-2 min-h-[340px]",
     className:
       "flex h-full flex-col justify-between gap-8 px-8 py-14 text-left text-slate-900",
@@ -23,17 +23,17 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Preview dialogue with AI-translated context cues",
-      "Export ready-to-study decks in one click",
-      "Supports Netflix, Hulu, Prime Video, and more",
+      "Placement check calibrates vocabulary packs to your level",
+      "Preferences steer focus areas and pacing",
+      "Progress snapshots keep improvement visible across sessions",
     ],
   },
   {
-    title: "Multi-Modal Learning",
+    title: "Intelligent Subtitle Analysis",
     description:
-      "Study words with AI-generated definitions, natural pronunciations, and contextual images for deeper understanding.",
-    Icon: Headphones,
-    eyebrow: "Make it memorable",
+      "LexiFlix pulls in subtitles automatically and highlights the vocabulary you are most likely to hear in context before the episode begins.",
+    Icon: Clapperboard,
+    eyebrow: "Curate the content",
     containerClassName: "col-span-1 min-h-[320px]",
     className: "flex h-full flex-col gap-6 px-8 py-12 text-left text-slate-900",
     iconWrapperClass: "bg-white/80 text-slate-900 shadow-indigo-400/40",
@@ -45,16 +45,17 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Hear accents the way natives speak",
-      "See scenes reimagined as vivid visuals",
+      "Automatic subtitle imports stay synced with your chosen titles",
+      "Key phrases are graded to match your confidence level",
+      "Idioms and cultural references are surfaced before you watch",
     ],
   },
   {
-    title: "Smart Flashcards (SRS)",
+    title: "AI Study Packs",
     description:
-      "Retain what you learn with active recall and a spaced repetition system designed to fit your memory curve.",
-    Icon: Repeat,
-    eyebrow: "Remember more",
+      "Review curated vocabulary with AI-generated definitions, natural pronunciation, and contextual imagery all in one place.",
+    Icon: Headphones,
+    eyebrow: "Make it stick",
     containerClassName: "col-span-1 min-h-[320px]",
     className: "flex h-full flex-col gap-6 px-8 py-12 text-left text-slate-900",
     iconWrapperClass: "bg-white/80 text-slate-900 shadow-teal-400/40",
@@ -66,16 +67,16 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Adaptive reviews based on your streak",
-      "Example sentences stay tied to the scene",
+      "AI writes plain-language definitions and examples",
+      "Natural pronunciation guides help you hear every nuance",
     ],
   },
   {
-    title: "Stay Motivated",
+    title: "Spaced Repetition",
     description:
-      "Track streaks, unlock badges, and receive friendly reminders to keep your learning on track.",
-    Icon: Trophy,
-    eyebrow: "Momentum matters",
+      "Active recall sessions, adaptive scheduling, and gentle nudges help the vocabulary stay fresh long after the credits roll.",
+    Icon: Repeat,
+    eyebrow: "Remember more",
     containerClassName: "col-span-1 md:col-span-1 lg:col-span-2 min-h-[280px]",
     className:
       "flex h-full flex-col justify-between gap-8 px-8 py-12 text-left text-slate-900",
@@ -89,9 +90,9 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Personal best trackers keep you energized",
-      "Weekly goals adjust to your calendar",
-      "Celebrate progress with shareable badges",
+      "Adaptive spaced repetition responds to your recall ratings",
+      "Daily streaks and goals keep motivation visible",
+      "Notifications highlight when reviews are ready",
     ],
   },
 ];
@@ -100,7 +101,7 @@ export function FeaturesSection() {
   return (
     <section
       id="features"
-      className="relative bg-white px-6 py-20 sm:py-24 dark:bg-slate-950"
+      className="relative bg-white px-6 py-8 dark:bg-slate-950"
     >
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-transparent [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       <div className="mx-auto flex max-w-6xl flex-col gap-12">
@@ -149,7 +150,7 @@ export function FeaturesSection() {
                     {eyebrow ? (
                       <p
                         className={cn(
-                          "text-xs font-semibold uppercase tracking-[0.4em]",
+                          "text-xs font-semibold uppercase  font-ubuntu-mono",
                           eyebrowClass,
                         )}
                       >

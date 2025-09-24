@@ -221,8 +221,8 @@ export function ShapeHero({
             variants={fadeUpVariants}
             className="mt-6"
           >
-            <h1 className="text-4xl font-bold leading-[1.15] tracking-tight sm:text-6xl md:text-8xl">
-              <span className="bg-clip-text text-transparent bg-linear-to-b from-black to-black/80 dark:from-white dark:to-white/80">
+            <h1 className="text-4xl font-semibold leading-[1.2] tracking-tight sm:text-6xl md:text-8xl">
+              <span className="font-geist bg-clip-text text-transparent bg-linear-to-b from-black to-black/80 dark:from-white dark:to-white/80">
                 {title1}
               </span>
               <br />
@@ -244,7 +244,7 @@ export function ShapeHero({
               variants={fadeUpVariants}
               className="mt-8"
             >
-              <p className="mx-auto max-w-xl px-4 text-base font-light leading-relaxed tracking-wide text-black/40 sm:text-lg md:text-xl dark:text-white/40">
+              <p className="mx-auto max-w-xl px-4 text-lg text-base leading-relaxed text-black/50 dark:text-white/40">
                 {description}
               </p>
             </motion.div>
