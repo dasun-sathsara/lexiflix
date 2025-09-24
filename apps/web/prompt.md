@@ -1,16 +1,65 @@
--   Use the following set of gradient effects for the card backgrounds.
+Use a similar background color for the 'Start Learning Today' call-to-action button as well. Make the hover animation tad bit more subtle.
+
+**Use this on a black text color**
 
 ```tsx
-<div className="min-h-screen w-full bg-black relative">
-    {/* Midnight Mist */}
+<div className="min-h-screen w-full bg-white relative">
+    {/* Pastel Wave */}
+    <div
+        className="absolute inset-0 z-0"
+        style={{
+            background: 'linear-gradient(120deg, #d5c5ff 0%, #a7f3d0 50%, #f0f0f0 100%)',
+        }}
+    />
+    {/* Your Content/Components */}
+</div>
+```
+
+---
+
+`
+Use a similar dot background alternatively in sections. For example, the feature card background does not change. How it works section's (Turn Every Episode Into) background color changes. Then, Contact form background color does not change. Then, FAQ section's background color changes.
+
+Use this:
+
+```tsx
+import { cn } from '@/lib/utils';
+import React from 'react';
+
+export function DotBackgroundDemo() {
+    return (
+        <div className="relative flex h-[50rem] w-full items-center justify-center bg-white dark:bg-black">
+            <div
+                className={cn(
+                    'absolute inset-0',
+                    '[background-size:20px_20px]',
+                    '[background-image:radial-gradient(#d4d4d4_1px,transparent_1px)]',
+                    'dark:[background-image:radial-gradient(#404040_1px,transparent_1px)]'
+                )}
+            />
+            {/* Radial gradient for the container to give a faded look */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black"></div>
+            <p className="relative z-20 bg-gradient-to-b from-neutral-200 to-neutral-500 bg-clip-text py-8 text-4xl font-bold text-transparent sm:text-7xl">
+                Backgrounds
+            </p>
+        </div>
+    );
+}
+```
+
+---
+
+Replace the feature card background's with these gradients:
+
+```tsx
+<div className="min-h-screen w-full bg-[#fefcff] relative">
+    {/* Dreamy Sky Pink Glow */}
     <div
         className="absolute inset-0 z-0"
         style={{
             backgroundImage: `
-          radial-gradient(circle at 50% 100%, rgba(70, 85, 110, 0.5) 0%, transparent 60%),
-          radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.4) 0%, transparent 70%),
-          radial-gradient(circle at 50% 100%, rgba(181, 184, 208, 0.3) 0%, transparent 80%)
-        `,
+        radial-gradient(circle at 30% 70%, rgba(173, 216, 230, 0.35), transparent 60%),
+        radial-gradient(circle at 70% 30%, rgba(255, 182, 193, 0.4), transparent 60%)`,
         }}
     />
     {/* Your Content/Components */}
@@ -18,13 +67,12 @@
 ```
 
 ```tsx
-<div className="min-h-screen w-full bg-black relative">
-    {/* Deep Ocean Glow */}
+<div className="min-h-screen w-full relative">
+    {/* Cotton Candy Sky Gradient */}
     <div
         className="absolute inset-0 z-0"
         style={{
-            background:
-                'radial-gradient(70% 55% at 50% 50%, #2a5d77 0%, #184058 18%, #0f2a43 34%, #0a1b30 50%, #071226 66%, #040d1c 80%, #020814 92%, #01040d 97%, #000309 100%), radial-gradient(160% 130% at 10% 10%, rgba(0,0,0,0) 38%, #000309 76%, #000208 100%), radial-gradient(160% 130% at 90% 90%, rgba(0,0,0,0) 38%, #000309 76%, #000208 100%)',
+            background: `linear-gradient(45deg, #FFB3D9 0%, #FFD1DC 20%, #FFF0F5 40%, #E6F3FF 60%, #D1E7FF 80%, #C7E9F1 100%)`,
         }}
     />
     {/* Your Content/Components */}
@@ -32,38 +80,35 @@
 ```
 
 ```tsx
-<div className="min-h-screen w-full bg-black relative">
-    {/* Aurora Mystic Mist Background */}
+<div className="min-h-screen w-full relative">
+    {/* Cotton Candy Sky Gradient - Opposite Direction */}
+    <div
+        className="absolute inset-0 z-0"
+        style={{
+            background: `linear-gradient(225deg, #FFB3D9 0%, #FFD1DC 20%, #FFF0F5 40%, #E6F3FF 60%, #D1E7FF 80%, #C7E9F1 100%)`,
+        }}
+    />
+    {/* Your Content/Components */}
+</div>
+```
+
+```tsx
+<div className="min-h-screen w-full bg-[#f0fdfa] relative">
+    {/* Mint Fresh Breeze Background */}
     <div
         className="absolute inset-0 z-0"
         style={{
             backgroundImage: `
-          radial-gradient(circle at 50% 100%, rgba(58, 175, 169, 0.6) 0%, transparent 60%),
-          radial-gradient(circle at 50% 100%, rgba(255, 140, 0, 0.4) 0%, transparent 70%),
-          radial-gradient(circle at 50% 100%, rgba(238, 130, 238, 0.3) 0%, transparent 80%)
-        `,
-        }}
-    />
-    {/* Your Content/Components */}
-</div>
-```
-
-```tsx
-<div className="min-h-screen w-full bg-black relative">
-    {/* Crimson Core Glow */}
-    <div
-        className="absolute inset-0 z-0"
-        style={{
-            background:
-                'linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6)), radial-gradient(68% 58% at 50% 50%, #c81e3a 0%, #a51d35 16%, #7d1a2f 32%, #591828 46%, #3c1722 60%, #2a151d 72%, #1f1317 84%, #141013 94%, #0a0a0a 100%), radial-gradient(90% 75% at 50% 50%, rgba(228,42,66,0.06) 0%, rgba(228,42,66,0) 55%), radial-gradient(150% 120% at 8% 8%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(150% 120% at 92% 92%, rgba(0,0,0,0) 42%, #0b0a0a 82%, #070707 100%), radial-gradient(60% 50% at 50% 60%, rgba(240,60,80,0.06), rgba(0,0,0,0) 60%), #050505',
-        }}
-    />
-    {/* Soft vignette to blend edges */}
-    <div
-        className="absolute inset-0 z-0 pointer-events-none"
-        style={{
-            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%)',
-            opacity: 0.95,
+        linear-gradient(45deg, 
+          rgba(240,253,250,1) 0%, 
+          rgba(204,251,241,0.7) 30%, 
+          rgba(153,246,228,0.5) 60%, 
+          rgba(94,234,212,0.4) 100%
+        ),
+        radial-gradient(circle at 40% 30%, rgba(255,255,255,0.8) 0%, transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(167,243,208,0.5) 0%, transparent 50%),
+        radial-gradient(circle at 20% 80%, rgba(209,250,229,0.6) 0%, transparent 45%)
+      `,
         }}
     />
     {/* Your Content/Components */}

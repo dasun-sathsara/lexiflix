@@ -1,19 +1,41 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-The web app is a Next.js 15 project rooted in this directory. Route files, layouts, and server components live under `src/app`, reusable primitives reside in `src/components` (with design-system pieces inside `src/components/ui`), and shared utilities belong in `src/lib`. Public assets such as fonts and images are served from `public`. Configuration for the toolchain is kept at the root (`next.config.ts`, `tsconfig.json`, `biome.json`, `postcss.config.mjs`), so update those here to keep the workspace consistent.
+
+-   `src/app` holds Next.js 15 routes, layouts, and server components; use kebab-case folders for route segments.
+-   Shared UI lives in `src/components`, with design-system primitives under `src/components/ui`; centralized helpers sit in `src/lib`.
+-   Co-locate feature assets in `public` when they must be web-accessible; keep configuration at the root (`next.config.ts`, `tsconfig.json`, `biome.json`).
+-   Place tests beside the code they cover, using `.test.ts(x)` filenames or a `__tests__` directory within the relevant module.
 
 ## Build, Test, and Development Commands
-Install dependencies with `pnpm install`, then start the development server via `pnpm dev` (hot reloads on http://localhost:3000). Use `pnpm build` to produce an optimized production bundle and `pnpm start` to run that build locally. Run `pnpm lint` for type-aware linting and static checks, and `pnpm format` to apply Biome formatting. 
+
+-   `pnpm install` — install project dependencies (Node 18.18+ required).
+-   `pnpm dev` — launch the Next.js dev server with HMR at http://localhost:3000.
+-   `pnpm build` — create the optimized production bundle used by deploys.
+-   `pnpm start` — run the previously built bundle for local production checks.
+-   `pnpm lint` — execute type-aware linting via Biome.
+-   `pnpm format` — apply Biome formatting to stabilize diffs.
 
 ## Coding Style & Naming Conventions
-TypeScript is the default; favor `.tsx` for React entries and `.ts` for utilities. Follow the alias `@/` for imports that map to `src`. Components and hooks should be PascalCase (`Button`, `useAuth`), helpers camelCase, and route segments kebab-case to match the file-system router. The codebase uses two-space indentation and Tailwind CSS utility classes for styling, so keep layout logic declarative and avoid inline styles when Tailwind tokens exist. Let Biome manage linting and formatting—avoid manual formatting.
+
+-   TypeScript-first codebase; default to `.tsx` for React components and `.ts` for utilities.
+-   Follow two-space indentation, Tailwind CSS utility classes, and the `@/` alias for imports from `src`.
+-   Components/hooks use PascalCase (e.g., `SidebarMenu`, `useAuth`); helpers stay camelCase, and route folders use kebab-case.
+-   Let Biome handle linting/formatting—avoid manual whitespace tweaks.
 
 ## Testing Guidelines
-Automated tests are not yet wired into the scripts. When adding tests, colocate them next to the feature using the `.test.ts(x)` suffix or a `__tests__` folder, and prefer React Testing Library with a Vitest runner for component coverage. Until a permanent harness lands, document manual verifications in your pull request and ensure `pnpm lint` passes as a guardrail.
+
+-   Prefer Vitest with React Testing Library for UI behaviour; document manual verification when automation is absent.
+-   Name tests `ComponentName.test.tsx` or place them in `__tests__`; keep imports relative to the unit under test.
+-   Ensure new code paths can be linted (`pnpm lint`) and describe manual test steps in PRs until CI harness arrives.
 
 ## Commit & Pull Request Guidelines
-Follow the conventional commit pattern already in history (`type: short summary`, e.g., `feat: add signup form`). Keep messages imperative and scoped to a single change. Pull requests should describe the problem, summarize the solution, link any tracking issue, and include screenshots or clips for UI-facing updates. 
 
-## Environment & Tooling Notes
-Use Node.js 18.18 or newer (required by Next.js 15) and pnpm 8+. Tailwind CSS 4 and the Radix-based UI system drive styling; generate new primitives with the configuration in `components.json`.
+-   Use conventional commits (`feat: add signup form`) with imperative summaries scoped to one change.
+-   PRs should explain the problem, summarize the solution, link relevant issues, and include UI screenshots or clips when visuals change.
+-   List manual verification steps and note any follow-up work; keep diffs focused to simplify review.
+
+## Security & Configuration Tips
+
+-   Store secrets outside the repo; rely on environment variables managed by the deployment platform.
+-   Consult `components.json` when extending the design system, and confirm Tailwind tokens exist before adding custom CSS.

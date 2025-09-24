@@ -15,12 +15,16 @@ import { type MouseEvent, useState } from "react";
 
 const navItems = [
   {
-    name: "Product",
+    name: "Features",
     link: "#features",
   },
   {
-    name: "How it works",
+    name: "How It Works",
     link: "#cta",
+  },
+  {
+    name: "FAQ",
+    link: "#faq",
   },
   {
     name: "Contact",

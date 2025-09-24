@@ -3,16 +3,11 @@
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
+import { Sparkles } from "lucide-react";
 
 export function CallToActionSection() {
   return (
-    <section id="cta" className="relative px-6 pb-24 pt-4">
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950" />
-        <div className="absolute -top-24 left-[5%] h-72 w-72 rounded-full bg-indigo-300/40 blur-3xl dark:bg-indigo-500/20" />
-        <div className="absolute bottom-0 right-[12%] h-80 w-80 rounded-full bg-pink-200/40 blur-3xl dark:bg-pink-500/20" />
-        <div className="absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-indigo-200/30 opacity-30" />
-      </div>
+    <section id="cta" className="relative bg-transparent px-6 pb-24 pt-4">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -29,7 +24,7 @@ export function CallToActionSection() {
               "Confidence on Camera",
               "Real Conversations",
             ]}
-            duration={3200}
+            duration={2000}
           />
           <p className="max-w-3xl text-balance text-base text-muted-foreground sm:text-lg">
             Prep with laser-focused vocabulary, let LexiFlix surface the moments
@@ -66,8 +61,27 @@ export function CallToActionSection() {
             </p>
           </div>
         </div>
-        <Button size="lg" className="px-8 text-base">
-          Start Learning Today
+        <Button
+          size="lg"
+          className="group relative isolate inline-flex h-auto items-center gap-3 overflow-hidden rounded-full border border-slate-800/70 bg-black px-12 py-3.5 text-base font-semibold text-white shadow-[0_18px_36px_-20px_rgba(0,0,0,0.6)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_44px_-20px_rgba(0,0,0,0.75)] focus-visible:ring-offset-2"
+        >
+          <span
+            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.18),transparent_55%)] opacity-60 transition-opacity duration-500 group-hover:opacity-85"
+            aria-hidden="true"
+          />
+          <span
+            className="pointer-events-none absolute inset-[-120%] -z-20 bg-[radial-gradient(circle_at_50%_100%,rgba(58,175,169,0.6)_0%,transparent_60%),radial-gradient(circle_at_50%_100%,rgba(255,140,0,0.4)_0%,transparent_70%),radial-gradient(circle_at_50%_100%,rgba(238,130,238,0.3)_0%,transparent_80%)] opacity-70 blur-2xl transition-opacity duration-500 group-hover:opacity-90"
+            aria-hidden="true"
+          />
+          <span
+            className="pointer-events-none absolute inset-0 -z-10 translate-x-[-120%] bg-white/15 transition-transform duration-500 ease-out group-hover:translate-x-0"
+            aria-hidden="true"
+          />
+          <Sparkles
+            aria-hidden="true"
+            className="relative size-5 shrink-0 text-cyan-200 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-2"
+          />
+          <span className="relative">Start Learning Today</span>
         </Button>
       </div>
     </section>
