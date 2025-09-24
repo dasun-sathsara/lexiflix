@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { MarketingNavbar } from "@/components/marketing-navbar";
-import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
+import { ShapeHero } from "@/components/ui/shape-hero";
 import { WobbleCard } from "@/components/ui/wobble-card";
 import { CallToActionSection } from "@/components/call-to-action";
 import { cn } from "@/lib/utils";
@@ -93,32 +93,17 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <MarketingNavbar />
-      <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-20 bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
-        <div className="absolute inset-0 -z-10 blur-3xl">
-          <div className="absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-300/25 mix-blend-screen dark:bg-indigo-500/25" />
-          <div className="absolute right-12 bottom-10 h-56 w-56 rounded-full bg-violet-200/40 mix-blend-screen dark:bg-violet-500/30" />
-        </div>
-        <HeroHighlight
-          containerClassName="!h-auto min-h-[70vh] w-full px-6 pb-24 pt-28 sm:pt-32 lg:pt-36"
-          className="mx-auto flex max-w-5xl flex-col items-center gap-8 text-center"
-        >
+      <ShapeHero
+        title1="Learn English Naturally from"
+        title2="Movies & TV"
+        description="LexiFlix transforms your favorite shows into powerful language lessons with AI-powered vocabulary packs, flashcards, and immersive study tools. Prepare in minutes, enjoy every episode, and remember more."
+        badge={
           <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-indigo-600 shadow-sm backdrop-blur-sm dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
             Fluent by movie night
           </span>
-          <h1 className="text-balance text-[2.75rem] font-bold leading-snug sm:text-[3.25rem] lg:text-[3.75rem]">
-            Learn English Naturally from{" "}
-            <Highlight className="px-2 py-1 text-indigo-900 dark:text-white">
-              Movies &amp; TV
-            </Highlight>
-          </h1>
-          <p className="max-w-3xl text-balance text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            LexiFlix transforms your favorite shows into powerful language
-            lessons with AI-powered vocabulary packs, flashcards, and immersive
-            study tools. Prepare in minutes, enjoy every episode, and remember
-            more.
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
+        }
+        cta={
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button size="lg" className="px-8 text-base">
               Get Started Free
             </Button>
@@ -131,6 +116,8 @@ export default function Home() {
               <Link href="#features">How It Works</Link>
             </Button>
           </div>
+        }
+        footer={
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-indigo-500" />
@@ -141,8 +128,8 @@ export default function Home() {
               Built for binge-worthy learning sessions
             </span>
           </div>
-        </HeroHighlight>
-      </section>
+        }
+      />
 
       <section id="features" className="relative px-6 py-20 sm:py-24">
         <div className="absolute inset-x-0 top-0 -z-10 h-40 bg-gradient-to-b from-slate-100/70 via-white/0 to-transparent dark:from-slate-800/30" />
