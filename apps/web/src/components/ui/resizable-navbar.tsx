@@ -10,7 +10,10 @@ import {
 
 import React, { useEffect, useRef, useState } from "react";
 
-type NavbarProps = Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "children"> & {
+type NavbarProps = Omit<
+  React.ComponentPropsWithoutRef<typeof motion.div>,
+  "children"
+> & {
   children: React.ReactNode;
 };
 

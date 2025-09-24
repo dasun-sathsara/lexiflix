@@ -244,7 +244,7 @@ export function ShapeHero({
               variants={fadeUpVariants}
               className="mt-8"
             >
-              <p className="mx-auto max-w-xl px-4 text-lg text-base leading-relaxed text-black/50 dark:text-white/40">
+              <p className="mx-auto max-w-xl px-4 text-lg leading-relaxed text-black/50 dark:text-white/40">
                 {description}
               </p>
             </motion.div>

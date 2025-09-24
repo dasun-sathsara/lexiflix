@@ -1,4 +1,10 @@
-import { Check, Clapperboard, Headphones, ListChecks, Repeat } from "lucide-react";
+import {
+  Check,
+  Clapperboard,
+  Headphones,
+  ListChecks,
+  Repeat,
+} from "lucide-react";
 
 import { WobbleCard } from "@/components/ui/wobble-card";
 import { cn } from "@/lib/utils";

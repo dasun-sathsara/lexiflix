@@ -38,9 +38,9 @@ export function CallToActionSection() {
             duration={2000}
           />
           <p className="max-w-3xl text-balance text-base text-muted-foreground sm:text-lg">
-            LexiFlix walks you from level check to active recall: choose a title,
-            let our subtitle analysis surface the vocabulary you'll encounter,
-            and master it before the opening credits roll.
+            LexiFlix walks you from level check to active recall: choose a
+            title, let our subtitle analysis surface the vocabulary you'll
+            encounter, and master it before the opening credits roll.
           </p>
         </motion.div>
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
@@ -68,12 +68,16 @@ export function CallToActionSection() {
               Study &amp; Review
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Dive into AI-crafted definitions, audio, and images, then reinforce
-              every term with spaced repetition reminders that fit your pace.
+              Dive into AI-crafted definitions, audio, and images, then
+              reinforce every term with spaced repetition reminders that fit
+              your pace.
             </p>
           </div>
         </div>
-        <ElegantButton size="elegantLg" className="text-base font-medium cursor-pointer">
+        <ElegantButton
+          size="elegantLg"
+          className="text-base font-medium cursor-pointer"
+        >
           <span>See LexiFlix in Action</span>
           <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
         </ElegantButton>
