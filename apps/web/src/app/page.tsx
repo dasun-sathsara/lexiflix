@@ -13,12 +13,12 @@ export default function Home() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <MarketingNavbar />
       <ShapeHero
-        title1="Learn English Naturally from"
-        title2="Movies & VTV"
-        description="LexiFlix transforms your favorite shows into powerful language lessons with AI-powered vocabulary packs, flashcards, and immersive study tools. Prepare in minutes, enjoy every episode, and remember more."
+        title1="Prepare for English Mastery with"
+        title2="Movies & TV"
+        description="LexiFlix builds level-aware vocabulary packs from the subtitles of the stories you plan to watch, so you walk into every episode confident, prepared, and ready to retain more."
         badge={
-          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-indigo-600 shadow-sm backdrop-blur-sm dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
-            Fluent by movie night
+          <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-1 text-xs font-semibold uppercase  text-indigo-600 shadow-sm backdrop-blur-sm font-ubuntu-mono dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
+            Pre-learn before you press play
           </span>
         }
         cta={
@@ -40,11 +40,11 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-indigo-500" />
-              AI-personalized lessons in under 3 minutes
+              Vocabulary packs sourced directly from subtitles
             </span>
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-purple-500" />
-              Built for binge-worthy learning sessions
+              Designed for focused pre-watch study sessions
             </span>
           </div>
         }

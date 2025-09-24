@@ -18,7 +18,7 @@ import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 
 export function CallToActionSection() {
   return (
-    <section id="cta" className="relative bg-transparent px-6 pb-24 pt-4">
+    <section id="cta" className="relative bg-transparent px-6 py-8">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -30,50 +30,51 @@ export function CallToActionSection() {
           <LayoutTextFlip
             text="Turn Every Episode Into"
             words={[
-              "a Guided Lesson",
-              "Pronunciation Practice",
-              "Confidence on Camera",
-              "Real Conversations",
+              "a Personalized Pack",
+              "Confident Comprehension",
+              "Vocabulary Gains",
+              "Reliable Reviews",
             ]}
             duration={2000}
           />
           <p className="max-w-3xl text-balance text-base text-muted-foreground sm:text-lg">
-            Prep with laser-focused vocabulary, let LexiFlix surface the moments
-            that matter, and switch seamlessly between learning and bingeing
-            without losing the plot—or the context.
+            LexiFlix walks you from level check to active recall: choose a title,
+            let our subtitle analysis surface the vocabulary you'll encounter,
+            and master it before the opening credits roll.
           </p>
         </motion.div>
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">
-              Prep Mode
+            <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
+              Assess &amp; Align
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Scan episodes for tricky phrases and cultural references before
-              you hit play.
+              Complete a CEFR-aware placement check and set preferences so every
+              pack targets the skills you want to strengthen.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">
-              Watch &amp; Learn
+            <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
+              Select &amp; Curate
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Tap into synchronized subtitles, pronunciation cues, and inline
-              definitions while you watch.
+              Browse a rich catalog of movies and shows, pull in matching
+              subtitles automatically, and let LexiFlix spotlight the vocabulary
+              that matters most.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.3em] text-indigo-500 dark:text-indigo-300">
-              Lock It In
+            <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
+              Study &amp; Review
             </h4>
             <p className="mt-3 text-sm text-muted-foreground">
-              Turn favorite scenes into spaced reviews that keep phrases fresh
-              long after the credits roll.
+              Dive into AI-crafted definitions, audio, and images, then reinforce
+              every term with spaced repetition reminders that fit your pace.
             </p>
           </div>
         </div>
-        <ElegantButton size="elegantLg" className="text-base font-medium">
-          <span>Start Learning Today</span>
+        <ElegantButton size="elegantLg" className="text-base font-medium cursor-pointer">
+          <span>See LexiFlix in Action</span>
           <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
         </ElegantButton>
       </div>
