@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { motion } from "motion/react";
 import type { Variants } from "motion/react";
+import { motion } from "motion/react";
 import { Pacifico } from "next/font/google";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 

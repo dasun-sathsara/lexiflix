@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,11 +19,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuthClient } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
-function getInitials(firstName: string, lastName: string) {
-  const firstInitial = firstName.at(0)?.toUpperCase() ?? "L";
-  const lastInitial = lastName.at(0)?.toUpperCase() ?? "F";
-  return `${firstInitial}${lastInitial}`;
-}
+import { GoogleIcon } from "./google-icon";
 
 type SignupFormVariant = "standalone" | "tab";
 
@@ -48,58 +43,31 @@ export function SignupForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isProcessing = isEmailSubmitting || isGoogleSubmitting;
+
   const cardClasses = cn(
-    "mx-auto flex h-full w-full flex-col",
+    "mx-auto flex w-full flex-col",
     variant === "standalone"
       ? "max-w-2xl border-border/70 bg-white/85 backdrop-blur-md dark:border-border/40 dark:bg-slate-950/70"
       : "max-w-none border-none bg-transparent p-0 shadow-none backdrop-blur-0",
     variant === "tab" ? "rounded-none" : "",
     className,
   );
-
+  const headerSpacing = variant === "tab" ? "space-y-2" : "space-y-3";
   const footerAlignment = variant === "tab" ? "items-stretch" : "";
   const primaryButtonWidth = variant === "tab" ? "w-full" : "w-full md:w-auto";
   const headerPadding = variant === "tab" ? "p-0" : "px-6 pt-6";
   const contentPadding = variant === "tab" ? "p-0" : "px-6";
-  const footerPadding = variant === "tab" ? "p-0 pt-6" : "px-6 pb-6 pt-2";
-  const formClasses = cn("space-y-6", variant === "tab" ? "mt-8" : "");
-
-  useEffect(() => {
-    if (!profileImage) {
-      setPreviewUrl(null);
-      return undefined;
-    }
-
-    const objectUrl = URL.createObjectURL(profileImage);
-    setPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [profileImage]);
-
-  const initials = useMemo(
-    () => getInitials(firstName, lastName),
-    [firstName, lastName],
-  );
+  const footerPadding = variant === "tab" ? "p-0 pt-5" : "px-6 pb-6 pt-2";
+  const footerGap = variant === "tab" ? "gap-3" : "gap-4";
+  const formClasses = cn("space-y-5", variant === "tab" ? "mt-6" : "");
 
   function resetErrors() {
     setError(null);
-  }
-
-  function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0] ?? null;
-    setProfileImage(file);
-  }
-
-  function handleClearImage() {
-    setProfileImage(null);
-    setPreviewUrl(null);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -119,7 +87,7 @@ export function SignupForm({
       return;
     }
 
-    setIsSubmitting(true);
+    setIsEmailSubmitting(true);
 
     try {
       await auth.signUp.email({
@@ -127,7 +95,6 @@ export function SignupForm({
         password,
         firstName,
         lastName,
-        image: profileImage,
       });
 
       router.push("/dashboard");
@@ -144,13 +111,37 @@ export function SignupForm({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsEmailSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setIsGoogleSubmitting(true);
+
+    try {
+      await auth.signIn.social({ provider: "google" });
+      router.push("/dashboard");
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Google sign in failed. Please try again.";
+
+      setError(message);
+      toast({
+        title: "Google sign in failed",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGoogleSubmitting(false);
     }
   }
 
   return (
     <Card className={cardClasses}>
-      <CardHeader className={cn("space-y-3", headerPadding)}>
+      <CardHeader className={cn(headerSpacing, headerPadding)}>
         <CardTitle className="text-3xl">Create your LexiFlix account</CardTitle>
         <CardDescription>
           Personalize your learning journey, track vocabulary growth, and sync
@@ -158,53 +149,8 @@ export function SignupForm({
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className={formClasses}>
-        <CardContent className={cn("space-y-6", contentPadding)}>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar className="size-16">
-                {previewUrl ? (
-                  <AvatarImage
-                    src={previewUrl}
-                    alt="Profile preview"
-                    className="object-cover"
-                  />
-                ) : null}
-                <AvatarFallback className="text-lg font-semibold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Profile image</p>
-                <p className="text-sm text-muted-foreground">
-                  Optional, square images work best.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" className="text-sm">
-                <label htmlFor="profile-image" className="cursor-pointer">
-                  Upload
-                </label>
-              </Button>
-              {profileImage ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleClearImage}
-                >
-                  Clear
-                </Button>
-              ) : null}
-              <Input
-                id="profile-image"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageChange}
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardContent className={cn("space-y-5", contentPadding)}>
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="first-name">First name</Label>
               <Input
@@ -214,6 +160,7 @@ export function SignupForm({
                 required
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
+                disabled={isProcessing}
               />
             </div>
             <div className="space-y-2">
@@ -225,6 +172,7 @@ export function SignupForm({
                 required
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
+                disabled={isProcessing}
               />
             </div>
           </div>
@@ -238,9 +186,10 @@ export function SignupForm({
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              disabled={isProcessing}
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="signup-password">Password</Label>
               <Input
@@ -252,6 +201,7 @@ export function SignupForm({
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                disabled={isProcessing}
               />
             </div>
             <div className="space-y-2">
@@ -265,6 +215,7 @@ export function SignupForm({
                 required
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
+                disabled={isProcessing}
               />
             </div>
           </div>
@@ -275,14 +226,44 @@ export function SignupForm({
           ) : null}
         </CardContent>
         <CardFooter
-          className={cn("flex flex-col gap-4", footerAlignment, footerPadding)}
+          className={cn("flex flex-col", footerGap, footerAlignment, footerPadding)}
         >
           <Button
             type="submit"
             className={primaryButtonWidth}
-            disabled={isSubmitting}
+            disabled={isProcessing}
           >
-            {isSubmitting ? "Creating account..." : "Create account"}
+            {isEmailSubmitting ? "Creating account..." : "Create account"}
+          </Button>
+          <div className="relative my-3">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 flex items-center"
+            >
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              "group gap-3 border-border/60 bg-background/95 text-foreground shadow-sm transition hover:bg-background focus-visible:ring-offset-2 dark:bg-slate-950/70 dark:hover:bg-slate-950/60",
+              primaryButtonWidth,
+            )}
+            onClick={handleGoogleSignIn}
+            disabled={isProcessing}
+          >
+            <GoogleIcon className="size-5 transition group-hover:scale-105" />
+            <span className="font-medium">
+              {isGoogleSubmitting
+                ? "Connecting with Google..."
+                : "Continue with Google"}
+            </span>
           </Button>
           <p className="text-sm text-muted-foreground">
             Already part of LexiFlix?{" "}

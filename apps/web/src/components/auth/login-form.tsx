@@ -20,6 +20,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuthClient } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
+import { GoogleIcon } from "./google-icon";
+
 type LoginFormVariant = "standalone" | "tab";
 
 interface LoginFormProps {
@@ -40,13 +42,16 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isProcessing = isEmailSubmitting || isGoogleSubmitting;
 
   const cardClasses = useMemo(
     () =>
       cn(
-        "mx-auto flex h-full w-full flex-col",
+        "mx-auto flex w-full flex-col",
         variant === "standalone"
           ? "max-w-md border-border/70 bg-white/80 backdrop-blur-md dark:border-border/40 dark:bg-slate-950/70"
           : "max-w-none border-none bg-transparent p-0 shadow-none backdrop-blur-0",
@@ -57,18 +62,19 @@ export function LoginForm({
   );
 
   const footerButtonWidth = "w-full";
-  const contentSpacing = variant === "tab" ? "space-y-6" : "space-y-4";
-  const headerSpacing = variant === "tab" ? "space-y-4" : "space-y-2";
+  const footerGap = variant === "tab" ? "gap-3" : "gap-4";
+  const contentSpacing = variant === "tab" ? "space-y-5" : "space-y-4";
+  const headerSpacing = variant === "tab" ? "space-y-3" : "space-y-2";
   const headerPadding = variant === "tab" ? "p-0" : "px-6 pt-6";
   const contentPadding = variant === "tab" ? "p-0" : "px-6";
-  const footerPadding = variant === "tab" ? "p-0 pt-6" : "px-6 pb-6 pt-2";
-  const formClasses = cn("space-y-6", variant === "tab" ? "mt-8" : "");
+  const footerPadding = variant === "tab" ? "p-0 pt-4" : "px-6 pb-6 pt-2";
+  const formClasses = cn("space-y-5", variant === "tab" ? "mt-6" : "");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError(null);
-    setIsSubmitting(true);
+    setIsEmailSubmitting(true);
 
     try {
       await auth.signIn.email({ email, password, remember: rememberMe });
@@ -86,13 +92,13 @@ export function LoginForm({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsEmailSubmitting(false);
     }
   }
 
   async function handleGoogleSignIn() {
     setError(null);
-    setIsSubmitting(true);
+    setIsGoogleSubmitting(true);
 
     try {
       await auth.signIn.social({ provider: "google" });
@@ -110,7 +116,7 @@ export function LoginForm({
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsGoogleSubmitting(false);
     }
   }
 
@@ -136,12 +142,16 @@ export function LoginForm({
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              disabled={isProcessing}
             />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link href="#" className="text-sm text-primary hover:underline">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-primary hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -153,6 +163,7 @@ export function LoginForm({
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              disabled={isProcessing}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -164,6 +175,7 @@ export function LoginForm({
                 id="remember-me"
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                disabled={isProcessing}
               />
               <span className="select-none">Remember me</span>
             </Label>
@@ -193,22 +205,43 @@ export function LoginForm({
             </p>
           ) : null}
         </CardContent>
-        <CardFooter className={cn("flex-col gap-3", footerPadding)}>
+        <CardFooter className={cn("flex-col", footerGap, footerPadding)}>
           <Button
             type="submit"
             className={footerButtonWidth}
-            disabled={isSubmitting}
+            disabled={isProcessing}
           >
-            {isSubmitting ? "Signing in..." : "Sign in"}
+            {isEmailSubmitting ? "Signing in..." : "Sign in"}
           </Button>
+          <div className="relative my-3">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 flex items-center"
+            >
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
           <Button
             type="button"
             variant="outline"
-            className={footerButtonWidth}
+            className={cn(
+              "group gap-3 border-border/60 bg-background/95 text-foreground shadow-sm transition hover:bg-background focus-visible:ring-offset-2 dark:bg-slate-950/70 dark:hover:bg-slate-950/60",
+              footerButtonWidth,
+            )}
             onClick={handleGoogleSignIn}
-            disabled={isSubmitting}
+            disabled={isProcessing}
           >
-            Continue with Google
+            <GoogleIcon className="size-5 transition group-hover:scale-105" />
+            <span className="font-medium">
+              {isGoogleSubmitting
+                ? "Connecting with Google..."
+                : "Continue with Google"}
+            </span>
           </Button>
         </CardFooter>
       </form>

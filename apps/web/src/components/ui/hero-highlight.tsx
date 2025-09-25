@@ -1,7 +1,7 @@
 "use client";
-import { cn } from "@/lib/utils";
-import { useMotionValue, motion, useMotionTemplate } from "motion/react";
+import { motion, useMotionTemplate, useMotionValue } from "motion/react";
 import type React from "react";
+import { cn } from "@/lib/utils";
 
 export const HeroHighlight = ({
   children,
@@ -31,7 +31,7 @@ export const HeroHighlight = ({
     currentTarget,
     clientX,
     clientY,
-  }: React.MouseEvent<HTMLDivElement>) {
+  }: React.MouseEvent<HTMLButtonElement>) {
     if (!currentTarget) return;
     const { left, top } = currentTarget.getBoundingClientRect();
 
@@ -39,7 +39,8 @@ export const HeroHighlight = ({
     mouseY.set(clientY - top);
   }
   return (
-    <div
+    <button
+      type="button"
       className={cn(
         "group relative flex h-[40rem] w-full items-center justify-center bg-white dark:bg-black",
         containerClassName,
@@ -100,7 +101,7 @@ export const HeroHighlight = ({
       />
 
       <div className={cn("relative z-20", className)}>{children}</div>
-    </div>
+    </button>
   );
 };
 

@@ -67,8 +67,8 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
   };
 
   return (
-    <div className={cn("w-full", className)}>
-      <div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-[32px] border border-border/40 bg-white/90 p-10 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-2xl dark:border-border/30 dark:bg-slate-950/80">
+    <div className={cn("flex w-full flex-col", className)}>
+      <div className="relative mx-auto flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-[32px] border border-border/40 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-2xl dark:border-border/30 dark:bg-slate-950/80">
         <div
           ref={containerRef}
           className="relative flex items-center gap-2 rounded-full bg-muted/60 p-1 dark:bg-slate-900/70"
@@ -115,7 +115,7 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
           })}
         </div>
 
-        <div className="relative mt-10 min-h-[560px]">
+        <div className="relative mt-8 flex-1 min-h-[580px]">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={selectedTab.id}
@@ -132,19 +132,17 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
                 filter: "blur(18px)",
               }}
               transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
-              className="absolute inset-0 flex"
+              className="absolute inset-0 flex min-h-[580px]"
             >
               {selectedTab.id === "login" ? (
                 <LoginForm
                   variant="tab"
                   onNavigateToSignup={() => handleSelect("signup")}
-                  className="h-full"
                 />
               ) : (
                 <SignupForm
                   variant="tab"
                   onNavigateToLogin={() => handleSelect("login")}
-                  className="h-full"
                 />
               )}
             </motion.div>
