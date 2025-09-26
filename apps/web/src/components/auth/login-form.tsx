@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +18,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthClient } from "@/hooks/use-auth-client";
+import { useSignIn } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
 import { GoogleIcon } from "./google-icon";
+import { parseAuthError, requiresEmailVerification } from "./auth-error-utils";
 
 type LoginFormVariant = "standalone" | "tab";
 
@@ -30,6 +32,12 @@ interface LoginFormProps {
   onNavigateToSignup?: () => void;
 }
 
+type EmailCredentials = {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+};
+
 export function LoginForm({
   className,
   variant = "standalone",
@@ -37,16 +45,69 @@ export function LoginForm({
 }: LoginFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuthClient();
+  const signIn = useSignIn();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const isProcessing = isEmailSubmitting || isGoogleSubmitting;
+  const emailSignIn = useMutation({
+    mutationFn: async (credentials: EmailCredentials) => {
+      const result = await signIn.email({
+        ...credentials,
+        fetchOptions: { throw: false },
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      const { message } = parseAuthError(error);
+
+      toast({
+        title: "Unable to sign in",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const googleSignIn = useMutation({
+    mutationFn: async () => {
+      const result = await signIn.social({ provider: "google", fetchOptions: { throw: false } });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      const { message } = parseAuthError(error);
+
+      toast({
+        title: "Google sign in failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const aggregatedAuthError = useMemo(
+    () => parseAuthError(emailSignIn.error ?? googleSignIn.error),
+    [emailSignIn.error, googleSignIn.error],
+  );
+  const shouldVerifyEmail = requiresEmailVerification(emailSignIn.error);
+  const isProcessing = emailSignIn.isPending || googleSignIn.isPending;
 
   const cardClasses = useMemo(
     () =>
@@ -70,55 +131,30 @@ export function LoginForm({
   const footerPadding = variant === "tab" ? "p-0 pt-4" : "px-6 pb-6 pt-2";
   const formClasses = cn("space-y-5", variant === "tab" ? "mt-6" : "");
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    setError(null);
-    setIsEmailSubmitting(true);
+      emailSignIn.reset();
 
-    try {
-      await auth.signIn.email({ email, password, remember: rememberMe });
-      router.push("/dashboard");
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to sign in right now. Please try again.";
+      try {
+        await emailSignIn.mutateAsync({ email, password, rememberMe });
+      } catch {
+        // handled via onError
+      }
+    },
+    [email, password, rememberMe, emailSignIn],
+  );
 
-      setError(message);
-      toast({
-        title: "Unable to sign in",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsEmailSubmitting(false);
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setError(null);
-    setIsGoogleSubmitting(true);
+  const handleGoogleSignIn = useCallback(async () => {
+    googleSignIn.reset();
 
     try {
-      await auth.signIn.social({ provider: "google" });
-      router.push("/dashboard");
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Google sign in failed. Please try again.";
-
-      setError(message);
-      toast({
-        title: "Google sign in failed",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsGoogleSubmitting(false);
+      await googleSignIn.mutateAsync();
+    } catch {
+      // handled via onError
     }
-  }
+  }, [googleSignIn]);
 
   return (
     <Card className={cardClasses}>
@@ -188,15 +224,23 @@ export function LoginForm({
               )}
             </span>
           </div>
-          {error ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {error}
+          {shouldVerifyEmail ? (
+            <p className="rounded-md border border-yellow-400/40 bg-yellow-400/5 px-3 py-2 text-sm text-yellow-400">
+              Please verify your email. Check your inbox for a verification link.
+            </p>
+          ) : null}
+          {aggregatedAuthError.message ? (
+            <p
+              className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              aria-live="polite"
+            >
+              {aggregatedAuthError.message}
             </p>
           ) : null}
         </CardContent>
         <CardFooter className={cn("flex-col", footerGap, footerPadding)}>
           <Button type="submit" className={footerButtonWidth} disabled={isProcessing}>
-            {isEmailSubmitting ? "Signing in..." : "Sign in"}
+            {emailSignIn.isPending ? "Signing in..." : "Sign in"}
           </Button>
           <div className="relative my-3">
             <div aria-hidden="true" className="absolute inset-0 flex items-center">
@@ -218,7 +262,7 @@ export function LoginForm({
           >
             <GoogleIcon className="size-5 transition group-hover:scale-105" />
             <span className="font-medium">
-              {isGoogleSubmitting ? "Connecting with Google..." : "Continue with Google"}
+              {googleSignIn.isPending ? "Connecting with Google..." : "Continue with Google"}
             </span>
           </Button>
         </CardFooter>

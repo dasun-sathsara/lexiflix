@@ -1,18 +1,23 @@
 import { AuthTabs } from "@/components/auth/auth-tabs";
 import { SoftGradientBackground } from "@/components/ui/soft-gradient-background";
 
+interface Benefit {
+  title: string;
+  description: string;
+}
+
+const SIGNUP_BENEFITS: Benefit[] = [
+  {
+    title: "Curated word banks",
+    description: "Every show comes with vocab lists matched to your goals and difficulty level.",
+  },
+  {
+    title: "Guided practice",
+    description: "Interactive prompts and spaced reminders ensure new phrases stick for the binge.",
+  },
+];
+
 export default function SignupPage() {
-  const benefits = [
-    {
-      title: "Curated word banks",
-      description: "Every show comes with vocab lists matched to your goals and difficulty level.",
-    },
-    {
-      title: "Guided practice",
-      description:
-        "Interactive prompts and spaced reminders ensure new phrases stick for the binge.",
-    },
-  ];
 
   return (
     <SoftGradientBackground>
@@ -34,7 +39,7 @@ export default function SignupPage() {
                 </p>
               </header>
               <div className="grid gap-4 sm:grid-cols-2">
-                {benefits.map((benefit) => (
+                {SIGNUP_BENEFITS.map((benefit) => (
                   <div
                     key={benefit.title}
                     className="flex flex-col gap-2 rounded-2xl border border-border/40 bg-white/85 p-5 text-left shadow-sm backdrop-blur-md dark:border-border/30 dark:bg-slate-950/70"

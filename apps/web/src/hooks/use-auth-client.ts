@@ -1,73 +1,49 @@
-"use client";
+import { signIn, signOut, signUp, useSession, authClient } from "@/lib/auth-client";
 
-import { useMemo } from "react";
+type PasswordActions = typeof authClient extends { password: infer Password }
+  ? Password
+  : Record<string, never>;
 
-type EmailSignInPayload = {
-  email: string;
-  password: string;
-  remember?: boolean;
-};
+type SendResetEmailFn = PasswordActions extends { sendResetEmail: infer Fn }
+  ? Fn
+  : (...args: unknown[]) => Promise<unknown>;
 
-type SocialSignInPayload = {
-  provider: string;
-};
+type ResetPasswordFn = PasswordActions extends { reset: infer Fn }
+  ? Fn
+  : (...args: unknown[]) => Promise<unknown>;
 
-type EmailSignUpPayload = {
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-  image?: File | null;
-};
-
-type AuthClient = {
-  signIn: {
-    email: (payload: EmailSignInPayload) => Promise<void>;
-    social: (payload: SocialSignInPayload) => Promise<void>;
-  };
-  signUp: {
-    email: (payload: EmailSignUpPayload) => Promise<void>;
-  };
-  password: {
-    sendResetEmail: (payload: { email: string }) => Promise<void>;
-  };
-};
-
-function delay(ms: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
+function getPasswordActions(): Partial<PasswordActions> {
+  return (authClient as { password?: PasswordActions }).password ?? {};
 }
 
-export function useAuthClient(): AuthClient {
-  return useMemo(() => {
-    const client: AuthClient = {
-      signIn: {
-        async email(payload) {
-          console.info("[auth] signIn.email called", payload);
-          await delay(800);
-        },
-        async social(payload) {
-          console.info("[auth] signIn.social called", payload);
-          await delay(600);
-        },
-      },
-      signUp: {
-        async email(payload) {
-          console.info("[auth] signUp.email called", payload);
-          await delay(1000);
-        },
-      },
-      password: {
-        async sendResetEmail(payload) {
-          console.info("[auth] password.sendResetEmail called", payload);
-          await delay(700);
-        },
-      },
-    };
+export const useAuth = useSession;
+export const useSignIn = () => signIn;
+export const useSignOut = () => signOut;
+export const useSignUp = () => signUp;
+export const useRequestPasswordReset = () => {
+  const { sendResetEmail } = getPasswordActions();
 
-    return client;
-  }, []);
-}
+  const handler = ((...args: unknown[]) => {
+    if (!sendResetEmail) {
+      return Promise.reject(new Error("Password reset email is not configured."));
+    }
 
-export type { EmailSignInPayload, EmailSignUpPayload };
+    return (sendResetEmail as (...fnArgs: unknown[]) => Promise<unknown>)(...args);
+  }) as unknown as SendResetEmailFn;
+
+  return { requestPasswordReset: handler };
+};
+
+export const useResetPassword = () => {
+  const { reset } = getPasswordActions();
+
+  const handler = ((...args: unknown[]) => {
+    if (!reset) {
+      return Promise.reject(new Error("Password reset is not configured."));
+    }
+
+    return (reset as (...fnArgs: unknown[]) => Promise<unknown>)(...args);
+  }) as unknown as ResetPasswordFn;
+
+  return { resetPassword: handler };
+};

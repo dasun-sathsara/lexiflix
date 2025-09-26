@@ -55,7 +55,7 @@ export function BeamsBackground({
 }: BeamsBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const beamsRef = useRef<Beam[]>([]);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
   const isDarkModeRef = useRef(false);
 
   useEffect(() => {

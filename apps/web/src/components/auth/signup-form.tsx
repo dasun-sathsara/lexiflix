@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,10 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthClient } from "@/hooks/use-auth-client";
+import { useSignUp, useSignIn } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
 import { GoogleIcon } from "./google-icon";
+import { parseAuthError } from "./auth-error-utils";
 
 type SignupFormVariant = "standalone" | "tab";
 
@@ -29,6 +31,12 @@ interface SignupFormProps {
   onNavigateToLogin?: () => void;
 }
 
+type SignupPayload = {
+  email: string;
+  password: string;
+  name: string;
+};
+
 export function SignupForm({
   className,
   variant = "standalone",
@@ -36,18 +44,75 @@ export function SignupForm({
 }: SignupFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuthClient();
+  const signUp = useSignUp();
+  const signIn = useSignIn();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
-  const isProcessing = isEmailSubmitting || isGoogleSubmitting;
+  const signUpMutation = useMutation({
+    mutationFn: async (payload: SignupPayload) => {
+      const result = await signUp.email({
+        ...payload,
+        fetchOptions: { throw: false },
+      });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      setClientError(null);
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      const { message } = parseAuthError(error);
+
+      toast({
+        title: "Unable to create account",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const googleSignIn = useMutation({
+    mutationFn: async () => {
+      const result = await signIn.social({ provider: "google", fetchOptions: { throw: false } });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      return result.data;
+    },
+    onSuccess: () => {
+      setClientError(null);
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      const { message } = parseAuthError(error);
+
+      toast({
+        title: "Google sign in failed",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const remoteError = useMemo(
+    () => parseAuthError(signUpMutation.error ?? googleSignIn.error),
+    [googleSignIn.error, signUpMutation.error],
+  );
+  const inlineError = clientError ?? remoteError.message;
+  const isProcessing = signUpMutation.isPending || googleSignIn.isPending;
 
   const cardClasses = cn(
     "mx-auto flex w-full flex-col",
@@ -66,77 +131,53 @@ export function SignupForm({
   const footerGap = variant === "tab" ? "gap-3" : "gap-4";
   const formClasses = cn("space-y-5", variant === "tab" ? "mt-6" : "");
 
-  function resetErrors() {
-    setError(null);
-  }
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+      setClientError(null);
+      signUpMutation.reset();
 
-    resetErrors();
+      if (password !== confirmPassword) {
+        const message = "Passwords need to match before we can create your account.";
+        setClientError(message);
+        toast({
+          title: "Check your password",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (password !== confirmPassword) {
-      const message = "Passwords need to match before we can create your account.";
-      setError(message);
-      toast({
-        title: "Check your password",
-        description: message,
-        variant: "destructive",
-      });
-      return;
-    }
+      const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-    setIsEmailSubmitting(true);
+      try {
+        await signUpMutation.mutateAsync({ email, password, name: fullName });
+      } catch {
+        // handled via onError
+      }
+    },
+    [
+      confirmPassword,
+      email,
+      firstName,
+      lastName,
+      password,
+      signUpMutation,
+      toast,
+    ],
+  );
 
-    try {
-      await auth.signUp.email({
-        email,
-        password,
-        firstName,
-        lastName,
-      });
-
-      router.push("/dashboard");
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "We ran into a glitch while creating your account.";
-
-      setError(message);
-      toast({
-        title: "Unable to create account",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsEmailSubmitting(false);
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setError(null);
-    setIsGoogleSubmitting(true);
+  const handleGoogleSignIn = useCallback(async () => {
+    setClientError(null);
+    googleSignIn.reset();
 
     try {
-      await auth.signIn.social({ provider: "google" });
-      router.push("/dashboard");
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Google sign in failed. Please try again.";
-
-      setError(message);
-      toast({
-        title: "Google sign in failed",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsGoogleSubmitting(false);
+      await googleSignIn.mutateAsync();
+    } catch {
+      // handled via onError
     }
-  }
+  }, [googleSignIn]);
 
   return (
     <Card className={cardClasses}>
@@ -218,15 +259,18 @@ export function SignupForm({
               />
             </div>
           </div>
-          {error ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {error}
+          {inlineError ? (
+            <p
+              className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              aria-live="polite"
+            >
+              {inlineError}
             </p>
           ) : null}
         </CardContent>
         <CardFooter className={cn("flex flex-col", footerGap, footerAlignment, footerPadding)}>
           <Button type="submit" className={primaryButtonWidth} disabled={isProcessing}>
-            {isEmailSubmitting ? "Creating account..." : "Create account"}
+            {signUpMutation.isPending ? "Creating account..." : "Create account"}
           </Button>
           <div className="relative my-3">
             <div aria-hidden="true" className="absolute inset-0 flex items-center">
@@ -248,7 +292,7 @@ export function SignupForm({
           >
             <GoogleIcon className="size-5 transition group-hover:scale-105" />
             <span className="font-medium">
-              {isGoogleSubmitting ? "Connecting with Google..." : "Continue with Google"}
+              {googleSignIn.isPending ? "Connecting with Google..." : "Continue with Google"}
             </span>
           </Button>
           <p className="text-sm text-muted-foreground">

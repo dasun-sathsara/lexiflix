@@ -1,17 +1,23 @@
 import { AuthTabs } from "@/components/auth/auth-tabs";
 import { SoftGradientBackground } from "@/components/ui/soft-gradient-background";
 
+interface Benefit {
+  title: string;
+  description: string;
+}
+
+const LOGIN_BENEFITS: Benefit[] = [
+  {
+    title: "Stay in flow",
+    description: "Resume saved study packs and keep momentum across every series you follow.",
+  },
+  {
+    title: "Progress that adapts",
+    description: "Personalized reviews that flex to your pace with real-time mastery tracking.",
+  },
+];
+
 export default function LoginPage() {
-  const benefits = [
-    {
-      title: "Stay in flow",
-      description: "Resume saved study packs and keep momentum across every series you follow.",
-    },
-    {
-      title: "Progress that adapts",
-      description: "Personalized reviews that flex to your pace with real-time mastery tracking.",
-    },
-  ];
 
   return (
     <SoftGradientBackground>
@@ -33,7 +39,7 @@ export default function LoginPage() {
                 </p>
               </header>
               <div className="grid gap-4 sm:grid-cols-2">
-                {benefits.map((benefit) => (
+                {LOGIN_BENEFITS.map((benefit) => (
                   <div
                     key={benefit.title}
                     className="flex flex-col gap-2 rounded-2xl border border-border/40 bg-white/85 p-5 text-left shadow-sm backdrop-blur-md dark:border-border/30 dark:bg-slate-950/70"

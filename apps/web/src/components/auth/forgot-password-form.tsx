@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 
+import { useRequestPasswordReset } from "@/hooks/use-auth-client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthClient } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
 interface ForgotPasswordFormProps {
@@ -16,7 +17,7 @@ interface ForgotPasswordFormProps {
 
 export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
   const { toast } = useToast();
-  const auth = useAuthClient();
+  const { requestPasswordReset } = useRequestPasswordReset();
 
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +30,10 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
     setIsSubmitting(true);
 
     try {
-      await auth.password.sendResetEmail({ email });
+      await requestPasswordReset({ 
+        email, 
+        redirectTo: `${window.location.origin}/reset-password` 
+      });
       toast({
         title: "Password reset email sent",
         description: "Please check your inbox for further instructions.",
