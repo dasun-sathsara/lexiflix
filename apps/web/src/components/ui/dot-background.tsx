@@ -16,10 +16,8 @@ export function DotBackground({
   dotOpacity = 1,
   maskOpacity = 1,
 }: DotBackgroundProps) {
-  const dotBgOpacity =
-    typeof dotOpacity === "number" ? dotOpacity : (dotOpacity ?? 1);
-  const maskBgOpacity =
-    typeof maskOpacity === "number" ? maskOpacity : (maskOpacity ?? 1);
+  const dotBgOpacity = typeof dotOpacity === "number" ? dotOpacity : (dotOpacity ?? 1);
+  const maskBgOpacity = typeof maskOpacity === "number" ? maskOpacity : (maskOpacity ?? 1);
 
   return (
     <div
@@ -41,9 +39,7 @@ export function DotBackground({
         className="pointer-events-none absolute inset-0 bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_18%,black)] dark:bg-black"
         style={{ opacity: maskBgOpacity }}
       />
-      <div className={cn("relative z-20 w-full", contentClassName)}>
-        {children}
-      </div>
+      <div className={cn("relative z-20 w-full", contentClassName)}>{children}</div>
     </div>
   );
 }

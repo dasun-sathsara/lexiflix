@@ -123,9 +123,7 @@ export function LoginForm({
   return (
     <Card className={cardClasses}>
       <CardHeader className={cn(headerSpacing, headerPadding)}>
-        <CardTitle className={variant === "tab" ? "text-3xl" : "text-2xl"}>
-          Welcome back
-        </CardTitle>
+        <CardTitle className={variant === "tab" ? "text-3xl" : "text-2xl"}>Welcome back</CardTitle>
         <CardDescription>
           Sign in to pick up where you left off with your LexiFlix study packs.
         </CardDescription>
@@ -148,10 +146,7 @@ export function LoginForm({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link
-                href="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
+              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -167,10 +162,7 @@ export function LoginForm({
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label
-              htmlFor="remember-me"
-              className="flex cursor-pointer items-center gap-2 text-sm"
-            >
+            <Label htmlFor="remember-me" className="flex cursor-pointer items-center gap-2 text-sm">
               <Checkbox
                 id="remember-me"
                 checked={rememberMe}
@@ -190,10 +182,7 @@ export function LoginForm({
                   Sign up
                 </button>
               ) : (
-                <Link
-                  href="/signup"
-                  className="font-medium text-primary hover:underline"
-                >
+                <Link href="/signup" className="font-medium text-primary hover:underline">
                   Sign up
                 </Link>
               )}
@@ -206,24 +195,15 @@ export function LoginForm({
           ) : null}
         </CardContent>
         <CardFooter className={cn("flex-col", footerGap, footerPadding)}>
-          <Button
-            type="submit"
-            className={footerButtonWidth}
-            disabled={isProcessing}
-          >
+          <Button type="submit" className={footerButtonWidth} disabled={isProcessing}>
             {isEmailSubmitting ? "Signing in..." : "Sign in"}
           </Button>
           <div className="relative my-3">
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 flex items-center"
-            >
+            <div aria-hidden="true" className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border/60" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
           <Button
@@ -238,9 +218,7 @@ export function LoginForm({
           >
             <GoogleIcon className="size-5 transition group-hover:scale-105" />
             <span className="font-medium">
-              {isGoogleSubmitting
-                ? "Connecting with Google..."
-                : "Continue with Google"}
+              {isGoogleSubmitting ? "Connecting with Google..." : "Continue with Google"}
             </span>
           </Button>
         </CardFooter>

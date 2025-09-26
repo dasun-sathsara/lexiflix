@@ -5,8 +5,7 @@ export default function SignupPage() {
   const benefits = [
     {
       title: "Curated word banks",
-      description:
-        "Every show comes with vocab lists matched to your goals and difficulty level.",
+      description: "Every show comes with vocab lists matched to your goals and difficulty level.",
     },
     {
       title: "Guided practice",
@@ -30,9 +29,8 @@ export default function SignupPage() {
                   Create an account to pre-learn every episode in style
                 </h1>
                 <p className="mx-auto max-w-xl text-base text-muted-foreground lg:mx-0">
-                  Discover vocabulary packs aligned to your CEFR level, complete
-                  with AI-crafted examples and review reminders that help you
-                  prep before the opening credits roll.
+                  Discover vocabulary packs aligned to your CEFR level, complete with AI-crafted
+                  examples and review reminders that help you prep before the opening credits roll.
                 </p>
               </header>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -41,21 +39,14 @@ export default function SignupPage() {
                     key={benefit.title}
                     className="flex flex-col gap-2 rounded-2xl border border-border/40 bg-white/85 p-5 text-left shadow-sm backdrop-blur-md dark:border-border/30 dark:bg-slate-950/70"
                   >
-                    <p className="text-sm font-semibold text-foreground">
-                      {benefit.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {benefit.description}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">{benefit.title}</p>
+                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
                   </div>
                 ))}
               </div>
             </section>
             <section className="order-1 flex justify-center lg:order-2 lg:justify-end">
-              <AuthTabs
-                defaultTab="signup"
-                className="w-full max-w-md lg:ml-auto"
-              />
+              <AuthTabs defaultTab="signup" className="w-full max-w-md lg:ml-auto" />
             </section>
           </div>
         </div>

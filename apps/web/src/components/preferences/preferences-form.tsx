@@ -126,8 +126,7 @@ export function PreferencesForm() {
     if (isPasswordMismatch) {
       toast({
         title: "Passwords do not match",
-        description:
-          "Please make sure the new password fields match before saving.",
+        description: "Please make sure the new password fields match before saving.",
         variant: "destructive",
       });
       return;
@@ -190,9 +189,7 @@ export function PreferencesForm() {
     }
   }
 
-  async function handleNotificationsSubmit(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleNotificationsSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setIsSavingNotifications(true);
@@ -206,9 +203,7 @@ export function PreferencesForm() {
       });
     } catch (caughtError) {
       const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Notifications could not be updated.";
+        caughtError instanceof Error ? caughtError.message : "Notifications could not be updated.";
       toast({
         title: "Notification update failed",
         description: message,
@@ -234,9 +229,7 @@ export function PreferencesForm() {
                 <h2 className="text-2xl font-semibold leading-tight">
                   {account.displayName || "Your profile"}
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  @{account.username || "username"}
-                </p>
+                <p className="text-sm text-muted-foreground">@{account.username || "username"}</p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xs sm:justify-start">
                 <Badge className="bg-indigo-500/15 text-indigo-600 shadow-sm dark:bg-indigo-500/20 dark:text-indigo-100">
@@ -263,8 +256,7 @@ export function PreferencesForm() {
                 {language.cefrLevel}
               </p>
               <p className="mt-2 text-xs text-indigo-900/80 dark:text-indigo-100/80">
-                We calibrate packs and scene notes to your current difficulty
-                band.
+                We calibrate packs and scene notes to your current difficulty band.
               </p>
             </div>
             <div className="flex flex-col justify-between gap-4 rounded-xl border border-border/60 bg-white/70 p-4 shadow-sm dark:border-border/40 dark:bg-slate-950/50">
@@ -286,9 +278,7 @@ export function PreferencesForm() {
               <dl className="grid grid-cols-2 gap-3 text-xs">
                 <div>
                   <dt className="text-foreground/60">Primary email</dt>
-                  <dd className="font-medium text-foreground/90">
-                    {account.email}
-                  </dd>
+                  <dd className="font-medium text-foreground/90">{account.email}</dd>
                 </div>
                 <div>
                   <dt className="text-foreground/60">Member since</dt>
@@ -301,18 +291,11 @@ export function PreferencesForm() {
       </Card>
 
       <div className="grid gap-8 lg:grid-cols-2 xl:grid-cols-[1.2fr_0.8fr]">
-        <form
-          onSubmit={handleAccountSubmit}
-          className="space-y-6 lg:col-span-2"
-        >
+        <form onSubmit={handleAccountSubmit} className="space-y-6 lg:col-span-2">
           <Card className={surfaceCardClass}>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                Account settings
-              </CardTitle>
-              <CardDescription>
-                Manage how other learners see you inside LexiFlix.
-              </CardDescription>
+              <CardTitle className="text-xl font-semibold">Account settings</CardTitle>
+              <CardDescription>Manage how other learners see you inside LexiFlix.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
@@ -349,8 +332,7 @@ export function PreferencesForm() {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={account.email} disabled />
                 <p className="text-sm text-muted-foreground">
-                  Email updates are managed through support to keep your{" "}
-                  progress safe.
+                  Email updates are managed through support to keep your progress safe.
                 </p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -410,9 +392,7 @@ export function PreferencesForm() {
         <form onSubmit={handleLanguageSubmit} className="space-y-6">
           <Card className={surfaceCardClass}>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                Language & learning
-              </CardTitle>
+              <CardTitle className="text-xl font-semibold">Language & learning</CardTitle>
               <CardDescription>
                 Tailor LexiFlix to your study goals and native language context.
               </CardDescription>
@@ -476,18 +456,12 @@ export function PreferencesForm() {
           </Card>
         </form>
 
-        <form
-          onSubmit={handleNotificationsSubmit}
-          className="space-y-6 lg:col-span-2"
-        >
+        <form onSubmit={handleNotificationsSubmit} className="space-y-6 lg:col-span-2">
           <Card className={surfaceCardClass}>
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                Notifications & goals
-              </CardTitle>
+              <CardTitle className="text-xl font-semibold">Notifications & goals</CardTitle>
               <CardDescription>
-                Keep your learning momentum with gentle nudges and review
-                targets.
+                Keep your learning momentum with gentle nudges and review targets.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -537,8 +511,7 @@ export function PreferencesForm() {
                   onChange={(event) =>
                     setNotifications((current) => ({
                       ...current,
-                      dailyReviewGoal:
-                        Number.parseInt(event.target.value, 10) || 0,
+                      dailyReviewGoal: Number.parseInt(event.target.value, 10) || 0,
                     }))
                   }
                 />

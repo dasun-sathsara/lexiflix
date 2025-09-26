@@ -5,10 +5,7 @@ interface SoftGradientBackgroundProps {
   children?: React.ReactNode;
 }
 
-export function SoftGradientBackground({
-  className,
-  children,
-}: SoftGradientBackgroundProps) {
+export function SoftGradientBackground({ className, children }: SoftGradientBackgroundProps) {
   return (
     <div
       className={cn(

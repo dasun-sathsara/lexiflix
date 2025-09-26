@@ -28,6 +28,9 @@ type AuthClient = {
   signUp: {
     email: (payload: EmailSignUpPayload) => Promise<void>;
   };
+  password: {
+    sendResetEmail: (payload: { email: string }) => Promise<void>;
+  };
 };
 
 function delay(ms: number) {
@@ -53,6 +56,12 @@ export function useAuthClient(): AuthClient {
         async email(payload) {
           console.info("[auth] signUp.email called", payload);
           await delay(1000);
+        },
+      },
+      password: {
+        async sendResetEmail(payload) {
+          console.info("[auth] password.sendResetEmail called", payload);
+          await delay(700);
         },
       },
     };

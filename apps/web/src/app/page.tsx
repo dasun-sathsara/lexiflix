@@ -89,10 +89,7 @@ export default function Home() {
             <a href="#faq" className="hover:text-foreground">
               FAQ
             </a>
-            <a
-              href="mailto:support@lexiflix.app"
-              className="hover:text-foreground"
-            >
+            <a href="mailto:support@lexiflix.app" className="hover:text-foreground">
               support@lexiflix.app
             </a>
             <a

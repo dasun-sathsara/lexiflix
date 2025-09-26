@@ -49,16 +49,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(
-        inter.className,
-        inter.variable,
-        geist.variable,
-        ubuntuMono.variable,
-      )}
+      className={cn(inter.className, inter.variable, geist.variable, ubuntuMono.variable)}
     >
-      <body className="font-sans antialiased bg-background text-foreground">
-        {children}
-      </body>
+      <body className="font-sans antialiased bg-background text-foreground">{children}</body>
     </html>
   );
 }

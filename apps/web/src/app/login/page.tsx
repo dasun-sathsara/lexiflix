@@ -5,13 +5,11 @@ export default function LoginPage() {
   const benefits = [
     {
       title: "Stay in flow",
-      description:
-        "Resume saved study packs and keep momentum across every series you follow.",
+      description: "Resume saved study packs and keep momentum across every series you follow.",
     },
     {
       title: "Progress that adapts",
-      description:
-        "Personalized reviews that flex to your pace with real-time mastery tracking.",
+      description: "Personalized reviews that flex to your pace with real-time mastery tracking.",
     },
   ];
 
@@ -30,9 +28,8 @@ export default function LoginPage() {
                   Sign in to unlock smarter subtitle study sessions
                 </h1>
                 <p className="mx-auto max-w-xl text-base text-muted-foreground lg:mx-0">
-                  Continue pre-learning vocabulary tailored to the stories you
-                  plan to watch. Your dashboard awaits with personalized packs,
-                  spaced review goals, and more.
+                  Continue pre-learning vocabulary tailored to the stories you plan to watch. Your
+                  dashboard awaits with personalized packs, spaced review goals, and more.
                 </p>
               </header>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -41,21 +38,14 @@ export default function LoginPage() {
                     key={benefit.title}
                     className="flex flex-col gap-2 rounded-2xl border border-border/40 bg-white/85 p-5 text-left shadow-sm backdrop-blur-md dark:border-border/30 dark:bg-slate-950/70"
                   >
-                    <p className="text-sm font-semibold text-foreground">
-                      {benefit.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {benefit.description}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">{benefit.title}</p>
+                    <p className="text-sm text-muted-foreground">{benefit.description}</p>
                   </div>
                 ))}
               </div>
             </section>
             <section className="order-1 flex justify-center lg:order-2 lg:justify-end">
-              <AuthTabs
-                defaultTab="login"
-                className="w-full max-w-md lg:ml-auto"
-              />
+              <AuthTabs defaultTab="login" className="w-full max-w-md lg:ml-auto" />
             </section>
           </div>
         </div>

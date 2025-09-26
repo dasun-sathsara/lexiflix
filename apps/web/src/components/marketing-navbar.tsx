@@ -45,14 +45,11 @@ export function MarketingNavbar() {
     if (item.link.startsWith("#")) {
       event.preventDefault();
       const target = document.querySelector(item.link);
-      const navbar = document.querySelector<HTMLElement>(
-        "[data-marketing-navbar]",
-      );
+      const navbar = document.querySelector<HTMLElement>("[data-marketing-navbar]");
       const offset = navbar?.getBoundingClientRect().height ?? 0;
 
       if (target) {
-        const targetPosition =
-          target.getBoundingClientRect().top + window.scrollY - (offset + 16);
+        const targetPosition = target.getBoundingClientRect().top + window.scrollY - (offset + 16);
 
         window.scrollTo({
           top: Math.max(0, targetPosition),
@@ -72,10 +69,7 @@ export function MarketingNavbar() {
             href="/"
             className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
           >
-            <span
-              className="size-8 rounded-full bg-indigo-500/10"
-              aria-hidden="true"
-            />
+            <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
             <span>LexiFlix</span>
           </Link>
           <NavItems items={navItems} onItemClick={handleNavItemClick} />
@@ -95,10 +89,7 @@ export function MarketingNavbar() {
               href="/"
               className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
             >
-              <span
-                className="size-8 rounded-full bg-indigo-500/10"
-                aria-hidden="true"
-              />
+              <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
               <span>LexiFlix</span>
             </Link>
             <MobileNavToggle
@@ -107,10 +98,7 @@ export function MarketingNavbar() {
             />
           </MobileNavHeader>
 
-          <MobileNavMenu
-            isOpen={isMobileMenuOpen}
-            onClose={handleCloseMobileMenu}
-          >
+          <MobileNavMenu isOpen={isMobileMenuOpen} onClose={handleCloseMobileMenu}>
             {navItems.map((item) => (
               <Link
                 key={item.name}

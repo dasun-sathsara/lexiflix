@@ -76,8 +76,7 @@ export function SignupForm({
     resetErrors();
 
     if (password !== confirmPassword) {
-      const message =
-        "Passwords need to match before we can create your account.";
+      const message = "Passwords need to match before we can create your account.";
       setError(message);
       toast({
         title: "Check your password",
@@ -144,8 +143,8 @@ export function SignupForm({
       <CardHeader className={cn(headerSpacing, headerPadding)}>
         <CardTitle className="text-3xl">Create your LexiFlix account</CardTitle>
         <CardDescription>
-          Personalize your learning journey, track vocabulary growth, and sync
-          your study packs across devices.
+          Personalize your learning journey, track vocabulary growth, and sync your study packs
+          across devices.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className={formClasses}>
@@ -225,27 +224,16 @@ export function SignupForm({
             </p>
           ) : null}
         </CardContent>
-        <CardFooter
-          className={cn("flex flex-col", footerGap, footerAlignment, footerPadding)}
-        >
-          <Button
-            type="submit"
-            className={primaryButtonWidth}
-            disabled={isProcessing}
-          >
+        <CardFooter className={cn("flex flex-col", footerGap, footerAlignment, footerPadding)}>
+          <Button type="submit" className={primaryButtonWidth} disabled={isProcessing}>
             {isEmailSubmitting ? "Creating account..." : "Create account"}
           </Button>
           <div className="relative my-3">
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 flex items-center"
-            >
+            <div aria-hidden="true" className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border/60" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
           <Button
@@ -260,9 +248,7 @@ export function SignupForm({
           >
             <GoogleIcon className="size-5 transition group-hover:scale-105" />
             <span className="font-medium">
-              {isGoogleSubmitting
-                ? "Connecting with Google..."
-                : "Continue with Google"}
+              {isGoogleSubmitting ? "Connecting with Google..." : "Continue with Google"}
             </span>
           </Button>
           <p className="text-sm text-muted-foreground">
@@ -276,10 +262,7 @@ export function SignupForm({
                 Sign in
               </button>
             ) : (
-              <Link
-                href="/login"
-                className="font-medium text-primary hover:underline"
-              >
+              <Link href="/login" className="font-medium text-primary hover:underline">
                 Sign in
               </Link>
             )}

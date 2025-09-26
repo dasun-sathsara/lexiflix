@@ -1,53 +1,55 @@
 # -----------------------------
-# Next.js App
-# -----------------------------
-
-prompt.md
-
 # Node / Bun dependencies
+# -----------------------------
 node_modules/
 .pnp/
 .pnp.js
+.pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+npm-debug.log*
+*.log
 
-# Output / build
+# -----------------------------
+# Next.js / React
+# -----------------------------
 .next/
+.next.cache/
 out/
 dist/
 build/
-.next.cache/
+coverage/
+*.tsbuildinfo
+*.d.ts
 
-# Debug / logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-*.log
-
-# Local env
+# -----------------------------
+# Environment files
+# -----------------------------
 .env
 .env.*
 !.env.example
 
-# Database
+# -----------------------------
+# Database / Drizzle
+# -----------------------------
 *.sqlite
 *.db
 drizzle/*.sqlite
 drizzle/migrations/.cache/
 
-# Coverage / testing
-coverage/
-*.lcov
-.jest/
-.vitest/
+# -----------------------------
+# Debug / Testing
+# -----------------------------
 test-output/
-playwright-report/
 test-results/
+playwright-report/
+.vitest/
+.jest/
+*.lcov
 
-# TypeScript
-*.tsbuildinfo
-*.d.ts
-
-# IDE / editor
+# -----------------------------
+# IDE / Editor
+# -----------------------------
 .vscode/
 .idea/
 *.swp
@@ -55,8 +57,14 @@ test-results/
 *~
 *.iml
 
+# -----------------------------
 # OS junk
+# -----------------------------
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# -----------------------------
+# Custom project files
+# -----------------------------
 prompt.md

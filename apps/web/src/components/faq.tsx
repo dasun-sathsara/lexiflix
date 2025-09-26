@@ -4,13 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 const faqs = [
@@ -50,29 +44,20 @@ export function FAQSection() {
             <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 shadow-sm backdrop-blur font-ubuntu-mono dark:border-indigo-900/40 dark:bg-slate-950/50 dark:text-indigo-200">
               FAQ
             </span>
-            <h2
-              id="faq-heading"
-              className="text-balance text-3xl font-semibold sm:text-4xl"
-            >
+            <h2 id="faq-heading" className="text-balance text-3xl font-semibold sm:text-4xl">
               Everything you're curious about, answered in two taps
             </h2>
             <p className="text-balance text-base text-muted-foreground sm:text-lg">
-              Our learners ask smart questions. We built a compact, tappable FAQ
-              so you get to the good stuff quickly—no endless scrolling.
+              Our learners ask smart questions. We built a compact, tappable FAQ so you get to the
+              good stuff quickly—no endless scrolling.
             </p>
             <div className="flex flex-wrap gap-2 text-xs font-medium uppercase  text-muted-foreground font-ubuntu-mono">
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/50 bg-white/65 px-4 py-1.5 dark:border-indigo-900/50 dark:bg-slate-950/60">
-                <span
-                  className="size-2 rounded-full bg-indigo-500"
-                  aria-hidden="true"
-                />
+                <span className="size-2 rounded-full bg-indigo-500" aria-hidden="true" />
                 Updated weekly
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-purple-200/50 bg-white/65 px-4 py-1.5 dark:border-purple-900/50 dark:bg-slate-950/60">
-                <span
-                  className="size-2 rounded-full bg-purple-500"
-                  aria-hidden="true"
-                />
+                <span className="size-2 rounded-full bg-purple-500" aria-hidden="true" />
                 Learner feedback
               </span>
             </div>
@@ -95,8 +80,8 @@ export function FAQSection() {
                 Quick answers whenever you need them
               </CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
-                Tap to expand a question—each one keeps your place so you can
-                skim without losing focus.
+                Tap to expand a question—each one keeps your place so you can skim without losing
+                focus.
               </CardDescription>
             </CardHeader>
             <CardContent className="relative px-0 pb-1">

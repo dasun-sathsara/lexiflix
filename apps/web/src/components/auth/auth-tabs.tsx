@@ -75,10 +75,7 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
         >
           <motion.div
             ref={indicatorRef}
-            className={cn(
-              "absolute top-1 bottom-1 rounded-full",
-              selectedTab.accent,
-            )}
+            className={cn("absolute top-1 bottom-1 rounded-full", selectedTab.accent)}
             animate={{ width: Math.max(indicator.width, 0), x: indicator.left }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
           />
@@ -102,9 +99,7 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
                 className={cn(
                   "relative z-[1] flex-1 rounded-full px-6 py-3 text-sm font-medium transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive
-                    ? "text-white"
-                    : "text-muted-foreground hover:text-foreground",
+                  isActive ? "text-white" : "text-muted-foreground hover:text-foreground",
                 )}
                 aria-selected={isActive}
                 aria-controls={`auth-tab-${tab.id}`}
@@ -135,15 +130,9 @@ export function AuthTabs({ defaultTab = "login", className }: AuthTabsProps) {
               className="absolute inset-0 flex min-h-[580px]"
             >
               {selectedTab.id === "login" ? (
-                <LoginForm
-                  variant="tab"
-                  onNavigateToSignup={() => handleSelect("signup")}
-                />
+                <LoginForm variant="tab" onNavigateToSignup={() => handleSelect("signup")} />
               ) : (
-                <SignupForm
-                  variant="tab"
-                  onNavigateToLogin={() => handleSelect("login")}
-                />
+                <SignupForm variant="tab" onNavigateToLogin={() => handleSelect("login")} />
               )}
             </motion.div>
           </AnimatePresence>

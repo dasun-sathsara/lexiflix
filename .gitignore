@@ -1,1 +1,127 @@
-**/prompt.md/**
+# -----------------------------
+# Node / Next.js (apps/web)
+# -----------------------------
+node_modules/
+.pnp/
+.pnp.js
+.next/
+.next.cache/
+out/
+dist/
+build/
+
+# Debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# TypeScript
+*.tsbuildinfo
+*.d.ts
+
+# Testing / coverage
+coverage/
+*.lcov
+.jest/
+.vitest/
+test-output/
+playwright-report/
+test-results/
+
+# Database (local dev artifacts)
+*.sqlite
+*.db
+drizzle/*.sqlite
+drizzle/migrations/.cache/
+
+# -----------------------------
+# Python / Celery Worker (apps/worker)
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.uv/
+.uv-cache/
+
+# Test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Celery / task queue
+celerybeat-schedule
+celerybeat.pid
+*.pid
+
+# Worker artifacts / generated output
+artifacts/
+*.bin
+*.wav
+*.png
+*.jpg
+*.jsonl
+
+# Redis dump
+dump.rdb
+
+# -----------------------------
+# Environment / secrets
+# -----------------------------
+.env
+.env.*
+*.env
+!.env.example
+__secrets__/
+.tmp/
+
+# -----------------------------
+# Editors / OS junk
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+dd your description here

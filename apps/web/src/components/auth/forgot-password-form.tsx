@@ -3,13 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
@@ -62,8 +56,7 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
       <CardHeader>
         <CardTitle>Forgot your password?</CardTitle>
         <CardDescription>
-          Enter your email address and we'll send you a link to reset your
-          password.
+          Enter your email address and we'll send you a link to reset your password.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

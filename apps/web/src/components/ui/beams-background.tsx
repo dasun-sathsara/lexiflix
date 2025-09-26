@@ -24,10 +24,7 @@ interface Beam {
   pulseSpeed: number;
 }
 
-const OPACITY_MULTIPLIER: Record<
-  Required<BeamsBackgroundProps>["intensity"],
-  number
-> = {
+const OPACITY_MULTIPLIER: Record<Required<BeamsBackgroundProps>["intensity"], number> = {
   subtle: 0.6,
   medium: 0.85,
   strong: 1,
@@ -69,8 +66,7 @@ export function BeamsBackground({
     if (!context) return;
 
     const updateDarkMode = () => {
-      isDarkModeRef.current =
-        document.documentElement.classList.contains("dark");
+      isDarkModeRef.current = document.documentElement.classList.contains("dark");
     };
 
     const observer = new MutationObserver(updateDarkMode);
@@ -122,17 +118,12 @@ export function BeamsBackground({
       ctx.rotate((beam.angle * Math.PI) / 180);
 
       const pulsingOpacity =
-        beam.opacity *
-        (0.85 + Math.sin(beam.pulse) * 0.15) *
-        OPACITY_MULTIPLIER[intensity];
+        beam.opacity * (0.85 + Math.sin(beam.pulse) * 0.15) * OPACITY_MULTIPLIER[intensity];
       const saturation = isDarkModeRef.current ? "80%" : "70%";
       const lightness = isDarkModeRef.current ? "62%" : "48%";
 
       const gradient = ctx.createLinearGradient(0, 0, 0, beam.length);
-      gradient.addColorStop(
-        0,
-        `hsla(${beam.hue}, ${saturation}, ${lightness}, 0)`,
-      );
+      gradient.addColorStop(0, `hsla(${beam.hue}, ${saturation}, ${lightness}, 0)`);
       gradient.addColorStop(
         0.12,
         `hsla(${beam.hue}, ${saturation}, ${lightness}, ${pulsingOpacity * 0.5})`,
@@ -149,10 +140,7 @@ export function BeamsBackground({
         0.9,
         `hsla(${beam.hue}, ${saturation}, ${lightness}, ${pulsingOpacity * 0.4})`,
       );
-      gradient.addColorStop(
-        1,
-        `hsla(${beam.hue}, ${saturation}, ${lightness}, 0)`,
-      );
+      gradient.addColorStop(1, `hsla(${beam.hue}, ${saturation}, ${lightness}, 0)`);
 
       ctx.fillStyle = gradient;
       ctx.fillRect(-beam.width / 2, 0, beam.width, beam.length);
@@ -186,8 +174,7 @@ export function BeamsBackground({
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      if (animationFrameRef.current)
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       observer.disconnect();
     };
   }, [intensity]);
@@ -199,10 +186,7 @@ export function BeamsBackground({
         className,
       )}
     >
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none absolute inset-0"
-      />
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" />
       <motion.div
         className="pointer-events-none absolute inset-0 bg-neutral-900/5 dark:bg-neutral-50/5"
         animate={{ opacity: [0.08, 0.16, 0.08] }}
@@ -213,9 +197,7 @@ export function BeamsBackground({
         }}
         style={{ backdropFilter: "blur(50px)" }}
       />
-      <div className="relative z-[1] flex min-h-screen flex-col">
-        {children}
-      </div>
+      <div className="relative z-[1] flex min-h-screen flex-col">{children}</div>
     </div>
   );
 }
