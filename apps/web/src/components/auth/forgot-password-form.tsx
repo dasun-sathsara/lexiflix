@@ -30,9 +30,9 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
     setIsSubmitting(true);
 
     try {
-      await requestPasswordReset({ 
-        email, 
-        redirectTo: `${window.location.origin}/reset-password` 
+      await requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}/reset-password`
       });
       toast({
         title: "Password reset email sent",
