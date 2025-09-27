@@ -1,106 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { useRequestPasswordReset } from "@/hooks/use-auth-client";
-import { cn } from "@/lib/utils";
 
 interface ForgotPasswordFormProps {
-  className?: string;
+  onBackToLogin: () => void;
 }
 
-export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
-  const { toast } = useToast();
-  const { requestPasswordReset } = useRequestPasswordReset();
-
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    setError(null);
-    setSuccess(false);
-    setIsSubmitting(true);
-
-    try {
-      await requestPasswordReset({
-        email,
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      setSuccess(true);
-      toast({
-        title: "Password reset email sent",
-        description: "Please check your inbox for further instructions.",
-      });
-    } catch (caughtError) {
-      setSuccess(false);
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to send password reset email. Please try again.";
-
-      setError(message);
-      toast({
-        title: "Unable to send reset email",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
+export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
   return (
-    <Card className={cn("w-full max-w-md", className)}>
-      <CardHeader>
-        <CardTitle>Forgot your password?</CardTitle>
-        <CardDescription>
-          Enter your email address and we'll send you a link to reset your password.
+    <Card className="w-full max-w-md rounded-2xl border-border/70 bg-white/80 backdrop-blur-md dark:border-border/40 dark:bg-slate-950/70">
+      <CardHeader className="space-y-1.5 px-5 pt-5 text-center">
+        <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          Forgot your password?
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground/90">
+          We'll email you a secure link to reset it.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+
+      <form className="mt-1">
+        <CardContent className="space-y-3.5 px-5">
+          <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              required
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                if (success) {
-                  setSuccess(false);
-                }
-              }}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="pl-10 h-10 rounded-lg"
+              />
+            </div>
           </div>
-          {success ? (
-            <p className="rounded-md border border-emerald-400/40 bg-emerald-400/5 px-3 py-2 text-sm text-emerald-400">
-              We emailed a secure link to reset your password. The message may take a few minutes to
-              arrive.
+
+          {/* Success message (static placeholder) */}
+          <div className="hidden items-start gap-3 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-4 py-3 backdrop-blur-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+            <CheckCircle2 className="size-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                Reset link sent
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                Check your inbox for the secure link.
+              </p>
+            </div>
+          </div>
+
+          {/* Error message (static placeholder) */}
+          <div className="hidden rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 backdrop-blur-sm">
+            <p className="text-sm font-medium text-destructive">
+              Unable to send reset email. Please try again.
             </p>
-          ) : null}
-          {error ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
+          </div>
         </CardContent>
-        <CardContent>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send reset link"}
+
+        <CardContent className="space-y-3.5 px-5 pb-5">
+          <Button
+            type="submit"
+            className="w-full h-11 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/30 hover:from-purple-500 hover:to-purple-500"
+          >
+            <span>Send reset link</span>
+            <ArrowRight className="size-4" />
           </Button>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={onBackToLogin}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+            >
+              &larr; Back to sign in
+            </button>
+          </div>
         </CardContent>
       </form>
     </Card>

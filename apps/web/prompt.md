@@ -1,7 +1,8 @@
-Use the context7 MCP server to obtain the latest documentation.
+I’ve installed and configured ShadCN’s UI Sidebar component. Now, I need to theme and customize it to match my application’s look and feel. The avatar section and the top logo area are fine as they are. What I need is:
 
-Run `pnpm run tsc` to identify TypeScript errors — do not use the build command for this purpose. Always use `tsc` to check for TypeScript errors and ignore errors that are out of scope for this task.
+-   Theme adjustments
+-   Removal of unnecessary links
+-   Addition of the appropriate links for my app
+-   A redesigned layout for the remaining links and sections
 
----
-
-Clean up the Login and Signup pages. Refactor the `auth-error-utils.ts` file. Use the context7 MCP server to obtain the latest documentation. Use 2025 best practices.
+The new design should be modern, elegant and visually appealing.

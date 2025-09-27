@@ -41,7 +41,7 @@ export function FAQSection() {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
           {/* Header Content */}
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-indigo-600 shadow-sm backdrop-blur font-ubuntu-mono dark:border-indigo-900/40 dark:bg-slate-950/50 dark:text-indigo-200">
+            <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/60 bg-white/70 px-4 py-1 text-xs font-semibold uppercase text-indigo-600 shadow-sm backdrop-blur font-ubuntu-mono dark:border-indigo-900/40 dark:bg-slate-950/50 dark:text-indigo-200">
               FAQ
             </span>
             <h2 id="faq-heading" className="text-balance text-3xl font-semibold sm:text-4xl">
