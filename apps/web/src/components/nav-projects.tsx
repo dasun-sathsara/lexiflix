@@ -1,82 +1,57 @@
 "use client";
 
-import { Folder, type LucideIcon, MoreHorizontal, Share, Trash2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
-export function NavProjects({
-  projects,
-}: {
-  projects: {
-    name: string;
-    url: string;
-    icon: LucideIcon;
-  }[];
-}) {
-  const { isMobile } = useSidebar();
+export type LearningJourney = {
+  name: string;
+  url: string;
+  icon: LucideIcon;
+  level: string;
+  description: string;
+  progress: string;
+};
 
+export function NavProjects({ projects }: { projects: LearningJourney[] }) {
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarGroupLabel className="text-[0.7rem] uppercase tracking-[0.35em] text-slate-400">
+        Learning journeys
+      </SidebarGroupLabel>
+      <SidebarMenu className="gap-3">
         {projects.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
+          <SidebarMenuItem
+            key={item.name}
+            className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur"
+          >
+            <SidebarMenuButton
+              asChild
+              className="h-auto flex-col items-start gap-3 rounded-2xl border-none bg-transparent p-4 text-left text-slate-200 transition hover:bg-white/5"
+            >
               <a href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
+                <div className="flex w-full items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">
+                  <span>{item.level}</span>
+                  <item.icon className="size-4 text-slate-200" />
+                </div>
+                <div className="space-y-2">
+                  <p className="font-semibold text-slate-100">{item.name}</p>
+                  <p className="text-xs leading-snug text-slate-400">{item.description}</p>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                  <span className="inline-flex size-1.5 rounded-full bg-emerald-400/80" />
+                  <span>{item.progress}</span>
+                </div>
               </a>
             </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Share className="text-muted-foreground" />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </SidebarMenuItem>
         ))}
-        <SidebarMenuItem>
-          <SidebarMenuButton>
-            <MoreHorizontal />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );
