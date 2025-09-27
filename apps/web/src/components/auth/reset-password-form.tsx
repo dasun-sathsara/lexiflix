@@ -1,115 +1,85 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-import { useResetPassword } from "@/hooks/use-auth-client";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
 
-interface ResetPasswordFormProps {
-  className?: string;
-}
-
-export function ResetPasswordForm({ className }: ResetPasswordFormProps) {
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-  const { resetPassword } = useResetPassword();
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      const token = searchParams.get("token");
-      if (!token) {
-        setError("Invalid or expired password reset link.");
-        return;
-      }
-
-      await resetPassword({ newPassword: password, token });
-
-      toast({
-        title: "Password reset successfully",
-        description: "You can now sign in with your new password.",
-      });
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to reset password. Please try again.";
-
-      setError(message);
-      toast({
-        title: "Unable to reset password",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
+export function ResetPasswordForm() {
   return (
-    <Card className={cn("w-full max-w-md", className)}>
-      <CardHeader>
-        <CardTitle>Reset your password</CardTitle>
-        <CardDescription>
-          Enter your new password below.
+    <Card className="w-full max-w-md rounded-2xl border-border/70 bg-white/80 backdrop-blur-md dark:border-border/40 dark:bg-slate-950/70">
+      <CardHeader className="space-y-1.5 px-5 pt-5 text-center">
+        <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+          Set a new password
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground/90">
+          Choose a strong password to secure your account.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+
+      <form className="mt-1">
+        <CardContent className="space-y-3.5 px-5">
+          <div className="space-y-1.5">
             <Label htmlFor="password">New password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a strong password"
+                className="pl-10 pr-10 h-10 rounded-lg"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+              >
+                <Eye className="size-4" />
+              </button>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm new password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="confirm-password">Confirm password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="confirm-password"
+                type="password"
+                placeholder="Repeat your password"
+                className="pl-10 pr-10 h-10 rounded-lg"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+              >
+                <EyeOff className="size-4" />
+              </button>
+            </div>
           </div>
-          {error ? (
-            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
+
+          {/* Success placeholder (static) */}
+          <div className="hidden items-start gap-3 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-4 py-3 backdrop-blur-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+            <CheckCircle2 className="size-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                Password updated
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                You can now sign in with your new password.
+              </p>
+            </div>
+          </div>
         </CardContent>
-        <CardContent>
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Resetting password..." : "Reset password"}
+
+        <CardContent className="space-y-3.5 px-5 pb-5">
+          <Button
+            type="submit"
+            className="w-full h-11 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/30 hover:from-purple-500 hover:to-purple-500"
+          >
+            <span>Reset password</span>
+            <ArrowRight className="size-4" />
           </Button>
         </CardContent>
       </form>

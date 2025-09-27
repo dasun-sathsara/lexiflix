@@ -1,15 +1,5 @@
 "use client";
 
-/**
- * @author: @dorian_baffier
- * @description: Particle Button
- * @version: 1.0.0
- * @date: 2025-06-26
- * @license: MIT
- * @website: https://kokonutui.com
- * @github: https://github.com/kokonut-labs/kokonutui
- */
-
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -37,7 +27,7 @@ export function CallToActionSection() {
             ]}
             duration={2000}
           />
-          <p className="max-w-3xl text-balance text-base text-muted-foreground sm:text-lg">
+          <p className="max-w-3xl text-balance font-medium text-base text-muted-foreground sm:text-lg">
             LexiFlix walks you from level check to active recall: choose a title, let our subtitle
             analysis surface the vocabulary you'll encounter, and master it before the opening
             credits roll.
@@ -48,7 +38,7 @@ export function CallToActionSection() {
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
               Assess &amp; Align
             </h4>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground font-normal">
               Complete a CEFR-aware placement check and set preferences so every pack targets the
               skills you want to strengthen.
             </p>
@@ -57,7 +47,7 @@ export function CallToActionSection() {
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
               Select &amp; Curate
             </h4>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground font-normal">
               Browse a rich catalog of movies and shows, pull in matching subtitles automatically,
               and let LexiFlix spotlight the vocabulary that matters most.
             </p>
@@ -66,7 +56,7 @@ export function CallToActionSection() {
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
               Study &amp; Review
             </h4>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground font-normal">
               Dive into AI-crafted definitions, audio, and images, then reinforce every term with
               spaced repetition reminders that fit your pace.
             </p>
