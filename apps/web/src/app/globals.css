@@ -122,11 +122,11 @@ body {
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.12 0.02 276);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.72 0.22 310);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.22 0.03 274);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -150,6 +150,15 @@ body {
   h6 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+  }
+
+  [data-sidebar='sidebar'] {
+    background: linear-gradient(to bottom, oklch(0.12 0.02 276), oklch(0.12 0.04 250));
+    box-shadow: 0 0 20px oklch(0.12 0.02 276 / 50%);
+  }
+
+  .active-link {
+    box-shadow: 0 0 15px oklch(0.72 0.22 310 / 50%);
   }
 }
 

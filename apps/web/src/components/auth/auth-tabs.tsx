@@ -30,7 +30,7 @@ export function AuthTabs({ className }: { className?: string }) {
     setHeight(el.offsetHeight);
 
     return () => ro.disconnect();
-  }, [activeView]);
+  }, []);
 
   const isLogin = activeView === "login";
   const isSignup = activeView === "signup";
