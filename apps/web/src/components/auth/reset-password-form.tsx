@@ -1,15 +1,14 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-import { useResetPassword } from "@/hooks/use-auth-client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { useResetPassword } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
 interface ResetPasswordFormProps {
@@ -18,6 +17,7 @@ interface ResetPasswordFormProps {
 
 export function ResetPasswordForm({ className }: ResetPasswordFormProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
   const { resetPassword } = useResetPassword();
 
@@ -50,6 +50,10 @@ export function ResetPasswordForm({ className }: ResetPasswordFormProps) {
         title: "Password reset successfully",
         description: "You can now sign in with your new password.",
       });
+
+      setPassword("");
+      setConfirmPassword("");
+      router.push("/login?passwordReset=1");
     } catch (caughtError) {
       const message =
         caughtError instanceof Error
@@ -71,9 +75,7 @@ export function ResetPasswordForm({ className }: ResetPasswordFormProps) {
     <Card className={cn("w-full max-w-md", className)}>
       <CardHeader>
         <CardTitle>Reset your password</CardTitle>
-        <CardDescription>
-          Enter your new password below.
-        </CardDescription>
+        <CardDescription>Enter your new password below.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">

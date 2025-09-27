@@ -1,9 +1,9 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useSignUp, useSignIn } from "@/hooks/use-auth-client";
+import { useSignIn, useSignUp } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
-import { GoogleIcon } from "./google-icon";
 import { parseAuthError } from "./auth-error-utils";
+import { GoogleIcon } from "./google-icon";
 
 type SignupFormVariant = "standalone" | "tab";
 
@@ -157,15 +157,7 @@ export function SignupForm({
         // handled via onError
       }
     },
-    [
-      confirmPassword,
-      email,
-      firstName,
-      lastName,
-      password,
-      signUpMutation,
-      toast,
-    ],
+    [confirmPassword, email, firstName, lastName, password, signUpMutation, toast],
   );
 
   const handleGoogleSignIn = useCallback(async () => {

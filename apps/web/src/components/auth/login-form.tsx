@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +18,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { useSignIn } from "@/hooks/use-auth-client";
+import { useSendVerificationEmail, useSignIn } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
-import { GoogleIcon } from "./google-icon";
 import { parseAuthError, requiresEmailVerification } from "./auth-error-utils";
+import { GoogleIcon } from "./google-icon";
 
 type LoginFormVariant = "standalone" | "tab";
 
@@ -44,8 +44,10 @@ export function LoginForm({
   onNavigateToSignup,
 }: LoginFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const signIn = useSignIn();
+  const { sendVerificationEmail } = useSendVerificationEmail();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -108,6 +110,38 @@ export function LoginForm({
   );
   const shouldVerifyEmail = requiresEmailVerification(emailSignIn.error);
   const isProcessing = emailSignIn.isPending || googleSignIn.isPending;
+  const passwordResetSuccess = searchParams.get("passwordReset") === "1";
+  const emailVerifiedSuccess = searchParams.get("verified") === "1";
+  const resendVerification = useMutation({
+    mutationFn: async () => {
+      const nextEmail = email.trim();
+
+      if (!nextEmail) {
+        throw new Error("Enter your email to receive a verification link.");
+      }
+
+      await sendVerificationEmail({
+        email: nextEmail,
+        callbackURL: `${window.location.origin}/login`,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification email sent",
+        description: "Check your inbox for a fresh verification link.",
+      });
+    },
+    onError: (error) => {
+      const { message } = parseAuthError(error);
+
+      toast({
+        title: "Unable to resend verification",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+  const isResendingVerification = resendVerification.isPending;
 
   const cardClasses = useMemo(
     () =>
@@ -224,10 +258,33 @@ export function LoginForm({
               )}
             </span>
           </div>
-          {shouldVerifyEmail ? (
-            <p className="rounded-md border border-yellow-400/40 bg-yellow-400/5 px-3 py-2 text-sm text-yellow-400">
-              Please verify your email. Check your inbox for a verification link.
+          {passwordResetSuccess ? (
+            <p className="rounded-md border border-emerald-400/40 bg-emerald-400/5 px-3 py-2 text-sm text-emerald-400">
+              Password updated. Sign in with your new credentials.
             </p>
+          ) : null}
+          {emailVerifiedSuccess ? (
+            <p className="rounded-md border border-indigo-400/40 bg-indigo-400/5 px-3 py-2 text-sm text-indigo-400">
+              Email verified successfully. You can sign in now.
+            </p>
+          ) : null}
+          {shouldVerifyEmail ? (
+            <div className="flex flex-col gap-3 rounded-md border border-yellow-400/40 bg-yellow-400/5 px-3 py-2 text-sm text-yellow-400">
+              <p>
+                Please verify your email before signing in. Check your inbox for a verification
+                link.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => resendVerification.mutate()}
+                disabled={isResendingVerification || !email}
+                className="w-fit border-yellow-400/40 bg-transparent text-xs font-medium text-yellow-400 hover:bg-yellow-400/10 hover:text-yellow-300"
+              >
+                {isResendingVerification ? "Sending..." : "Resend verification email"}
+              </Button>
+            </div>
           ) : null}
           {aggregatedAuthError.message ? (
             <p

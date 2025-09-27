@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 
-import { useRequestPasswordReset } from "@/hooks/use-auth-client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { useRequestPasswordReset } from "@/hooks/use-auth-client";
 import { cn } from "@/lib/utils";
 
 interface ForgotPasswordFormProps {
@@ -22,23 +21,27 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError(null);
+    setSuccess(false);
     setIsSubmitting(true);
 
     try {
       await requestPasswordReset({
         email,
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${window.location.origin}/reset-password`,
       });
+      setSuccess(true);
       toast({
         title: "Password reset email sent",
         description: "Please check your inbox for further instructions.",
       });
     } catch (caughtError) {
+      setSuccess(false);
       const message =
         caughtError instanceof Error
           ? caughtError.message
@@ -74,9 +77,20 @@ export function ForgotPasswordForm({ className }: ForgotPasswordFormProps) {
               placeholder="you@example.com"
               required
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (success) {
+                  setSuccess(false);
+                }
+              }}
             />
           </div>
+          {success ? (
+            <p className="rounded-md border border-emerald-400/40 bg-emerald-400/5 px-3 py-2 text-sm text-emerald-400">
+              We emailed a secure link to reset your password. The message may take a few minutes to
+              arrive.
+            </p>
+          ) : null}
           {error ? (
             <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {error}

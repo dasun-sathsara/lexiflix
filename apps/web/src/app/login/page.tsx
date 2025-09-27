@@ -18,7 +18,6 @@ const LOGIN_BENEFITS: Benefit[] = [
 ];
 
 export default function LoginPage() {
-
   return (
     <SoftGradientBackground>
       <main className="flex min-h-screen items-center px-6 py-20 sm:py-24">

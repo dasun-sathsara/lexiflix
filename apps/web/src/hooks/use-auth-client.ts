@@ -1,49 +1,68 @@
-import { signIn, signOut, signUp, useSession, authClient } from "@/lib/auth-client";
+import { authClient, signIn, signOut, signUp, useSession } from "@/lib/auth-client";
 
-type PasswordActions = typeof authClient extends { password: infer Password }
-  ? Password
-  : Record<string, never>;
+type ClientActionResult<Action extends (...args: unknown[]) => Promise<unknown>> = Awaited<
+  ReturnType<Action>
+>;
+type ClientActionData<Action extends (...args: unknown[]) => Promise<unknown>> =
+  ClientActionResult<Action> extends {
+    data: infer Data;
+  }
+    ? Data
+    : ClientActionResult<Action>;
 
-type SendResetEmailFn = PasswordActions extends { sendResetEmail: infer Fn }
-  ? Fn
-  : (...args: unknown[]) => Promise<unknown>;
+function wrapClientAction<Action extends (...args: unknown[]) => Promise<unknown>>(
+  action: Action | undefined,
+  errorMessage: string,
+) {
+  if (!action) {
+    return (async (..._args: Parameters<Action>) => {
+      throw new Error(errorMessage);
+    }) as (...args: Parameters<Action>) => Promise<ClientActionData<Action>>;
+  }
 
-type ResetPasswordFn = PasswordActions extends { reset: infer Fn }
-  ? Fn
-  : (...args: unknown[]) => Promise<unknown>;
+  return (async (...args: Parameters<Action>) => {
+    const result = (await action(...args)) as ClientActionResult<Action>;
 
-function getPasswordActions(): Partial<PasswordActions> {
-  return (authClient as { password?: PasswordActions }).password ?? {};
+    if (result && typeof result === "object" && "error" in result && result.error) {
+      throw result.error;
+    }
+
+    if (result && typeof result === "object" && "data" in result) {
+      return result.data as ClientActionData<Action>;
+    }
+
+    return result as ClientActionData<Action>;
+  }) as (...args: Parameters<Action>) => Promise<ClientActionData<Action>>;
 }
 
 export const useAuth = useSession;
 export const useSignIn = () => signIn;
 export const useSignOut = () => signOut;
 export const useSignUp = () => signUp;
+
 export const useRequestPasswordReset = () => {
-  const { sendResetEmail } = getPasswordActions();
+  const requestPasswordReset = wrapClientAction(
+    authClient.requestPasswordReset?.bind(authClient),
+    "Password reset email is not configured.",
+  );
 
-  const handler = ((...args: unknown[]) => {
-    if (!sendResetEmail) {
-      return Promise.reject(new Error("Password reset email is not configured."));
-    }
-
-    return (sendResetEmail as (...fnArgs: unknown[]) => Promise<unknown>)(...args);
-  }) as unknown as SendResetEmailFn;
-
-  return { requestPasswordReset: handler };
+  return { requestPasswordReset };
 };
 
 export const useResetPassword = () => {
-  const { reset } = getPasswordActions();
+  const resetPassword = wrapClientAction(
+    authClient.resetPassword?.bind(authClient),
+    "Password reset is not configured.",
+  );
 
-  const handler = ((...args: unknown[]) => {
-    if (!reset) {
-      return Promise.reject(new Error("Password reset is not configured."));
-    }
+  return { resetPassword };
+};
 
-    return (reset as (...fnArgs: unknown[]) => Promise<unknown>)(...args);
-  }) as unknown as ResetPasswordFn;
+export const useSendVerificationEmail = () => {
+  const sendVerificationEmail = wrapClientAction(
+    authClient.sendVerificationEmail?.bind(authClient),
+    "Email verification is not configured.",
+  );
 
-  return { resetPassword: handler };
+  return { sendVerificationEmail };
 };
