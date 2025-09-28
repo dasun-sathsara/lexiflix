@@ -1,5 +1,5 @@
-import { ResetPasswordForm } from "@/components/auth/reset-password-form";
-import { SoftGradientBackground } from "@/components/ui/soft-gradient-background";
+import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
+import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
 
 export default function ResetPasswordPage() {
   return (

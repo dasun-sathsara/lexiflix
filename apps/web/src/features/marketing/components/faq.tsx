@@ -1,3 +1,4 @@
+import { GlowingEffect } from "@/components/common/glowing-effect";
 import {
   Accordion,
   AccordionContent,
@@ -5,7 +6,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 const faqs = [
   {

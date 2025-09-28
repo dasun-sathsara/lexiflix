@@ -38,14 +38,14 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
               <Label htmlFor="first-name">First name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="first-name" placeholder="Lexi" className="pl-10 h-10 rounded-lg" />
+                <Input id="first-name" placeholder="Lexi" className="pl-10" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="last-name">Last name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="last-name" placeholder="Learner" className="pl-10 h-10 rounded-lg" />
+                <Input id="last-name" placeholder="Learner" className="pl-10" />
               </div>
             </div>
           </div>
@@ -58,7 +58,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 id="signup-email"
                 type="email"
                 placeholder="you@example.com"
-                className="pl-10 h-10 rounded-lg"
+                className="pl-10"
               />
             </div>
           </div>
@@ -71,7 +71,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 id="signup-password"
                 type="password"
                 placeholder="Create a strong password"
-                className="pl-10 pr-10 h-10 rounded-lg"
+                className="pl-10 pr-10"
               />
               <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 p-1">
                 <Eye className="size-4" />
@@ -87,7 +87,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
                 id="signup-password-confirm"
                 type="password"
                 placeholder="Repeat your password"
-                className="pl-10 pr-10 h-10 rounded-lg"
+                className="pl-10 pr-10"
               />
               <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 p-1">
                 <EyeOff className="size-4" />
@@ -96,7 +96,7 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           </div>
         </CardContent>
 
-        <CardFooter className="flex-col gap-3.5 px-5 pb-5 pt-2">
+        <CardFooter className="flex-col gap-1.5 px-5 pb-5 pt-2">
           <Button
             type="submit"
             className="w-full h-11 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-sm shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-500"
@@ -124,17 +124,6 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
             <GoogleIcon className="size-5 mr-2" />
             <span>Continue with Google</span>
           </Button>
-
-          <div className="text-sm text-muted-foreground pt-1">
-            Already part of LexiFlix?{" "}
-            <button
-              type="button"
-              onClick={onSwitchToLogin}
-              className="font-semibold text-purple-600 hover:text-purple-500 hover:underline dark:text-purple-400 dark:hover:text-purple-300"
-            >
-              Sign in
-            </button>
-          </div>
         </CardFooter>
       </form>
     </Card>

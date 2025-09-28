@@ -1,5 +1,5 @@
-import { AuthTabs } from "@/components/auth/auth-tabs";
-import { SoftGradientBackground } from "@/components/ui/soft-gradient-background";
+import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
+import { AuthTabs } from "@/features/auth/components/auth-tabs";
 
 interface Benefit {
   title: string;

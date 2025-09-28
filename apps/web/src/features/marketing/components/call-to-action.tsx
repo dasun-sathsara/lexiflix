@@ -2,9 +2,8 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
-
+import { LayoutTextFlip } from "@/components/common/layout-text-flip";
 import { ElegantButton } from "@/components/ui/button";
-import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 
 export function CallToActionSection() {
   return (

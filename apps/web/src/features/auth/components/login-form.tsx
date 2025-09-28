@@ -44,7 +44,7 @@ export function LoginForm({ onSwitchToSignup, onForgotPassword }: LoginFormProps
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="pl-10 h-10 rounded-lg"
+                className="pl-10"
               />
             </div>
           </div>
@@ -67,7 +67,7 @@ export function LoginForm({ onSwitchToSignup, onForgotPassword }: LoginFormProps
                 type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="pl-10 pr-10 h-10 rounded-lg"
+                className="pl-10 pr-10"
               />
               <button
                 type="button"
@@ -99,7 +99,7 @@ export function LoginForm({ onSwitchToSignup, onForgotPassword }: LoginFormProps
           </div>
         </CardContent>
 
-        <CardFooter className="flex-col gap-3.5 px-5 pb-5 pt-1">
+        <CardFooter className="flex-col gap-1.5 px-5 pb-5 pt-1">
           <Button
             type="submit"
             className="w-full h-11 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/30 hover:from-purple-500 hover:to-purple-500"
@@ -113,7 +113,7 @@ export function LoginForm({ onSwitchToSignup, onForgotPassword }: LoginFormProps
               <div className="w-full border-t border-border/50" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-3 font-medium text-muted-foreground">
+              <span className="bg-background font-medium text-muted-foreground">
                 Or continue with
               </span>
             </div>

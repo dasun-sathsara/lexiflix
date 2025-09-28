@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Ubuntu_Mono } from "next/font/google";
-import "./globals.css";
-import { AppProviders } from "@/components/providers/app-providers";
+import "../styles/globals.css";
 import { cn } from "@/lib/utils";
+import { AppProviders } from "@/providers/app-providers";
 
 const inter = Inter({
   variable: "--font-lexiflix-sans",

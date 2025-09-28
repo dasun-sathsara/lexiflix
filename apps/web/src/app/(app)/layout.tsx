@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import type * as React from "react";
-import { AppInset, AppSidebar, AppTopbar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Persist collapsed/expanded state between navigations
@@ -12,8 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <AppInset>
-        <AppTopbar />
-        <main className="p-6">{children}</main>
+        <main>{children}</main>
       </AppInset>
     </SidebarProvider>
   );

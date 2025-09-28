@@ -125,3 +125,6 @@ __secrets__/
 Thumbs.db
 desktop.ini
 dd your description here
+
+.gemini/
+gha-creds-*.json

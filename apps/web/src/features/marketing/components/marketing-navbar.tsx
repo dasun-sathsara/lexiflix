@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { type MouseEvent, useState } from "react";
-
-import { ElegantButton } from "@/components/ui/button";
 import {
   MobileNav,
   MobileNavHeader,
@@ -12,7 +10,8 @@ import {
   NavBody,
   Navbar,
   NavItems,
-} from "@/components/ui/resizable-navbar";
+} from "@/components/common/resizable-navbar";
+import { ElegantButton } from "@/components/ui/button";
 
 const navItems = [
   {
