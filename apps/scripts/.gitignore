@@ -1,0 +1,65 @@
+# === Python ===
+# Virtual environments
+python-analyzer/.venv/
+python-analyzer/__pycache__/
+python-analyzer/**/__pycache__/
+python-analyzer/.ruff_cache/
+
+# Python builds
+python-analyzer/*.egg-info/
+python-analyzer/dist/
+python-analyzer/build/
+
+# === Bun/TypeScript ===
+# Dependencies
+cli-tool/node_modules/
+node_modules/
+
+# Build output
+out/
+dist/
+*.tgz
+
+# Code coverage
+coverage/
+*.lcov
+
+# Logs
+logs/
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Environment files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# === Output Files ===
+# Temporary analysis output
+output_temp.json
+output_*.json
+*.csv
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Keep Data Directory ===
+# Keep the data directory structure but ignore large files
+data/*.srt
+!data/.gitkeep
