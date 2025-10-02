@@ -8,6 +8,13 @@
       "when": 1758909692869,
       "tag": "0000_chunky_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1759125985101,
+      "tag": "0001_right_butterfly",
+      "breakpoints": true
     }
   ]
 }

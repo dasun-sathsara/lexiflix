@@ -6,7 +6,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 import { ForgotPasswordForm } from "./forgot-password-form";
-import { LoginForm } from "./login-form";
+import { LoginForm } from "./sign-form";
 import { SignupForm } from "./signup-form";
 
 type AuthView = "login" | "signup" | "forgot-password";
@@ -47,10 +47,7 @@ export function AuthTabs({ className }: { className?: string }) {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
         >
-          <LoginForm
-            onSwitchToSignup={() => setActiveView("signup")}
-            onForgotPassword={() => setActiveView("forgot-password")}
-          />
+          <LoginForm onForgotPassword={() => setActiveView("forgot-password")} />
         </motion.div>
       );
     }
@@ -64,7 +61,7 @@ export function AuthTabs({ className }: { className?: string }) {
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.28, ease: "easeOut" }}
         >
-          <SignupForm onSwitchToLogin={() => setActiveView("login")} />
+          <SignupForm />
         </motion.div>
       );
     }

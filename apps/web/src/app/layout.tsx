@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     "flashcards",
     "spaced repetition",
   ],
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -50,9 +54,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(inter.className, inter.variable, geist.variable, ubuntuMono.variable)}
+      className={cn("h-full", inter.className, inter.variable, geist.variable, ubuntuMono.variable)}
     >
-      <body className="font-sans antialiased bg-background text-foreground">
+      <body className="h-full font-sans antialiased bg-background text-foreground">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   return (
     <SoftGradientBackground>
       <main className="flex min-h-screen items-center px-6 py-20 sm:py-24">
@@ -29,5 +30,24 @@ export default function ResetPasswordPage() {
         </div>
       </main>
     </SoftGradientBackground>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <SoftGradientBackground>
+          <main className="flex min-h-screen items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-purple-600 border-r-transparent" />
+              <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+            </div>
+          </main>
+        </SoftGradientBackground>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

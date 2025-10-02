@@ -12,7 +12,11 @@ interface AuroraBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
 export const AuroraBackground = forwardRef<HTMLDivElement, AuroraBackgroundProps>(
   ({ className, children, showRadialGradient = true, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn("relative isolate overflow-hidden", className)} {...props}>
+      <div
+        ref={ref}
+        className={cn("relative isolate overflow-hidden h-full", className)}
+        {...props}
+      >
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden"
           style={

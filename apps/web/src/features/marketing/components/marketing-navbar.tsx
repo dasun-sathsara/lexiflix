@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { type MouseEvent, useState } from "react";
 import {
@@ -32,7 +33,11 @@ const navItems = [
   },
 ];
 
-export function MarketingNavbar() {
+interface MarketingNavbarProps {
+  isLoggedIn?: boolean;
+}
+
+export function MarketingNavbar({ isLoggedIn = false }: MarketingNavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleCloseMobileMenu = () => setIsMobileMenuOpen(false);
@@ -68,17 +73,25 @@ export function MarketingNavbar() {
             href="/"
             className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
           >
-            <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
+            <Image src="/logo.png" alt="LexiFlix logo" width={32} height={32} className="size-10" />
             <span>LexiFlix</span>
           </Link>
           <NavItems items={navItems} onItemClick={handleNavItemClick} />
           <div className="flex items-center gap-4">
-            <ElegantButton asChild size="elegant" variant="elegantSecondary">
-              <Link href="/login">Login</Link>
-            </ElegantButton>
-            <ElegantButton asChild size="elegant" variant="elegant">
-              <Link href="/signup">Sign Up</Link>
-            </ElegantButton>
+            {isLoggedIn ? (
+              <ElegantButton asChild size="elegant" variant="elegant">
+                <Link href="/dashboard">Dashboard</Link>
+              </ElegantButton>
+            ) : (
+              <>
+                <ElegantButton asChild size="elegant" variant="elegantSecondary">
+                  <Link href="/login">Login</Link>
+                </ElegantButton>
+                <ElegantButton asChild size="elegant" variant="elegant">
+                  <Link href="/signup">Sign Up</Link>
+                </ElegantButton>
+              </>
+            )}
           </div>
         </NavBody>
 
@@ -88,7 +101,13 @@ export function MarketingNavbar() {
               href="/"
               className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1 text-sm font-medium text-foreground"
             >
-              <span className="size-8 rounded-full bg-indigo-500/10" aria-hidden="true" />
+              <Image
+                src="/logo.png"
+                alt="LexiFlix logo"
+                width={32}
+                height={32}
+                className="size-8"
+              />
               <span>LexiFlix</span>
             </Link>
             <MobileNavToggle
@@ -108,26 +127,6 @@ export function MarketingNavbar() {
                 <span className="block">{item.name}</span>
               </Link>
             ))}
-            <div className="flex w-full flex-col gap-4">
-              <ElegantButton
-                asChild
-                size="elegant"
-                variant="elegantSecondary"
-                className="w-full"
-                onClick={handleCloseMobileMenu}
-              >
-                <Link href="/login">Login</Link>
-              </ElegantButton>
-              <ElegantButton
-                asChild
-                size="elegant"
-                variant="elegant"
-                className="w-full"
-                onClick={handleCloseMobileMenu}
-              >
-                <Link href="/signup">Sign Up</Link>
-              </ElegantButton>
-            </div>
           </MobileNavMenu>
         </MobileNav>
       </Navbar>

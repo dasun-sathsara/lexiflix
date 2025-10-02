@@ -22,7 +22,7 @@ export function DotBackground({
   return (
     <div
       className={cn(
-        "relative flex w-full items-center justify-center overflow-hidden bg-white py-24 dark:bg-black",
+        "relative flex h-full w-full items-center justify-center overflow-hidden bg-white dark:bg-black",
         className,
       )}
     >

@@ -23,7 +23,7 @@ import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import  cast
+from typing import cast
 
 # Third-party imports
 try:
@@ -209,7 +209,9 @@ def normalize_cefr_value(val: any) -> tuple[int | None, str | None]:  # type: ig
         return None, None
     # Try enum/int semantics
     try:
-        num = int(val)  # CEFRLevel often behaves like IntEnum  # type: ignore[reportAny]
+        num = int(
+            val
+        )  # CEFRLevel often behaves like IntEnum  # type: ignore[reportAny]
         label = NUM_TO_LABEL.get(num)
         if label:
             return num, label
@@ -249,9 +251,7 @@ class CEFRLookup:
         self.cache_pos: dict[tuple[str, str], tuple[int, str]] = {}
         self.cache_avg: dict[str, tuple[int, str]] = {}
 
-    def get_pos_level(
-        self, word: str, pos_ptb: str
-    ) -> tuple[int | None, str | None]:
+    def get_pos_level(self, word: str, pos_ptb: str) -> tuple[int | None, str | None]:
         key = (word, pos_ptb)
         if key in self.cache_pos:
             n, s = self.cache_pos[key]
@@ -354,9 +354,7 @@ def is_mostly_digits_or_punct(token: Token) -> bool:
     return ratio >= 0.6
 
 
-def token_should_be_excluded(
-    token: Token, allowed_pos: set[str]
-) -> bool:
+def token_should_be_excluded(token: Token, allowed_pos: set[str]) -> bool:
     # Spaces and punctuation
     if token.is_space or token.is_punct:
         return True
@@ -447,9 +445,7 @@ def best_cefr_for_token(
     return None, None
 
 
-def get_valid_lemma(
-    token: Token, allowed_pos: set[str]
-) -> str | None:
+def get_valid_lemma(token: Token, allowed_pos: set[str]) -> str | None:
     # Advanced filtering before considering lemma
     if token_should_be_excluded(token, allowed_pos):
         return None
@@ -627,7 +623,9 @@ def main() -> None:
     _ = p.add_argument(
         "--out-json", type=Path, help="Path to write results to a JSON file."
     )
-    _ = p.add_argument("--out-csv", type=Path, help="Path to write results to a CSV file.")
+    _ = p.add_argument(
+        "--out-csv", type=Path, help="Path to write results to a CSV file."
+    )
 
     _ = p.add_argument(
         "--include-propn",
@@ -640,7 +638,9 @@ def main() -> None:
         dest="dedup",
         help="Disable deduplication of subtitle lines.",
     )
-    _ = p.add_argument("--top", type=int, default=50, help="Number of top tokens to print.")
+    _ = p.add_argument(
+        "--top", type=int, default=50, help="Number of top tokens to print."
+    )
 
     _ = p.add_argument(
         "--cpu", action="store_true", help="Force CPU usage; do not prefer GPU."
