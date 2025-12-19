@@ -25,6 +25,7 @@ const serverSchema = z.object({
   R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
   R2_ENDPOINT: z.string().min(1, "R2_ENDPOINT is required"),
   R2_PUBLIC_BASE_URL: z.url("R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com"),
+  TMDB_API_KEY: z.string().min(1, "TMDB_API_KEY is required"),
 });
 
 const isServer = typeof window === "undefined";

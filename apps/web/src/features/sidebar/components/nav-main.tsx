@@ -3,6 +3,7 @@ import { ChevronRight, type LucideIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -15,6 +16,7 @@ import {
 
 export function NavMain({
   items,
+  label,
 }: {
   items: {
     title: string;
@@ -28,9 +30,11 @@ export function NavMain({
       isActive?: boolean;
     }[];
   }[];
+  label?: string;
 }) {
   return (
     <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) =>
           item.items?.length ? (

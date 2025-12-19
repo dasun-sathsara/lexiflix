@@ -48,6 +48,7 @@ export async function changePasswordAction(input: {
 export async function deleteAccountAction(): Promise<ActionResponse> {
   try {
     await auth.api.deleteUser({
+      body: {},
       headers: await headers(),
     });
 

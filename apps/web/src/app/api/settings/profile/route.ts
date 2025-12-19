@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await auth.api.updateUser({
-      body: updates,
+      body: updates as any,
       headers: request.headers,
     });
 

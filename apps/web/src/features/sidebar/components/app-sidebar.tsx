@@ -3,12 +3,14 @@
 import {
   Bell,
   Clapperboard,
+  Film,
   Home,
-  Library,
   List,
   type LucideIcon,
   Search,
   Settings2,
+  Sparkles,
+  Tv,
   X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -28,7 +30,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarInput,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -54,7 +55,7 @@ type NavItem = {
   items?: SubNavItem[];
 };
 
-const baseNavItems: NavItem[] = [
+const platformItems: NavItem[] = [
   {
     title: "Home",
     url: "/dashboard",
@@ -85,25 +86,27 @@ const baseNavItems: NavItem[] = [
     icon: List,
     badge: "8",
   },
+];
+
+const libraryItems: NavItem[] = [
   {
-    title: "Library",
-    url: "/library",
-    icon: Library,
-    items: [
-      {
-        title: "Movies",
-        url: "/library/movies",
-      },
-      {
-        title: "Series",
-        url: "/library/series",
-      },
-      {
-        title: "Originals",
-        url: "/library/originals",
-      },
-    ],
+    title: "Movies",
+    url: "/library/movies",
+    icon: Film,
   },
+  {
+    title: "Series",
+    url: "/library/series",
+    icon: Tv,
+  },
+  {
+    title: "Originals",
+    url: "/library/originals",
+    icon: Sparkles,
+  },
+];
+
+const generalItems: NavItem[] = [
   {
     title: "Notifications",
     url: "/notifications",
@@ -184,12 +187,12 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const pathname = usePathname();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
 
-  const navMain = useMemo(
-    () =>
-      baseNavItems.map((item) => {
+  const processItems = useCallback(
+    (items: NavItem[]) =>
+      items.map((item) => {
         const nestedItems = item.items?.map((subItem) => ({
           ...subItem,
           isActive: pathname === subItem.url,
@@ -209,6 +212,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     [pathname],
   );
 
+  const navPlatform = useMemo(() => processItems(platformItems), [processItems]);
+  const navLibrary = useMemo(() => processItems(libraryItems), [processItems]);
+  const navGeneral = useMemo(() => processItems(generalItems), [processItems]);
+
   return (
     <Sidebar variant="inset" collapsible="icon" {...props}>
       <SidebarHeader>
@@ -217,7 +224,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarMenuButton size="lg" variant={"plane"} asChild>
               <a href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
-                  <Clapperboard className="size-4" />
+                  <Clapperboard className="size-[18px]" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">LexiFlix</span>
@@ -227,12 +234,11 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        {!isCollapsed && (
-          <SidebarInput type="search" placeholder="Search titles..." className="mt-1" />
-        )}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain items={navPlatform} label="Platform" />
+        <NavMain items={navLibrary} label="Library" />
+        <NavMain items={navGeneral} label="General" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
@@ -275,12 +281,12 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
   }, []);
 
   return (
-    <header className="bg-background/80 supports-[backdrop-filter]:backdrop-blur border-b border-border sticky top-0 z-20">
+    <header className="bg-background/85 py-0.5 supports-[backdrop-filter]:backdrop-blur border-b border-border sticky top-0 z-20">
       <div className="flex h-14 items-center gap-3 px-4">
         <SidebarTrigger className="-ml-1" />
         <div className="flex items-center gap-2">
           <div className="bg-sidebar-primary/15 text-sidebar-primary flex size-6 items-center justify-center rounded-md">
-            <Clapperboard className="size-3.5" />
+            <Clapperboard className="size-4" />
           </div>
           <h1 className="text-sm font-medium tracking-tight">{title}</h1>
         </div>
@@ -294,7 +300,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                 className="relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 aria-label={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
               >
-                <Bell className="size-4" />
+                <Bell className="size-[18px]" />
                 {unreadCount > 0 && (
                   <span className="bg-destructive absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full">
                     <span className="sr-only">Unread notifications</span>
@@ -369,7 +375,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                         }}
                         aria-label="Remove notification"
                       >
-                        <X className="size-3.5" />
+                        <X className="size-4" />
                       </Button>
                     </DropdownMenuItem>
                   ))
