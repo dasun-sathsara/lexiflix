@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Clock3, Flame, Play, Sparkles } from "lucide-react";
+import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,9 +101,9 @@ function StatCard({
   }[accent];
 
   return (
-    <Card className={"relative overflow-hidden border " + accentStyles.border}>
+    <Card className={"relative overflow-hidden border py-0 " + accentStyles.border}>
       <div className={"pointer-events-none absolute inset-0 bg-gradient-to-br " + accentStyles.glow} />
-      <CardContent className="relative flex items-start justify-between gap-4 p-6">
+      <CardContent className="relative flex items-start justify-between gap-4 p-4">
         <div className="flex items-start gap-3">
           <div className={"grid size-10 place-items-center rounded-xl border border-white/10 " + accentStyles.iconBg}>
             {icon}
@@ -192,6 +192,36 @@ export default function DashboardPage() {
                 <Progress value={dailyGoalPct} className="h-2" />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Level Assessment CTA */}
+        <Card className="group relative overflow-hidden border-2 border-amber-200/60 py-0 dark:border-amber-500/30">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
+          <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
+          <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-500/10 to-orange-500/10 text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
+                <GraduationCap className="size-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold">Discover Your Level</h3>
+                  <Badge variant="secondary" className="border border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                    New
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Take a quick 2-minute assessment to unlock personalized learning recommendations.
+                </p>
+              </div>
+            </div>
+            <Button asChild className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600">
+              <Link href="/onboarding/assessment">
+                Start Assessment
+                <ChevronRight className="size-4" />
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
