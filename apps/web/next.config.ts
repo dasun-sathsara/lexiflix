@@ -12,6 +12,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/t/p/**",
       },
+      {
+        protocol: "https",
+        hostname: "resizing.flixster.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

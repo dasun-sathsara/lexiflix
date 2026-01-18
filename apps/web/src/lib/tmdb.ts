@@ -119,9 +119,9 @@ export async function searchMedia(query: string, type: "movie" | "tv", page: num
 
   // Post-filter search results as API doesn't support these filters on search endpoints
   // Note: This effectively reduces the page size below 20
-  data.results = data.results.filter(
-    (item) => item.original_language === "en" && item.vote_count >= 1000,
-  );
+  // data.results = data.results.filter(
+  //   (item) => item.original_language === "en" && item.vote_count >= 1000,
+  // );
 
   return data;
 }

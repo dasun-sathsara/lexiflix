@@ -1,6 +1,6 @@
+import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,25 +38,19 @@ const MOCK_RECENT_PACKS = [
     progressLabel: "Pre-learned",
     progressPct: 55,
   },
-  {
-    id: "the-bear",
-    title: "The Bear",
-    kind: "TV",
-    posterUrl: "https://image.tmdb.org/t/p/w300_and_h450_bestv2/s1R7K0fCkI1d5mFvZp4YbQw7zVq.jpg",
-    progressLabel: "Pre-learned",
-    progressPct: 30,
-  },
 ] as const;
 
-const MOCK_ACTIVITY = [
-  { day: "Mon", reviews: 8 },
-  { day: "Tue", reviews: 14 },
-  { day: "Wed", reviews: 10 },
-  { day: "Thu", reviews: 18 },
-  { day: "Fri", reviews: 22 },
-  { day: "Sat", reviews: 12 },
-  { day: "Sun", reviews: 16 },
-] as const;
+const MOCK_REVIEW_PLAN = {
+  dueNow: 12,
+  dueLaterToday: 18,
+  dueTomorrow: 26,
+  estimatedMinutes: 24,
+  focusPacks: [
+    { id: "interstellar", title: "Interstellar", due: 9, accuracy: 78 },
+    { id: "tokyo-ghoul", title: "Tokyo Ghoul", due: 6, accuracy: 62 },
+    { id: "spirited-away", title: "Spirited Away", due: 4, accuracy: 88 },
+  ],
+} as const;
 
 function clampToInt(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -101,11 +95,23 @@ function StatCard({
   }[accent];
 
   return (
-    <Card className={"relative overflow-hidden border py-0 " + accentStyles.border}>
-      <div className={"pointer-events-none absolute inset-0 bg-gradient-to-br " + accentStyles.glow} />
+    <Card
+      className={
+        "relative overflow-hidden border py-0 bg-card/40 backdrop-blur-lg shadow-md shadow-black/5 " +
+        accentStyles.border
+      }
+    >
+      <div
+        className={"pointer-events-none absolute inset-0 bg-gradient-to-br " + accentStyles.glow}
+      />
       <CardContent className="relative flex items-start justify-between gap-4 p-4">
         <div className="flex items-start gap-3">
-          <div className={"grid size-10 place-items-center rounded-xl border border-white/10 " + accentStyles.iconBg}>
+          <div
+            className={
+              "grid size-10 place-items-center rounded-xl border border-white/10 " +
+              accentStyles.iconBg
+            }
+          >
             {icon}
           </div>
           <div className="space-y-1">
@@ -120,83 +126,57 @@ function StatCard({
   );
 }
 
-function DailyGoalRing({ reviewed, target }: { reviewed: number; target: number }) {
-  const pct = clampToInt((reviewed / Math.max(1, target)) * 100);
-  const gradient = `conic-gradient(from 180deg, hsl(var(--primary)) ${pct}%, hsl(var(--muted)) 0%)`;
-
-  return (
-    <div className="flex items-center gap-4">
-      <div
-        className="relative grid size-16 place-items-center rounded-full p-[3px] shadow-sm"
-        style={{ background: gradient }}
-      >
-        <span className="sr-only">Daily goal: {reviewed}/{target}</span>
-        <div className="grid size-full place-items-center rounded-full bg-background">
-          <div className="text-center leading-tight">
-            <div className="text-sm font-semibold">{reviewed}/{target}</div>
-            <div className="text-[10px] text-muted-foreground">goal</div>
-          </div>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-indigo-500" />
-          <p className="text-sm font-medium">Daily Goal</p>
-        </div>
-        <p className="text-xs text-muted-foreground">Keep your momentum—small wins stack.</p>
-      </div>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { dailyGoal } = MOCK_STATS;
   const dailyGoalPct = clampToInt((dailyGoal.reviewed / Math.max(1, dailyGoal.target)) * 100);
-  const maxReviews = Math.max(...MOCK_ACTIVITY.map((d) => d.reviews), 1);
+  const todayLoad =
+    MOCK_REVIEW_PLAN.dueNow + MOCK_REVIEW_PLAN.dueLaterToday - dailyGoal.reviewed;
+  const todayLoadPct = clampToInt((todayLoad / Math.max(1, dailyGoal.target)) * 100);
 
   return (
     <>
       <AppTopbar title="Dashboard" />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
-        <Card className="relative overflow-hidden border-indigo-200/60 dark:border-indigo-500/20">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
+        {/* Decorative Background Blobs */}
+        <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute bottom-0 left-1/3 size-72 rounded-full bg-rose-500/5 blur-[80px]" />
+
+        <Card className="relative overflow-hidden border-indigo-200/60 bg-card/40 backdrop-blur-lg shadow-xl shadow-indigo-500/5 dark:border-indigo-500/20">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10" />
           <CardContent className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="border border-indigo-200/60 bg-white/60 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200">
+                <Badge
+                  variant="secondary"
+                  className="border border-indigo-200/60 bg-white/40 text-indigo-700 backdrop-blur-md dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
+                >
                   Command Center
                 </Badge>
               </div>
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Welcome back, <span className="text-indigo-600 dark:text-indigo-300">{MOCK_STATS.userName}</span>
+                Welcome back,{" "}
+                <span className="text-indigo-600 dark:text-indigo-300">{MOCK_STATS.userName}</span>
               </h1>
               <p className="max-w-xl text-sm text-muted-foreground">
-                Your learning momentum is compounding. Keep the streak alive and clear today’s reviews.
+                Your learning momentum is compounding. Keep the streak alive and clear today’s
+                reviews.
               </p>
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Button size="sm" asChild>
-                  <Link href="/pack/interstellar">Open Pack</Link>
+                  <Link href="/decks">My Decks</Link>
                 </Button>
                 <Button size="sm" variant="secondary" asChild>
                   <Link href="/browse">Browse</Link>
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col gap-3 sm:items-end">
-              <DailyGoalRing reviewed={dailyGoal.reviewed} target={dailyGoal.target} />
-              <div className="w-full max-w-sm space-y-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{dailyGoal.label}</span>
-                  <span>{dailyGoalPct}%</span>
-                </div>
-                <Progress value={dailyGoalPct} className="h-2" />
-              </div>
-            </div>
+            <div className="flex w-full max-w-sm flex-col gap-2 sm:items-end"></div>
           </CardContent>
         </Card>
 
         {/* Level Assessment CTA */}
-        <Card className="group relative overflow-hidden border-2 border-amber-200/60 py-0 dark:border-amber-500/30">
+        <Card className="group relative overflow-hidden border-2 border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-lg shadow-amber-500/5 dark:border-amber-500/30">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
           <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
           <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -207,7 +187,10 @@ export default function DashboardPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold">Discover Your Level</h3>
-                  <Badge variant="secondary" className="border border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                  <Badge
+                    variant="secondary"
+                    className="border border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
+                  >
                     New
                   </Badge>
                 </div>
@@ -216,7 +199,10 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <Button asChild className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600">
+            <Button
+              asChild
+              className="gap-2 bg-gradient-to-r tracking-tight from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600"
+            >
               <Link href="/onboarding/assessment">
                 Start Assessment
                 <ChevronRight className="size-4" />
@@ -248,7 +234,7 @@ export default function DashboardPage() {
             accent="amber"
             right={
               <Button size="sm" asChild className="shadow-sm">
-                <Link href="/pack/interstellar">Start</Link>
+                <Link href="/decks">Start</Link>
               </Button>
             }
           />
@@ -262,23 +248,30 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card className="overflow-hidden">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md shadow-black/5">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <CardTitle>Jump Back In</CardTitle>
-                  <CardDescription>Pick up where you left off—your packs are ready.</CardDescription>
+                  <CardDescription>
+                    Pick up where you left off—your packs are ready.
+                  </CardDescription>
                 </div>
-                <Button variant="secondary" asChild>
-                  <Link href="/pack/interstellar">Open pack</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/packs">Manage</Link>
+                  </Button>
+                  <Button variant="secondary" asChild>
+                    <Link href="/decks">Study</Link>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {MOCK_RECENT_PACKS.map((pack) => (
                 <Link
                   key={pack.id}
-                  href={`/pack/${pack.id}`}
+                  href={`/study/${pack.id}`}
                   className="group block rounded-2xl border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors hover:bg-card/60"
                 >
                   <div className="flex gap-4">
@@ -301,7 +294,9 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <Button size="sm" variant="outline" className="shrink-0" asChild>
-                          <span className="group-hover:border-indigo-300/60 group-hover:bg-indigo-500/5 dark:group-hover:border-indigo-500/30">Resume</span>
+                          <span className="group-hover:border-indigo-300/60 group-hover:bg-indigo-500/5 dark:group-hover:border-indigo-500/30">
+                            Resume
+                          </span>
                         </Button>
                       </div>
                       <div className="space-y-2">
@@ -318,35 +313,73 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md shadow-black/5">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5" />
             <CardHeader className="relative">
-              <CardTitle>SRS Activity</CardTitle>
-              <CardDescription>Reviews completed over the last 7 days.</CardDescription>
+              <CardTitle>Review Plan</CardTitle>
+              <CardDescription>Prioritize the cards that matter most today.</CardDescription>
             </CardHeader>
             <CardContent className="relative">
-              <div className="rounded-2xl border bg-card/40 p-4 backdrop-blur-sm">
-                <div className="flex items-end gap-3">
-                  {MOCK_ACTIVITY.map((d) => {
-                    const heightPct = clampToInt((d.reviews / maxReviews) * 100);
-                    return (
-                      <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
-                        <div className="w-full rounded-xl bg-muted/50 p-1">
-                          <div
-                            className="w-full rounded-lg bg-gradient-to-t from-indigo-600/70 to-purple-500/60"
-                            style={{ height: `${Math.max(18, Math.round((heightPct / 100) * 120))}px` }}
-                          />
-                          <span className="sr-only">{d.day}: {d.reviews} reviews</span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">{d.day}</div>
-                      </div>
-                    );
-                  })}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    label: "Due now",
+                    value: MOCK_REVIEW_PLAN.dueNow,
+                    note: "Start here",
+                  },
+                  {
+                    label: "Later today",
+                    value: MOCK_REVIEW_PLAN.dueLaterToday,
+                    note: "Afternoon boost",
+                  },
+                  {
+                    label: "Tomorrow",
+                    value: MOCK_REVIEW_PLAN.dueTomorrow,
+                    note: "Stay ahead",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border bg-card/60 p-3 shadow-sm backdrop-blur-sm"
+                  >
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="mt-1 text-2xl font-semibold">{item.value}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.note}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Today’s review load</span>
+                  <span>~{MOCK_REVIEW_PLAN.estimatedMinutes} min</span>
                 </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Low</span>
-                  <span>High</span>
+                <Progress value={todayLoadPct} className="h-2" />
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Focus packs</p>
+                  <Badge variant="secondary">Needs attention</Badge>
                 </div>
+                {MOCK_REVIEW_PLAN.focusPacks.map((pack) => (
+                  <div
+                    key={pack.id}
+                    className="rounded-2xl border bg-card/50 p-3 shadow-sm backdrop-blur-sm"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{pack.title}</span>
+                      <span className="text-xs text-muted-foreground">{pack.due} due</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <span className="shrink-0">Accuracy</span>
+                      <Progress value={pack.accuracy} className="h-1.5 flex-1" />
+                      <span className="w-8 shrink-0 text-right text-foreground">
+                        {pack.accuracy}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

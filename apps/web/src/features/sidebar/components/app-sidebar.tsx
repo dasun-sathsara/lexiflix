@@ -3,16 +3,15 @@
 import {
   Bell,
   Clapperboard,
-  Film,
   Home,
-  List,
+  Layers,
   type LucideIcon,
   Search,
   Settings2,
   Sparkles,
-  Tv,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -29,30 +28,27 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { NavMain } from "@/features/sidebar/components/nav-main";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
-
-type SubNavItem = {
-  title: string;
-  url: string;
-};
 
 type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
   badge?: string;
-  items?: SubNavItem[];
 };
 
 const platformItems: NavItem[] = [
@@ -65,54 +61,21 @@ const platformItems: NavItem[] = [
     title: "Browse",
     url: "/browse",
     icon: Search,
-    items: [
-      {
-        title: "Trending",
-        url: "/browse/trending",
-      },
-      {
-        title: "New Releases",
-        url: "/browse/new",
-      },
-      {
-        title: "Coming Soon",
-        url: "/browse/coming-soon",
-      },
-    ],
   },
   {
-    title: "My List",
-    url: "/my-list",
-    icon: List,
-    badge: "8",
-  },
-];
-
-const libraryItems: NavItem[] = [
-  {
-    title: "Movies",
-    url: "/library/movies",
-    icon: Film,
-  },
-  {
-    title: "Series",
-    url: "/library/series",
-    icon: Tv,
-  },
-  {
-    title: "Originals",
-    url: "/library/originals",
+    title: "My Decks",
+    url: "/decks",
     icon: Sparkles,
+    badge: "4",
+  },
+  {
+    title: "My Packs",
+    url: "/packs",
+    icon: Layers,
   },
 ];
 
 const generalItems: NavItem[] = [
-  {
-    title: "Notifications",
-    url: "/notifications",
-    icon: Bell,
-    badge: "3",
-  },
   {
     title: "Settings",
     url: "/settings",
@@ -177,6 +140,39 @@ function formatRelativeTime(date: Date) {
   return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
 }
 
+// Clean navigation menu component with proper active states
+function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
+  const pathname = usePathname();
+
+  return (
+    <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => {
+          const isActive =
+            pathname === item.url || pathname.startsWith(`${item.url}/`);
+
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={isActive}
+              >
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+              {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
     name: string;
@@ -186,60 +182,32 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const pathname = usePathname();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { state } = useSidebar();
-
-  const processItems = useCallback(
-    (items: NavItem[]) =>
-      items.map((item) => {
-        const nestedItems = item.items?.map((subItem) => ({
-          ...subItem,
-          isActive: pathname === subItem.url,
-        }));
-
-        const isActive =
-          pathname === item.url ||
-          pathname.startsWith(`${item.url}/`) ||
-          nestedItems?.some((subItem) => subItem.isActive);
-
-        return {
-          ...item,
-          items: nestedItems,
-          isActive,
-        };
-      }),
-    [pathname],
-  );
-
-  const navPlatform = useMemo(() => processItems(platformItems), [processItems]);
-  const navLibrary = useMemo(() => processItems(libraryItems), [processItems]);
-  const navGeneral = useMemo(() => processItems(generalItems), [processItems]);
-
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar variant="inset" collapsible="icon" className="border-r border-sidebar-border" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" variant={"plane"} asChild>
-              <a href="/">
+              <Link href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
                   <Clapperboard className="size-[18px]" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">LexiFlix</span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">Entertainment</span>
+                  <span className="truncate font-semibold">LexiFlix</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    Learn with entertainment
+                  </span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navPlatform} label="Platform" />
-        <NavMain items={navLibrary} label="Library" />
-        <NavMain items={navGeneral} label="General" />
+        <NavMenu items={platformItems} label="Platform" />
+        <NavMenu items={generalItems} label="General" />
       </SidebarContent>
+      <SidebarSeparator />
       <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>
@@ -249,41 +217,71 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 }
 
 // Inset wrapper that applies consistent spacing and surface styling for main content
-export function AppInset({ className, children }: React.ComponentProps<typeof SidebarInset>) {
-  return <SidebarInset className={className}>{children}</SidebarInset>;
+export function AppInset({
+  className,
+  children,
+}: React.ComponentProps<typeof SidebarInset>) {
+  return (
+    <SidebarInset className={cn("bg-background", className)}>
+      {children}
+    </SidebarInset>
+  );
 }
 
 // Simple, branded top bar that pairs with the inset layout
-export function AppTopbar({ title, right }: { title: string; right?: React.ReactNode }) {
+export function AppTopbar({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    createInitialNotifications(),
+    createInitialNotifications()
   );
+
+  const { state } = useSidebar();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
-    [notifications],
+    [notifications]
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
+    setNotifications((prev) =>
+      prev.map((notification) => ({ ...notification, read: true }))
+    );
   }, []);
 
   const handleMarkAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      ),
+        notification.id === id ? { ...notification, read: true } : notification
+      )
     );
   }, []);
 
   const handleRemoveNotification = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+    setNotifications((prev) =>
+      prev.filter((notification) => notification.id !== id)
+    );
   }, []);
 
   return (
-    <header className="bg-background/85 py-0.5 supports-[backdrop-filter]:backdrop-blur border-b border-border sticky top-0 z-20">
+    <header
+      className={cn(
+        "sticky top-0 z-20 border-b border-sidebar-border",
+        "bg-sidebar/80 backdrop-blur-md supports-[backdrop-filter]:bg-sidebar/60"
+      )}
+    >
       <div className="flex h-14 items-center gap-3 px-4">
         <SidebarTrigger className="-ml-1" />
+        <div
+          className={cn(
+            "h-4 w-px bg-border/60 transition-opacity duration-300",
+            state === "collapsed" ? "opacity-0" : "opacity-100"
+          )}
+        />
         <div className="flex items-center gap-2">
           <div className="bg-sidebar-primary/15 text-sidebar-primary flex size-6 items-center justify-center rounded-md">
             <Clapperboard className="size-4" />
@@ -298,7 +296,9 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                 variant="ghost"
                 size="icon"
                 className="relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                aria-label={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
+                aria-label={
+                  unreadCount ? `${unreadCount} unread notifications` : "Notifications"
+                }
               >
                 <Bell className="size-[18px]" />
                 {unreadCount > 0 && (
@@ -335,7 +335,9 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                 {notifications.length === 0 ? (
                   <div className="text-muted-foreground flex flex-col items-center gap-1 px-6 py-8 text-center text-sm">
                     <p>No notifications yet.</p>
-                    <p className="text-xs">We'll keep you posted when something new arrives.</p>
+                    <p className="text-xs">
+                      We'll keep you posted when something new arrives.
+                    </p>
                   </div>
                 ) : (
                   notifications.map((notification) => (
@@ -343,7 +345,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                       key={notification.id}
                       className={cn(
                         "items-start gap-3 px-4 py-3",
-                        !notification.read && "bg-accent/10",
+                        !notification.read && "bg-accent/10"
                       )}
                       onSelect={(event) => {
                         event.preventDefault();
@@ -353,12 +355,16 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
                       <span
                         className={cn(
                           "mt-1 flex size-2.5 rounded-full",
-                          notification.read ? "bg-muted" : "bg-primary",
+                          notification.read ? "bg-muted" : "bg-primary"
                         )}
                       />
                       <div className="flex flex-1 flex-col gap-1 text-left">
-                        <p className="text-sm font-medium leading-none">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground">{notification.description}</p>
+                        <p className="text-sm font-medium leading-none">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {notification.description}
+                        </p>
                         <span className="text-xs text-muted-foreground">
                           {formatRelativeTime(notification.createdAt)}
                         </span>

@@ -1,6 +1,4 @@
-# srt_cefr_analyzer.py
 # An end-to-end pipeline to extract word frequencies and CEFR levels from .srt.
-# Key changes in this rewrite:
 #   - Harder filtering:
 #       * Exclude tokens that are part of any named entity (GPE, PERSON, DATE,
 #         ORDINAL, etc.) regardless of POS

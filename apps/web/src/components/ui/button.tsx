@@ -38,10 +38,13 @@ function Button({
   size,
   asChild = false,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
+}:
+  & React.ComponentProps<"button">
+  & VariantProps<typeof buttonVariants>
+  & {
     asChild?: boolean;
-  }) {
+  })
+{
   const Comp = asChild ? Slot : "button";
 
   return (
@@ -77,8 +80,10 @@ const elegantButtonVariants = cva(
   },
 );
 
-type ElegantButtonProps = React.ComponentProps<"button"> &
-  VariantProps<typeof elegantButtonVariants> & {
+type ElegantButtonProps =
+  & React.ComponentProps<"button">
+  & VariantProps<typeof elegantButtonVariants>
+  & {
     asChild?: boolean;
   };
 

@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import type { Metadata } from "next";
 
 import { BrowseControls } from "@/features/browse/components/browse-controls";
 import { MediaGrid } from "@/features/browse/components/media-grid";
@@ -67,20 +67,25 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   return (
     <>
       <AppTopbar title="Browse" />
-      <div className="container mx-auto min-h-screen space-y-8 px-4 py-8">
+      <div className="relative mx-auto w-full max-w-7xl space-y-8 p-6">
+        {/* Decorative Background Blobs */}
+        <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute -right-20 top-1/3 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute bottom-1/4 left-1/4 size-72 rounded-full bg-rose-500/5 blur-[80px]" />
+
         {/* Zone A: Header & Controls */}
-        <section className="space-y-4">
+        <section className="relative space-y-4">
           <h1 className="text-3xl font-bold tracking-tight">Browse</h1>
           <BrowseControls genres={currentGenres} />
         </section>
 
         {/* Zone B: Main Grid */}
-        <section>
+        <section className="relative">
           <MediaGrid results={data.results} genreMap={genreMap} />
         </section>
 
         {/* Zone C: Pagination */}
-        <section className="flex justify-center">
+        <section className="relative flex justify-center">
           <PaginationControls currentPage={data.page} totalPages={data.total_pages} />
         </section>
       </div>

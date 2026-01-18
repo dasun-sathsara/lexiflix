@@ -24,9 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar user={user} />
-      <AppInset>
-        <main>{children}</main>
-      </AppInset>
+      <AppInset>{children}</AppInset>
     </SidebarProvider>
   );
 }
