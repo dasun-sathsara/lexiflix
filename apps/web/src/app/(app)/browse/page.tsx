@@ -67,11 +67,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   return (
     <>
       <AppTopbar title="Browse" />
-      <div className="relative mx-auto w-full max-w-7xl space-y-8 p-6">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
         {/* Decorative Background Blobs */}
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
-        <div className="pointer-events-none absolute -right-20 top-1/3 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
-        <div className="pointer-events-none absolute bottom-1/4 left-1/4 size-72 rounded-full bg-rose-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
+        <div className="pointer-events-none absolute bottom-0 left-1/3 size-72 rounded-full bg-rose-500/5 blur-[80px]" />
 
         {/* Zone A: Header & Controls */}
         <section className="relative space-y-4">

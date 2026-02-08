@@ -50,8 +50,6 @@ const MOCK_REVIEW_PLAN = {
   estimatedMinutes: 24,
   focusPacks: [
     { id: "interstellar", title: "Interstellar", due: 9, accuracy: 78 },
-    { id: "tokyo-ghoul", title: "Tokyo Ghoul", due: 6, accuracy: 62 },
-    { id: "spirited-away", title: "Spirited Away", due: 4, accuracy: 88 },
   ],
 } as const;
 

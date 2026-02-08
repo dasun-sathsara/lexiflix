@@ -47,7 +47,7 @@ const Header: React.FC = () => (
       ╔═══════════════════════════════════════════════╗
     </Text>
     <Text bold color="cyan">
-      ║ LexiFlix Subtitle Analyzer v1.0 ║
+      ║ LexiFlix Subtitle Analyzer v1.0               ║
     </Text>
     <Text bold color="cyan">
       ╚═══════════════════════════════════════════════╝

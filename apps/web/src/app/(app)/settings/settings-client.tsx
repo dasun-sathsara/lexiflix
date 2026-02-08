@@ -11,7 +11,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -76,9 +76,17 @@ type SettingsClientProps = {
 };
 
 type ManualOverrideSelection = CefrLevel | "assessed";
+type SettingsTab = "account" | "preferences";
+
+function toSettingsTab(value: string | null): SettingsTab {
+  return value === "preferences" ? "preferences" : "account";
+}
 
 export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [initialProfile, setInitialProfile] = useState(() => ({
@@ -114,6 +122,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const [isSavingPreferences, startSavingPreferences] = useTransition();
   const [isUpdatingPassword, startUpdatingPassword] = useTransition();
   const [isDeletingAccount, startDeletingAccount] = useTransition();
+  const [activeTab, setActiveTab] = useState<SettingsTab>(() => toSettingsTab(tabParam));
 
   useEffect(() => {
     return () => {
@@ -122,6 +131,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
       }
     };
   }, [avatarPreview]);
+
+  useEffect(() => {
+    setActiveTab(toSettingsTab(tabParam));
+  }, [tabParam]);
 
   const initials = useMemo(
     () =>
@@ -391,6 +404,21 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     });
   };
 
+  const handleTabChange = (tab: string) => {
+    const nextTab = toSettingsTab(tab);
+    setActiveTab(nextTab);
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextTab === "account") {
+      params.delete("tab");
+    } else {
+      params.set("tab", nextTab);
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
       <header className="space-y-3">
@@ -403,7 +431,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         </div>
       </header>
 
-      <Tabs defaultValue="account" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="w-full justify-start sm:w-fit">
           <TabsTrigger value="account" className="px-4">
             Account

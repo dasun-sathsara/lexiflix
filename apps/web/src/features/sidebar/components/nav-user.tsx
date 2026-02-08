@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  BadgeCheck,
-  ChevronsUpDown,
-  LogOut,
-  ShieldAlert,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -114,29 +107,16 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/settings#profile">
+                <Link href="/settings?tab=account">
                   <BadgeCheck />
-                  Profile
+                  Account
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings#security">
-                  <ShieldCheck />
-                  Security
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings#danger">
-                  <ShieldAlert />
-                  Danger zone
+                <Link href="/settings?tab=preferences">
+                  <Bell />
+                  Preferences
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
