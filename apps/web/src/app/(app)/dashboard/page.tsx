@@ -1,4 +1,5 @@
 import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -6,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
+import { auth } from "@/lib/auth";
 
 const MOCK_STATS = {
   userName: "Lexi Learner",
@@ -102,7 +105,7 @@ function StatCard({
       }
     >
       <div
-        className={"pointer-events-none absolute inset-0 bg-gradient-to-br " + accentStyles.glow}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accentStyles.glow}`}
       />
       <CardContent className="relative flex items-start justify-between gap-4 p-4">
         <div className="flex items-start gap-3">
@@ -126,11 +129,14 @@ function StatCard({
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const showAssessmentBanner = session?.user
+    ? await shouldShowAssessmentBanner(session.user.id)
+    : true;
+
   const { dailyGoal } = MOCK_STATS;
-  const dailyGoalPct = clampToInt((dailyGoal.reviewed / Math.max(1, dailyGoal.target)) * 100);
-  const todayLoad =
-    MOCK_REVIEW_PLAN.dueNow + MOCK_REVIEW_PLAN.dueLaterToday - dailyGoal.reviewed;
+  const todayLoad = MOCK_REVIEW_PLAN.dueNow + MOCK_REVIEW_PLAN.dueLaterToday - dailyGoal.reviewed;
   const todayLoadPct = clampToInt((todayLoad / Math.max(1, dailyGoal.target)) * 100);
 
   return (
@@ -175,41 +181,43 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Level Assessment CTA */}
-        <Card className="group relative overflow-hidden border-2 border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-lg shadow-amber-500/5 dark:border-amber-500/30">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
-          <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
-          <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-500/10 to-orange-500/10 text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
-                <GraduationCap className="size-6" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">Discover Your Level</h3>
-                  <Badge
-                    variant="secondary"
-                    className="border border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
-                  >
-                    New
-                  </Badge>
+        {showAssessmentBanner ? (
+          <Card className="group relative overflow-hidden border-2 border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-lg shadow-amber-500/5 dark:border-amber-500/30">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
+            <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
+            <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-500/10 to-orange-500/10 text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
+                  <GraduationCap className="size-6" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Take a quick 2-minute assessment to unlock personalized learning recommendations.
-                </p>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Discover Your Level</h3>
+                    <Badge
+                      variant="secondary"
+                      className="border border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/30 dark:text-amber-300"
+                    >
+                      New
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Take a quick 2-minute assessment to unlock personalized learning
+                    recommendations.
+                  </p>
+                </div>
               </div>
-            </div>
-            <Button
-              asChild
-              className="gap-2 bg-gradient-to-r tracking-tight from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600"
-            >
-              <Link href="/onboarding/assessment">
-                Start Assessment
-                <ChevronRight className="size-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+              <Button
+                asChild
+                className="gap-2 bg-gradient-to-r tracking-tight from-amber-500 to-orange-500 text-white shadow-md hover:from-amber-600 hover:to-orange-600"
+              >
+                <Link href="/onboarding/assessment">
+                  Start Assessment
+                  <ChevronRight className="size-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

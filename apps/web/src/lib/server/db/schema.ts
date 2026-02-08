@@ -1,4 +1,13 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -60,3 +69,67 @@ export const verification = pgTable("verification", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+export const cefrProfile = pgTable("cefr_profile", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  assessedLevel: text("assessed_level"),
+  assessedConfidence: real("assessed_confidence"),
+  assessedAt: timestamp("assessed_at"),
+  manualOverrideLevel: text("manual_override_level"),
+  manualOverrideAt: timestamp("manual_override_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const cefrAssessmentAttempt = pgTable("cefr_assessment_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: text("status").notNull(),
+  state: jsonb("state").notNull(),
+  answeredCount: integer("answered_count").default(0).notNull(),
+  thetaMean: real("theta_mean"),
+  thetaLow: real("theta_low"),
+  thetaHigh: real("theta_high"),
+  level: text("level"),
+  confidence: real("confidence"),
+  borderlineLabel: text("borderline_label"),
+  levelProbabilities: jsonb("level_probabilities"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const cefrAssessmentResponse = pgTable(
+  "cefr_assessment_response",
+  {
+    id: text("id").primaryKey(),
+    attemptId: text("attempt_id")
+      .notNull()
+      .references(() => cefrAssessmentAttempt.id, { onDelete: "cascade" }),
+    itemId: text("item_id").notNull(),
+    itemLevel: text("item_level").notNull(),
+    itemDifficulty: real("item_difficulty").notNull(),
+    sequence: integer("sequence").notNull(),
+    selectedIndex: integer("selected_index"),
+    isDontKnow: boolean("is_dont_know").default(false).notNull(),
+    isCorrect: boolean("is_correct").notNull(),
+    responseTimeMs: integer("response_time_ms"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    attemptItemUnique: uniqueIndex("cefr_assessment_response_attempt_item_unique").on(
+      table.attemptId,
+      table.itemId,
+    ),
+  }),
+);
