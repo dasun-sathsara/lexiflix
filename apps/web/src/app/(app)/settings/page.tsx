@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 
+import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { auth } from "@/lib/auth";
 
@@ -12,6 +13,8 @@ export default async function SettingsPage() {
     return null;
   }
 
+  const preferences = await getSettingsPreferences(session.user.id);
+
   return (
     <>
       <AppTopbar title="Settings" />
@@ -21,6 +24,7 @@ export default async function SettingsPage() {
           email: session.user.email,
           image: session.user.image ?? null,
         }}
+        preferences={preferences}
       />
     </>
   );

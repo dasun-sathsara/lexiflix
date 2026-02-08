@@ -133,3 +133,18 @@ export const cefrAssessmentResponse = pgTable(
     ),
   }),
 );
+
+export const userPreferences = pgTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  targetLanguage: text("target_language").default("English").notNull(),
+  dailyWordsGoal: integer("daily_words_goal").default(20).notNull(),
+  emailRemindersEnabled: boolean("email_reminders_enabled").default(true).notNull(),
+  streakAlertsEnabled: boolean("streak_alerts_enabled").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});

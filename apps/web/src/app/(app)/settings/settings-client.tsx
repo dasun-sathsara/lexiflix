@@ -1,6 +1,16 @@
 "use client";
 
-import { CheckCircle2, Loader2, ShieldAlert, ShieldCheck, Trash2, Upload } from "lucide-react";
+import {
+  Bell,
+  CheckCircle2,
+  GraduationCap,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   type ChangeEvent,
@@ -25,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,8 +47,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
 import { changePasswordAction, deleteAccountAction } from "@/features/settings/actions";
+import type { SettingsPreferences } from "@/features/settings/types";
 
 type StatusState = {
   type: "success" | "error";
@@ -50,9 +72,12 @@ type SettingsClientProps = {
     email: string;
     image: string | null;
   };
+  preferences: SettingsPreferences;
 };
 
-export function SettingsClient({ user }: SettingsClientProps) {
+type ManualOverrideSelection = CefrLevel | "assessed";
+
+export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,8 +98,20 @@ export function SettingsClient({ user }: SettingsClientProps) {
   const [passwordStatus, setPasswordStatus] = useState<StatusState>(null);
 
   const [deleteStatus, setDeleteStatus] = useState<StatusState>(null);
+  const [preferencesStatus, setPreferencesStatus] = useState<StatusState>(null);
+
+  const [initialPreferences, setInitialPreferences] = useState(preferences);
+  const [manualOverrideSelection, setManualOverrideSelection] = useState<ManualOverrideSelection>(
+    preferences.manualOverrideLevel ?? "assessed",
+  );
+  const [dailyWordsGoal, setDailyWordsGoal] = useState(String(preferences.dailyWordsGoal));
+  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(
+    preferences.emailRemindersEnabled,
+  );
+  const [streakAlertsEnabled, setStreakAlertsEnabled] = useState(preferences.streakAlertsEnabled);
 
   const [isSavingProfile, startSavingProfile] = useTransition();
+  const [isSavingPreferences, startSavingPreferences] = useTransition();
   const [isUpdatingPassword, startUpdatingPassword] = useTransition();
   const [isDeletingAccount, startDeletingAccount] = useTransition();
 
@@ -112,6 +149,22 @@ export function SettingsClient({ user }: SettingsClientProps) {
     !newPassword.trim() ||
     !confirmPassword.trim() ||
     newPassword.length < 8;
+
+  const parsedDailyWordsGoal = Number.parseInt(dailyWordsGoal, 10);
+  const dailyWordsGoalIsValid =
+    Number.isInteger(parsedDailyWordsGoal) &&
+    parsedDailyWordsGoal >= 1 &&
+    parsedDailyWordsGoal <= 500;
+  const manualOverrideLevel: CefrLevel | null =
+    manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
+  const preferencesChanged =
+    manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
+    parsedDailyWordsGoal !== initialPreferences.dailyWordsGoal ||
+    emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
+    streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
+  const preferencesSubmitDisabled =
+    isSavingPreferences || !dailyWordsGoalIsValid || !preferencesChanged;
+  const effectiveCefrLevel = manualOverrideLevel ?? initialPreferences.assessedLevel;
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -227,6 +280,57 @@ export function SettingsClient({ user }: SettingsClientProps) {
     });
   };
 
+  const handlePreferencesSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!dailyWordsGoalIsValid || preferencesSubmitDisabled) {
+      return;
+    }
+
+    startSavingPreferences(async () => {
+      try {
+        const response = await fetch("/api/settings/preferences", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            manualOverrideLevel,
+            dailyWordsGoal: parsedDailyWordsGoal,
+            emailRemindersEnabled,
+            streakAlertsEnabled,
+          }),
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+          const message = payload.error || "Failed to update preferences.";
+          setPreferencesStatus({ type: "error", message });
+          toast.error(message);
+          return;
+        }
+
+        const nextPreferences = payload.preferences as SettingsPreferences;
+        setInitialPreferences(nextPreferences);
+        setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
+        setDailyWordsGoal(String(nextPreferences.dailyWordsGoal));
+        setEmailRemindersEnabled(nextPreferences.emailRemindersEnabled);
+        setStreakAlertsEnabled(nextPreferences.streakAlertsEnabled);
+        setPreferencesStatus({
+          type: "success",
+          message: "Preferences updated successfully.",
+        });
+        toast.success("Preferences updated");
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to update preferences", error);
+        setPreferencesStatus({ type: "error", message: "Failed to update preferences." });
+        toast.error("Failed to update preferences");
+      }
+    });
+  };
+
   const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -290,7 +394,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
       <header className="space-y-3">
-        <span className="text-xs font-semibold uppercase text-indigo-500">Account</span>
+        <span className="text-xs font-semibold uppercase text-indigo-500">Settings</span>
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">User settings</h1>
           <p className="text-sm text-muted-foreground sm:text-base">
@@ -299,314 +403,531 @@ export function SettingsClient({ user }: SettingsClientProps) {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-6">
-          <form onSubmit={handleProfileSubmit} className="contents">
-            <Card id="profile">
-              <CardHeader>
-                <CardTitle>Profile</CardTitle>
-                <CardDescription>
-                  Refresh your avatar and display name so collaborators recognize you instantly.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex flex-col gap-4 rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
-                  <Avatar className="size-16 sm:size-20">
-                    {avatarPreview ? (
-                      <AvatarImage
-                        src={avatarPreview}
-                        alt="Profile preview"
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <AvatarFallback className="text-base font-medium">{initials}</AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex flex-1 flex-col gap-3">
-                    <p className="text-sm text-muted-foreground">
-                      Upload a square image (JPG, PNG, or WebP). Keep it under 5 MB for the
-                      snappiest sync.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
+      <Tabs defaultValue="account" className="space-y-6">
+        <TabsList className="w-full justify-start sm:w-fit">
+          <TabsTrigger value="account" className="px-4">
+            Account
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="px-4">
+            Preferences
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="account" className="mt-0">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-6">
+              <form onSubmit={handleProfileSubmit} className="contents">
+                <Card id="profile">
+                  <CardHeader>
+                    <CardTitle>Profile</CardTitle>
+                    <CardDescription>
+                      Refresh your avatar and display name so collaborators recognize you instantly.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex flex-col gap-4 rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
+                      <Avatar className="size-16 sm:size-20">
+                        {avatarPreview ? (
+                          <AvatarImage
+                            src={avatarPreview}
+                            alt="Profile preview"
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <AvatarFallback className="text-base font-medium">
+                            {initials}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="flex flex-1 flex-col gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          Upload a square image (JPG, PNG, or WebP). Keep it under 5 MB for the
+                          snappiest sync.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={handleAvatarChange}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="size-4" />
+                            Upload new
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleAvatarReset}
+                            disabled={!hasProfileChanges}
+                          >
+                            Reset
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleAvatarRemove}
+                            disabled={
+                              avatarPreview === null &&
+                              avatarFile === null &&
+                              !initialProfile.avatar
+                            }
+                          >
+                            Remove photo
+                          </Button>
+                          {avatarFileName ? (
+                            <span
+                              className="truncate text-xs text-muted-foreground"
+                              title={avatarFileName}
+                            >
+                              {avatarFileName}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2 space-y-2">
+                        <Label htmlFor="display-name">Display name</Label>
+                        <Input
+                          id="display-name"
+                          value={displayName}
+                          onChange={(event) => {
+                            setDisplayName(event.target.value);
+                            setProfileStatus(null);
+                          }}
+                          placeholder="Your public username"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          This appears on study leaderboards, shared packs, and invitations you
+                          send.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      {profileStatus ? (
+                        <>
+                          {profileStatus.type === "success" ? (
+                            <CheckCircle2 className="size-4 text-emerald-500" />
+                          ) : (
+                            <ShieldAlert className="size-4 text-destructive" />
+                          )}
+                          <span
+                            className={
+                              profileStatus.type === "success"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-destructive"
+                            }
+                          >
+                            {profileStatus.message}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="size-4 text-indigo-500" />
+                          <span className="text-muted-foreground">
+                            Changes save instantly across the dashboard once you hit save.
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <Button type="submit" disabled={profileSubmitDisabled}>
+                      {isSavingProfile ? (
+                        <>
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                          Saving
+                        </>
+                      ) : (
+                        "Save profile"
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </form>
+
+              <form onSubmit={handlePasswordSubmit} className="contents">
+                <Card id="security">
+                  <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>
+                      Rotate your credentials regularly to keep your learning streaks and billing
+                      details secure.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Current password</Label>
                       <Input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        className="hidden"
-                        onChange={handleAvatarChange}
+                        id="current-password"
+                        type="password"
+                        autoComplete="current-password"
+                        value={currentPassword}
+                        onChange={(event) => {
+                          setCurrentPassword(event.target.value);
+                          setPasswordStatus(null);
+                        }}
+                        placeholder="••••••••"
                       />
-                      <Button type="button" size="sm" onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="size-4" />
-                        Upload new
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleAvatarReset}
-                        disabled={!hasProfileChanges}
-                      >
-                        Reset
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleAvatarRemove}
-                        disabled={
-                          avatarPreview === null && avatarFile === null && !initialProfile.avatar
-                        }
-                      >
-                        Remove photo
-                      </Button>
-                      {avatarFileName ? (
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New password</Label>
+                      <Input
+                        id="new-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={newPassword}
+                        onChange={(event) => {
+                          setNewPassword(event.target.value);
+                          setPasswordStatus(null);
+                        }}
+                        placeholder="At least 8 characters"
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="confirm-password">Confirm new password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(event) => {
+                          setConfirmPassword(event.target.value);
+                          setPasswordStatus(null);
+                        }}
+                        placeholder="Repeat your new password"
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      {passwordStatus ? (
+                        <>
+                          {passwordStatus.type === "success" ? (
+                            <CheckCircle2 className="size-4 text-emerald-500" />
+                          ) : (
+                            <ShieldAlert className="size-4 text-destructive" />
+                          )}
+                          <span
+                            className={
+                              passwordStatus.type === "success"
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-destructive"
+                            }
+                          >
+                            {passwordStatus.message}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="size-4 text-indigo-500" />
+                          <span className="text-muted-foreground">
+                            Use a unique phrase. We will never share it with anyone.
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <Button type="submit" disabled={passwordSubmitDisabled}>
+                      {isUpdatingPassword ? (
+                        <>
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                          Updating
+                        </>
+                      ) : (
+                        "Update password"
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </form>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <Card id="danger" className="border-destructive/40 bg-destructive/5">
+                <CardHeader className="space-y-1.5">
+                  <CardTitle>Delete account</CardTitle>
+                  <CardDescription>Remove your LexiFlix data permanently.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    Deleting your account wipes packs, progress, and billing records right away.
+                    Export anything you need before you continue.
+                  </p>
+                </CardContent>
+                <CardFooter className="flex flex-row gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {deleteStatus ? (
+                      <>
+                        {deleteStatus.type === "success" ? (
+                          <CheckCircle2 className="size-4 text-emerald-500" />
+                        ) : (
+                          <ShieldAlert className="size-4 text-destructive" />
+                        )}
                         <span
-                          className="truncate text-xs text-muted-foreground"
-                          title={avatarFileName}
+                          className={
+                            deleteStatus.type === "success"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-destructive"
+                          }
                         >
-                          {avatarFileName}
+                          {deleteStatus.message}
                         </span>
-                      ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <ShieldAlert className="size-4 text-destructive" />
+                        <span>Only proceed if you are sure.</span>
+                      </>
+                    )}
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="px-3"
+                        disabled={isDeletingAccount}
+                      >
+                        {isDeletingAccount ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-4" />
+                        )}
+                        {isDeletingAccount ? "Deleting" : "Delete account"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action is permanent. All packs, analytics, and billing records
+                          disappear immediately.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingAccount}>
+                          Never mind
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/30"
+                          onClick={handleDeleteAccount}
+                          disabled={isDeletingAccount}
+                        >
+                          Delete anyway
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="preferences" className="mt-0">
+          <form onSubmit={handlePreferencesSubmit}>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <Card id="preferences">
+                <CardHeader>
+                  <CardTitle>Learning preferences</CardTitle>
+                  <CardDescription>
+                    Tune your CEFR level and daily pace for a personalized study flow.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-cefr-level">Current CEFR level</Label>
+                      <Select
+                        value={manualOverrideSelection}
+                        onValueChange={(value) => {
+                          if (value === "assessed" || CEFR_LEVELS.includes(value as CefrLevel)) {
+                            setManualOverrideSelection(value as ManualOverrideSelection);
+                          }
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="current-cefr-level" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="assessed">
+                            Use assessment result
+                            {initialPreferences.assessedLevel
+                              ? ` (${initialPreferences.assessedLevel})`
+                              : ""}
+                          </SelectItem>
+                          {CEFR_LEVELS.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Effective level:{" "}
+                        {effectiveCefrLevel ? (
+                          <Badge variant="secondary" className="ml-1">
+                            {effectiveCefrLevel}
+                          </Badge>
+                        ) : (
+                          "Not assessed yet"
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="target-language">Target language</Label>
+                      <Input
+                        id="target-language"
+                        value={initialPreferences.targetLanguage}
+                        readOnly
+                        disabled
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Multi-language support is coming soon.
+                      </p>
                     </div>
                   </div>
-                </div>
 
-                <Separator />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2 space-y-2">
-                    <Label htmlFor="display-name">Display name</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="daily-words-goal">Daily words goal</Label>
                     <Input
-                      id="display-name"
-                      value={displayName}
+                      id="daily-words-goal"
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={dailyWordsGoal}
                       onChange={(event) => {
-                        setDisplayName(event.target.value);
-                        setProfileStatus(null);
+                        setDailyWordsGoal(event.target.value);
+                        setPreferencesStatus(null);
                       }}
-                      placeholder="Your public username"
+                      placeholder="20"
                     />
                     <p className="text-xs text-muted-foreground">
-                      This appears on study leaderboards, shared packs, and invitations you send.
+                      Recommended range: 10-40 words per day.
                     </p>
+                    {!dailyWordsGoalIsValid ? (
+                      <p className="text-xs text-destructive">
+                        Enter a whole number between 1 and 500.
+                      </p>
+                    ) : null}
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                  {profileStatus ? (
-                    <>
-                      {profileStatus.type === "success" ? (
-                        <CheckCircle2 className="size-4 text-emerald-500" />
-                      ) : (
-                        <ShieldAlert className="size-4 text-destructive" />
-                      )}
-                      <span
-                        className={
-                          profileStatus.type === "success"
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-destructive"
-                        }
-                      >
-                        {profileStatus.message}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="size-4 text-indigo-500" />
-                      <span className="text-muted-foreground">
-                        Changes save instantly across the dashboard once you hit save.
-                      </span>
-                    </>
-                  )}
-                </div>
-                <Button type="submit" disabled={profileSubmitDisabled}>
-                  {isSavingProfile ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Saving
-                    </>
-                  ) : (
-                    "Save profile"
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
 
-          <form onSubmit={handlePasswordSubmit} className="contents">
-            <Card id="security">
-              <CardHeader>
-                <CardTitle>Password</CardTitle>
-                <CardDescription>
-                  Rotate your credentials regularly to keep your learning streaks and billing
-                  details secure.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="current-password">Current password</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={currentPassword}
-                    onChange={(event) => {
-                      setCurrentPassword(event.target.value);
-                      setPasswordStatus(null);
-                    }}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">New password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(event) => {
-                      setNewPassword(event.target.value);
-                      setPasswordStatus(null);
-                    }}
-                    placeholder="At least 8 characters"
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="confirm-password">Confirm new password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(event) => {
-                      setConfirmPassword(event.target.value);
-                      setPasswordStatus(null);
-                    }}
-                    placeholder="Repeat your new password"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2 text-sm">
-                  {passwordStatus ? (
-                    <>
-                      {passwordStatus.type === "success" ? (
-                        <CheckCircle2 className="size-4 text-emerald-500" />
-                      ) : (
-                        <ShieldAlert className="size-4 text-destructive" />
-                      )}
-                      <span
-                        className={
-                          passwordStatus.type === "success"
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-destructive"
-                        }
-                      >
-                        {passwordStatus.message}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="size-4 text-indigo-500" />
-                      <span className="text-muted-foreground">
-                        Use a unique phrase. We will never share it with anyone.
-                      </span>
-                    </>
-                  )}
-                </div>
-                <Button type="submit" disabled={passwordSubmitDisabled}>
-                  {isUpdatingPassword ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Updating
-                    </>
-                  ) : (
-                    "Update password"
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-        </div>
+                  <Separator />
 
-        <div className="flex flex-col gap-6">
-          <Card id="danger" className="border-destructive/40 bg-destructive/5">
-            <CardHeader className="space-y-1.5">
-              <CardTitle>Delete account</CardTitle>
-              <CardDescription>Remove your LexiFlix data permanently.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Deleting your account wipes packs, progress, and billing records right away. Export
-                anything you need before you continue.
-              </p>
-            </CardContent>
-            <CardFooter className="flex flex-row gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {deleteStatus ? (
-                  <>
-                    {deleteStatus.type === "success" ? (
-                      <CheckCircle2 className="size-4 text-emerald-500" />
+                  <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1">
+                      <p className="font-medium">Retake CEFR assessment</p>
+                      <p className="text-sm text-muted-foreground">
+                        Run a new adaptive test if you want a fresh estimated level.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" asChild>
+                      <Link href="/onboarding/assessment">
+                        <GraduationCap className="size-4" />
+                        Retake assessment
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card id="preferences-notifications">
+                <CardHeader>
+                  <CardTitle>Notifications</CardTitle>
+                  <CardDescription>Control reminders and streak alerts.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="space-y-1">
+                      <p className="font-medium">Email reminders</p>
+                      <p className="text-sm text-muted-foreground">
+                        Receive a reminder email when your study queue is waiting.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={emailRemindersEnabled}
+                      onCheckedChange={(checked) => {
+                        setEmailRemindersEnabled(checked);
+                        setPreferencesStatus(null);
+                      }}
+                      aria-label="Toggle email reminders"
+                    />
+                  </div>
+
+                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                    <div className="space-y-1">
+                      <p className="font-medium">Streak alerts</p>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when your current streak is at risk.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={streakAlertsEnabled}
+                      onCheckedChange={(checked) => {
+                        setStreakAlertsEnabled(checked);
+                        setPreferencesStatus(null);
+                      }}
+                      aria-label="Toggle streak alerts"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col gap-3">
+                  <div className="flex w-full items-center gap-2 text-sm">
+                    {preferencesStatus ? (
+                      <>
+                        {preferencesStatus.type === "success" ? (
+                          <CheckCircle2 className="size-4 text-emerald-500" />
+                        ) : (
+                          <ShieldAlert className="size-4 text-destructive" />
+                        )}
+                        <span
+                          className={
+                            preferencesStatus.type === "success"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-destructive"
+                          }
+                        >
+                          {preferencesStatus.message}
+                        </span>
+                      </>
                     ) : (
-                      <ShieldAlert className="size-4 text-destructive" />
+                      <>
+                        <Bell className="size-4 text-indigo-500" />
+                        <span className="text-muted-foreground">
+                          Personalization updates apply immediately after saving.
+                        </span>
+                      </>
                     )}
-                    <span
-                      className={
-                        deleteStatus.type === "success"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-destructive"
-                      }
-                    >
-                      {deleteStatus.message}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldAlert className="size-4 text-destructive" />
-                    <span>Only proceed if you are sure.</span>
-                  </>
-                )}
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="px-3"
-                    disabled={isDeletingAccount}
-                  >
-                    {isDeletingAccount ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
+                  </div>
+                  <Button type="submit" disabled={preferencesSubmitDisabled} className="w-full">
+                    {isSavingPreferences ? (
+                      <>
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                        Saving
+                      </>
                     ) : (
-                      <Trash2 className="size-4" />
+                      "Save preferences"
                     )}
-                    {isDeletingAccount ? "Deleting" : "Delete account"}
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action is permanent. All packs, analytics, and billing records disappear
-                      immediately.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isDeletingAccount}>Never mind</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/30"
-                      onClick={handleDeleteAccount}
-                      disabled={isDeletingAccount}
-                    >
-                      Delete anyway
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+                </CardFooter>
+              </Card>
+            </div>
+          </form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
