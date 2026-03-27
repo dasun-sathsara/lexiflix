@@ -329,9 +329,9 @@ export default function DecksPage() {
               {/* Right side - CTA */}
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/packs">
+                  <Link href="/browse">
                     <Layers className="size-4 mr-1.5" />
-                    Manage Packs
+                    Browse Content
                   </Link>
                 </Button>
                 {totalCards > 0 && (

@@ -12,7 +12,6 @@ import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { auth } from "@/lib/auth";
 
 const MOCK_STATS = {
-  userName: "Lexi Learner",
   dailyGoal: {
     reviewed: 15,
     target: 20,
@@ -48,9 +47,7 @@ const MOCK_REVIEW_PLAN = {
   dueLaterToday: 18,
   dueTomorrow: 26,
   estimatedMinutes: 24,
-  focusPacks: [
-    { id: "interstellar", title: "Interstellar", due: 9, accuracy: 78 },
-  ],
+  focusPacks: [{ id: "interstellar", title: "Interstellar", due: 9, accuracy: 78 }],
 } as const;
 
 function clampToInt(value: number) {
@@ -132,6 +129,8 @@ export default async function DashboardPage() {
   const showAssessmentBanner = session?.user
     ? await shouldShowAssessmentBanner(session.user.id)
     : true;
+  const displayName =
+    session?.user?.name?.trim() || session?.user?.email?.split("@")[0] || "Learner";
 
   const { dailyGoal } = MOCK_STATS;
   const todayLoad = MOCK_REVIEW_PLAN.dueNow + MOCK_REVIEW_PLAN.dueLaterToday - dailyGoal.reviewed;
@@ -160,7 +159,7 @@ export default async function DashboardPage() {
               </div>
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Welcome back,{" "}
-                <span className="text-indigo-600 dark:text-indigo-300">{MOCK_STATS.userName}</span>
+                <span className="text-indigo-600 dark:text-indigo-300">{displayName}</span>
               </h1>
               <p className="max-w-xl text-sm text-muted-foreground">
                 Your learning momentum is compounding. Keep the streak alive and clear today’s
@@ -265,7 +264,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href="/packs">Manage</Link>
+                    <Link href="/decks">Manage</Link>
                   </Button>
                   <Button variant="secondary" asChild>
                     <Link href="/decks">Study</Link>

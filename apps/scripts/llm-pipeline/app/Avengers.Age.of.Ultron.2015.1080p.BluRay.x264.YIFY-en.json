@@ -1,13 +1,8 @@
 [
   {
-    "text": "under attack",
+    "text": "lose the element of surprise",
     "type": "idiom",
-    "level": "B1"
-  },
-  {
-    "text": "at long last",
-    "type": "idiom",
-    "level": "B2"
+    "level": "C1"
   },
   {
     "text": "deal with",
@@ -15,19 +10,14 @@
     "level": "B1"
   },
   {
-    "text": "close ranks",
+    "text": "hold them",
     "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "sign up for",
-    "type": "phrasal verb",
-    "level": "B2"
+    "level": "B1"
   },
   {
     "text": "back away",
     "type": "phrasal verb",
-    "level": "B1"
+    "level": "B2"
   },
   {
     "text": "take on",
@@ -35,19 +25,34 @@
     "level": "B1"
   },
   {
-    "text": "close in",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
     "text": "closing in",
     "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "line up",
+    "text": "get inside",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "see that coming",
+    "type": "idiom",
+    "level": "B2"
+  },
+  {
+    "text": "get to",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "get away with",
     "type": "phrasal verb",
     "level": "B2"
+  },
+  {
+    "text": "lining up",
+    "type": "phrasal verb",
+    "level": "B1"
   },
   {
     "text": "go away",
@@ -57,27 +62,17 @@
   {
     "text": "talk through",
     "type": "phrasal verb",
-    "level": "C1"
+    "level": "B2"
   },
   {
-    "text": "get inside",
+    "text": "hiding more than",
     "type": "phrasal verb",
-    "level": "B1"
+    "level": "B2"
   },
   {
-    "text": "get to",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "back to",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "on the way",
+    "text": "wind up",
     "type": "idiom",
-    "level": "B1"
+    "level": "B2"
   },
   {
     "text": "show up",
@@ -85,23 +80,78 @@
     "level": "B1"
   },
   {
-    "text": "look alive",
+    "text": "sign up for",
     "type": "idiom",
     "level": "B2"
   },
   {
-    "text": "wind up",
+    "text": "bring to a close",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "find out",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "give it the once over",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "set up",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "show up again",
+    "type": "idiom",
+    "level": "B2"
+  },
+  {
+    "text": "roll up to",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "hate missing",
+    "type": "idiom",
+    "level": "C1"
+  },
+  {
+    "text": "get together",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "sound tough",
     "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "deep down",
-    "type": "idiom",
-    "level": "B2"
+    "text": "chasing down",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "find a place",
+    "type": "phrasal verb",
+    "level": "B1"
   },
   {
     "text": "run with",
-    "type": "idiom",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "have a temper",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "dig that",
+    "type": "phrasal verb",
     "level": "B2"
   },
   {
@@ -110,14 +160,39 @@
     "level": "C1"
   },
   {
-    "text": "get it up",
+    "text": "wait too long",
     "type": "phrasal verb",
-    "level": "C2"
+    "level": "B2"
   },
   {
-    "text": "hold it against",
+    "text": "deserve a win",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "get it up",
     "type": "phrasal verb",
     "level": "C1"
+  },
+  {
+    "text": "shrink from",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "get after",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "come on",
+    "type": "phrasal verb",
+    "level": "A2"
+  },
+  {
+    "text": "kill the other guy",
+    "type": "idiom",
+    "level": "B2"
   },
   {
     "text": "face with",
@@ -130,13 +205,8 @@
     "level": "B2"
   },
   {
-    "text": "go around",
+    "text": "think through",
     "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "call out",
-    "type": "idiom",
     "level": "B2"
   },
   {
@@ -147,12 +217,17 @@
   {
     "text": "come up",
     "type": "phrasal verb",
-    "level": "B2"
+    "level": "B1"
   },
   {
-    "text": "bust arms",
-    "type": "phrasal verb",
+    "text": "bust arms dealers",
+    "type": "idiom",
     "level": "C1"
+  },
+  {
+    "text": "call out",
+    "type": "phrasal verb",
+    "level": "B2"
   },
   {
     "text": "move out",
@@ -160,9 +235,9 @@
     "level": "B1"
   },
   {
-    "text": "look inside",
-    "type": "phrasal verb",
-    "level": "B2"
+    "text": "look inside my head",
+    "type": "idiom",
+    "level": "C1"
   },
   {
     "text": "tear apart",
@@ -172,37 +247,42 @@
   {
     "text": "go on about",
     "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "answer to",
-    "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "smoke screen",
-    "type": "idiom",
-    "level": "C1"
-  },
-  {
-    "text": "get out",
+    "text": "make sense",
     "type": "phrasal verb",
     "level": "B1"
   },
   {
-    "text": "game-changer",
-    "type": "idiom",
-    "level": "C1"
+    "text": "go to",
+    "type": "phrasal verb",
+    "level": "B1"
   },
   {
-    "text": "make it right",
-    "type": "idiom",
+    "text": "erase",
+    "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "fiddle with",
+    "text": "operate off",
     "type": "phrasal verb",
     "level": "C1"
+  },
+  {
+    "text": "get out of",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "follow",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "make it right",
+    "type": "phrasal verb",
+    "level": "B2"
   },
   {
     "text": "build up",
@@ -210,29 +290,34 @@
     "level": "B2"
   },
   {
-    "text": "find out",
+    "text": "keep your friends rich",
     "type": "idiom",
-    "level": "B2"
+    "level": "C1"
   },
   {
-    "text": "break your heart",
+    "text": "break your old man's heart",
     "type": "idiom",
-    "level": "B2"
+    "level": "C1"
   },
   {
     "text": "walk away",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "throw up",
     "type": "idiom",
     "level": "B2"
+  },
+  {
+    "text": "throw up in my mouth",
+    "type": "idiom",
+    "level": "C2"
   },
   {
     "text": "keep at bay",
     "type": "phrasal verb",
     "level": "C1"
+  },
+  {
+    "text": "go home",
+    "type": "phrasal verb",
+    "level": "B1"
   },
   {
     "text": "wake up",
@@ -250,22 +335,12 @@
     "level": "B2"
   },
   {
-    "text": "call in",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "mess with",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "stay away",
-    "type": "phrasal verb",
+    "text": "move out",
+    "type": "idiom",
     "level": "B1"
   },
   {
-    "text": "shake it off",
+    "text": "shake off",
     "type": "phrasal verb",
     "level": "B2"
   },
@@ -276,53 +351,13 @@
   },
   {
     "text": "get some kip",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "puny",
-    "type": "slang",
-    "level": "B2"
-  },
-  {
-    "text": "go to sleep",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "work with",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "in the air",
     "type": "idiom",
     "level": "B2"
   },
   {
-    "text": "stay down",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "set up",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
     "text": "lay low",
-    "type": "phrasal verb",
+    "type": "idiom",
     "level": "B2"
-  },
-  {
-    "text": "go on",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "carry a big stick",
-    "type": "phrasal verb",
-    "level": "C1"
   },
   {
     "text": "double up",
@@ -330,24 +365,34 @@
     "level": "B2"
   },
   {
-    "text": "have someone's back",
-    "type": "idiom",
-    "level": "B2"
+    "text": "go on",
+    "type": "phrasal verb",
+    "level": "A2"
   },
   {
-    "text": "used up",
+    "text": "teach someone a lesson",
     "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "be hard on",
+    "text": "be proud of",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "have someone's back",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "be hard on someone",
     "type": "idiom",
     "level": "B2"
   },
   {
     "text": "run with it",
     "type": "phrasal verb",
-    "level": "B2"
+    "level": "C1"
   },
   {
     "text": "do the math",
@@ -355,42 +400,22 @@
     "level": "B2"
   },
   {
-    "text": "have a dark side",
+    "text": "give someone time",
     "type": "idiom",
-    "level": "B2"
+    "level": "B1"
   },
   {
-    "text": "tear us apart",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "give a kick",
+    "text": "walk away",
     "type": "phrasal verb",
     "level": "B1"
   },
   {
-    "text": "bring to life",
+    "text": "miss the window",
     "type": "idiom",
     "level": "B2"
   },
   {
-    "text": "skip to",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "rub someone's faces in it",
-    "type": "idiom",
-    "level": "C1"
-  },
-  {
-    "text": "come up with",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "take out of play",
+    "text": "be out of play",
     "type": "idiom",
     "level": "C1"
   },
@@ -400,9 +425,14 @@
     "level": "B2"
   },
   {
-    "text": "fixated on",
-    "type": "slang",
-    "level": "B2"
+    "text": "get an angle on",
+    "type": "idiom",
+    "level": "C1"
+  },
+  {
+    "text": "go after",
+    "type": "phrasal verb",
+    "level": "A2"
   },
   {
     "text": "pay folding money",
@@ -412,130 +442,20 @@
   {
     "text": "dream up",
     "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "back in the day",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "between someone and something",
-    "type": "idiom",
     "level": "C1"
   },
   {
-    "text": "coming back to",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "scratch the surface",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "drop off",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "tear apart",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "find out",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "level the city",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "draw out",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "keep someone occupied",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "take care of",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "break down",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "piece together",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "beat someone from inside",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "worth a go",
+    "text": "be in a loop",
     "type": "idiom",
     "level": "B2"
   },
   {
     "text": "make a stand",
-    "type": "idiom",
+    "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "start again",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "rub someone's faces in it",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "make things right",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "break it down",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "work on",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "fry whatever",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "go underground",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "out of someone's field",
-    "type": "idiom",
-    "level": "C1"
-  },
-  {
-    "text": "make someone stronger",
+    "text": "make stronger",
     "type": "idiom",
     "level": "B2"
   },
@@ -555,32 +475,22 @@
     "level": "C1"
   },
   {
-    "text": "see something coming",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "piss someone off",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "bring something up",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "get through something",
+    "text": "sign up for",
     "type": "phrasal verb",
     "level": "B1"
   },
   {
-    "text": "get first crack at",
-    "type": "idiom",
-    "level": "C1"
+    "text": "light up",
+    "type": "phrasal verb",
+    "level": "B2"
   },
   {
-    "text": "get off (one's) ass",
+    "text": "get off",
+    "type": "phrasal verb",
+    "level": "B1"
+  },
+  {
+    "text": "get the job done",
     "type": "phrasal verb",
     "level": "B2"
   },
@@ -590,38 +500,23 @@
     "level": "C1"
   },
   {
-    "text": "light up",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "get the job done",
+    "text": "blow up",
     "type": "phrasal verb",
     "level": "B1"
   },
   {
-    "text": "make sense",
+    "text": "get through",
     "type": "idiom",
-    "level": "B1"
+    "level": "B2"
   },
   {
-    "text": "find (someone) out",
+    "text": "get away",
     "type": "phrasal verb",
     "level": "B2"
   },
   {
-    "text": "burn out",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "take away",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "go for a ride",
-    "type": "idiom",
+    "text": "make weird",
+    "type": "slang",
     "level": "B2"
   },
   {
@@ -630,29 +525,59 @@
     "level": "B1"
   },
   {
-    "text": "blow up",
+    "text": "keep up",
     "type": "phrasal verb",
     "level": "B1"
   },
   {
-    "text": "walk it off",
+    "text": "get through",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "turn against",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "make a choice",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "get clear",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "load up",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "go full reverse thrust",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "double back",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "get a hand on",
+    "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "work for a living",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "hide the zucchini",
     "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "get through this",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "hold (one's) own",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "come back",
-    "type": "phrasal verb",
-    "level": "B1"
+    "level": "C1"
   },
   {
     "text": "knock out",
@@ -660,64 +585,19 @@
     "level": "B2"
   },
   {
-    "text": "buckle up",
+    "text": "get on",
+    "type": "phrasal verb",
+    "level": "B2"
+  },
+  {
+    "text": "make sense",
     "type": "idiom",
     "level": "B1"
   },
   {
-    "text": "get on board",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "work for a living",
+    "text": "make do with",
     "type": "idiom",
     "level": "B2"
-  },
-  {
-    "text": "get a hand on",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "lose cool",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "make a choice",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "leave behind",
-    "type": "phrasal verb",
-    "level": "B2"
-  },
-  {
-    "text": "get clear",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "run around",
-    "type": "phrasal verb",
-    "level": "B1"
-  },
-  {
-    "text": "have fun",
-    "type": "idiom",
-    "level": "B1"
-  },
-  {
-    "text": "clear the city",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "for god's sake",
-    "type": "idiom",
-    "level": "B1"
   },
   {
     "text": "turn around",
@@ -727,22 +607,7 @@
   {
     "text": "help out",
     "type": "phrasal verb",
-    "level": "A2"
-  },
-  {
-    "text": "make do with",
-    "type": "idiom",
-    "level": "B2"
-  },
-  {
-    "text": "come around",
-    "type": "phrasal verb",
     "level": "B1"
-  },
-  {
-    "text": "in short supply",
-    "type": "idiom",
-    "level": "B2"
   },
   {
     "text": "tap out",
@@ -750,23 +615,18 @@
     "level": "B2"
   },
   {
-    "text": "take a page out of",
-    "type": "phrasal verb",
-    "level": "C1"
-  },
-  {
-    "text": "go to work",
+    "text": "take a page out of someone's book",
     "type": "idiom",
-    "level": "B1"
-  },
-  {
-    "text": "gaze into",
-    "type": "phrasal verb",
     "level": "C1"
   },
   {
     "text": "beat into shape",
     "type": "phrasal verb",
+    "level": "C1"
+  },
+  {
+    "text": "gaze into each other's eyes",
+    "type": "idiom",
     "level": "C1"
   }
 ]

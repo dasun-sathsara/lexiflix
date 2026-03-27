@@ -4,7 +4,6 @@ import {
   Bell,
   Clapperboard,
   Home,
-  Layers,
   type LucideIcon,
   Search,
   Settings2,
@@ -67,11 +66,6 @@ const platformItems: NavItem[] = [
     url: "/decks",
     icon: Sparkles,
     badge: "4",
-  },
-  {
-    title: "My Packs",
-    url: "/packs",
-    icon: Layers,
   },
 ];
 
@@ -149,16 +143,11 @@ function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
       {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => {
-          const isActive =
-            pathname === item.url || pathname.startsWith(`${item.url}/`);
+          const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
 
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-                isActive={isActive}
-              >
+              <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
                 <Link href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
@@ -183,7 +172,12 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
-    <Sidebar variant="inset" collapsible="icon" className="border-r border-sidebar-border" {...props}>
+    <Sidebar
+      variant="inset"
+      collapsible="icon"
+      className="border-r border-sidebar-border"
+      {...props}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -217,61 +211,44 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 }
 
 // Inset wrapper that applies consistent spacing and surface styling for main content
-export function AppInset({
-  className,
-  children,
-}: React.ComponentProps<typeof SidebarInset>) {
-  return (
-    <SidebarInset className={cn("bg-background", className)}>
-      {children}
-    </SidebarInset>
-  );
+export function AppInset({ className, children }: React.ComponentProps<typeof SidebarInset>) {
+  return <SidebarInset className={cn("bg-background", className)}>{children}</SidebarInset>;
 }
 
 // Simple, branded top bar that pairs with the inset layout
-export function AppTopbar({
-  title,
-  right,
-}: {
-  title: string;
-  right?: React.ReactNode;
-}) {
+export function AppTopbar({ title, right }: { title: string; right?: React.ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    createInitialNotifications()
+    createInitialNotifications(),
   );
 
   const { state } = useSidebar();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
-    [notifications]
+    [notifications],
   );
 
   const handleMarkAllAsRead = useCallback(() => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, read: true }))
-    );
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
   }, []);
 
   const handleMarkAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
+        notification.id === id ? { ...notification, read: true } : notification,
+      ),
     );
   }, []);
 
   const handleRemoveNotification = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
-    );
+    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
   }, []);
 
   return (
     <header
       className={cn(
         "sticky top-0 z-20 border-b border-sidebar-border",
-        "bg-sidebar/80 backdrop-blur-md supports-[backdrop-filter]:bg-sidebar/60"
+        "bg-sidebar/80 backdrop-blur-md supports-[backdrop-filter]:bg-sidebar/60",
       )}
     >
       <div className="flex h-14 items-center gap-3 px-4">
@@ -279,7 +256,7 @@ export function AppTopbar({
         <div
           className={cn(
             "h-4 w-px bg-border/60 transition-opacity duration-300",
-            state === "collapsed" ? "opacity-0" : "opacity-100"
+            state === "collapsed" ? "opacity-0" : "opacity-100",
           )}
         />
         <div className="flex items-center gap-2">
@@ -296,9 +273,7 @@ export function AppTopbar({
                 variant="ghost"
                 size="icon"
                 className="relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                aria-label={
-                  unreadCount ? `${unreadCount} unread notifications` : "Notifications"
-                }
+                aria-label={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
               >
                 <Bell className="size-[18px]" />
                 {unreadCount > 0 && (
@@ -335,9 +310,7 @@ export function AppTopbar({
                 {notifications.length === 0 ? (
                   <div className="text-muted-foreground flex flex-col items-center gap-1 px-6 py-8 text-center text-sm">
                     <p>No notifications yet.</p>
-                    <p className="text-xs">
-                      We'll keep you posted when something new arrives.
-                    </p>
+                    <p className="text-xs">We'll keep you posted when something new arrives.</p>
                   </div>
                 ) : (
                   notifications.map((notification) => (
@@ -345,7 +318,7 @@ export function AppTopbar({
                       key={notification.id}
                       className={cn(
                         "items-start gap-3 px-4 py-3",
-                        !notification.read && "bg-accent/10"
+                        !notification.read && "bg-accent/10",
                       )}
                       onSelect={(event) => {
                         event.preventDefault();
@@ -355,16 +328,12 @@ export function AppTopbar({
                       <span
                         className={cn(
                           "mt-1 flex size-2.5 rounded-full",
-                          notification.read ? "bg-muted" : "bg-primary"
+                          notification.read ? "bg-muted" : "bg-primary",
                         )}
                       />
                       <div className="flex flex-1 flex-col gap-1 text-left">
-                        <p className="text-sm font-medium leading-none">
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {notification.description}
-                        </p>
+                        <p className="text-sm font-medium leading-none">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground">{notification.description}</p>
                         <span className="text-xs text-muted-foreground">
                           {formatRelativeTime(notification.createdAt)}
                         </span>

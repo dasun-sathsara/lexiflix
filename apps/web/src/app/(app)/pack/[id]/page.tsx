@@ -247,12 +247,7 @@ function StatBadge({
   };
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5 rounded-lg border px-2 py-1",
-        styles[variant],
-      )}
-    >
+    <div className={cn("flex items-center gap-1.5 rounded-lg border px-2 py-1", styles[variant])}>
       <span className="text-base font-normal tabular-nums">{count}</span>
       <span className="text-[11px] opacity-80">{label}</span>
     </div>
@@ -349,9 +344,9 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
             {/* Back button */}
             <div className="mb-5 -mt-1">
               <Button variant="ghost" size="sm" asChild className="gap-2 hover:bg-background/60">
-                <Link href="/packs">
+                <Link href="/decks">
                   <ArrowLeft className="size-4" />
-                  Back to Packs
+                  Back to Decks
                 </Link>
               </Button>
             </div>
@@ -403,7 +398,12 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
                     <span>~{MOVIE_DATA.estimatedMinutes} min</span>
                   </div>
                 )}
-                <Button size="default" className="gap-2 shadow-sm" asChild disabled={cardsToStudy === 0}>
+                <Button
+                  size="default"
+                  className="gap-2 shadow-sm"
+                  asChild
+                  disabled={cardsToStudy === 0}
+                >
                   <Link href={`/study/${packId}`}>
                     <Play className="size-4" />
                     Start Learning
@@ -706,9 +706,9 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
 
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
-                    <Link href="/packs">
+                    <Link href="/decks">
                       <Layers className="size-3.5" />
-                      All Packs
+                      All Decks
                     </Link>
                   </Button>
                   <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
