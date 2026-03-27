@@ -1,7 +1,34 @@
 import dotenv from "dotenv";
-import { treeifyError, z } from "zod";
+import { z } from "zod";
 
 dotenv.config();
+
+function formatEnvIssues(error: z.ZodError) {
+  return error.issues.map((issue) => {
+    const key = issue.path[0];
+    const label = typeof key === "string" && key.length > 0 ? key : "ENV";
+
+    if (issue.code === "invalid_type" && issue.input === undefined) {
+      return `${label}: missing`;
+    }
+
+    return `${label}: ${issue.message}`;
+  });
+}
+
+function reportEnvValidationIssues(scope: "client" | "server", error: z.ZodError) {
+  const issues = formatEnvIssues(error);
+  const heading = `\n[env] Invalid ${scope} environment variables`;
+  const details = issues.map((issue) => `  - ${issue}`).join("\n");
+
+  console.error(`${heading}\n${details}\n`);
+}
+
+function createEnvValidationError(scope: "client" | "server", error: z.ZodError) {
+  reportEnvValidationIssues(scope, error);
+
+  return new Error(`Invalid ${scope} environment variables. See log output above.`);
+}
 
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z
@@ -37,8 +64,7 @@ const clientRaw = {
 
 const parsedClient = clientSchema.safeParse(clientRaw);
 if (!parsedClient.success) {
-  console.error("❌ Invalid client env:", treeifyError(parsedClient.error).properties);
-  throw new Error("Invalid client environment variables");
+  throw createEnvValidationError("client", parsedClient.error);
 }
 const clientEnv = Object.freeze(parsedClient.data);
 
@@ -46,8 +72,7 @@ let serverEnv: z.infer<typeof serverSchema>;
 if (isServer) {
   const parsedServer = serverSchema.safeParse(process.env);
   if (!parsedServer.success) {
-    console.error("❌ Invalid server env:", treeifyError(parsedServer.error).properties);
-    throw new Error("Invalid server environment variables");
+    throw createEnvValidationError("server", parsedServer.error);
   }
   serverEnv = Object.freeze(parsedServer.data);
 } else {

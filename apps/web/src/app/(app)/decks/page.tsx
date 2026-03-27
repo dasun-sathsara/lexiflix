@@ -328,7 +328,7 @@ export default function DecksPage() {
 
               {/* Right side - CTA */}
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="default" asChild>
                   <Link href="/browse">
                     <Layers className="size-4 mr-1.5" />
                     Browse Content
