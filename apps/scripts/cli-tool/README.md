@@ -4,10 +4,10 @@ Interactive terminal interface for subtitle analysis using Ink and React.
 
 ## Features
 
--   Interactive file selection from `../data/`
--   Real-time processing progress
--   Scrollable results with CEFR color coding
--   Keyboard navigation (↑/↓, Enter, Q/ESC)
+- Interactive file selection from `../data/`
+- Real-time processing progress
+- Scrollable results with CEFR color coding
+- Keyboard navigation (↑/↓, Enter, Q/ESC)
 
 ## Installation
 
@@ -29,19 +29,19 @@ bun run start
 
 ## Interface
 
--   File selection menu
--   Processing spinner
--   Results table: Word | Count | CEFR | Frequency bar
+- File selection menu
+- Processing spinner
+- Results table: Word | Count | CEFR | Frequency bar
 
 ## CEFR Colors
 
--   🟢 A1/A2: Green
--   🟡 B1/B2: Yellow
--   🔴 C1/C2: Red
--   ⚪ N/A: Gray
+- 🟢 A1/A2: Green
+- 🟡 B1/B2: Yellow
+- 🔴 C1/C2: Red
+- ⚪ N/A: Gray
 
 ## Requirements
 
--   Bun
--   Python analyzer setup
--   `.srt` files in `../data/`
+- Bun
+- Python analyzer setup
+- `.srt` files in `../data/`

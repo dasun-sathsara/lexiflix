@@ -9,7 +9,7 @@ export function HomeHero() {
       title2="Movies & TV"
       description="LexiFlix builds level-aware vocabulary packs from the subtitles of the stories you plan to watch, so you walk into every episode confident, prepared, and ready to retain more."
       badge={
-        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-1 text-xs font-semibold uppercase  text-indigo-600 shadow-sm backdrop-blur-sm font-ubuntu-mono dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
+        <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200/70 bg-white/70 px-4 py-0 text-xs font-semibold uppercase  text-indigo-600 shadow-sm backdrop-blur-sm font-ubuntu-mono dark:border-indigo-500/50 dark:bg-indigo-900/40 dark:text-indigo-200">
           Pre-learn before you press play
         </span>
       }

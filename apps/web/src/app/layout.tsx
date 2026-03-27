@@ -5,14 +5,14 @@ import { cn } from "@/lib/utils";
 import { AppProviders } from "@/providers/app-providers";
 
 const inter = Inter({
-  variable: "--font-lexiflix-sans",
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
   preload: true,
 });
 
 const geist = Geist({
-  variable: "--font-geist",
+  variable: "--font-lexiflix-sans",
   subsets: ["latin"],
   display: "swap",
   preload: true,
@@ -54,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", inter.className, inter.variable, geist.variable, ubuntuMono.variable)}
+      className={cn("h-full", geist.className, geist.variable, inter.variable, ubuntuMono.variable)}
     >
       <body className="h-full font-sans antialiased bg-background text-foreground">
         <AppProviders>{children}</AppProviders>

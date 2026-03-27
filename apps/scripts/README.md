@@ -44,18 +44,18 @@ bun run start
 
 ### Python Analyzer
 
--   spaCy-based linguistic analysis
--   CEFR level classification
--   JSON/CSV output
+- spaCy-based linguistic analysis
+- CEFR level classification
+- JSON/CSV output
 
 ### CLI Tool
 
--   Interactive file selection
--   Real-time processing feedback
--   Scrollable results with CEFR visualization
+- Interactive file selection
+- Real-time processing feedback
+- Scrollable results with CEFR visualization
 
 ## Requirements
 
--   Python 3.11+
--   Bun
--   uv package manager
+- Python 3.11+
+- Bun
+- uv package manager

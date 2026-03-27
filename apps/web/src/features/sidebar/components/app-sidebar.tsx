@@ -3,16 +3,14 @@
 import {
   Bell,
   Clapperboard,
-  Film,
   Home,
-  List,
   type LucideIcon,
   Search,
   Settings2,
   Sparkles,
-  Tv,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
 import { useCallback, useMemo, useState } from "react";
@@ -29,30 +27,27 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { NavMain } from "@/features/sidebar/components/nav-main";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
-
-type SubNavItem = {
-  title: string;
-  url: string;
-};
 
 type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
   badge?: string;
-  items?: SubNavItem[];
 };
 
 const platformItems: NavItem[] = [
@@ -65,54 +60,16 @@ const platformItems: NavItem[] = [
     title: "Browse",
     url: "/browse",
     icon: Search,
-    items: [
-      {
-        title: "Trending",
-        url: "/browse/trending",
-      },
-      {
-        title: "New Releases",
-        url: "/browse/new",
-      },
-      {
-        title: "Coming Soon",
-        url: "/browse/coming-soon",
-      },
-    ],
   },
   {
-    title: "My List",
-    url: "/my-list",
-    icon: List,
-    badge: "8",
-  },
-];
-
-const libraryItems: NavItem[] = [
-  {
-    title: "Movies",
-    url: "/library/movies",
-    icon: Film,
-  },
-  {
-    title: "Series",
-    url: "/library/series",
-    icon: Tv,
-  },
-  {
-    title: "Originals",
-    url: "/library/originals",
+    title: "My Decks",
+    url: "/decks",
     icon: Sparkles,
+    badge: "4",
   },
 ];
 
 const generalItems: NavItem[] = [
-  {
-    title: "Notifications",
-    url: "/notifications",
-    icon: Bell,
-    badge: "3",
-  },
   {
     title: "Settings",
     url: "/settings",
@@ -177,6 +134,34 @@ function formatRelativeTime(date: Date) {
   return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
 }
 
+// Clean navigation menu component with proper active states
+function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
+  const pathname = usePathname();
+
+  return (
+    <SidebarGroup>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+      <SidebarMenu>
+        {items.map((item) => {
+          const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
+
+          return (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+              {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
     name: string;
@@ -186,60 +171,37 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const pathname = usePathname();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { state } = useSidebar();
-
-  const processItems = useCallback(
-    (items: NavItem[]) =>
-      items.map((item) => {
-        const nestedItems = item.items?.map((subItem) => ({
-          ...subItem,
-          isActive: pathname === subItem.url,
-        }));
-
-        const isActive =
-          pathname === item.url ||
-          pathname.startsWith(`${item.url}/`) ||
-          nestedItems?.some((subItem) => subItem.isActive);
-
-        return {
-          ...item,
-          items: nestedItems,
-          isActive,
-        };
-      }),
-    [pathname],
-  );
-
-  const navPlatform = useMemo(() => processItems(platformItems), [processItems]);
-  const navLibrary = useMemo(() => processItems(libraryItems), [processItems]);
-  const navGeneral = useMemo(() => processItems(generalItems), [processItems]);
-
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar
+      variant="inset"
+      collapsible="icon"
+      className="border-r border-sidebar-border"
+      {...props}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" variant={"plane"} asChild>
-              <a href="/">
+              <Link href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
                   <Clapperboard className="size-[18px]" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">LexiFlix</span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">Entertainment</span>
+                  <span className="truncate font-semibold">LexiFlix</span>
+                  <span className="truncate text-xs text-sidebar-foreground/70">
+                    Learn with entertainment
+                  </span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navPlatform} label="Platform" />
-        <NavMain items={navLibrary} label="Library" />
-        <NavMain items={navGeneral} label="General" />
+        <NavMenu items={platformItems} label="Platform" />
+        <NavMenu items={generalItems} label="General" />
       </SidebarContent>
+      <SidebarSeparator />
       <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>
@@ -250,7 +212,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
 // Inset wrapper that applies consistent spacing and surface styling for main content
 export function AppInset({ className, children }: React.ComponentProps<typeof SidebarInset>) {
-  return <SidebarInset className={className}>{children}</SidebarInset>;
+  return <SidebarInset className={cn("bg-background", className)}>{children}</SidebarInset>;
 }
 
 // Simple, branded top bar that pairs with the inset layout
@@ -258,6 +220,8 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
   const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
     createInitialNotifications(),
   );
+
+  const { state } = useSidebar();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
@@ -281,9 +245,20 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
   }, []);
 
   return (
-    <header className="bg-background/85 py-0.5 supports-[backdrop-filter]:backdrop-blur border-b border-border sticky top-0 z-20">
+    <header
+      className={cn(
+        "sticky top-0 z-20 border-b border-sidebar-border",
+        "bg-sidebar/80 backdrop-blur-md supports-[backdrop-filter]:bg-sidebar/60",
+      )}
+    >
       <div className="flex h-14 items-center gap-3 px-4">
         <SidebarTrigger className="-ml-1" />
+        <div
+          className={cn(
+            "h-4 w-px bg-border/60 transition-opacity duration-300",
+            state === "collapsed" ? "opacity-0" : "opacity-100",
+          )}
+        />
         <div className="flex items-center gap-2">
           <div className="bg-sidebar-primary/15 text-sidebar-primary flex size-6 items-center justify-center rounded-md">
             <Clapperboard className="size-4" />
