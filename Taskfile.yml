@@ -1,0 +1,97 @@
+version: "3"
+
+vars:
+  WEB_DIR: /Users/pabasara/Dev/lexiflix/apps/web
+  DOPPLER_PROJECT: '{{default "lexiflix_web" .DOPPLER_PROJECT}}'
+  DOPPLER_CONFIG: '{{default "dev" .DOPPLER_CONFIG}}'
+
+tasks:
+  web:dev:
+    desc: Run the Next.js web app locally
+    dir: "{{.WEB_DIR}}"
+    env:
+      DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+      DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+    cmds:
+      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm dev
+
+  web:lint:
+    desc: Lint the web app with Biome
+    dir: "{{.WEB_DIR}}"
+    cmds:
+      - pnpm lint
+
+  web:typecheck:
+    desc: Typecheck the web app
+    dir: "{{.WEB_DIR}}"
+    env:
+      DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+      DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+    cmds:
+      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm tsc
+
+  web:build:
+    desc: Build the web app
+    dir: "{{.WEB_DIR}}"
+    env:
+      DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+      DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+    cmds:
+      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm build
+
+  vercel:web:sync-envs:
+    desc: Sync required apps/web env vars from Doppler into a Vercel environment
+    dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{default "lexiflix_web" .DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{default "prd" .DOPPLER_CONFIG}}'
+      VERCEL_ENV: '{{default "preview" .VERCEL_ENV}}'
+      VERCEL_GIT_BRANCH: '{{default "dev" .VERCEL_GIT_BRANCH}}'
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+      - sh: command -v vercel >/dev/null 2>&1
+        msg: "Vercel CLI is required. Install it before running this task."
+      - sh: command -v jq >/dev/null 2>&1
+        msg: "jq is required. Install it before running this task."
+      - sh: test -f .vercel/project.json
+        msg: "apps/web is not linked to Vercel yet. Run: task vercel:web:link"
+    cmds:
+      - |
+        set -euo pipefail
+
+        for key in $(doppler secrets --only-names --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" --json | jq -r 'keys[]'); do
+          case "${key}" in
+            DOPPLER_CONFIG|DOPPLER_ENVIRONMENT|DOPPLER_PROJECT)
+              continue
+              ;;
+          esac
+
+          echo "Syncing ${key} -> {{.VERCEL_ENV}}"
+          value="$(doppler secrets get "${key}" --plain --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}")"
+          cmd=(vercel env add "${key}" "{{.VERCEL_ENV}}")
+          if [ "{{.VERCEL_ENV}}" = "preview" ]; then
+            cmd+=("{{.VERCEL_GIT_BRANCH}}")
+          fi
+          cmd+=(--value "${value}" --force --yes --non-interactive)
+
+          if ! "${cmd[@]}"; then
+            echo "Failed syncing ${key} to Vercel environment '{{.VERCEL_ENV}}'."
+            exit 1
+          fi
+        done
+
+        if [ "{{.VERCEL_ENV}}" = "preview" ]; then
+          echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}' for branch '{{.VERCEL_GIT_BRANCH}}'."
+        else
+          echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}'."
+        fi

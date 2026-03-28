@@ -1,41 +1,113 @@
-# Repository Guidelines
+# LexiFlix Web App Guide
 
-## Project Structure & Module Organization
+## Scope
 
-- `src/app` holds Next.js 15 routes, layouts, and server components; use kebab-case folders for route segments.
-- Shared UI lives in `src/components`, with design-system primitives under `src/components/ui`; centralized helpers sit in `src/lib`.
-- Co-locate feature assets in `public` when they must be web-accessible; keep configuration at the root (`next.config.ts`, `tsconfig.json`, `biome.json`).
-- Place tests beside the code they cover, using `.test.ts(x)` filenames or a `__tests__` directory within the relevant module.
+This file applies to `/Users/pabasara/Dev/lexiflix/apps/web`.
 
-## Build, Test, and Development Commands
+The web app is the center of the LexiFlix product. It owns the user-facing application, authentication, route handlers, durable product state, and the browser-side experience around packs, decks, study flows, and settings.
 
-- `pnpm install` — install project dependencies (Node 18.18+ required).
-- `pnpm dev` — launch the Next.js dev server with HMR at http://localhost:3000.
-- `pnpm build` — create the optimized production bundle used by deploys.
-- `pnpm start` — run the previously built bundle for local production checks.
-- `pnpm lint` — execute type-aware linting via Biome.
-- `pnpm format` — apply Biome formatting to stabilize diffs.
+## Development Workflow
 
-## Coding Style & Naming Conventions
+The preferred workflow is to run web app commands from the repository root through `task`, because the Taskfile already wires Doppler-backed environment injection where needed.
 
-- TypeScript-first codebase; default to `.tsx` for React components and `.ts` for utilities.
-- Follow two-space indentation, Tailwind CSS utility classes, and the `@/` alias for imports from `src`.
-- Components/hooks use PascalCase (e.g., `SidebarMenu`, `useAuth`); helpers stay camelCase, and route folders use kebab-case.
-- Let Biome handle linting/formatting—avoid manual whitespace tweaks.
+Preferred commands:
 
-## Testing Guidelines
+- `task web:dev`
+- `task web:typecheck`
+- `task web:build`
+- `task web:lint`
+- `task vercel:web:sync-envs`
 
-- Prefer Vitest with React Testing Library for UI behaviour; document manual verification when automation is absent.
-- Name tests `ComponentName.test.tsx` or place them in `__tests__`; keep imports relative to the unit under test.
-- Ensure new code paths can be linted (`pnpm lint`) and describe manual test steps in PRs until CI harness arrives.
+Direct `pnpm` commands are still valid from `apps/web`, but use them intentionally:
 
-## Commit & Pull Request Guidelines
+- `pnpm dev`
+- `pnpm tsc`
+- `pnpm lint`
+- `pnpm build`
+- `pnpm db:generate`
+- `pnpm db:migrate`
+- `pnpm db:studio`
 
-- Use conventional commits (`feat: add signup form`) with imperative summaries scoped to one change.
-- PRs should explain the problem, summarize the solution, link relevant issues, and include UI screenshots or clips when visuals change.
-- List manual verification steps and note any follow-up work; keep diffs focused to simplify review.
+## Environment Rules
 
-## Security & Configuration Tips
+This app validates env vars at startup through `src/lib/env.ts`. If env is broken, development, typechecking, builds, and database tooling may fail early.
 
-- Store secrets outside the repo; rely on environment variables managed by the deployment platform.
-- Consult `components.json` when extending the design system, and confirm Tailwind tokens exist before adding custom CSS.
+Current required server-side envs include:
+
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `RESEND_API_KEY`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_ENDPOINT`
+- `R2_PUBLIC_BASE_URL`
+- `TMDB_API_KEY`
+
+Current public envs include:
+
+- `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_ENV`
+
+Do not print or copy secret values into diffs, docs, or responses.
+
+## Project Structure
+
+- `src/app`: App Router routes, layouts, loading states, and API route handlers
+- `src/features`: feature-level UI and server logic
+- `src/components/common`: hand-written shared UI
+- `src/components/ui`: lower-level design system primitives
+- `src/lib`: auth, env validation, integrations, DB helpers, storage, email, and utility code
+- `drizzle`: SQL migrations and metadata snapshots
+
+Keep product behavior in feature modules or dedicated library files when possible. Do not dump everything into route files just because it is convenient in the moment.
+
+## Coding Guidance
+
+This app is TypeScript-first and already has established patterns. Follow them.
+
+- Use the `@/` import alias for code under `src`.
+- Let Biome handle formatting and linting.
+- Respect the existing visual language unless the task is explicitly about redesign.
+- Do not casually churn `src/components/ui`; those primitives should remain stable unless the change belongs there.
+- Prefer focused changes over wide refactors in a demo project.
+
+## Architecture Constraints
+
+The current repo-level direction is:
+
+- Next.js is the only public app surface
+- Trigger.dev will orchestrate background workflows
+- Python handles narrow NLP compute through `apps/nlp_service`
+- the frontend polls app-owned job endpoints rather than talking to infrastructure directly
+
+That means:
+
+- do not make the browser talk directly to the Python service
+- do not introduce a second public backend inside the web app
+- do not reintroduce Celery/Redis assumptions into the web layer
+- do not scatter Gemini calls across route handlers; AI integration should stay behind internal adapters
+
+## Validation Expectations
+
+There is no established test suite here yet. Do not pretend Vitest, Playwright, or CI coverage exists unless you add it.
+
+For most changes, the minimum useful validation is:
+
+- `task web:typecheck`
+- `task web:lint`
+- manual verification of the affected route or interaction in the browser
+
+If you skip validation because the environment is unavailable, say so explicitly.
+
+## Deployment Notes
+
+The app is intended to deploy on Vercel. The Taskfile includes a Vercel env sync task backed by Doppler.
+
+If a task involves deploy-time config:
+
+- keep Vercel preview vs production env behavior in mind
+- remember that preview env syncs are branch-scoped
+- prefer updating the Taskfile or docs rather than inventing one-off shell workflows
