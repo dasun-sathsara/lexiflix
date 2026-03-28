@@ -1,8 +1,5 @@
 "use client";
 
-import { Search } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -13,6 +10,9 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Genre } from "@/lib/tmdb";
+import { Search } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 interface BrowseControlsProps {
   genres: Genre[];

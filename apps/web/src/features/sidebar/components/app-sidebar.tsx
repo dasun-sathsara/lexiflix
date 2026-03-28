@@ -1,19 +1,5 @@
 "use client";
 
-import {
-  Bell,
-  Clapperboard,
-  Home,
-  type LucideIcon,
-  Search,
-  Settings2,
-  Sparkles,
-  X,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type * as React from "react";
-import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,6 +28,20 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
+import {
+  Bell,
+  Clapperboard,
+  Home,
+  type LucideIcon,
+  Search,
+  Settings2,
+  Sparkles,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type * as React from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type NavItem = {
   title: string;

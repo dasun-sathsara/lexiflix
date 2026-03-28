@@ -1,0 +1,89 @@
+"""Subtitle text preprocessing — parsing, cleaning, and deduplication.
+
+Extracted from the original analyzer script. Each function is a small,
+testable unit with no side-effects beyond its return value.
+"""
+
+from __future__ import annotations
+
+import html
+import re
+
+import srt  # type: ignore[import-untyped]
+
+from app.core.exceptions import SRTParsingError
+
+
+# ---------------------------------------------------------------------------
+# Cleaning
+# ---------------------------------------------------------------------------
+
+
+def clean_subtitle_text(text: str) -> str:
+    """Remove HTML tags, bracketed cues, speaker labels, and collapse whitespace."""
+    text = html.unescape(text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\[[^\]]*\]", " ", text)
+    text = re.sub(r"\([^\)]*\)", " ", text)
+    text = re.sub(r"\{[^\}]*\}", " ", text)
+    # Speaker labels like "JOHN: ..."
+    text = re.sub(r"^[A-Z][A-Z0-9\s\-]{1,20}:\s*", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+# ---------------------------------------------------------------------------
+# SRT parsing
+# ---------------------------------------------------------------------------
+
+
+def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
+    """Parse raw SRT markup into a list of cleaned subtitle lines.
+
+    Raises ``SRTParsingError`` if the SRT content is malformed.
+    """
+    try:
+        subs = list(srt.parse(srt_text))
+    except Exception as exc:
+        raise SRTParsingError(
+            "Failed to parse SRT content.",
+            detail=str(exc),
+        ) from exc
+
+    cleaned: list[str] = []
+    for sub in subs:
+        line = sub.content.replace("\n", " ").strip()
+        line = clean_subtitle_text(line)
+        if line:
+            cleaned.append(line)
+
+    if not dedup_lines:
+        return cleaned
+
+    return _deduplicate_lines(cleaned)
+
+
+def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
+    """Split pre-extracted plain text into lines and optionally deduplicate."""
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not dedup_lines:
+        return lines
+    return _deduplicate_lines(lines)
+
+
+# ---------------------------------------------------------------------------
+# Deduplication
+# ---------------------------------------------------------------------------
+
+
+def _deduplicate_lines(lines: list[str]) -> list[str]:
+    """Case-insensitive, punctuation-insensitive dedup preserving order."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for line in lines:
+        key = re.sub(r"[^\w\s]", "", line.casefold())
+        key = re.sub(r"\s+", " ", key).strip()
+        if key not in seen:
+            seen.add(key)
+            result.append(line)
+    return result

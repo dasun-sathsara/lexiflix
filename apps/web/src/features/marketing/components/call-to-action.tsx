@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
-import { motion } from "motion/react";
 import { LayoutTextFlip } from "@/components/common/layout-text-flip";
 import { ElegantButton } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { motion } from "motion/react";
 
 export function CallToActionSection() {
   return (

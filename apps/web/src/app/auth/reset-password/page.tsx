@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
+import { Suspense } from "react";
 
 function ResetPasswordContent() {
   return (

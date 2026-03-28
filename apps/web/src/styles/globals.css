@@ -73,8 +73,7 @@
 /* Custom font classes with fallback stacks */
 .font-geist {
   font-family:
-    var(--font-lexiflix-sans), system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+    var(--font-lexiflix-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .font-ubuntu-mono {

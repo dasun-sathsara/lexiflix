@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { CallToActionSection } from "@/features/marketing/components/call-to-action";
 import { FAQSection } from "@/features/marketing/components/faq";
 import { FeaturesSection } from "@/features/marketing/components/features";
@@ -7,6 +6,7 @@ import { HomeHero } from "@/features/marketing/components/home-hero";
 import { MarketingNavbar } from "@/features/marketing/components/marketing-navbar";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { headers } from "next/headers";
 
 export default async function Home() {
   const session = await auth.api.getSession({ headers: await headers() });

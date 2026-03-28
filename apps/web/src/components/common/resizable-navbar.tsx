@@ -1,9 +1,9 @@
 "use client";
+import { cn } from "@/lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 
 type NavbarProps = Omit<React.ComponentPropsWithoutRef<typeof motion.div>, "children"> & {
   children: React.ReactNode;

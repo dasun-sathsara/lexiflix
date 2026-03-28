@@ -1,47 +1,144 @@
 # LexiFlix NLP Service
 
-This service is the Python-side NLP component for LexiFlix. Its job is intentionally narrow: take subtitle or transcript input, run language analysis that is better served by Python tooling, and return structured vocabulary candidates to the rest of the application.
+Internal Python microservice for subtitle analysis and vocabulary extraction. Called by Trigger.dev workflows as a single compute step — not intended for direct browser access.
 
-The service is not intended to own authentication, user-facing routes, workflow orchestration, or persistent product state. Those responsibilities remain in the main Next.js application and the surrounding workflow layer.
+## Architecture Role
 
-## Intended Role
+This service is deliberately narrow. It accepts subtitle text (SRT or plain text), runs the NLP pipeline, and returns structured vocabulary candidates as JSON. It does **not** own:
 
-The long-term role of this service is to provide subtitle analysis capabilities that would be awkward or lower quality in a TypeScript-only stack. That includes tasks such as subtitle normalization, tokenization, lemmatization, POS tagging, NER-based filtering, and candidate vocabulary extraction.
+- Authentication or sessions
+- Job orchestration or queues
+- Durable product state
+- Browser-facing routes
 
-The surrounding application will then take that structured output and continue with user-level filtering, Gemini enrichment, artifact generation, and persistence.
+For the full architecture picture, see [docs/architecture.md](/docs/architecture.md).
 
-## Current Status
+## Project Structure
 
-Right now this service is a scaffold. The codebase and dependencies indicate the intended NLP direction, but the HTTP service layer has not been fully implemented yet. The current `main.py` is still a placeholder, so this directory should be treated as a work-in-progress service boundary rather than a finished runtime.
+```
+apps/nlp_service/
+├── app/
+│   ├── main.py              # FastAPI app factory + startup lifecycle
+│   ├── api/                  # Route modules (HTTP layer only)
+│   │   ├── analysis.py       # POST /api/v1/analyze
+│   │   └── health.py         # GET /health, GET /ready
+│   ├── core/                 # Settings, logging, exceptions
+│   │   ├── exceptions.py     # Structured domain exceptions
+│   │   ├── logging.py        # Centralized logging setup
+│   │   └── settings.py       # Environment-driven config (pydantic-settings)
+│   ├── models/               # Internal domain structures
+│   │   └── vocabulary.py     # WordStats dataclass
+│   ├── schemas/              # Pydantic request/response models
+│   │   ├── requests.py       # AnalyzeRequest, AnalysisOptions
+│   │   └── responses.py      # AnalyzeResponse, VocabularyCandidate, etc.
+│   └── services/             # NLP pipeline logic
+│       ├── cefr.py           # CEFR level lookup + normalization
+│       ├── pipeline.py       # Pipeline façade (main entry point)
+│       ├── spacy_models.py   # spaCy model loading + singleton
+│       ├── text_processing.py # SRT parsing, cleaning, dedup
+│       └── token_filters.py  # Token exclusion rules
+├── tests/                    # Test suite
+├── main.py                   # Uvicorn runner shim
+├── pyproject.toml            # Dependencies + tooling config
+└── .python-version           # Python 3.13
+```
 
-That is acceptable for the current stage of the project. The architecture has already settled on Python as the place for NLP, even though the final service contract is still being built.
+## Quick Start
 
-## Tooling
+### Prerequisites
 
-This service uses Python 3.13 and is managed with `uv`. The dependency set currently includes spaCy, `spacy-transformers`, PyTorch CPU builds, and related NLP libraries.
+- Python 3.13+
+- [uv](https://docs.astral.sh/uv/) package manager
+- A spaCy English model (at minimum `en_core_web_sm`)
 
-Install dependencies from this directory with:
+### Setup
 
 ```bash
+# From apps/nlp_service/
 uv sync
+
+# Download a spaCy model (pick one)
+uv run python -m spacy download en_core_web_sm    # smallest, fastest
+uv run python -m spacy download en_core_web_lg    # better accuracy
+uv run python -m spacy download en_core_web_trf   # transformer-backed, best accuracy
 ```
 
-Once development commands are finalized, they should be documented here. For now, the current configuration already supports linting and type-checking through the tools declared in `pyproject.toml`.
-
-Examples:
+### Run the Dev Server
 
 ```bash
-uv run ruff check .
-uv run ruff format .
-uv run basedpyright
+# From repo root (preferred):
+task nlp:dev
+
+# Or directly:
+cd apps/nlp_service
+NLP_DEBUG=true uv run uvicorn app.main:app --reload
 ```
 
-## Deployment Direction
+The service starts on `http://localhost:8000`. With `NLP_DEBUG=true`, the interactive API docs are available at `/docs`.
 
-The current plan is to package this service as a container and deploy it to an already rented VPS through a deployment pipeline. That choice is deliberate. It keeps the service lightweight, avoids unnecessary cloud orchestration complexity, and gives direct control over CPU-heavy NLP workloads.
+### Example Request
 
-The service is expected to be internal-facing. Trigger.dev workflows or the main application backend will call it over HTTP. Browsers should not call it directly.
+```bash
+curl -X POST http://localhost:8000/api/v1/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "1\n00:00:01,000 --> 00:00:04,000\nThe quick brown fox jumped over the lazy dog.\n\n2\n00:00:05,000 --> 00:00:08,000\nShe sells seashells by the seashore.",
+    "content_type": "srt",
+    "job_id": "test-123"
+  }'
+```
 
-## Relationship to the Main App
+## Configuration
 
-The main app lives in [apps/web](/Users/pabasara/Dev/lexiflix/apps/web). That is the public product surface. This service is only a specialized compute dependency behind that app. If you are trying to understand the overall system design, read the repository-level architecture document at [docs/architecture.md](/Users/pabasara/Dev/lexiflix/docs/architecture.md) first.
+All settings are read from environment variables with an `NLP_` prefix:
+
+| Variable                       | Default   | Description                               |
+| ------------------------------ | --------- | ----------------------------------------- |
+| `NLP_DEBUG`                    | `false`   | Enable debug mode (auto-reload, API docs) |
+| `NLP_HOST`                     | `0.0.0.0` | Server bind address                       |
+| `NLP_PORT`                     | `8000`    | Server port                               |
+| `NLP_LOG_LEVEL`                | `info`    | Logging level                             |
+| `NLP_SPACY_PREFER_GPU`         | `true`    | Attempt GPU acceleration                  |
+| `NLP_SPACY_PREFER_TRANSFORMER` | `true`    | Prefer transformer models                 |
+| `NLP_SPACY_BATCH_SIZE`         | `200`     | Default spaCy batch size                  |
+
+## API Endpoints
+
+| Method | Path              | Description                                 |
+| ------ | ----------------- | ------------------------------------------- |
+| `GET`  | `/health`         | Liveness probe                              |
+| `GET`  | `/ready`          | Readiness probe (reports spaCy model state) |
+| `POST` | `/api/v1/analyze` | Subtitle analysis → vocabulary candidates   |
+
+## Development Commands
+
+```bash
+# Lint
+uv run ruff check .
+
+# Format
+uv run ruff format .
+
+# Type check
+uv run basedpyright
+
+# Run tests
+uv run pytest
+
+# Run server with auto-reload
+NLP_DEBUG=true uv run uvicorn app.main:app --reload
+```
+
+## Deployment
+
+The service is packaged as a container and deployed to the project's VPS. See the architecture document for deployment rationale.
+
+```bash
+# Build from apps/nlp_service/
+docker build -t lexiflix-nlp-service .
+
+# Run locally
+docker run --rm -p 8000:8000 lexiflix-nlp-service
+```
+
+The committed [Dockerfile](/Users/pabasara/Dev/lexiflix/apps/nlp_service/Dockerfile) resolves dependencies directly from `pyproject.toml`, installs `en_core_web_trf` during the image build, and defaults to transformer-first inference in the container. GPU use still defaults off for VPS/container predictability. Override `SPACY_MODEL` at build time or `NLP_*` variables at runtime if you need a lighter profile.

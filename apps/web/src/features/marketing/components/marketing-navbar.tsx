@@ -1,18 +1,18 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { type MouseEvent, useState } from "react";
 import {
   MobileNav,
   MobileNavHeader,
   MobileNavMenu,
   MobileNavToggle,
-  NavBody,
   Navbar,
+  NavBody,
   NavItems,
 } from "@/components/common/resizable-navbar";
 import { ElegantButton } from "@/components/ui/button";
+import Image from "next/image";
+import Link from "next/link";
+import { type MouseEvent, useState } from "react";
 
 const navItems = [
   {

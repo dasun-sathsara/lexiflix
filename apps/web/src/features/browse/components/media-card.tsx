@@ -1,9 +1,9 @@
-import { Star } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb";
+import { Star } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface MediaCardProps {
   media: TMDBResult;
