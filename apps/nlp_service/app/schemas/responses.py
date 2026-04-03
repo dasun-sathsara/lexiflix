@@ -42,11 +42,11 @@ class VocabularyCandidate(BaseModel):
     )
     confidence: float | None = Field(
         default=None,
-        description="Optional confidence score. Reserved for future use.",
+        description="Calibrated CEFR confidence score in the range [0, 1].",
     )
     notes: str | None = Field(
         default=None,
-        description="Freeform metadata — e.g. 'participial adjective treated as verb'.",
+        description="Machine-readable CEFR provenance or downgrade reason.",
     )
 
 

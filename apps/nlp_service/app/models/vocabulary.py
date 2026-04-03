@@ -17,6 +17,8 @@ class WordStats:
     count: int = 0
     cefr_label: str | None = None
     cefr_num: int | None = None  # 1=A1 … 6=C2
+    cefr_confidence: float | None = None
+    cefr_note: str | None = None
     pos_counts: Counter[str] = field(default_factory=Counter)
     surface_counts: Counter[str] = field(default_factory=Counter)
     capitalized_count: int = 0

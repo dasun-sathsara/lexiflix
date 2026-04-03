@@ -135,7 +135,7 @@ class AnalysisPipeline:
         *,
         include_propn: bool,
     ) -> dict[str, WordStats]:
-        """Filter tokens, count frequencies, assign CEFR levels, collect contexts."""
+        """Filter tokens, count frequencies, calibrate CEFR levels, collect contexts."""
         allowed_pos: set[str] = {"NOUN", "VERB", "ADJ", "ADV"}
         if include_propn:
             allowed_pos.add("PROPN")
@@ -178,14 +178,17 @@ class AnalysisPipeline:
                 ):
                     stats.contexts.append(line_text)
 
-                # CEFR lookup with fallbacks
-                num, label = self._cefr_lookup.best_level_for_token(token, lemma)
-                if num is not None and label is not None:
-                    if stats.cefr_num is None or num < stats.cefr_num:
-                        stats.cefr_num = num
-                        stats.cefr_label = label
-
+        self._apply_calibrated_cefr(word_stats)
         return self._prune_word_stats(word_stats, include_propn=include_propn)
+
+    def _apply_calibrated_cefr(self, word_stats: dict[str, WordStats]) -> None:
+        """Assign calibrated CEFR labels after lemma aggregation."""
+        for lemma, stats in word_stats.items():
+            result = self._cefr_lookup.resolve_candidate(lemma, stats.dominant_pos)
+            stats.cefr_num = result.level_num
+            stats.cefr_label = result.level_label
+            stats.cefr_confidence = result.confidence
+            stats.cefr_note = result.note
 
     @staticmethod
     def _prune_word_stats(
@@ -244,6 +247,8 @@ class AnalysisPipeline:
                 cefr_numeric=stats.cefr_num,
                 count=stats.count,
                 contexts=[CandidateContext(text=ctx) for ctx in stats.contexts],
+                confidence=stats.cefr_confidence,
+                notes=stats.cefr_note,
             )
             for lemma, stats in sorted_items
         ]
