@@ -63,10 +63,11 @@ def normalize_cefr_value(val: object) -> tuple[int | None, str | None]:
 
     # IntEnum-style
     try:
-        num = int(val)  # type: ignore[arg-type]
-        label = NUM_TO_LABEL.get(num)
-        if label:
-            return num, label
+        if isinstance(val, int | float | str):
+            num = int(val)
+            label = NUM_TO_LABEL.get(num)
+            if label:
+                return num, label
     except (TypeError, ValueError):
         pass
 

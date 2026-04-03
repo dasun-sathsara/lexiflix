@@ -13,7 +13,6 @@ import srt  # type: ignore[import-untyped]
 
 from app.core.exceptions import SRTParsingError
 
-
 # ---------------------------------------------------------------------------
 # Cleaning
 # ---------------------------------------------------------------------------
