@@ -2,6 +2,10 @@
 
 Internal Python microservice for subtitle analysis and vocabulary extraction. Called by Trigger.dev workflows as a single compute step — not intended for direct browser access.
 
+The service bundles `EFLLex.tsv` under `app/data/` and uses it to calibrate
+`cefrpy` outputs conservatively. In v1, single-word candidates never emit `C2`;
+unverified advanced labels are downgraded one step instead.
+
 ## Architecture Role
 
 This service is deliberately narrow. It accepts subtitle text (SRT or plain text), runs the NLP pipeline, and returns structured vocabulary candidates as JSON. It does **not** own:
@@ -28,11 +32,14 @@ apps/nlp_service/
 │   │   └── settings.py       # Environment-driven config (pydantic-settings)
 │   ├── models/               # Internal domain structures
 │   │   └── vocabulary.py     # WordStats dataclass
+│   ├── data/
+│   │   ├── __init__.py
+│   │   └── EFLLex.tsv        # Bundled CEFR calibration lexicon
 │   ├── schemas/              # Pydantic request/response models
 │   │   ├── requests.py       # AnalyzeRequest, AnalysisOptions
 │   │   └── responses.py      # AnalyzeResponse, VocabularyCandidate, etc.
 │   └── services/             # NLP pipeline logic
-│       ├── cefr.py           # CEFR level lookup + normalization
+│       ├── cefr.py           # EFLLex-calibrated CEFR resolution
 │       ├── pipeline.py       # Pipeline façade (main entry point)
 │       ├── spacy_models.py   # spaCy model loading + singleton
 │       ├── text_processing.py # SRT parsing, cleaning, dedup
