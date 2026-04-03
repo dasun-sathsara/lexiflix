@@ -3,8 +3,11 @@
 Internal Python microservice for subtitle analysis and vocabulary extraction. Called by Trigger.dev workflows as a single compute step — not intended for direct browser access.
 
 The service bundles `EFLLex.tsv` under `app/data/` and uses it to calibrate
-`cefrpy` outputs conservatively. In v1, single-word candidates never emit `C2`;
-unverified advanced labels are downgraded one step instead.
+`cefrpy` outputs conservatively. Advanced labels are only preserved when the
+signals align strongly; otherwise they are downgraded to reduce overclassification.
+When EFLLex has no entry for a candidate, the fallback policy is intentionally
+conservative because raw `cefrpy` advanced labels are not trusted on their own:
+raw `C2` is reduced to `C1`, and raw `C1` is reduced to `B2`.
 
 ## Architecture Role
 

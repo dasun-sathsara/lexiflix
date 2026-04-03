@@ -460,14 +460,18 @@ class CEFRLookup:
         if raw_num is None or raw_label is None:
             return efllex_num, efllex_signal.level_label, note
 
+        strong_direct_advanced_support = (
+            not efllex_used_lemma_fallback
+            and not efllex_signal.used_pos_fallback
+            and efllex_signal.note == "cefr:efllex"
+            and efllex_signal.confidence >= 0.9
+        )
+
         final_num = efllex_num
         if raw_num <= 4 and efllex_num == 5:
             can_promote_to_c1 = (
                 raw_num >= 3
-                and not efllex_used_lemma_fallback
-                and not efllex_signal.used_pos_fallback
-                and efllex_signal.note == "cefr:efllex"
-                and efllex_signal.confidence >= 0.75
+                and strong_direct_advanced_support
             )
             final_num = 5 if can_promote_to_c1 else raw_num
         elif raw_num <= 4 and efllex_num <= 4:
@@ -475,7 +479,7 @@ class CEFRLookup:
         elif raw_num == 5 and efllex_num == 5:
             final_num = 5
         elif raw_num == 6 and efllex_num == 5:
-            final_num = 5
+            final_num = 6 if strong_direct_advanced_support else 5
         else:
             final_num = efllex_num
 
@@ -492,6 +496,8 @@ class CEFRLookup:
                 return final_num, final_label, f"cefr:downgraded_from_{raw_label.lower()}_to_{final_label.lower()}_efllex_cap"
             return final_num, final_label, "cefr:efllex+cefrpy"
 
+        if raw_num == 6 and final_num == 6:
+            return final_num, final_label, "cefr:c2_supported_by_cefrpy+strong_efllex"
         if note.startswith("cefr:efllex"):
             return final_num, final_label, "cefr:efllex+cefrpy"
         return final_num, final_label, note
