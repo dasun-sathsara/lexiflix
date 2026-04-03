@@ -1,0 +1,41 @@
+meta {
+  name: Analyze Plain Text
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{host}}/api/v1/analyze
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "job_id": "bruno-plain-001",
+    "content_type": "plain_text",
+    "content": "The cat wandered through the abandoned theater. Later, it discovered a hidden staircase behind the curtain.",
+    "study_language": "en",
+    "options": {
+      "include_propn": false,
+      "dedup_lines": true,
+      "batch_size": 200
+    }
+  }
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns candidate list", function() {
+    const body = res.getBody();
+    expect(body.metadata.job_id).to.equal("bruno-plain-001");
+    expect(body.candidates).to.be.an("array");
+  });
+}

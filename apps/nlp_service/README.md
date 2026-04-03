@@ -37,7 +37,6 @@ apps/nlp_service/
 │       ├── spacy_models.py   # spaCy model loading + singleton
 │       ├── text_processing.py # SRT parsing, cleaning, dedup
 │       └── token_filters.py  # Token exclusion rules
-├── tests/                    # Test suite
 ├── main.py                   # Uvicorn runner shim
 ├── pyproject.toml            # Dependencies + tooling config
 └── .python-version           # Python 3.13
@@ -75,6 +74,55 @@ NLP_DEBUG=true uv run uvicorn app.main:app --reload
 ```
 
 The service starts on `http://localhost:8000`. With `NLP_DEBUG=true`, the interactive API docs are available at `/docs`.
+
+Important: the local `uv` path does not install a spaCy English model for you. If you skip the `spacy download` step above, startup will fail with `SpaCyModelError: No suitable spaCy model found`.
+
+## Local Docker with Colima
+
+If your goal is to smoke-test the API rather than iterate on Python internals, use Colima plus Docker first. That path is more predictable because the image installs the spaCy model during build.
+
+### 1. Start Colima
+
+```bash
+colima start --cpu 4 --memory 8 --disk 60
+docker context use colima
+docker info
+```
+
+If `docker info` fails, Colima is not ready yet.
+
+### 2. Build the image
+
+For quick local testing, prefer the smaller spaCy model instead of the default transformer image:
+
+```bash
+# From repo root
+task nlp:docker:build
+
+# Optional: build a heavier image closer to the committed default
+task nlp:docker:build SPACY_MODEL=en_core_web_trf
+```
+
+The task defaults to `en_core_web_sm` because it is materially faster and lighter for demo-time endpoint testing. That is the better tradeoff here unless you specifically need transformer behaviour.
+
+### 3. Run the container
+
+```bash
+# From repo root
+task nlp:docker:run
+```
+
+The API will be available at `http://localhost:8000`.
+
+### 4. Stop the container and Colima
+
+Stop the running container with `Ctrl+C`.
+
+When you are done with Docker entirely:
+
+```bash
+colima stop
+```
 
 ### Example Request
 
@@ -128,6 +176,28 @@ uv run pytest
 # Run server with auto-reload
 NLP_DEBUG=true uv run uvicorn app.main:app --reload
 ```
+
+## Bruno Collection
+
+A Bruno collection is checked in at [apps/nlp_service/bruno](/Users/pabasara/Dev/lexiflix/apps/nlp_service/bruno).
+
+It includes:
+
+- `GET /health`
+- `GET /ready`
+- `POST /api/v1/analyze` with SRT input
+- `POST /api/v1/analyze` with plain text input
+- `POST /api/v1/analyze` with invalid SRT to verify the `422` error path
+
+### Using the collection
+
+1. Open Bruno.
+2. Import or open the folder [apps/nlp_service/bruno](/Users/pabasara/Dev/lexiflix/apps/nlp_service/bruno) as a collection.
+3. Select the `local` environment from `environments/local.bru`.
+4. Confirm `host` is `http://localhost:8000`.
+5. Run `Health`, then `Ready`, then either analysis request.
+
+If you expose the container on a different port, update `host` in the Bruno environment file or override it inside Bruno.
 
 ## Deployment
 

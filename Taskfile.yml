@@ -31,6 +31,23 @@ tasks:
     cmds:
       - uv run --extra dev basedpyright
 
+  nlp:docker:build:
+    desc: Build the NLP service container for local testing
+    dir: "{{.NLP_DIR}}"
+    vars:
+      IMAGE_NAME: '{{default "lexiflix-nlp-service" .IMAGE_NAME}}'
+      SPACY_MODEL: '{{default "en_core_web_sm" .SPACY_MODEL}}'
+    cmds:
+      - docker build --build-arg SPACY_MODEL="{{.SPACY_MODEL}}" -t "{{.IMAGE_NAME}}" .
+
+  nlp:docker:run:
+    desc: Run the NLP service container locally
+    vars:
+      IMAGE_NAME: '{{default "lexiflix-nlp-service" .IMAGE_NAME}}'
+      PORT: '{{default "8000" .PORT}}'
+    cmds:
+      - docker run --rm --name lexiflix-nlp-service -p "{{.PORT}}:8000" "{{.IMAGE_NAME}}"
+
   web:dev:
     desc: Run the Next.js web app locally
     dir: "{{.WEB_DIR}}"

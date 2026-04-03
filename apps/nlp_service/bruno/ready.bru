@@ -1,0 +1,23 @@
+meta {
+  name: Ready
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{host}}/ready
+  auth: none
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns readiness fields", function() {
+    const body = res.getBody();
+    expect(["ok", "loading"]).to.include(body.status);
+    expect(body).to.have.property("spacy_model_loaded");
+    expect(body).to.have.property("spacy_model_name");
+  });
+}

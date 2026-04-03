@@ -15,11 +15,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 ARG UV_VERSION=0.8.13
 ARG SPACY_MODEL=en_core_web_trf
+ARG UV_HTTP_TIMEOUT=120
+
+ENV UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT}
 
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends curl ca-certificates \
+    && apt-get install --yes --no-install-recommends build-essential curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh
