@@ -13,6 +13,33 @@ import srt  # type: ignore[import-untyped]
 
 from app.core.exceptions import SRTParsingError
 
+_METADATA_PREFIXES = (
+    "caption by",
+    "captions by",
+    "downloaded from",
+    "encoded by",
+    "resync by",
+    "resynced by",
+    "rip by",
+    "subscene",
+    "subtitle by",
+    "subtitles by",
+    "synced by",
+    "thanks to ",
+    "translated by",
+    "www.",
+)
+
+_METADATA_SNIPPETS = (
+    "opensubtitles",
+    "subscene",
+    "tvsubtitles",
+    "yify",
+    "yts",
+    "http://",
+    "https://",
+)
+
 # ---------------------------------------------------------------------------
 # Cleaning
 # ---------------------------------------------------------------------------
@@ -29,6 +56,21 @@ def clean_subtitle_text(text: str) -> str:
     text = re.sub(r"^[A-Z][A-Z0-9\s\-]{1,20}:\s*", "", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
+
+
+def is_subtitle_metadata_line(text: str) -> bool:
+    """Detect credits and release metadata that should not reach the pipeline."""
+    normalized = text.casefold().strip()
+    if not normalized:
+        return True
+
+    if any(normalized.startswith(prefix) for prefix in _METADATA_PREFIXES):
+        return True
+
+    if any(snippet in normalized for snippet in _METADATA_SNIPPETS):
+        return True
+
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -53,7 +95,7 @@ def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
     for sub in subs:
         line = sub.content.replace("\n", " ").strip()
         line = clean_subtitle_text(line)
-        if line:
+        if line and not is_subtitle_metadata_line(line):
             cleaned.append(line)
 
     if not dedup_lines:
@@ -64,7 +106,11 @@ def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
 
 def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
     """Split pre-extracted plain text into lines and optionally deduplicate."""
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    lines = [
+        line
+        for ln in text.splitlines()
+        if (line := clean_subtitle_text(ln)) and not is_subtitle_metadata_line(line)
+    ]
     if not dedup_lines:
         return lines
     return _deduplicate_lines(lines)

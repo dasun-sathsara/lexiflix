@@ -23,7 +23,7 @@ from app.schemas.responses import (
 from app.services.cefr import CEFRLookup
 from app.services.spacy_models import model_manager
 from app.services.text_processing import parse_srt_content, split_plain_text
-from app.services.token_filters import get_valid_lemma
+from app.services.token_filters import get_valid_lemma, token_looks_like_name_reference
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,6 @@ class AnalysisPipeline:
         # 3. Token filtering + CEFR resolution
         word_stats = self._process_docs(
             docs,
-            lines=lines,
             include_propn=request.options.include_propn,
         )
 
@@ -134,7 +133,6 @@ class AnalysisPipeline:
         self,
         docs: Iterable[Doc],
         *,
-        lines: list[str],
         include_propn: bool,
     ) -> dict[str, WordStats]:
         """Filter tokens, count frequencies, assign CEFR levels, collect contexts."""
@@ -155,12 +153,23 @@ class AnalysisPipeline:
 
                 stats = word_stats.get(lemma)
                 if stats is None:
-                    stats = WordStats(
-                        count=0,
-                        primary_pos=token.pos_,
-                    )
+                    stats = WordStats()
                     word_stats[lemma] = stats
                 stats.count += 1
+                if token.pos_:
+                    stats.pos_counts[token.pos_] += 1
+
+                surface = token.text.casefold().strip()
+                if surface and surface.isalpha():
+                    stats.surface_counts[surface] += 1
+
+                if token.text.islower():
+                    stats.lowercase_count += 1
+                elif token.text[:1].isupper():
+                    stats.capitalized_count += 1
+
+                if token_looks_like_name_reference(token):
+                    stats.name_like_count += 1
 
                 # Collect context examples (up to limit)
                 if (
@@ -176,7 +185,46 @@ class AnalysisPipeline:
                         stats.cefr_num = num
                         stats.cefr_label = label
 
-        return word_stats
+        return self._prune_word_stats(word_stats, include_propn=include_propn)
+
+    @staticmethod
+    def _prune_word_stats(
+        word_stats: dict[str, WordStats],
+        *,
+        include_propn: bool,
+    ) -> dict[str, WordStats]:
+        """Drop low-signal artifacts and proper nouns that slipped past token filtering."""
+        filtered: dict[str, WordStats] = {}
+        for lemma, stats in word_stats.items():
+            if AnalysisPipeline._should_drop_low_signal_candidate(stats):
+                continue
+            if not include_propn and AnalysisPipeline._looks_like_missed_proper_noun(
+                stats
+            ):
+                continue
+            filtered[lemma] = stats
+        return filtered
+
+    @staticmethod
+    def _should_drop_low_signal_candidate(stats: WordStats) -> bool:
+        """Drop one-off garbage that has no CEFR signal and no repetition."""
+        if stats.count == 1 and stats.cefr_num is None:
+            return True
+        return False
+
+    @staticmethod
+    def _looks_like_missed_proper_noun(stats: WordStats) -> bool:
+        """Prune candidates that behave like names even when NER/POS missed them."""
+        if stats.count == 0:
+            return False
+        if stats.lowercase_count > 0:
+            return False
+        if stats.cefr_num is not None and stats.cefr_num < 4:
+            return False
+
+        capitalized_ratio = stats.capitalized_count / stats.count
+        name_like_ratio = stats.name_like_count / stats.count
+        return capitalized_ratio >= 0.8 and name_like_ratio >= 0.5
 
     @staticmethod
     def _build_candidates(
@@ -189,7 +237,7 @@ class AnalysisPipeline:
         )
         return [
             VocabularyCandidate(
-                text=lemma,
+                text=stats.representative_text or lemma,
                 lemma=lemma,
                 type=stats.pos_category,
                 cefr_level=stats.cefr_label,

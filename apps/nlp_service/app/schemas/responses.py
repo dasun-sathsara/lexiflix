@@ -16,7 +16,10 @@ class CandidateContext(BaseModel):
 class VocabularyCandidate(BaseModel):
     """A single candidate vocabulary item extracted by the NLP pipeline."""
 
-    text: str = Field(..., description="Surface form of the word (lowercased).")
+    text: str = Field(
+        ...,
+        description="Representative observed surface form for the candidate (lowercased).",
+    )
     lemma: str = Field(..., description="Lemmatized form.")
     type: str = Field(
         ...,

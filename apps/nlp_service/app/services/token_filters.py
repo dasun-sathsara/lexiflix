@@ -9,6 +9,9 @@ from __future__ import annotations
 
 from spacy.tokens import Token  # type: ignore[import-untyped]
 
+_TITLE_MARKERS = {"agent", "dr", "doctor", "miss", "mr", "mrs", "ms"}
+_SHORT_NAME_CONNECTORS = {"and", "of", "the"}
+
 
 def is_named_entity_token(token: Token) -> bool:
     """Exclude tokens that belong to any named entity span."""
@@ -68,22 +71,64 @@ def token_should_be_excluded(token: Token, allowed_pos: set[str]) -> bool:
     return False
 
 
+def token_looks_like_name_reference(token: Token) -> bool:
+    """Heuristic for short title-cased references that NER may miss."""
+    text = token.text.strip()
+    if not text or not token.is_alpha or not text[0].isupper():
+        return False
+
+    alpha_tokens = [doc_token for doc_token in token.doc if doc_token.is_alpha]
+    if len(alpha_tokens) == 1:
+        return True
+
+    if token.i > 0:
+        prev = token.doc[token.i - 1].text.rstrip(".").casefold()
+        if prev in _TITLE_MARKERS:
+            return True
+
+    if token.i + 1 < len(token.doc) and token.doc[token.i + 1].text in {"'s", "’s"}:
+        return True
+
+    if len(alpha_tokens) <= 3 and all(
+        doc_token.text[0].isupper()
+        or doc_token.text.casefold() in _SHORT_NAME_CONNECTORS
+        for doc_token in alpha_tokens
+    ):
+        return True
+
+    return False
+
+
+def _verb_lemma(token: Token) -> str | None:
+    from lemminflect import getLemma  # type: ignore[import-untyped]
+
+    lemmas = getLemma(token.text, upos="VERB")
+    for candidate in lemmas:
+        cleaned = candidate.casefold().strip()
+        if cleaned and cleaned.isalpha():
+            return cleaned
+    return None
+
+
 def get_valid_lemma(token: Token, allowed_pos: set[str]) -> str | None:
     """Return cleaned lemma if the token passes all filters, else ``None``."""
     if token_should_be_excluded(token, allowed_pos):
         return None
 
-    lemma = token.lemma_.lower().strip()
+    lemma = token.lemma_.casefold().strip()
+
+    if token.pos_ == "VERB":
+        verb_lemma = _verb_lemma(token)
+        if verb_lemma:
+            lemma = verb_lemma
 
     # Participial adjectives → prefer verb lemma
     if token.pos_ == "ADJ" and (
-        token.text.lower().endswith("ed") or token.text.lower().endswith("ing")
+        token.text.casefold().endswith("ed") or token.text.casefold().endswith("ing")
     ):
-        from lemminflect import getLemma  # type: ignore[import-untyped]
-
-        verb_lemma_tuple = getLemma(token.text, upos="VERB")
-        if verb_lemma_tuple:
-            lemma = verb_lemma_tuple[0].lower().strip()
+        verb_lemma = _verb_lemma(token)
+        if verb_lemma:
+            lemma = verb_lemma
 
     # Only purely alphabetic lemmas survive
     if not lemma or not lemma.isalpha():
