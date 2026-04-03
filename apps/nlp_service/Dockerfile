@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -21,16 +23,21 @@ ENV UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT}
 
 WORKDIR /app
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
     && apt-get install --yes --no-install-recommends build-essential curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh
 
-COPY pyproject.toml README.md ./
-RUN uv sync --no-dev --no-install-project
+COPY pyproject.toml uv.lock README.md ./
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    uv sync --frozen --no-dev --no-install-project
 
-RUN uv run python -m spacy download "${SPACY_MODEL}"
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    uv run python -m spacy download "${SPACY_MODEL}"
 
 COPY app ./app
 COPY main.py ./main.py
