@@ -5,10 +5,15 @@ import type { SettingsPreferences } from "@/features/settings/types";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
 
+const DEFAULT_STUDY_LANGUAGE_CODE = "en";
 const DEFAULT_TARGET_LANGUAGE = "English";
 const DEFAULT_DAILY_WORDS_GOAL = 20;
 const DEFAULT_EMAIL_REMINDERS_ENABLED = true;
 const DEFAULT_STREAK_ALERTS_ENABLED = true;
+
+const STUDY_LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+};
 
 function toCefrLevel(value: string | null | undefined): CefrLevel | null {
   if (!value) {
@@ -16,6 +21,14 @@ function toCefrLevel(value: string | null | undefined): CefrLevel | null {
   }
 
   return CEFR_LEVELS.includes(value as CefrLevel) ? (value as CefrLevel) : null;
+}
+
+function studyLanguageLabel(code: string | null | undefined) {
+  if (!code) {
+    return DEFAULT_TARGET_LANGUAGE;
+  }
+
+  return STUDY_LANGUAGE_LABELS[code] ?? code;
 }
 
 export async function getSettingsPreferences(userId: string): Promise<SettingsPreferences> {
@@ -31,7 +44,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
       .then((rows) => rows[0] ?? null),
     db
       .select({
-        targetLanguage: userPreferences.targetLanguage,
+        studyLanguageCode: userPreferences.studyLanguageCode,
         dailyWordsGoal: userPreferences.dailyWordsGoal,
         emailRemindersEnabled: userPreferences.emailRemindersEnabled,
         streakAlertsEnabled: userPreferences.streakAlertsEnabled,
@@ -45,7 +58,9 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
   return {
     assessedLevel: toCefrLevel(profile?.assessedLevel),
     manualOverrideLevel: toCefrLevel(profile?.manualOverrideLevel),
-    targetLanguage: preferences?.targetLanguage ?? DEFAULT_TARGET_LANGUAGE,
+    targetLanguage: studyLanguageLabel(
+      preferences?.studyLanguageCode ?? DEFAULT_STUDY_LANGUAGE_CODE,
+    ),
     dailyWordsGoal: preferences?.dailyWordsGoal ?? DEFAULT_DAILY_WORDS_GOAL,
     emailRemindersEnabled: preferences?.emailRemindersEnabled ?? DEFAULT_EMAIL_REMINDERS_ENABLED,
     streakAlertsEnabled: preferences?.streakAlertsEnabled ?? DEFAULT_STREAK_ALERTS_ENABLED,
@@ -53,6 +68,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
 }
 
 export const settingsPreferenceDefaults = {
+  studyLanguageCode: DEFAULT_STUDY_LANGUAGE_CODE,
   targetLanguage: DEFAULT_TARGET_LANGUAGE,
   dailyWordsGoal: DEFAULT_DAILY_WORDS_GOAL,
   emailRemindersEnabled: DEFAULT_EMAIL_REMINDERS_ENABLED,

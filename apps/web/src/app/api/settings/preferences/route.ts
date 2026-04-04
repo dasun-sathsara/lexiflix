@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       .insert(userPreferences)
       .values({
         userId: session.user.id,
-        targetLanguage: settingsPreferenceDefaults.targetLanguage,
+        studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
         dailyWordsGoal,
         emailRemindersEnabled,
         streakAlertsEnabled,
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       .onConflictDoUpdate({
         target: userPreferences.userId,
         set: {
-          targetLanguage: settingsPreferenceDefaults.targetLanguage,
+          studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
           dailyWordsGoal,
           emailRemindersEnabled,
           streakAlertsEnabled,

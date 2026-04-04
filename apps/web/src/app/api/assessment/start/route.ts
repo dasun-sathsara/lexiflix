@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     id: attemptId,
     userId: session.user.id,
     status: "in_progress",
-    state: state as unknown as Record<string, unknown>,
+    state,
     answeredCount: 0,
   });
 

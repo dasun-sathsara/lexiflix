@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       .update(cefrAssessmentAttempt)
       .set({
         status: "completed",
-        state: next.state as unknown as Record<string, unknown>,
+        state: next.state,
         answeredCount: next.state.answeredCount,
         thetaMean: result.thetaMean,
         thetaLow: result.thetaLow,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         level: result.bestLevel,
         confidence: result.confidence,
         borderlineLabel: result.borderlineLabel,
-        levelProbabilities: result.levelProbabilities as unknown as Record<string, number>,
+        levelProbabilities: result.levelProbabilities,
         completedAt: new Date(),
       })
       .where(eq(cefrAssessmentAttempt.id, attemptId));
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
   await db
     .update(cefrAssessmentAttempt)
     .set({
-      state: next.state as unknown as Record<string, unknown>,
+      state: next.state,
       answeredCount: next.state.answeredCount,
       thetaMean: next.summary.thetaMean,
       thetaLow: next.summary.thetaLow,
@@ -165,7 +165,7 @@ export async function POST(request: Request) {
       level: next.summary.bestLevel,
       confidence: next.summary.confidence,
       borderlineLabel: next.summary.borderlineLabel,
-      levelProbabilities: next.summary.levelProbabilities as unknown as Record<string, number>,
+      levelProbabilities: next.summary.levelProbabilities,
     })
     .where(eq(cefrAssessmentAttempt.id, attemptId));
 

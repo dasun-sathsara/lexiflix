@@ -74,6 +74,8 @@ This matters because asynchronous systems often drift into a bad habit of treati
 
 Cloudflare R2 complements the database by storing the large generated artifacts. Audio clips, generated images, and similar assets belong there. The database only needs references, ownership, and metadata. This keeps the core domain relational and queryable while keeping the artifact layer operationally simple.
 
+The database also stores subtitle availability results, including negative outcomes, so the product can explain when subtitle-backed generation is unavailable instead of blindly retrying the same missing provider lookup. This is a small addition, but it materially improves demo behavior and keeps provider interactions disciplined.
+
 ## The Pack Generation Workflow
 
 The core workflow begins when the user requests a pack for a selected title. The Next.js app validates the request, computes an idempotency key, and creates or reuses a `jobs` row in Postgres. That row is the durable anchor for everything that follows. If the request is new, the app triggers a Trigger.dev workflow and returns the job handle to the frontend.
@@ -97,6 +99,8 @@ Gemini is the only LLM provider in the architecture. That is not because provide
 To solve that, all Gemini calls should go through one internal adapter layer. That adapter is responsible for request construction, prompt versioning, and four execution modes: live, record, replay, and mock. In live mode, it calls Gemini directly. In record mode, it calls Gemini and saves the normalized response under a stable request fingerprint. In replay mode, it skips the API call and reuses the stored response. In mock mode, it returns deterministic fake output suitable for local development and UI work.
 
 This is more useful than a gateway-level caching story because it solves the actual local development problem. The team does not need another network service to manage AI requests. It needs the ability to work on the app repeatedly without burning budget or waiting on model APIs every time.
+
+For persistence, the application treats pipeline-derived JSONB payloads as a single active contract, not as a versioned compatibility matrix. If the NLP or LLM output shape changes in a breaking way, the expected maintenance path is to purge and rebuild the affected derived data. That is the correct trade for a demo app with rebuildable pipeline state; carrying multiple generations of compatibility parsing would create more system than product.
 
 ## Local Development and Production Differences
 
