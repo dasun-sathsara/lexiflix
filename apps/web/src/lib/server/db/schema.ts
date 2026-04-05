@@ -18,15 +18,14 @@ import type {
   ArtifactMetadata,
   AssessmentAttemptState,
   AssessmentLevelProbabilities,
+  ContentAnalysisSummary,
   ExampleSentenceList,
-  GenerationJobEventPayload,
   GenerationRequestSnapshot,
   NlpCandidateContext,
   NotificationPayload,
   ProcessingWarningList,
-  SubtitleAvailabilityMetadata,
-  SubtitleSnapshotMetadata,
   TmdbRawPayload,
+  WorkflowEventPayload,
 } from "./json-contracts";
 
 /*
@@ -50,17 +49,20 @@ export const assessmentAttemptStatusEnum = pgEnum("assessment_attempt_status", [
   "completed",
 ]);
 export const contentKindEnum = pgEnum("content_kind", ["movie", "season"]);
-export const subtitleProviderEnum = pgEnum("subtitle_provider", ["opensubtitles", "manual_upload"]);
-export const subtitleFormatEnum = pgEnum("subtitle_format", ["srt", "plain_text"]);
-export const subtitleAvailabilityStatusEnum = pgEnum("subtitle_availability_status", [
-  "available",
-  "unavailable",
-  "error",
-]);
-export const artifactKindEnum = pgEnum("artifact_kind", ["subtitle", "audio", "image", "avatar"]);
+export const artifactKindEnum = pgEnum("artifact_kind", ["audio", "image", "avatar"]);
 export const artifactAccessEnum = pgEnum("artifact_access", ["private", "signed", "public"]);
 export const runStatusEnum = pgEnum("run_status", ["queued", "running", "completed", "failed"]);
-export const extractionSourceEnum = pgEnum("extraction_source", ["nlp", "llm"]);
+export const contentAnalysisStageEnum = pgEnum("content_analysis_stage", [
+  "queued",
+  "fetching_subtitles",
+  "running_nlp",
+  "running_llm",
+  "merging_analysis",
+  "saving_analysis",
+  "completed",
+  "failed",
+]);
+export const analysisSourceEnum = pgEnum("analysis_source", ["nlp", "analysis_llm"]);
 export const vocabularyKindEnum = pgEnum("vocabulary_kind", [
   "word",
   "phrasal_verb",
@@ -74,12 +76,11 @@ export const jobStatusEnum = pgEnum("job_status", [
   "failed",
   "cancelled",
 ]);
-export const jobStageEnum = pgEnum("job_stage", [
+export const packGenerationStageEnum = pgEnum("pack_generation_stage", [
   "queued",
-  "fetching_subtitles",
-  "running_nlp",
-  "running_llm",
+  "selecting_terms",
   "generating_content",
+  "generating_assets",
   "saving_pack",
   "completed",
   "failed",
@@ -322,91 +323,24 @@ export const artifactObject = pgTable(
 );
 
 /*
-  Persist subtitle-provider lookup outcomes, including negative results.
-  This keeps the UI honest and avoids hammering providers for known misses.
+  Canonical reusable content-analysis run for one content item and analysis pipeline fingerprint.
+  Subtitle fetching is transient runtime input; only the derived analysis is persisted.
 */
-export const contentSubtitleAvailability = pgTable(
-  "content_subtitle_availability",
-  {
-    contentId: text("content_id")
-      .notNull()
-      .references(() => content.id, { onDelete: "cascade" }),
-    provider: subtitleProviderEnum("provider").notNull(),
-    status: subtitleAvailabilityStatusEnum("status").notNull(),
-    checkedAt: timestamp("checked_at").defaultNow().notNull(),
-    retryAfter: timestamp("retry_after"),
-    errorCode: text("error_code"),
-    errorMessage: text("error_message"),
-    metadata: jsonb("metadata").$type<SubtitleAvailabilityMetadata>(),
-    ...auditColumns,
-  },
-  (table) => [
-    primaryKey({
-      columns: [table.contentId, table.provider],
-      name: "content_subtitle_availability_pkey",
-    }),
-    index("content_subtitle_availability_status_retry_idx").on(table.status, table.retryAfter),
-  ],
-);
-
-/*
-  One immutable subtitle snapshot for one content item.
-  For TV seasons, this snapshot represents one merged season corpus.
-*/
-export const contentSourceSnapshot = pgTable(
-  "content_source_snapshot",
+export const contentAnalysisRun = pgTable(
+  "content_analysis_run",
   {
     id: text("id").primaryKey(),
     contentId: text("content_id")
       .notNull()
       .references(() => content.id, { onDelete: "cascade" }),
-    provider: subtitleProviderEnum("provider").notNull(),
-    format: subtitleFormatEnum("format").default("srt").notNull(),
-    providerExternalId: text("provider_external_id"),
-    providerVersion: text("provider_version"),
-    releaseName: text("release_name"),
-    suppliedByUserId: text("supplied_by_user_id").references(() => user.id, {
-      onDelete: "set null",
-    }),
-    subtitleArtifactId: text("subtitle_artifact_id").references(() => artifactObject.id, {
-      onDelete: "set null",
-    }),
-    normalizedTextHash: text("normalized_text_hash").notNull(),
-    lineCount: integer("line_count"),
-    isActive: boolean("is_active").default(true).notNull(),
-    metadata: jsonb("metadata").$type<SubtitleSnapshotMetadata>(),
-    fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
-    ...auditColumns,
-  },
-  (table) => [
-    uniqueIndex("content_source_snapshot_active_content_unique")
-      .on(table.contentId)
-      .where(sql`${table.isActive} = true`),
-    uniqueIndex("content_source_snapshot_content_hash_unique").on(
-      table.contentId,
-      table.normalizedTextHash,
-    ),
-  ],
-);
-
-/*
-  Canonical reusable processing run for one content item and pipeline fingerprint.
-*/
-export const contentProcessingRun = pgTable(
-  "content_processing_run",
-  {
-    id: text("id").primaryKey(),
-    contentId: text("content_id")
-      .notNull()
-      .references(() => content.id, { onDelete: "cascade" }),
-    sourceSnapshotId: text("source_snapshot_id")
-      .notNull()
-      .references(() => contentSourceSnapshot.id, { onDelete: "restrict" }),
     status: runStatusEnum("status").default("queued").notNull(),
+    stage: contentAnalysisStageEnum("stage").default("queued").notNull(),
+    progressMessage: text("progress_message"),
     pipelineFingerprint: text("pipeline_fingerprint").notNull(),
     nlpPipelineVersion: text("nlp_pipeline_version").notNull(),
-    llmPipelineVersion: text("llm_pipeline_version"),
-    promptVersion: text("prompt_version"),
+    analysisLlmPipelineVersion: text("analysis_llm_pipeline_version").notNull(),
+    analysisLlmPromptVersion: text("analysis_llm_prompt_version"),
+    summary: jsonb("summary").$type<ContentAnalysisSummary>(),
     warnings: jsonb("warnings").$type<ProcessingWarningList>(),
     errorCode: text("error_code"),
     errorMessage: text("error_message"),
@@ -415,17 +349,38 @@ export const contentProcessingRun = pgTable(
     ...auditColumns,
   },
   (table) => [
-    uniqueIndex("content_processing_run_fingerprint_unique").on(
+    uniqueIndex("content_analysis_run_fingerprint_unique").on(
       table.contentId,
       table.pipelineFingerprint,
     ),
-    index("content_processing_run_status_idx").on(table.status),
+    index("content_analysis_run_status_idx").on(table.status),
+    index("content_analysis_run_stage_idx").on(table.stage),
   ],
 );
 
 /*
-  Canonical reusable vocabulary term.
-  Cross-title mastery anchors here, while content-specific evidence stays on contentVocabularyItem.
+  Immutable event trail for reusable content-analysis runs.
+  This gives the overview page something durable to poll without making the browser care about
+  Trigger.dev directly.
+*/
+export const contentAnalysisRunEvent = pgTable(
+  "content_analysis_run_event",
+  {
+    id: text("id").primaryKey(),
+    runId: text("run_id")
+      .notNull()
+      .references(() => contentAnalysisRun.id, { onDelete: "cascade" }),
+    stage: contentAnalysisStageEnum("stage").notNull(),
+    message: text("message"),
+    payload: jsonb("payload").$type<WorkflowEventPayload>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("content_analysis_run_event_run_stage_idx").on(table.runId, table.stage)],
+);
+
+/*
+  Canonical reusable vocabulary term or phrase.
+  Cross-title mastery anchors here, while content-specific evidence stays on contentAnalysisItem.
 */
 export const vocabularyTerm = pgTable(
   "vocabulary_term",
@@ -448,23 +403,25 @@ export const vocabularyTerm = pgTable(
 );
 
 /*
-  Reusable content-level vocabulary evidence plus enrichment.
+  Reusable content-analysis output from the NLP pipeline and the batched analysis LLM pipeline.
+  This table intentionally stops at reusable analysis data and does not store user-specific pack
+  generation output such as meanings, example sentences, or audio assets.
   `contexts` intentionally mirrors the current NLP service candidate context contract.
 */
-export const contentVocabularyItem = pgTable(
-  "content_vocabulary_item",
+export const contentAnalysisItem = pgTable(
+  "content_analysis_item",
   {
     id: text("id").primaryKey(),
-    processingRunId: text("processing_run_id")
+    analysisRunId: text("analysis_run_id")
       .notNull()
-      .references(() => contentProcessingRun.id, { onDelete: "cascade" }),
+      .references(() => contentAnalysisRun.id, { onDelete: "cascade" }),
     contentId: text("content_id")
       .notNull()
       .references(() => content.id, { onDelete: "cascade" }),
     termId: text("term_id")
       .notNull()
       .references(() => vocabularyTerm.id, { onDelete: "restrict" }),
-    extractionSource: extractionSourceEnum("extraction_source").notNull(),
+    analysisSource: analysisSourceEnum("analysis_source").notNull(),
     surfaceForm: text("surface_form").notNull(),
     representativeContext: text("representative_context"),
     contexts: jsonb("contexts").$type<NlpCandidateContext[]>(),
@@ -474,32 +431,25 @@ export const contentVocabularyItem = pgTable(
     cefrNumeric: integer("cefr_numeric"),
     cefrConfidence: real("cefr_confidence"),
     cefrNote: text("cefr_note"),
-    meaning: text("meaning"),
-    exampleSentences: jsonb("example_sentences").$type<ExampleSentenceList>(),
-    audioArtifactId: text("audio_artifact_id").references(() => artifactObject.id, {
-      onDelete: "set null",
-    }),
-    imageArtifactId: text("image_artifact_id").references(() => artifactObject.id, {
-      onDelete: "set null",
-    }),
     isSelectable: boolean("is_selectable").default(true).notNull(),
     filteredOutReason: text("filtered_out_reason"),
-    enrichedAt: timestamp("enriched_at"),
+    analyzedAt: timestamp("analyzed_at"),
     ...auditColumns,
   },
   (table) => [
-    uniqueIndex("content_vocabulary_item_run_term_unique").on(table.processingRunId, table.termId),
-    index("content_vocabulary_item_content_idx").on(table.contentId),
-    index("content_vocabulary_item_term_idx").on(table.termId),
-    index("content_vocabulary_item_source_idx").on(table.extractionSource),
+    uniqueIndex("content_analysis_item_run_term_unique").on(table.analysisRunId, table.termId),
+    index("content_analysis_item_content_idx").on(table.contentId),
+    index("content_analysis_item_term_idx").on(table.termId),
+    index("content_analysis_item_source_idx").on(table.analysisSource),
   ],
 );
 
 /*
-  User-visible generation job. This is what the frontend polls.
+  User-visible pack-generation job. This is what the frontend polls after a learner chooses
+  generation preferences from the media overview page.
 */
-export const generationJob = pgTable(
-  "generation_job",
+export const packGenerationJob = pgTable(
+  "pack_generation_job",
   {
     id: text("id").primaryKey(),
     userId: text("user_id")
@@ -508,11 +458,11 @@ export const generationJob = pgTable(
     contentId: text("content_id")
       .notNull()
       .references(() => content.id, { onDelete: "cascade" }),
-    processingRunId: text("processing_run_id").references(() => contentProcessingRun.id, {
+    analysisRunId: text("analysis_run_id").references(() => contentAnalysisRun.id, {
       onDelete: "set null",
     }),
     status: jobStatusEnum("status").default("queued").notNull(),
-    stage: jobStageEnum("stage").default("queued").notNull(),
+    stage: packGenerationStageEnum("stage").default("queued").notNull(),
     progressMessage: text("progress_message"),
     idempotencyKey: text("idempotency_key").notNull(),
     triggerWorkflowId: text("trigger_workflow_id"),
@@ -524,28 +474,31 @@ export const generationJob = pgTable(
     ...auditColumns,
   },
   (table) => [
-    uniqueIndex("generation_job_user_idempotency_unique").on(table.userId, table.idempotencyKey),
-    index("generation_job_content_status_idx").on(table.contentId, table.status),
-    index("generation_job_user_status_idx").on(table.userId, table.status),
+    uniqueIndex("pack_generation_job_user_idempotency_unique").on(
+      table.userId,
+      table.idempotencyKey,
+    ),
+    index("pack_generation_job_content_status_idx").on(table.contentId, table.status),
+    index("pack_generation_job_user_status_idx").on(table.userId, table.status),
   ],
 );
 
 /*
-  Immutable stage/event history for generation jobs.
+  Immutable stage/event history for pack-generation jobs.
 */
-export const generationJobEvent = pgTable(
-  "generation_job_event",
+export const packGenerationJobEvent = pgTable(
+  "pack_generation_job_event",
   {
     id: text("id").primaryKey(),
     jobId: text("job_id")
       .notNull()
-      .references(() => generationJob.id, { onDelete: "cascade" }),
-    stage: jobStageEnum("stage").notNull(),
+      .references(() => packGenerationJob.id, { onDelete: "cascade" }),
+    stage: packGenerationStageEnum("stage").notNull(),
     message: text("message"),
-    payload: jsonb("payload").$type<GenerationJobEventPayload>(),
+    payload: jsonb("payload").$type<WorkflowEventPayload>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("generation_job_event_job_stage_idx").on(table.jobId, table.stage)],
+  (table) => [index("pack_generation_job_event_job_stage_idx").on(table.jobId, table.stage)],
 );
 
 /*
@@ -562,10 +515,12 @@ export const pack = pgTable(
     contentId: text("content_id")
       .notNull()
       .references(() => content.id, { onDelete: "cascade" }),
-    sourceJobId: text("source_job_id").references(() => generationJob.id, { onDelete: "set null" }),
-    processingRunId: text("processing_run_id")
+    sourceJobId: text("source_job_id").references(() => packGenerationJob.id, {
+      onDelete: "set null",
+    }),
+    analysisRunId: text("analysis_run_id")
       .notNull()
-      .references(() => contentProcessingRun.id, { onDelete: "restrict" }),
+      .references(() => contentAnalysisRun.id, { onDelete: "restrict" }),
     status: packStatusEnum("status").default("active").notNull(),
     name: text("name").notNull(),
     learnerCefrLevelAtGeneration: cefrLevelEnum("learner_cefr_level_at_generation"),
@@ -573,6 +528,8 @@ export const pack = pgTable(
       "frequency_preference_at_generation",
     ).notNull(),
     selectedVocabularyTypes: vocabularyKindEnum("selected_vocabulary_types").array().notNull(),
+    contentGenerationPipelineVersion: text("content_generation_pipeline_version").notNull(),
+    contentGenerationPromptVersion: text("content_generation_prompt_version"),
     itemCount: integer("item_count").default(0).notNull(),
     estimatedStudyMinutes: integer("estimated_study_minutes"),
     archivedAt: timestamp("archived_at"),
@@ -595,9 +552,9 @@ export const packItem = pgTable(
     packId: text("pack_id")
       .notNull()
       .references(() => pack.id, { onDelete: "cascade" }),
-    contentVocabularyItemId: text("content_vocabulary_item_id")
+    contentAnalysisItemId: text("content_analysis_item_id")
       .notNull()
-      .references(() => contentVocabularyItem.id, { onDelete: "restrict" }),
+      .references(() => contentAnalysisItem.id, { onDelete: "restrict" }),
     termId: text("term_id")
       .notNull()
       .references(() => vocabularyTerm.id, { onDelete: "restrict" }),
@@ -618,11 +575,40 @@ export const packItem = pgTable(
     ...auditColumns,
   },
   (table) => [
-    uniqueIndex("pack_item_pack_candidate_unique").on(table.packId, table.contentVocabularyItemId),
+    uniqueIndex("pack_item_pack_candidate_unique").on(table.packId, table.contentAnalysisItemId),
     uniqueIndex("pack_item_pack_sort_order_unique").on(table.packId, table.sortOrder),
     index("pack_item_pack_state_idx").on(table.packId, table.state),
     index("pack_item_due_idx").on(table.state, table.dueAt),
     index("pack_item_term_idx").on(table.termId),
+  ],
+);
+
+/*
+  User-specific output of the content-generation pipeline for one pack item.
+  Text, audio, and optional imagery live here rather than on reusable analysis rows.
+  Generation is personalized against the learner state captured on the owning pack, including
+  the learner CEFR level at generation time.
+*/
+export const packItemContent = pgTable(
+  "pack_item_content",
+  {
+    packItemId: text("pack_item_id")
+      .primaryKey()
+      .references(() => packItem.id, { onDelete: "cascade" }),
+    meaning: text("meaning"),
+    exampleSentences: jsonb("example_sentences").$type<ExampleSentenceList>(),
+    audioArtifactId: text("audio_artifact_id").references(() => artifactObject.id, {
+      onDelete: "set null",
+    }),
+    imageArtifactId: text("image_artifact_id").references(() => artifactObject.id, {
+      onDelete: "set null",
+    }),
+    generatedAt: timestamp("generated_at"),
+    ...auditColumns,
+  },
+  (table) => [
+    index("pack_item_content_audio_idx").on(table.audioArtifactId),
+    index("pack_item_content_image_idx").on(table.imageArtifactId),
   ],
 );
 

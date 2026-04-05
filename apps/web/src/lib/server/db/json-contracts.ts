@@ -27,24 +27,24 @@ export type AssessmentLevelProbabilities = Record<StoredCefrLevel, number>;
 
 export type TmdbRawPayload = JsonMap;
 export type ArtifactMetadata = JsonMap;
-export type SubtitleAvailabilityMetadata = JsonMap;
-
-/*
-  For TV seasons, one subtitle snapshot represents one merged season corpus.
-  We intentionally do not persist episode-level provenance in V1.
-*/
-export type SubtitleSnapshotMetadata = {
-  deduplicated?: boolean;
-  originalLineCount?: number;
-  mergedEpisodeCount?: number;
-  sourceLanguageCode?: string;
-  [key: string]: unknown;
-};
 
 /*
   The current NLP service returns warnings as a simple string list.
 */
 export type ProcessingWarningList = string[];
+
+export type ContentAnalysisSummary = {
+  totalWordCount?: number;
+  uniqueLemmaCount?: number;
+  extractedItemCount?: number;
+  selectableItemCount?: number;
+  kindCounts?: Partial<Record<StoredVocabularyKind, number>>;
+  cefrDistribution?: Partial<Record<StoredCefrLevel, number>>;
+  averageCefrLevel?: StoredCefrLevel | null;
+  speechRateWpm?: number | null;
+  subtitleLineCount?: number;
+  [key: string]: unknown;
+};
 
 /*
   Mirrors the current NLP service response contract in apps/nlp_service.
@@ -62,10 +62,9 @@ export type GenerationRequestSnapshot = {
   learnerCefrLevel?: StoredCefrLevel | null;
   frequencyPreference?: StoredFrequencyPreference;
   selectedVocabularyTypes?: StoredVocabularyKind[];
-  subtitleProvider?: "opensubtitles" | "manual_upload";
   forceRegenerate?: boolean;
   [key: string]: unknown;
 };
 
-export type GenerationJobEventPayload = JsonMap;
+export type WorkflowEventPayload = JsonMap;
 export type NotificationPayload = JsonMap;
