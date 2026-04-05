@@ -42,17 +42,17 @@
 - Decision: keep schema support for both pronunciation audio and contextual images, but treat audio as the first shipped artifact type.
 - Reasoning: audio supports the core learning loop more directly; images can remain optional without forcing a schema redesign later.
 
-### Season subtitle storage
+### Season subtitle handling
 
-- Decision: a season is stored as one merged subtitle corpus, not as episode-level subtitle rows.
+- Decision: a season is analyzed as one merged subtitle corpus, not as episode-level subtitle rows.
 - Reasoning: the learning unit is the season, and episode-level provenance adds complexity without supporting a current product requirement.
-- Consequence: the subtitle snapshot model stays simple and content-focused.
+- Consequence: the analysis pipeline stays content-focused without introducing episode-level subtitle persistence.
 
-### Subtitle availability cache
+### Subtitle persistence scope
 
-- Decision: persist subtitle availability checks, including negative results.
-- Reasoning: repeated failed subtitle lookups are wasted work and produce bad UX when the app cannot explain why generation is unavailable.
-- Consequence: the schema includes a provider-specific availability snapshot so the UI can surface "not available" honestly and retry on a controlled schedule.
+- Decision: do not persist subtitle availability checks or fetched subtitle files in V1.
+- Reasoning: this is a demo system and the durable value is the derived content analysis, not the fetched subtitle payload or failed lookup history.
+- Consequence: the system refetches subtitles whenever reusable analysis is missing, and invalidation remains coarse rather than provenance-heavy.
 
 ### Review event depth
 

@@ -4,7 +4,7 @@
 
 This document defines the architecture we are actually building for LexiFlix. It is not a speculative future-state diagram and it is not a production readiness checklist. LexiFlix is a university demo application, so the architecture is optimized for fast iteration, understandable boundaries, low operational drag, and a reliable live demo. That constraint matters. It changes what “good architecture” means.
 
-The core product goal is straightforward: a user selects a movie or show, the system analyzes subtitle content, identifies vocabulary above the user’s current level, enriches those items with useful learning material, and delivers a study pack before the user starts watching. The architecture exists to make that workflow dependable without forcing the team to operate more infrastructure than the project justifies.
+The core product goal is straightforward: a user selects a movie or show, the system analyzes subtitle content to show a reusable linguistic profile, identifies vocabulary above the user’s current level, and then, only when requested, generates a personalized study pack before the user starts watching. The architecture exists to make that workflow dependable without forcing the team to operate more infrastructure than the project justifies.
 
 ## Architectural Position
 
@@ -14,7 +14,7 @@ That choice is deliberate. The earlier direction of Python plus Celery plus Redi
 
 ## Chosen Stack
 
-The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. AI requests are wrapped in internal adapters that support live calls, recorded responses, replay, and full mock mode for local development. The Python service is deployed as a container to an already rented VPS through a straightforward deployment pipeline.
+The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters that support live calls, recorded responses, replay, and full mock mode for local development. The Python service is deployed as a container to an already rented VPS through a straightforward deployment pipeline.
 
 This stack is intentionally asymmetric. The web app is fully managed because it should be easy to ship and preview. The workflow engine is managed because workflow orchestration is a solved problem we do not need to re-implement. The Python service is self-hosted because we already have the VPS, the workload is compute-heavy enough to justify controlling the runtime, and the service surface is small enough that operating one container is still simple. The architecture does not attempt to make every component equally abstract or equally portable. That would add ceremony without adding value.
 
@@ -26,7 +26,7 @@ The second boundary is workflow orchestration. Trigger.dev owns the lifecycle of
 
 The third boundary is compute. The Python service is not a general backend. It does not own jobs, queues, sessions, or browser-facing behavior. It accepts text input, runs NLP, and returns structured analysis. That is all. This narrowness is important because it keeps Python valuable without letting it spread into orchestration, persistence, and auth.
 
-The fourth boundary is storage. Neon Postgres owns durable product truth. R2 owns binary artifacts. The database stores titles, jobs, packs, vocabulary, cards, reviews, and metadata about artifacts. R2 stores the artifacts themselves. This separation keeps the data model clear and avoids turning object storage into an accidental database or the database into a blob store.
+The fourth boundary is storage. Neon Postgres owns durable product truth. R2 owns binary artifacts. The database stores titles, reusable content-analysis runs, user-visible pack-generation jobs, packs, cards, reviews, and metadata about artifacts. R2 stores the generated artifacts themselves. This separation keeps the data model clear and avoids turning object storage into an accidental database or the database into a blob store.
 
 ## Why Next.js Stays at the Center
 
@@ -42,6 +42,18 @@ The Trigger workflow model also keeps the product architecture honest. A pack-ge
 
 Equally important is what we are not doing. We are not using Celery for queues, Redis for orchestration state, or a Python control plane for job execution. Those systems are powerful, but in this context they would create operational complexity that adds very little to the product. Trigger.dev lets us keep the asynchronous behavior without inheriting the full worker-stack burden.
 
+## The Three Pipelines
+
+LexiFlix has three distinct pipelines, and keeping them separate is a requirement rather than a naming preference.
+
+The first is the NLP pipeline. It is reusable across users for a given content item and analysis pipeline version. Its job is tokenization, lemmatization, POS tagging, token filtering, CEFR-oriented scoring, and corpus-level summary metrics.
+
+The second is the analysis LLM pipeline. It is also reusable across users for a given content item and analysis pipeline version. Its job is batched phrase-level extraction and classification, especially phrasal verbs, idioms, slang, and related CEFR judgments that are not cleanly covered by the NLP pass alone.
+
+The third is the Content Generation Pipeline. It is user-triggered and user-specific. It starts only after the learner chooses generation preferences from the media page. Its job is to turn stored reusable analysis into pack-ready learning material such as meanings, example sentences, pronunciation audio, and optional images.
+
+Treating these as one blended pipeline would make the caching model, job model, and schema harder to reason about. The reusable analysis passes answer “what is in this subtitle corpus?” The content-generation pass answers “what study material should this learner get now?”
+
 ## Why Python Still Exists
 
 Python remains in the architecture because the NLP task is genuinely better served by Python today. The existing subtitle analysis code relies on spaCy, transformer-backed language processing, lemmatization, POS tagging, NER filtering, and CEFR-related analysis logic. That is not fake complexity. It is the part of the system where Python earns its place.
@@ -52,9 +64,9 @@ This gives us a much healthier division of labor. TypeScript owns the product wo
 
 ## The Python Service Model
 
-The Python service is a FastAPI application exposed internally over HTTP. Trigger.dev calls it synchronously as a single workflow step. That detail is important. The NLP stage is one stage in the larger workflow, not a second background job system nested inside the first.
+The Python service is a FastAPI application exposed internally over HTTP. Trigger.dev calls it synchronously as a single workflow step inside the reusable content-analysis workflow. That detail is important. The NLP stage is one stage in the larger workflow, not a second background job system nested inside the first.
 
-In practice, a pack-generation workflow enters a `running_nlp` stage, sends a request to the FastAPI service, waits for the response, and then continues. The call is synchronous from the workflow’s perspective, but not from the browser’s perspective. The browser remains decoupled because the long-running work is already off the request path.
+In practice, a content-analysis workflow enters a `running_nlp` stage, sends a request to the FastAPI service, waits for the response, and then continues into the batched analysis LLM stage. The call is synchronous from the workflow’s perspective, but not from the browser’s perspective. The browser remains decoupled because the long-running work is already off the request path.
 
 This is the simplest reliable model for the current project. It avoids Celery. It avoids Python-side polling. It avoids needing Python to publish job completion. It allows the NLP logic to stay computationally rich while keeping the overall system understandable.
 
@@ -68,27 +80,35 @@ The deployment model for the Python service should stay simple. Build a containe
 
 ## Data Ownership
 
-Neon Postgres is the durable system of record. It stores user-facing truth: who the user is, what title they selected, whether a generation job exists, which pack was produced, which vocabulary items are canonical, and how the spaced repetition system evolves over time.
+Neon Postgres is the durable system of record. It stores user-facing truth: who the user is, what title they selected, whether reusable content analysis exists for that content item, whether a user-specific pack-generation job exists, which pack was produced, which vocabulary items are canonical, and how the spaced repetition system evolves over time.
 
-This matters because asynchronous systems often drift into a bad habit of treating workflow engines as primary state. LexiFlix should not do that. Trigger.dev knows how a workflow is executing, but Neon knows what that execution means in product terms. A `jobs` row exists because the application wants to track a user-visible generation task. A `packs` row exists because the user needs a durable study resource. A `cards` row exists because review scheduling is part of the product, not an internal workflow concern.
+This matters because asynchronous systems often drift into a bad habit of treating workflow engines as primary state. LexiFlix should not do that. Trigger.dev knows how a workflow is executing, but Neon knows what that execution means in product terms. A reusable content-analysis row exists because the application wants to cache subtitle-derived facts for the media overview page. A pack-generation job row exists because the application wants to track a user-visible generation task. A `pack` row exists because the user needs a durable study resource. A `card` row exists because review scheduling is part of the product, not an internal workflow concern.
 
 Cloudflare R2 complements the database by storing the large generated artifacts. Audio clips, generated images, and similar assets belong there. The database only needs references, ownership, and metadata. This keeps the core domain relational and queryable while keeping the artifact layer operationally simple.
 
-The database also stores subtitle availability results, including negative outcomes, so the product can explain when subtitle-backed generation is unavailable instead of blindly retrying the same missing provider lookup. This is a small addition, but it materially improves demo behavior and keeps provider interactions disciplined.
+Subtitle fetching is treated as transient runtime input rather than durable product state. The database stores the reusable analysis, not the fetched subtitle text itself. That is the deliberate trade for this demo: simpler schema, simpler operations, and coarse invalidation when analysis needs to be rerun.
+
+TMDB-backed `content` rows are also intentionally lazy rather than exhaustive. Search results can stay transient TMDB payloads. A durable `content` row is created or refreshed only when a title actually enters the product flow, for example when a curated title is seeded, a user opens a media page, or a workflow needs the title as a stable product entity.
+
+## The Content Analysis Workflow
+
+The reusable analysis workflow begins when a user opens a media page for a selected title and no compatible cached analysis exists. The Next.js app checks for a completed analysis run keyed by content and analysis pipeline fingerprint. If none exists, the app creates a durable content-analysis row in Postgres, triggers a Trigger.dev workflow, and returns enough state for the frontend to poll.
+
+The workflow then proceeds through a small number of meaningful stages. It fetches subtitles, calls the Python NLP service, runs the analysis LLM pass for phrase extraction and classification, merges the results into summary metrics plus reusable content-analysis items, and finally marks the analysis run as completed or failed.
+
+The sequence matters less than the ownership model. Trigger owns the sequence. Postgres owns the durable meaning of the sequence. Python owns the NLP computation inside one stage. Gemini owns the batched phrase-classification work inside another stage. No component is allowed to “quietly” become the real source of truth for another layer.
 
 ## The Pack Generation Workflow
 
-The core workflow begins when the user requests a pack for a selected title. The Next.js app validates the request, computes an idempotency key, and creates or reuses a `jobs` row in Postgres. That row is the durable anchor for everything that follows. If the request is new, the app triggers a Trigger.dev workflow and returns the job handle to the frontend.
+The pack-generation workflow begins only when the user clicks `Start Generation`, confirms their preferences, and asks the app to build a pack. By this point the application should already have reusable subtitle analysis stored in Postgres. The app validates the request, computes an idempotency key, creates or reuses a user-specific pack-generation job, and triggers a separate Trigger.dev workflow.
 
-The workflow then proceeds through a small number of meaningful stages. It loads title and user context, fetches subtitles, calls the Python NLP service, filters candidates relative to the learner’s level, enriches items through Gemini, optionally generates audio and image artifacts, uploads those artifacts to R2, persists the resulting pack and related entities, and finally marks the job as completed or failed.
-
-The sequence matters less than the ownership model. Trigger owns the sequence. Postgres owns the durable meaning of the sequence. Python owns the NLP computation inside one stage of the sequence. Gemini owns the language-model generation inside later stages. No component is allowed to “quietly” become the real source of truth for another layer.
+That workflow reads the stored content-analysis output, selects items according to the learner’s level and preferences, runs the Content Generation Pipeline for meanings, example sentences, pronunciation audio, and optional images, persists the resulting pack and related entities, and finally marks the job as completed or failed. The generated `pack_item_content` rows are explicitly user-specific output, not reusable content facts, and they may be shaped by the learner’s current CEFR level at generation time.
 
 ## Progress Reporting
 
 The easiest progress model is also the correct one for this project: coarse stage-based progress stored in Postgres and polled by the frontend through the web app. We do not need Redis for this. We do not need WebSockets. We do not need fine-grained real-time streaming of sub-steps.
 
-That does not mean the user sees nothing. The job can move through meaningful stages such as `queued`, `fetching_subtitles`, `running_nlp`, `generating_content`, `saving_pack`, `completed`, and `failed`. The frontend can poll the app every few seconds and display the current stage with an indeterminate progress treatment. For a demo, this is exactly the right balance. It feels alive without forcing us to invent fake percentages or build an ephemeral progress infrastructure that adds more moving parts than value.
+That does not mean the user sees nothing. A content-analysis run can move through stages such as `queued`, `fetching_subtitles`, `running_nlp`, `running_llm`, `merging_analysis`, `saving_analysis`, `completed`, and `failed`. A pack-generation job can move through stages such as `queued`, `selecting_terms`, `generating_content`, `generating_assets`, `saving_pack`, `completed`, and `failed`. The frontend can poll the app every few seconds and display the current stage with an indeterminate progress treatment. For a demo, this is exactly the right balance. It feels alive without forcing us to invent fake percentages or build an ephemeral progress infrastructure that adds more moving parts than value.
 
 The key principle is that durable status belongs in the database, while highly transient ticks do not belong anywhere until they are proven necessary. If the project later needs richer progress, that can be added with a transient store. It should not be the baseline.
 

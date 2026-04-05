@@ -1,5 +1,6 @@
 - `NLP pipeline` refers to the local subtitle-analysis pipeline.
-- `LLM pipeline` refers to the enrichment pipeline used to identify or explain idioms, slang, phrasal verbs, and related CEFR judgments.
+- `LLM pipeline` refers to batched LLM calls used to extract and classify phrasal verbs, idioms, slang, and related CEFR judgments for a subtitle corpus.
+- `Content Generation Pipeline` refers to the later user-specific pipeline that generates meanings, example sentences, pronunciation audio, and optional images for the selected pack items.
 
 - For TV content, the primary learning unit is a **season**, not the show as a whole and not an individual episode.
 - For movies, the primary learning unit is the **movie** itself.
@@ -15,26 +16,30 @@
 - `overview` is treated as a first-class cached field for movies, TV shows, and TV seasons.
 - TMDB may return `overview` as an empty string when no localized or contributed description exists.
 - On ingest, empty-string `overview` values should be normalized to `NULL` so "no description available" has one durable representation in the database.
+- The system does not persist every TMDB search result into `content`.
+- Search and browse results may remain transient TMDB responses until a title actually enters the product flow.
+- A `content` row is created or refreshed when a curated title is seeded, when a user opens a media detail page, or when a workflow needs that title as a durable product entity.
 
-- Subtitle files are sourced either from **OpenSubtitles** or from a **manual user upload**.
-- Subtitle ingestion is intentionally simple for the current scope:
-- a content item can have multiple stored subtitle snapshots over time
-- only one subtitle snapshot is considered **active** for a content item at a time
-- once stored, a subtitle snapshot is treated as immutable input
-- for TV seasons, one subtitle snapshot represents one merged season corpus
+- Subtitle files are sourced from **OpenSubtitles** in V1.
+- Subtitle fetching is intentionally transient in V1:
+- the system fetches subtitle text when content analysis is missing
+- the fetched subtitle text is not persisted as a first-class database record
+- for TV seasons, one analysis run still represents one merged season corpus
 - episode-level subtitle provenance is intentionally not stored in the database for V1
 - language variants are out of scope for now because the current release targets English only
-- the system persists subtitle-availability checks, including unavailable results, so the app can avoid repeated failed lookups and explain missing subtitles in the UI
 
-- Pack generation follows an **on-demand** model.
-- The system fetches source data, runs NLP and LLM enrichment, and generates a pack only when a user explicitly requests a movie or season.
-- The system does not prefetch subtitle data or pre-generate packs in the background for the general catalog.
-- Once generated, reusable outputs are stored so later requests for the same content do not require the full pipeline to run again unless the subtitle snapshot or pipeline fingerprint changes.
+- Content analysis follows an **on-demand** model.
+- When a user opens a movie or season overview page and no reusable analysis exists for the current analysis pipeline fingerprint, the system fetches subtitles, runs the NLP pipeline, runs the LLM pipeline, and stores the resulting analysis.
+- The system does not prefetch subtitle data or pre-run analysis for the general catalog in the background.
+- Reusable analysis outputs are shared across users and rerun only when the analysis pipeline fingerprint changes or the cached analysis is manually invalidated.
+- Pack generation is a separate **on-demand** model.
+- The Content Generation Pipeline starts only after a user explicitly requests pack generation and confirms their generation preferences.
+- Pack generation reads from stored reusable analysis instead of repeating subtitle fetch, NLP analysis, or phrase-classification LLM work.
 
 - Canonical reusable processing happens at the content level.
-- User-visible generation jobs are separate from canonical content processing runs.
+- User-visible pack-generation jobs are separate from canonical content-analysis runs.
 - The workflow engine owns execution order and retries.
-- Postgres owns the durable meaning of the job and the resulting pack.
+- Postgres owns the durable meaning of the reusable analysis, the user-visible jobs, and the resulting pack.
 
 - The stable vocabulary type set is:
 - `word`
@@ -48,7 +53,7 @@
 - content-specific context, counts, and enrichment must still be tied to the subtitle source that produced them
 - therefore the schema should keep a reusable canonical term layer plus a content-level occurrence/enrichment layer
 
-- For each reusable content-level vocabulary item, the system stores or derives:
+- For each reusable content-analysis item, the system stores or derives:
 - the owning canonical content entity
 - the canonical term it maps to
 - the vocabulary type
@@ -57,11 +62,23 @@
 - representative subtitle context
 - CEFR judgment and related confidence/provenance
 - occurrence count and frequency signal
-- a single generated `meaning` field
+- whether the item came from the NLP pipeline or the LLM pipeline
+- standard housekeeping metadata
+
+- For each reusable content-analysis run, the system stores or derives:
+- the analysis pipeline fingerprint and versions
+- coarse stage/progress state for polling the overview page
+- summary metrics needed by the overview page such as vocabulary distribution and counts by kind
+- warnings and failure metadata when relevant
+
+- For each generated pack item, the system stores or derives:
+- the generated `meaning`
 - generated example sentences where available
 - the object-storage reference for pronunciation audio
 - the optional object-storage reference for a contextual image
-- standard housekeeping metadata
+- those generated outputs are user-specific and belong to the pack item, not to reusable content analysis
+- generated meanings, examples, and related assets may take the learner's current CEFR level into account
+- standard housekeeping metadata for the content-generation pass
 
 - Pack selection is personalized per user.
 - When generating a pack, the system considers the learner's CEFR level, their frequency preference, and the vocabulary types they want to study.
