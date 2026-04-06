@@ -65,3 +65,29 @@
 - Decision: pipeline-derived JSONB columns use one active contract at a time.
 - Reasoning: this is a rebuildable demo-system data layer, not a long-lived compatibility archive for every historical NLP or LLM payload shape.
 - Consequence: if a breaking payload-shape change lands, purge and rebuild the affected database state instead of layering compatibility parsing across multiple schema generations.
+
+## 2026-04-06
+
+### Curated catalog ownership
+
+- Decision: curated catalog state lives in a dedicated `curated_entry` table, not in `content`.
+- Reasoning: the curated feature needs to support `movie` and `tv` immediately, while `content` is still modeled around analysis units `movie` and `season`.
+- Consequence: editorial catalog concerns stay separate from subtitle-analysis concerns, and `content` remains the durable anchor for deeper analysis/generation flows.
+
+### TMDB query model for admin curation
+
+- Decision: admin curation uses two explicit TMDB modes.
+- Reasoning: TMDB `search` is for title lookup, while `discover` is the filterable browse API. Pretending they are one unified query model produces misleading UI and brittle backend logic.
+- Consequence: admin UI must expose `search` and `browse` as distinct modes, and persistence must hydrate from a TMDB detail payload rather than from summary cards.
+
+### TV curation scope in V1
+
+- Decision: curated TV entries are stored at the show level in V1, not the season level.
+- Reasoning: the product request is “movies and TV shows,” and show-level curation keeps the learner catalog simple while preserving a later path to season selection.
+- Consequence: curated TV rows use `media_type='tv'` and `curation_scope='show'`; season linkage fields stay reserved but null until a later feature actually needs them.
+
+### Learner catalog read path
+
+- Decision: learner-facing curated pages read only published curated rows from Postgres.
+- Reasoning: curated shelves should be stable and fast, and should not depend on live TMDB summary responses at render time.
+- Consequence: TMDB detail data is normalized and cached on write, and `/curated` renders published entries only.

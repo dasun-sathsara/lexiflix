@@ -2,6 +2,10 @@
 - `LLM pipeline` refers to batched LLM calls used to extract and classify phrasal verbs, idioms, slang, and related CEFR judgments for a subtitle corpus.
 - `Content Generation Pipeline` refers to the later user-specific pipeline that generates meanings, example sentences, pronunciation audio, and optional images for the selected pack items.
 
+- Curated catalog state is separate from canonical analysis content state.
+- `curated_entry` owns the learner-facing curated catalog for `movie` and `tv`.
+- `content` continues to own analysis/generation anchors for `movie` and `season`.
+
 - For TV content, the primary learning unit is a **season**, not the show as a whole and not an individual episode.
 - For movies, the primary learning unit is the **movie** itself.
 - Therefore, the system generates packs against two canonical content entities only: **movie** and **season**.
@@ -20,6 +24,12 @@
 - Search and browse results may remain transient TMDB responses until a title actually enters the product flow.
 - A `content` row is created or refreshed when a curated title is seeded, when a user opens a media detail page, or when a workflow needs that title as a durable product entity.
 
+- Admin curation uses two explicit TMDB query modes:
+- `search` for title lookup
+- `discover` for filterable browse
+- Curated rows are never persisted directly from TMDB search/discover summary payloads.
+- Before insert or refresh, the system fetches a TMDB detail payload and stores a normalized snapshot in Postgres.
+
 - Subtitle files are sourced from **OpenSubtitles** in V1.
 - Subtitle fetching is intentionally transient in V1:
 - the system fetches subtitle text when content analysis is missing
@@ -35,6 +45,11 @@
 - Pack generation is a separate **on-demand** model.
 - The Content Generation Pipeline starts only after a user explicitly requests pack generation and confirms their generation preferences.
 - Pack generation reads from stored reusable analysis instead of repeating subtitle fetch, NLP analysis, or phrase-classification LLM work.
+
+- The learner-facing curated catalog at `/curated` is a signed-in surface.
+- It reads published curated rows from Postgres only.
+- It must not depend on live TMDB responses at render time.
+- Admin curation at `/admin/curated` is server-guarded and admin-only.
 
 - Canonical reusable processing happens at the content level.
 - User-visible pack-generation jobs are separate from canonical content-analysis runs.
@@ -87,6 +102,10 @@
 - There is only **one pack per user per content item**.
 - If the user regenerates a pack for the same content with new inputs or preferences, the previous pack is deleted and replaced rather than versioned.
 
+- Curated catalog publication is explicit.
+- Learner-facing curated pages show published curated entries only.
+- Ordering is controlled by `featuredRank`, with lower ranks appearing first and null ranks falling behind ranked entries.
+
 - When a pack is created, content-level vocabulary items are linked into pack items.
 - Each pack item stores or derives:
 - the pack identifier
@@ -110,6 +129,9 @@
 - pack ready events
 - review due reminders
 - streak risk nudges
+
+- Curated TV entries are show-level in V1.
+- When a learner opens a curated TV show, season selection happens later in the detail flow rather than in the curated shelf itself.
 
 - Artifact support should be designed for both audio and images.
 - In the first real implementation pass:
