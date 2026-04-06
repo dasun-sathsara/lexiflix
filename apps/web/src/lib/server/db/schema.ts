@@ -2,9 +2,11 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -19,6 +21,10 @@ import type {
   AssessmentAttemptState,
   AssessmentLevelProbabilities,
   ContentAnalysisSummary,
+  CuratedCurationScope,
+  CuratedGenreSnapshot,
+  CuratedMediaType,
+  CuratedSourceProvider,
   ExampleSentenceList,
   GenerationRequestSnapshot,
   NlpCandidateContext,
@@ -43,6 +49,9 @@ const auditColumns = {
 };
 
 export const userRoleEnum = pgEnum("user_role", ["learner", "admin"]);
+export const curatedSourceProviderEnum = pgEnum("curated_source_provider", ["tmdb"]);
+export const curatedMediaTypeEnum = pgEnum("curated_media_type", ["movie", "tv"]);
+export const curationScopeEnum = pgEnum("curation_scope", ["movie", "show", "season"]);
 export const cefrLevelEnum = pgEnum("cefr_level", ["A1", "A2", "B1", "B2", "C1", "C2"]);
 export const assessmentAttemptStatusEnum = pgEnum("assessment_attempt_status", [
   "in_progress",
@@ -99,7 +108,7 @@ export const cardStateEnum = pgEnum("card_state", [
   "removed",
 ]);
 export const reviewRatingEnum = pgEnum("review_rating", ["again", "hard", "good", "easy"]);
-export const userTermStateEnum = pgEnum("user_term_state", [
+export const userTermStateEnum = pgEnum("user_term_state_value", [
   "unseen",
   "learning",
   "known",
@@ -293,6 +302,72 @@ export const content = pgTable(
       .on(table.tmdbShowId, table.tmdbSeasonNumber)
       .where(sql`${table.kind} = 'season'`),
     index("content_kind_idx").on(table.kind),
+  ],
+);
+
+export const curatedEntry = pgTable(
+  "curated_entry",
+  {
+    id: text("id").primaryKey(),
+    sourceProvider: curatedSourceProviderEnum("source_provider")
+      .$type<CuratedSourceProvider>()
+      .default("tmdb")
+      .notNull(),
+    mediaType: curatedMediaTypeEnum("media_type").$type<CuratedMediaType>().notNull(),
+    curationScope: curationScopeEnum("curation_scope").$type<CuratedCurationScope>().notNull(),
+    tmdbId: integer("tmdb_id").notNull(),
+    tmdbTvId: integer("tmdb_tv_id"),
+    tmdbSeasonNumber: integer("tmdb_season_number"),
+    tmdbSeasonId: integer("tmdb_season_id"),
+    title: text("title").notNull(),
+    originalTitle: text("original_title").notNull(),
+    displaySubtitle: text("display_subtitle"),
+    overview: text("overview"),
+    releaseDate: date("release_date", { mode: "string" }),
+    releaseYear: integer("release_year"),
+    decade: integer("decade"),
+    posterPath: text("poster_path"),
+    backdropPath: text("backdrop_path"),
+    originalLanguage: text("original_language"),
+    originCountries: text("origin_countries").array().default(sql`ARRAY[]::text[]`).notNull(),
+    genreIds: integer("genre_ids").array().default(sql`ARRAY[]::integer[]`).notNull(),
+    genres: jsonb("genres").$type<CuratedGenreSnapshot[]>().default(sql`'[]'::jsonb`).notNull(),
+    imdbId: text("imdb_id"),
+    contentRating: text("content_rating"),
+    tmdbPopularity: numeric("tmdb_popularity", { precision: 10, scale: 3 }),
+    voteAverage: numeric("vote_average", { precision: 4, scale: 2 }),
+    voteCount: integer("vote_count"),
+    seasonCountSnapshot: integer("season_count_snapshot"),
+    tmdbSnapshot: jsonb("tmdb_snapshot").$type<TmdbRawPayload>().notNull(),
+    isPublished: boolean("is_published").default(true).notNull(),
+    featuredRank: integer("featured_rank"),
+    contentId: text("content_id").references(() => content.id, { onDelete: "set null" }),
+    curatedByUserId: text("curated_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    curatedAt: timestamp("curated_at"),
+    lastTmdbSyncedAt: timestamp("last_tmdb_synced_at"),
+    ...auditColumns,
+  },
+  (table) => [
+    check(
+      "curated_entry_movie_scope_check",
+      sql`(${table.curationScope} <> 'movie') OR (${table.mediaType} = 'movie' AND ${table.tmdbTvId} IS NULL AND ${table.tmdbSeasonNumber} IS NULL AND ${table.tmdbSeasonId} IS NULL)`,
+    ),
+    check(
+      "curated_entry_show_scope_check",
+      sql`(${table.curationScope} <> 'show') OR (${table.mediaType} = 'tv' AND ${table.tmdbSeasonNumber} IS NULL AND ${table.tmdbSeasonId} IS NULL)`,
+    ),
+    check(
+      "curated_entry_season_scope_check",
+      sql`(${table.curationScope} <> 'season') OR (${table.mediaType} = 'tv' AND ${table.tmdbTvId} IS NOT NULL AND ${table.tmdbSeasonNumber} IS NOT NULL)`,
+    ),
+    uniqueIndex("curated_entry_media_tmdb_unique").on(table.mediaType, table.tmdbId),
+    index("curated_entry_published_rank_idx").on(table.isPublished, table.featuredRank),
+    index("curated_entry_media_type_idx").on(table.mediaType),
+    index("curated_entry_scope_idx").on(table.curationScope),
+    index("curated_entry_content_id_idx").on(table.contentId),
+    index("curated_entry_curated_by_user_id_idx").on(table.curatedByUserId),
   ],
 );
 

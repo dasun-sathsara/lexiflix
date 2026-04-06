@@ -1,6 +1,6 @@
 {
-  "id": "2eac69b9-6b70-43e6-9fcf-db7d718fecbe",
-  "prevId": "6eb08b93-90e2-441b-8bd3-eacaf280c2e8",
+  "id": "382eadb0-ae8a-438f-960c-837fc444b181",
+  "prevId": "2eac69b9-6b70-43e6-9fcf-db7d718fecbe",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1288,6 +1288,388 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.curated_entry": {
+      "name": "curated_entry",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "source_provider": {
+          "name": "source_provider",
+          "type": "curated_source_provider",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'tmdb'"
+        },
+        "media_type": {
+          "name": "media_type",
+          "type": "curated_media_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curation_scope": {
+          "name": "curation_scope",
+          "type": "curation_scope",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tmdb_id": {
+          "name": "tmdb_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tmdb_tv_id": {
+          "name": "tmdb_tv_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tmdb_season_number": {
+          "name": "tmdb_season_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tmdb_season_id": {
+          "name": "tmdb_season_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_title": {
+          "name": "original_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_subtitle": {
+          "name": "display_subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "overview": {
+          "name": "overview",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_date": {
+          "name": "release_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "release_year": {
+          "name": "release_year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decade": {
+          "name": "decade",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poster_path": {
+          "name": "poster_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "backdrop_path": {
+          "name": "backdrop_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_language": {
+          "name": "original_language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origin_countries": {
+          "name": "origin_countries",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "genre_ids": {
+          "name": "genre_ids",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::integer[]"
+        },
+        "genres": {
+          "name": "genres",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "imdb_id": {
+          "name": "imdb_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content_rating": {
+          "name": "content_rating",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tmdb_popularity": {
+          "name": "tmdb_popularity",
+          "type": "numeric(10, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vote_average": {
+          "name": "vote_average",
+          "type": "numeric(4, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vote_count": {
+          "name": "vote_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "season_count_snapshot": {
+          "name": "season_count_snapshot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tmdb_snapshot": {
+          "name": "tmdb_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_published": {
+          "name": "is_published",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "featured_rank": {
+          "name": "featured_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content_id": {
+          "name": "content_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "curated_by_user_id": {
+          "name": "curated_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "curated_at": {
+          "name": "curated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_tmdb_synced_at": {
+          "name": "last_tmdb_synced_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "curated_entry_media_tmdb_unique": {
+          "name": "curated_entry_media_tmdb_unique",
+          "columns": [
+            {
+              "expression": "media_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tmdb_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "curated_entry_published_rank_idx": {
+          "name": "curated_entry_published_rank_idx",
+          "columns": [
+            {
+              "expression": "is_published",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "featured_rank",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "curated_entry_media_type_idx": {
+          "name": "curated_entry_media_type_idx",
+          "columns": [
+            {
+              "expression": "media_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "curated_entry_scope_idx": {
+          "name": "curated_entry_scope_idx",
+          "columns": [
+            {
+              "expression": "curation_scope",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "curated_entry_content_id_idx": {
+          "name": "curated_entry_content_id_idx",
+          "columns": [
+            {
+              "expression": "content_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "curated_entry_curated_by_user_id_idx": {
+          "name": "curated_entry_curated_by_user_id_idx",
+          "columns": [
+            {
+              "expression": "curated_by_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "curated_entry_content_id_content_id_fk": {
+          "name": "curated_entry_content_id_content_id_fk",
+          "tableFrom": "curated_entry",
+          "tableTo": "content",
+          "columnsFrom": [
+            "content_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "curated_entry_curated_by_user_id_user_id_fk": {
+          "name": "curated_entry_curated_by_user_id_user_id_fk",
+          "tableFrom": "curated_entry",
+          "tableTo": "user",
+          "columnsFrom": [
+            "curated_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "curated_entry_movie_scope_check": {
+          "name": "curated_entry_movie_scope_check",
+          "value": "(\"curated_entry\".\"curation_scope\" <> 'movie') OR (\"curated_entry\".\"media_type\" = 'movie' AND \"curated_entry\".\"tmdb_tv_id\" IS NULL AND \"curated_entry\".\"tmdb_season_number\" IS NULL AND \"curated_entry\".\"tmdb_season_id\" IS NULL)"
+        },
+        "curated_entry_show_scope_check": {
+          "name": "curated_entry_show_scope_check",
+          "value": "(\"curated_entry\".\"curation_scope\" <> 'show') OR (\"curated_entry\".\"media_type\" = 'tv' AND \"curated_entry\".\"tmdb_season_number\" IS NULL AND \"curated_entry\".\"tmdb_season_id\" IS NULL)"
+        },
+        "curated_entry_season_scope_check": {
+          "name": "curated_entry_season_scope_check",
+          "value": "(\"curated_entry\".\"curation_scope\" <> 'season') OR (\"curated_entry\".\"media_type\" = 'tv' AND \"curated_entry\".\"tmdb_tv_id\" IS NOT NULL AND \"curated_entry\".\"tmdb_season_number\" IS NOT NULL)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.notification": {
@@ -3304,6 +3686,30 @@
       "schema": "public",
       "values": [
         "movie",
+        "season"
+      ]
+    },
+    "public.curated_media_type": {
+      "name": "curated_media_type",
+      "schema": "public",
+      "values": [
+        "movie",
+        "tv"
+      ]
+    },
+    "public.curated_source_provider": {
+      "name": "curated_source_provider",
+      "schema": "public",
+      "values": [
+        "tmdb"
+      ]
+    },
+    "public.curation_scope": {
+      "name": "curation_scope",
+      "schema": "public",
+      "values": [
+        "movie",
+        "show",
         "season"
       ]
     },

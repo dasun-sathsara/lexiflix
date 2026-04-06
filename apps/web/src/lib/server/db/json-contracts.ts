@@ -10,8 +10,15 @@
 export type StoredCefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export type StoredVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
 export type StoredFrequencyPreference = "balanced" | "common_first" | "challenge_first";
+export type CuratedSourceProvider = "tmdb";
+export type CuratedMediaType = "movie" | "tv";
+export type CuratedCurationScope = "movie" | "show" | "season";
 
 export type JsonMap = Record<string, unknown>;
+export type CuratedGenreSnapshot = {
+  id: number;
+  name: string;
+};
 
 export type AssessmentAttemptState = {
   posterior: number[];

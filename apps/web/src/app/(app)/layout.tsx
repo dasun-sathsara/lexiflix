@@ -1,30 +1,26 @@
+import { cookies } from "next/headers";
+import Link from "next/link";
+import type * as React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
-import { auth } from "@/lib/auth";
-import { cookies, headers } from "next/headers";
-import Link from "next/link";
-import { unauthorized } from "next/navigation";
-import type * as React from "react";
+import { requireSession } from "@/lib/auth-guards";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session?.user) {
-    return unauthorized();
-  }
+  const session = await requireSession();
 
   const needsEmailVerification =
     "emailVerified" in session.user &&
     typeof session.user.emailVerified === "boolean" &&
     !session.user.emailVerified;
 
-  const user = {
+  const user: React.ComponentProps<typeof AppSidebar>["user"] = {
     name: session.user.name,
     email: session.user.email,
     avatar: session.user.image ?? undefined,
+    role: session.user.role === "admin" ? "admin" : "learner",
   };
 
   return (

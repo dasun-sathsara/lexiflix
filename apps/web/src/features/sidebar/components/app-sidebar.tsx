@@ -1,5 +1,21 @@
 "use client";
 
+import {
+  Bell,
+  Clapperboard,
+  Home,
+  type LucideIcon,
+  Search,
+  Settings2,
+  Shield,
+  Sparkles,
+  X,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type * as React from "react";
+import { useCallback, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,20 +44,6 @@ import {
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
-import {
-  Bell,
-  Clapperboard,
-  Home,
-  type LucideIcon,
-  Search,
-  Settings2,
-  Sparkles,
-  X,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type * as React from "react";
-import { useCallback, useMemo, useState } from "react";
 
 type NavItem = {
   title: string;
@@ -74,6 +76,14 @@ const generalItems: NavItem[] = [
     title: "Settings",
     url: "/settings",
     icon: Settings2,
+  },
+];
+
+const adminItems: NavItem[] = [
+  {
+    title: "Curated Admin",
+    url: "/admin/curated",
+    icon: Shield,
   },
 ];
 
@@ -167,10 +177,13 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     name: string;
     email: string;
     avatar?: string;
+    role: "learner" | "admin";
   };
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
+  const isAdmin = user.role === "admin";
+
   return (
     <Sidebar
       variant="inset"
@@ -187,7 +200,14 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <Clapperboard className="size-[18px]" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">LexiFlix</span>
+                  <span className="flex items-center gap-2 truncate font-semibold">
+                    <span className="truncate">LexiFlix</span>
+                    {isAdmin ? (
+                      <Badge className="border border-amber-300/70 bg-amber-500/15 text-[10px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
+                        Admin
+                      </Badge>
+                    ) : null}
+                  </span>
                   <span className="truncate text-xs text-sidebar-foreground/70">
                     Learn with entertainment
                   </span>
@@ -199,6 +219,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <NavMenu items={platformItems} label="Platform" />
+        {isAdmin ? <NavMenu items={adminItems} label="Admin" /> : null}
         <NavMenu items={generalItems} label="General" />
       </SidebarContent>
       <SidebarSeparator />

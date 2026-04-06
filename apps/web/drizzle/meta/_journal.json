@@ -33,8 +33,15 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1775329584957,
+      "when": 1775497418278,
       "tag": "0004_goofy_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775497419408,
+      "tag": "0005_curated_catalog",
       "breakpoints": true
     }
   ]

@@ -1,24 +1,22 @@
+CREATE TYPE "public"."analysis_source" AS ENUM('nlp', 'analysis_llm');--> statement-breakpoint
 CREATE TYPE "public"."artifact_access" AS ENUM('private', 'signed', 'public');--> statement-breakpoint
-CREATE TYPE "public"."artifact_kind" AS ENUM('subtitle', 'audio', 'image', 'avatar');--> statement-breakpoint
+CREATE TYPE "public"."artifact_kind" AS ENUM('audio', 'image', 'avatar');--> statement-breakpoint
 CREATE TYPE "public"."assessment_attempt_status" AS ENUM('in_progress', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."card_state" AS ENUM('new', 'learning', 'due', 'mastered', 'removed');--> statement-breakpoint
 CREATE TYPE "public"."cefr_level" AS ENUM('A1', 'A2', 'B1', 'B2', 'C1', 'C2');--> statement-breakpoint
+CREATE TYPE "public"."content_analysis_stage" AS ENUM('queued', 'fetching_subtitles', 'running_nlp', 'running_llm', 'merging_analysis', 'saving_analysis', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."content_kind" AS ENUM('movie', 'season');--> statement-breakpoint
-CREATE TYPE "public"."extraction_source" AS ENUM('nlp', 'llm');--> statement-breakpoint
 CREATE TYPE "public"."frequency_preference" AS ENUM('balanced', 'common_first', 'challenge_first');--> statement-breakpoint
-CREATE TYPE "public"."job_stage" AS ENUM('queued', 'fetching_subtitles', 'running_nlp', 'running_llm', 'generating_content', 'saving_pack', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."job_status" AS ENUM('queued', 'running', 'completed', 'failed', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."notification_channel" AS ENUM('in_app', 'email');--> statement-breakpoint
 CREATE TYPE "public"."notification_status" AS ENUM('queued', 'sent', 'read', 'dismissed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."notification_type" AS ENUM('pack_ready', 'reviews_due', 'streak_risk', 'system');--> statement-breakpoint
+CREATE TYPE "public"."pack_generation_stage" AS ENUM('queued', 'selecting_terms', 'generating_content', 'generating_assets', 'saving_pack', 'completed', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."pack_status" AS ENUM('active', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."review_rating" AS ENUM('again', 'hard', 'good', 'easy');--> statement-breakpoint
 CREATE TYPE "public"."run_status" AS ENUM('queued', 'running', 'completed', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."subtitle_availability_status" AS ENUM('available', 'unavailable', 'error');--> statement-breakpoint
-CREATE TYPE "public"."subtitle_format" AS ENUM('srt', 'plain_text');--> statement-breakpoint
-CREATE TYPE "public"."subtitle_provider" AS ENUM('opensubtitles', 'manual_upload');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('learner', 'admin');--> statement-breakpoint
-CREATE TYPE "public"."user_term_state" AS ENUM('unseen', 'learning', 'known', 'ignored');--> statement-breakpoint
+CREATE TYPE "public"."user_term_state_value" AS ENUM('unseen', 'learning', 'known', 'ignored');--> statement-breakpoint
 CREATE TYPE "public"."vocabulary_kind" AS ENUM('word', 'phrasal_verb', 'idiom', 'slang');--> statement-breakpoint
 CREATE TABLE "artifact_object" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -63,63 +61,12 @@ CREATE TABLE "content" (
 	CONSTRAINT "content_season_shape_check" CHECK (("content"."kind" <> 'season') OR ("content"."tmdb_show_id" IS NOT NULL AND "content"."tmdb_season_number" IS NOT NULL AND "content"."tmdb_movie_id" IS NULL))
 );
 --> statement-breakpoint
-CREATE TABLE "content_processing_run" (
+CREATE TABLE "content_analysis_item" (
 	"id" text PRIMARY KEY NOT NULL,
-	"content_id" text NOT NULL,
-	"source_snapshot_id" text NOT NULL,
-	"status" "run_status" DEFAULT 'queued' NOT NULL,
-	"pipeline_fingerprint" text NOT NULL,
-	"nlp_pipeline_version" text NOT NULL,
-	"llm_pipeline_version" text,
-	"prompt_version" text,
-	"warnings" jsonb,
-	"error_code" text,
-	"error_message" text,
-	"started_at" timestamp,
-	"completed_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "content_source_snapshot" (
-	"id" text PRIMARY KEY NOT NULL,
-	"content_id" text NOT NULL,
-	"provider" "subtitle_provider" NOT NULL,
-	"format" "subtitle_format" DEFAULT 'srt' NOT NULL,
-	"provider_external_id" text,
-	"provider_version" text,
-	"release_name" text,
-	"supplied_by_user_id" text,
-	"subtitle_artifact_id" text,
-	"normalized_text_hash" text NOT NULL,
-	"line_count" integer,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"metadata" jsonb,
-	"fetched_at" timestamp DEFAULT now() NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "content_subtitle_availability" (
-	"content_id" text NOT NULL,
-	"provider" "subtitle_provider" NOT NULL,
-	"status" "subtitle_availability_status" NOT NULL,
-	"checked_at" timestamp DEFAULT now() NOT NULL,
-	"retry_after" timestamp,
-	"error_code" text,
-	"error_message" text,
-	"metadata" jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "content_subtitle_availability_pkey" PRIMARY KEY("content_id","provider")
-);
---> statement-breakpoint
-CREATE TABLE "content_vocabulary_item" (
-	"id" text PRIMARY KEY NOT NULL,
-	"processing_run_id" text NOT NULL,
+	"analysis_run_id" text NOT NULL,
 	"content_id" text NOT NULL,
 	"term_id" text NOT NULL,
-	"extraction_source" "extraction_source" NOT NULL,
+	"analysis_source" "analysis_source" NOT NULL,
 	"surface_form" text NOT NULL,
 	"representative_context" text,
 	"contexts" jsonb,
@@ -129,28 +76,25 @@ CREATE TABLE "content_vocabulary_item" (
 	"cefr_numeric" integer,
 	"cefr_confidence" real,
 	"cefr_note" text,
-	"meaning" text,
-	"example_sentences" jsonb,
-	"audio_artifact_id" text,
-	"image_artifact_id" text,
 	"is_selectable" boolean DEFAULT true NOT NULL,
 	"filtered_out_reason" text,
-	"enriched_at" timestamp,
+	"analyzed_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "generation_job" (
+CREATE TABLE "content_analysis_run" (
 	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
 	"content_id" text NOT NULL,
-	"processing_run_id" text,
-	"status" "job_status" DEFAULT 'queued' NOT NULL,
-	"stage" "job_stage" DEFAULT 'queued' NOT NULL,
+	"status" "run_status" DEFAULT 'queued' NOT NULL,
+	"stage" "content_analysis_stage" DEFAULT 'queued' NOT NULL,
 	"progress_message" text,
-	"idempotency_key" text NOT NULL,
-	"trigger_workflow_id" text,
-	"request_snapshot" jsonb NOT NULL,
+	"pipeline_fingerprint" text NOT NULL,
+	"nlp_pipeline_version" text NOT NULL,
+	"analysis_llm_pipeline_version" text NOT NULL,
+	"analysis_llm_prompt_version" text,
+	"summary" jsonb,
+	"warnings" jsonb,
 	"error_code" text,
 	"error_message" text,
 	"started_at" timestamp,
@@ -159,10 +103,10 @@ CREATE TABLE "generation_job" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "generation_job_event" (
+CREATE TABLE "content_analysis_run_event" (
 	"id" text PRIMARY KEY NOT NULL,
-	"job_id" text NOT NULL,
-	"stage" "job_stage" NOT NULL,
+	"run_id" text NOT NULL,
+	"stage" "content_analysis_stage" NOT NULL,
 	"message" text,
 	"payload" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL
@@ -191,12 +135,14 @@ CREATE TABLE "pack" (
 	"user_id" text NOT NULL,
 	"content_id" text NOT NULL,
 	"source_job_id" text,
-	"processing_run_id" text NOT NULL,
+	"analysis_run_id" text NOT NULL,
 	"status" "pack_status" DEFAULT 'active' NOT NULL,
 	"name" text NOT NULL,
 	"learner_cefr_level_at_generation" "cefr_level",
 	"frequency_preference_at_generation" "frequency_preference" NOT NULL,
 	"selected_vocabulary_types" "vocabulary_kind"[] NOT NULL,
+	"content_generation_pipeline_version" text NOT NULL,
+	"content_generation_prompt_version" text,
 	"item_count" integer DEFAULT 0 NOT NULL,
 	"estimated_study_minutes" integer,
 	"archived_at" timestamp,
@@ -204,10 +150,38 @@ CREATE TABLE "pack" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "pack_generation_job" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"content_id" text NOT NULL,
+	"analysis_run_id" text,
+	"status" "job_status" DEFAULT 'queued' NOT NULL,
+	"stage" "pack_generation_stage" DEFAULT 'queued' NOT NULL,
+	"progress_message" text,
+	"idempotency_key" text NOT NULL,
+	"trigger_workflow_id" text,
+	"request_snapshot" jsonb NOT NULL,
+	"error_code" text,
+	"error_message" text,
+	"started_at" timestamp,
+	"completed_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "pack_generation_job_event" (
+	"id" text PRIMARY KEY NOT NULL,
+	"job_id" text NOT NULL,
+	"stage" "pack_generation_stage" NOT NULL,
+	"message" text,
+	"payload" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "pack_item" (
 	"id" text PRIMARY KEY NOT NULL,
 	"pack_id" text NOT NULL,
-	"content_vocabulary_item_id" text NOT NULL,
+	"content_analysis_item_id" text NOT NULL,
 	"term_id" text NOT NULL,
 	"sort_order" integer NOT NULL,
 	"included_reason" text,
@@ -223,6 +197,17 @@ CREATE TABLE "pack_item" (
 	"mastered_at" timestamp,
 	"removed_at" timestamp,
 	"removal_reason" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "pack_item_content" (
+	"pack_item_id" text PRIMARY KEY NOT NULL,
+	"meaning" text,
+	"example_sentences" jsonb,
+	"audio_artifact_id" text,
+	"image_artifact_id" text,
+	"generated_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -250,7 +235,7 @@ CREATE TABLE "user_streak" (
 CREATE TABLE "user_term_state" (
 	"user_id" text NOT NULL,
 	"term_id" text NOT NULL,
-	"state" "user_term_state" DEFAULT 'unseen' NOT NULL,
+	"state" "user_term_state_value" DEFAULT 'unseen' NOT NULL,
 	"source" text DEFAULT 'derived' NOT NULL,
 	"total_reviews" integer DEFAULT 0 NOT NULL,
 	"total_lapses" integer DEFAULT 0 NOT NULL,
@@ -294,29 +279,26 @@ ALTER TABLE "user" ALTER COLUMN "role" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_preferences" ADD COLUMN "study_language_code" text DEFAULT 'en' NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_preferences" ADD COLUMN "frequency_preference" "frequency_preference" DEFAULT 'balanced' NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_preferences" ADD COLUMN "study_vocabulary_types" "vocabulary_kind"[] DEFAULT ARRAY['word', 'phrasal_verb', 'idiom', 'slang']::vocabulary_kind[] NOT NULL;--> statement-breakpoint
-ALTER TABLE "content_processing_run" ADD CONSTRAINT "content_processing_run_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_processing_run" ADD CONSTRAINT "content_processing_run_source_snapshot_id_content_source_snapshot_id_fk" FOREIGN KEY ("source_snapshot_id") REFERENCES "public"."content_source_snapshot"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_source_snapshot" ADD CONSTRAINT "content_source_snapshot_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_source_snapshot" ADD CONSTRAINT "content_source_snapshot_supplied_by_user_id_user_id_fk" FOREIGN KEY ("supplied_by_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_source_snapshot" ADD CONSTRAINT "content_source_snapshot_subtitle_artifact_id_artifact_object_id_fk" FOREIGN KEY ("subtitle_artifact_id") REFERENCES "public"."artifact_object"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_subtitle_availability" ADD CONSTRAINT "content_subtitle_availability_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_vocabulary_item" ADD CONSTRAINT "content_vocabulary_item_processing_run_id_content_processing_run_id_fk" FOREIGN KEY ("processing_run_id") REFERENCES "public"."content_processing_run"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_vocabulary_item" ADD CONSTRAINT "content_vocabulary_item_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_vocabulary_item" ADD CONSTRAINT "content_vocabulary_item_term_id_vocabulary_term_id_fk" FOREIGN KEY ("term_id") REFERENCES "public"."vocabulary_term"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_vocabulary_item" ADD CONSTRAINT "content_vocabulary_item_audio_artifact_id_artifact_object_id_fk" FOREIGN KEY ("audio_artifact_id") REFERENCES "public"."artifact_object"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_vocabulary_item" ADD CONSTRAINT "content_vocabulary_item_image_artifact_id_artifact_object_id_fk" FOREIGN KEY ("image_artifact_id") REFERENCES "public"."artifact_object"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "generation_job" ADD CONSTRAINT "generation_job_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "generation_job" ADD CONSTRAINT "generation_job_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "generation_job" ADD CONSTRAINT "generation_job_processing_run_id_content_processing_run_id_fk" FOREIGN KEY ("processing_run_id") REFERENCES "public"."content_processing_run"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "generation_job_event" ADD CONSTRAINT "generation_job_event_job_id_generation_job_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."generation_job"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_analysis_item" ADD CONSTRAINT "content_analysis_item_analysis_run_id_content_analysis_run_id_fk" FOREIGN KEY ("analysis_run_id") REFERENCES "public"."content_analysis_run"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_analysis_item" ADD CONSTRAINT "content_analysis_item_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_analysis_item" ADD CONSTRAINT "content_analysis_item_term_id_vocabulary_term_id_fk" FOREIGN KEY ("term_id") REFERENCES "public"."vocabulary_term"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_analysis_run" ADD CONSTRAINT "content_analysis_run_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_analysis_run_event" ADD CONSTRAINT "content_analysis_run_event_run_id_content_analysis_run_id_fk" FOREIGN KEY ("run_id") REFERENCES "public"."content_analysis_run"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pack" ADD CONSTRAINT "pack_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pack" ADD CONSTRAINT "pack_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pack" ADD CONSTRAINT "pack_source_job_id_generation_job_id_fk" FOREIGN KEY ("source_job_id") REFERENCES "public"."generation_job"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pack" ADD CONSTRAINT "pack_processing_run_id_content_processing_run_id_fk" FOREIGN KEY ("processing_run_id") REFERENCES "public"."content_processing_run"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack" ADD CONSTRAINT "pack_source_job_id_pack_generation_job_id_fk" FOREIGN KEY ("source_job_id") REFERENCES "public"."pack_generation_job"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack" ADD CONSTRAINT "pack_analysis_run_id_content_analysis_run_id_fk" FOREIGN KEY ("analysis_run_id") REFERENCES "public"."content_analysis_run"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_generation_job" ADD CONSTRAINT "pack_generation_job_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_generation_job" ADD CONSTRAINT "pack_generation_job_content_id_content_id_fk" FOREIGN KEY ("content_id") REFERENCES "public"."content"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_generation_job" ADD CONSTRAINT "pack_generation_job_analysis_run_id_content_analysis_run_id_fk" FOREIGN KEY ("analysis_run_id") REFERENCES "public"."content_analysis_run"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_generation_job_event" ADD CONSTRAINT "pack_generation_job_event_job_id_pack_generation_job_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."pack_generation_job"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pack_item" ADD CONSTRAINT "pack_item_pack_id_pack_id_fk" FOREIGN KEY ("pack_id") REFERENCES "public"."pack"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "pack_item" ADD CONSTRAINT "pack_item_content_vocabulary_item_id_content_vocabulary_item_id_fk" FOREIGN KEY ("content_vocabulary_item_id") REFERENCES "public"."content_vocabulary_item"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_item" ADD CONSTRAINT "pack_item_content_analysis_item_id_content_analysis_item_id_fk" FOREIGN KEY ("content_analysis_item_id") REFERENCES "public"."content_analysis_item"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pack_item" ADD CONSTRAINT "pack_item_term_id_vocabulary_term_id_fk" FOREIGN KEY ("term_id") REFERENCES "public"."vocabulary_term"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_item_content" ADD CONSTRAINT "pack_item_content_pack_item_id_pack_item_id_fk" FOREIGN KEY ("pack_item_id") REFERENCES "public"."pack_item"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_item_content" ADD CONSTRAINT "pack_item_content_audio_artifact_id_artifact_object_id_fk" FOREIGN KEY ("audio_artifact_id") REFERENCES "public"."artifact_object"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "pack_item_content" ADD CONSTRAINT "pack_item_content_image_artifact_id_artifact_object_id_fk" FOREIGN KEY ("image_artifact_id") REFERENCES "public"."artifact_object"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "review_event" ADD CONSTRAINT "review_event_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "review_event" ADD CONSTRAINT "review_event_pack_item_id_pack_item_id_fk" FOREIGN KEY ("pack_item_id") REFERENCES "public"."pack_item"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "review_event" ADD CONSTRAINT "review_event_term_id_vocabulary_term_id_fk" FOREIGN KEY ("term_id") REFERENCES "public"."vocabulary_term"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -329,28 +311,29 @@ CREATE INDEX "artifact_object_kind_idx" ON "artifact_object" USING btree ("kind"
 CREATE UNIQUE INDEX "content_movie_tmdb_unique" ON "content" USING btree ("tmdb_movie_id") WHERE "content"."kind" = 'movie';--> statement-breakpoint
 CREATE UNIQUE INDEX "content_season_tmdb_unique" ON "content" USING btree ("tmdb_show_id","tmdb_season_number") WHERE "content"."kind" = 'season';--> statement-breakpoint
 CREATE INDEX "content_kind_idx" ON "content" USING btree ("kind");--> statement-breakpoint
-CREATE UNIQUE INDEX "content_processing_run_fingerprint_unique" ON "content_processing_run" USING btree ("content_id","pipeline_fingerprint");--> statement-breakpoint
-CREATE INDEX "content_processing_run_status_idx" ON "content_processing_run" USING btree ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX "content_source_snapshot_active_content_unique" ON "content_source_snapshot" USING btree ("content_id") WHERE "content_source_snapshot"."is_active" = true;--> statement-breakpoint
-CREATE UNIQUE INDEX "content_source_snapshot_content_hash_unique" ON "content_source_snapshot" USING btree ("content_id","normalized_text_hash");--> statement-breakpoint
-CREATE INDEX "content_subtitle_availability_status_retry_idx" ON "content_subtitle_availability" USING btree ("status","retry_after");--> statement-breakpoint
-CREATE UNIQUE INDEX "content_vocabulary_item_run_term_unique" ON "content_vocabulary_item" USING btree ("processing_run_id","term_id");--> statement-breakpoint
-CREATE INDEX "content_vocabulary_item_content_idx" ON "content_vocabulary_item" USING btree ("content_id");--> statement-breakpoint
-CREATE INDEX "content_vocabulary_item_term_idx" ON "content_vocabulary_item" USING btree ("term_id");--> statement-breakpoint
-CREATE INDEX "content_vocabulary_item_source_idx" ON "content_vocabulary_item" USING btree ("extraction_source");--> statement-breakpoint
-CREATE UNIQUE INDEX "generation_job_user_idempotency_unique" ON "generation_job" USING btree ("user_id","idempotency_key");--> statement-breakpoint
-CREATE INDEX "generation_job_content_status_idx" ON "generation_job" USING btree ("content_id","status");--> statement-breakpoint
-CREATE INDEX "generation_job_user_status_idx" ON "generation_job" USING btree ("user_id","status");--> statement-breakpoint
-CREATE INDEX "generation_job_event_job_stage_idx" ON "generation_job_event" USING btree ("job_id","stage");--> statement-breakpoint
+CREATE UNIQUE INDEX "content_analysis_item_run_term_unique" ON "content_analysis_item" USING btree ("analysis_run_id","term_id");--> statement-breakpoint
+CREATE INDEX "content_analysis_item_content_idx" ON "content_analysis_item" USING btree ("content_id");--> statement-breakpoint
+CREATE INDEX "content_analysis_item_term_idx" ON "content_analysis_item" USING btree ("term_id");--> statement-breakpoint
+CREATE INDEX "content_analysis_item_source_idx" ON "content_analysis_item" USING btree ("analysis_source");--> statement-breakpoint
+CREATE UNIQUE INDEX "content_analysis_run_fingerprint_unique" ON "content_analysis_run" USING btree ("content_id","pipeline_fingerprint");--> statement-breakpoint
+CREATE INDEX "content_analysis_run_status_idx" ON "content_analysis_run" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "content_analysis_run_stage_idx" ON "content_analysis_run" USING btree ("stage");--> statement-breakpoint
+CREATE INDEX "content_analysis_run_event_run_stage_idx" ON "content_analysis_run_event" USING btree ("run_id","stage");--> statement-breakpoint
 CREATE INDEX "notification_user_status_idx" ON "notification" USING btree ("user_id","status");--> statement-breakpoint
 CREATE INDEX "notification_user_type_idx" ON "notification" USING btree ("user_id","type");--> statement-breakpoint
 CREATE UNIQUE INDEX "pack_user_content_unique" ON "pack" USING btree ("user_id","content_id");--> statement-breakpoint
 CREATE INDEX "pack_status_idx" ON "pack" USING btree ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX "pack_item_pack_candidate_unique" ON "pack_item" USING btree ("pack_id","content_vocabulary_item_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "pack_generation_job_user_idempotency_unique" ON "pack_generation_job" USING btree ("user_id","idempotency_key");--> statement-breakpoint
+CREATE INDEX "pack_generation_job_content_status_idx" ON "pack_generation_job" USING btree ("content_id","status");--> statement-breakpoint
+CREATE INDEX "pack_generation_job_user_status_idx" ON "pack_generation_job" USING btree ("user_id","status");--> statement-breakpoint
+CREATE INDEX "pack_generation_job_event_job_stage_idx" ON "pack_generation_job_event" USING btree ("job_id","stage");--> statement-breakpoint
+CREATE UNIQUE INDEX "pack_item_pack_candidate_unique" ON "pack_item" USING btree ("pack_id","content_analysis_item_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "pack_item_pack_sort_order_unique" ON "pack_item" USING btree ("pack_id","sort_order");--> statement-breakpoint
 CREATE INDEX "pack_item_pack_state_idx" ON "pack_item" USING btree ("pack_id","state");--> statement-breakpoint
 CREATE INDEX "pack_item_due_idx" ON "pack_item" USING btree ("state","due_at");--> statement-breakpoint
 CREATE INDEX "pack_item_term_idx" ON "pack_item" USING btree ("term_id");--> statement-breakpoint
+CREATE INDEX "pack_item_content_audio_idx" ON "pack_item_content" USING btree ("audio_artifact_id");--> statement-breakpoint
+CREATE INDEX "pack_item_content_image_idx" ON "pack_item_content" USING btree ("image_artifact_id");--> statement-breakpoint
 CREATE INDEX "review_event_user_reviewed_at_idx" ON "review_event" USING btree ("user_id","reviewed_at");--> statement-breakpoint
 CREATE INDEX "review_event_pack_item_reviewed_at_idx" ON "review_event" USING btree ("pack_item_id","reviewed_at");--> statement-breakpoint
 CREATE INDEX "review_event_term_reviewed_at_idx" ON "review_event" USING btree ("term_id","reviewed_at");--> statement-breakpoint
