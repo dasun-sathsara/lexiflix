@@ -3,6 +3,7 @@
 import {
   Bell,
   Clapperboard,
+  Film,
   Home,
   type LucideIcon,
   Search,
@@ -62,6 +63,11 @@ const platformItems: NavItem[] = [
     title: "Browse",
     url: "/browse",
     icon: Search,
+  },
+  {
+    title: "Curated",
+    url: "/curated",
+    icon: Film,
   },
   {
     title: "My Decks",
