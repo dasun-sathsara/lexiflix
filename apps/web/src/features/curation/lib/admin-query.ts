@@ -1,4 +1,4 @@
-import type { TMDBMediaType } from "@/lib/tmdb";
+import type { TMDBMediaType } from "@/lib/tmdb-shared";
 
 export type CuratedAdminMode = "search" | "browse";
 export type CuratedAdminView = "discover" | "catalog";
@@ -113,4 +113,34 @@ export function buildCuratedAdminDiscoverParams(state: CuratedAdminQueryState) {
   }
 
   return params;
+}
+
+// ---------------------------------------------------------------------------
+// Catalog filter types (appended — do not remove above code)
+// ---------------------------------------------------------------------------
+
+import type { TMDBResult } from "@/lib/tmdb-shared";
+
+export type AnnotatedTMDBResult = TMDBResult & { isCurated: boolean };
+
+export type CuratedAdminCatalogFilter = {
+  mediaType: "all" | "movie" | "tv";
+  status: "all" | "published" | "hidden";
+};
+
+export function parseCuratedAdminCatalogFilter(
+  params: Record<string, string | string[] | undefined>,
+): CuratedAdminCatalogFilter {
+  const mediaType =
+    typeof params.cat_type === "string" && (params.cat_type === "movie" || params.cat_type === "tv")
+      ? (params.cat_type as "movie" | "tv")
+      : ("all" as const);
+
+  const status =
+    typeof params.cat_status === "string" &&
+    (params.cat_status === "published" || params.cat_status === "hidden")
+      ? (params.cat_status as "published" | "hidden")
+      : ("all" as const);
+
+  return { mediaType, status };
 }

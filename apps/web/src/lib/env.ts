@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
 import { z } from "zod";
-
-dotenv.config();
 
 function formatEnvIssues(error: z.ZodError) {
   return error.issues.map((issue) => {

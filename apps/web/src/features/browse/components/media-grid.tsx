@@ -1,4 +1,4 @@
-import type { TMDBResult } from "@/lib/tmdb";
+import type { TMDBResult } from "@/lib/tmdb-shared";
 import { MediaCard } from "./media-card";
 
 interface MediaGridProps {

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listPublishedCuratedEntries } from "@/features/curation/server/catalog";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb";
+import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 export const metadata: Metadata = {
   title: "Curated - LexiFlix",
