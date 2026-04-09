@@ -101,7 +101,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border bg-card/40 px-3 py-2.5 transition-colors hover:bg-card/60",
+        "flex items-center gap-3 rounded-xl border bg-card/40 px-3 py-2.5 transition-all hover:bg-card/60 hover:shadow-sm",
         isPending && "pointer-events-none opacity-60",
       )}
     >
