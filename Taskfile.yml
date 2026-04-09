@@ -143,3 +143,16 @@ tasks:
         else
           echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}'."
         fi
+
+  vercel:web:sync-envs:prod:
+    desc: Sync required apps/web env vars from Doppler into the Vercel production environment
+    vars:
+      DOPPLER_PROJECT: '{{default "lexiflix_web" .DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{default "prd" .DOPPLER_CONFIG}}'
+      VERCEL_ENV: production
+    cmds:
+      - task: vercel:web:sync-envs
+        vars:
+          DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+          DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+          VERCEL_ENV: "{{.VERCEL_ENV}}"

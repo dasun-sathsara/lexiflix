@@ -95,12 +95,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -352,12 +348,8 @@
           "name": "cefr_assessment_attempt_user_id_user_id_fk",
           "tableFrom": "cefr_assessment_attempt",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -470,12 +462,8 @@
           "name": "cefr_assessment_response_attempt_id_cefr_assessment_attempt_id_fk",
           "tableFrom": "cefr_assessment_response",
           "tableTo": "cefr_assessment_attempt",
-          "columnsFrom": [
-            "attempt_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["attempt_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -549,12 +537,8 @@
           "name": "cefr_profile_user_id_user_id_fk",
           "tableFrom": "cefr_profile",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -974,12 +958,8 @@
           "name": "content_analysis_item_analysis_run_id_content_analysis_run_id_fk",
           "tableFrom": "content_analysis_item",
           "tableTo": "content_analysis_run",
-          "columnsFrom": [
-            "analysis_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["analysis_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -987,12 +967,8 @@
           "name": "content_analysis_item_content_id_content_id_fk",
           "tableFrom": "content_analysis_item",
           "tableTo": "content",
-          "columnsFrom": [
-            "content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1000,12 +976,8 @@
           "name": "content_analysis_item_term_id_vocabulary_term_id_fk",
           "tableFrom": "content_analysis_item",
           "tableTo": "vocabulary_term",
-          "columnsFrom": [
-            "term_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["term_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1187,12 +1159,8 @@
           "name": "content_analysis_run_content_id_content_id_fk",
           "tableFrom": "content_analysis_run",
           "tableTo": "content",
-          "columnsFrom": [
-            "content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1274,12 +1242,8 @@
           "name": "content_analysis_run_event_run_id_content_analysis_run_id_fk",
           "tableFrom": "content_analysis_run_event",
           "tableTo": "content_analysis_run",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["run_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1441,12 +1405,8 @@
           "name": "notification_user_id_user_id_fk",
           "tableFrom": "notification",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1615,12 +1575,8 @@
           "name": "pack_user_id_user_id_fk",
           "tableFrom": "pack",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1628,12 +1584,8 @@
           "name": "pack_content_id_content_id_fk",
           "tableFrom": "pack",
           "tableTo": "content",
-          "columnsFrom": [
-            "content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1641,12 +1593,8 @@
           "name": "pack_source_job_id_pack_generation_job_id_fk",
           "tableFrom": "pack",
           "tableTo": "pack_generation_job",
-          "columnsFrom": [
-            "source_job_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_job_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1654,12 +1602,8 @@
           "name": "pack_analysis_run_id_content_analysis_run_id_fk",
           "tableFrom": "pack",
           "tableTo": "content_analysis_run",
-          "columnsFrom": [
-            "analysis_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["analysis_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1847,12 +1791,8 @@
           "name": "pack_generation_job_user_id_user_id_fk",
           "tableFrom": "pack_generation_job",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1860,12 +1800,8 @@
           "name": "pack_generation_job_content_id_content_id_fk",
           "tableFrom": "pack_generation_job",
           "tableTo": "content",
-          "columnsFrom": [
-            "content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1873,12 +1809,8 @@
           "name": "pack_generation_job_analysis_run_id_content_analysis_run_id_fk",
           "tableFrom": "pack_generation_job",
           "tableTo": "content_analysis_run",
-          "columnsFrom": [
-            "analysis_run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["analysis_run_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1960,12 +1892,8 @@
           "name": "pack_generation_job_event_job_id_pack_generation_job_id_fk",
           "tableFrom": "pack_generation_job_event",
           "tableTo": "pack_generation_job",
-          "columnsFrom": [
-            "job_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["job_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2215,12 +2143,8 @@
           "name": "pack_item_pack_id_pack_id_fk",
           "tableFrom": "pack_item",
           "tableTo": "pack",
-          "columnsFrom": [
-            "pack_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pack_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2228,12 +2152,8 @@
           "name": "pack_item_content_analysis_item_id_content_analysis_item_id_fk",
           "tableFrom": "pack_item",
           "tableTo": "content_analysis_item",
-          "columnsFrom": [
-            "content_analysis_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_analysis_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -2241,12 +2161,8 @@
           "name": "pack_item_term_id_vocabulary_term_id_fk",
           "tableFrom": "pack_item",
           "tableTo": "vocabulary_term",
-          "columnsFrom": [
-            "term_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["term_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2349,12 +2265,8 @@
           "name": "pack_item_content_pack_item_id_pack_item_id_fk",
           "tableFrom": "pack_item_content",
           "tableTo": "pack_item",
-          "columnsFrom": [
-            "pack_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pack_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2362,12 +2274,8 @@
           "name": "pack_item_content_audio_artifact_id_artifact_object_id_fk",
           "tableFrom": "pack_item_content",
           "tableTo": "artifact_object",
-          "columnsFrom": [
-            "audio_artifact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["audio_artifact_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2375,12 +2283,8 @@
           "name": "pack_item_content_image_artifact_id_artifact_object_id_fk",
           "tableFrom": "pack_item_content",
           "tableTo": "artifact_object",
-          "columnsFrom": [
-            "image_artifact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_artifact_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2510,12 +2414,8 @@
           "name": "review_event_user_id_user_id_fk",
           "tableFrom": "review_event",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2523,12 +2423,8 @@
           "name": "review_event_pack_item_id_pack_item_id_fk",
           "tableFrom": "review_event",
           "tableTo": "pack_item",
-          "columnsFrom": [
-            "pack_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pack_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2536,12 +2432,8 @@
           "name": "review_event_term_id_vocabulary_term_id_fk",
           "tableFrom": "review_event",
           "tableTo": "vocabulary_term",
-          "columnsFrom": [
-            "term_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["term_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -2613,12 +2505,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2628,9 +2516,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -2702,9 +2588,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -2786,12 +2670,8 @@
           "name": "user_preferences_user_id_user_id_fk",
           "tableFrom": "user_preferences",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2859,12 +2739,8 @@
           "name": "user_streak_user_id_user_id_fk",
           "tableFrom": "user_streak",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3005,12 +2881,8 @@
           "name": "user_term_state_user_id_user_id_fk",
           "tableFrom": "user_term_state",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3018,12 +2890,8 @@
           "name": "user_term_state_term_id_vocabulary_term_id_fk",
           "tableFrom": "user_term_state",
           "tableTo": "vocabulary_term",
-          "columnsFrom": [
-            "term_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["term_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3031,12 +2899,8 @@
           "name": "user_term_state_last_pack_item_id_pack_item_id_fk",
           "tableFrom": "user_term_state",
           "tableTo": "pack_item",
-          "columnsFrom": [
-            "last_pack_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["last_pack_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3044,10 +2908,7 @@
       "compositePrimaryKeys": {
         "user_term_state_pkey": {
           "name": "user_term_state_pkey",
-          "columns": [
-            "user_id",
-            "term_id"
-          ]
+          "columns": ["user_id", "term_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3231,59 +3092,32 @@
     "public.analysis_source": {
       "name": "analysis_source",
       "schema": "public",
-      "values": [
-        "nlp",
-        "analysis_llm"
-      ]
+      "values": ["nlp", "analysis_llm"]
     },
     "public.artifact_access": {
       "name": "artifact_access",
       "schema": "public",
-      "values": [
-        "private",
-        "signed",
-        "public"
-      ]
+      "values": ["private", "signed", "public"]
     },
     "public.artifact_kind": {
       "name": "artifact_kind",
       "schema": "public",
-      "values": [
-        "audio",
-        "image",
-        "avatar"
-      ]
+      "values": ["audio", "image", "avatar"]
     },
     "public.assessment_attempt_status": {
       "name": "assessment_attempt_status",
       "schema": "public",
-      "values": [
-        "in_progress",
-        "completed"
-      ]
+      "values": ["in_progress", "completed"]
     },
     "public.card_state": {
       "name": "card_state",
       "schema": "public",
-      "values": [
-        "new",
-        "learning",
-        "due",
-        "mastered",
-        "removed"
-      ]
+      "values": ["new", "learning", "due", "mastered", "removed"]
     },
     "public.cefr_level": {
       "name": "cefr_level",
       "schema": "public",
-      "values": [
-        "A1",
-        "A2",
-        "B1",
-        "B2",
-        "C1",
-        "C2"
-      ]
+      "values": ["A1", "A2", "B1", "B2", "C1", "C2"]
     },
     "public.content_analysis_stage": {
       "name": "content_analysis_stage",
@@ -3302,59 +3136,32 @@
     "public.content_kind": {
       "name": "content_kind",
       "schema": "public",
-      "values": [
-        "movie",
-        "season"
-      ]
+      "values": ["movie", "season"]
     },
     "public.frequency_preference": {
       "name": "frequency_preference",
       "schema": "public",
-      "values": [
-        "balanced",
-        "common_first",
-        "challenge_first"
-      ]
+      "values": ["balanced", "common_first", "challenge_first"]
     },
     "public.job_status": {
       "name": "job_status",
       "schema": "public",
-      "values": [
-        "queued",
-        "running",
-        "completed",
-        "failed",
-        "cancelled"
-      ]
+      "values": ["queued", "running", "completed", "failed", "cancelled"]
     },
     "public.notification_channel": {
       "name": "notification_channel",
       "schema": "public",
-      "values": [
-        "in_app",
-        "email"
-      ]
+      "values": ["in_app", "email"]
     },
     "public.notification_status": {
       "name": "notification_status",
       "schema": "public",
-      "values": [
-        "queued",
-        "sent",
-        "read",
-        "dismissed",
-        "failed"
-      ]
+      "values": ["queued", "sent", "read", "dismissed", "failed"]
     },
     "public.notification_type": {
       "name": "notification_type",
       "schema": "public",
-      "values": [
-        "pack_ready",
-        "reviews_due",
-        "streak_risk",
-        "system"
-      ]
+      "values": ["pack_ready", "reviews_due", "streak_risk", "system"]
     },
     "public.pack_generation_stage": {
       "name": "pack_generation_stage",
@@ -3372,58 +3179,32 @@
     "public.pack_status": {
       "name": "pack_status",
       "schema": "public",
-      "values": [
-        "active",
-        "archived"
-      ]
+      "values": ["active", "archived"]
     },
     "public.review_rating": {
       "name": "review_rating",
       "schema": "public",
-      "values": [
-        "again",
-        "hard",
-        "good",
-        "easy"
-      ]
+      "values": ["again", "hard", "good", "easy"]
     },
     "public.run_status": {
       "name": "run_status",
       "schema": "public",
-      "values": [
-        "queued",
-        "running",
-        "completed",
-        "failed"
-      ]
+      "values": ["queued", "running", "completed", "failed"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "learner",
-        "admin"
-      ]
+      "values": ["learner", "admin"]
     },
     "public.user_term_state_value": {
       "name": "user_term_state_value",
       "schema": "public",
-      "values": [
-        "unseen",
-        "learning",
-        "known",
-        "ignored"
-      ]
+      "values": ["unseen", "learning", "known", "ignored"]
     },
     "public.vocabulary_kind": {
       "name": "vocabulary_kind",
       "schema": "public",
-      "values": [
-        "word",
-        "phrasal_verb",
-        "idiom",
-        "slang"
-      ]
+      "values": ["word", "phrasal_verb", "idiom", "slang"]
     }
   },
   "schemas": {},

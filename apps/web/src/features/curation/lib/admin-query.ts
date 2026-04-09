@@ -1,8 +1,10 @@
 import type { TMDBMediaType } from "@/lib/tmdb";
 
 export type CuratedAdminMode = "search" | "browse";
+export type CuratedAdminView = "discover" | "catalog";
 
 export type CuratedAdminQueryState = {
+  view: CuratedAdminView;
   mode: CuratedAdminMode;
   mediaType: TMDBMediaType;
   query: string;
@@ -59,6 +61,11 @@ export function getAdminSortOptions(mediaType: TMDBMediaType) {
 export function parseCuratedAdminSearchParams(
   params: Record<string, string | string[] | undefined>,
 ) {
+  const view: CuratedAdminView =
+    typeof params.view === "string" && (params.view === "discover" || params.view === "catalog")
+      ? params.view
+      : "discover";
+
   const mode: CuratedAdminMode =
     typeof params.mode === "string" && (params.mode === "search" || params.mode === "browse")
       ? params.mode
@@ -74,6 +81,7 @@ export function parseCuratedAdminSearchParams(
   const requestedSort = typeof params.sort === "string" ? params.sort : defaultSort;
 
   return {
+    view,
     mode,
     mediaType,
     query: typeof params.q === "string" ? params.q.trim() : "",
