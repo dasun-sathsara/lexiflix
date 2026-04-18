@@ -7,7 +7,7 @@ export default function ForbiddenPage() {
     <SoftGradientBackground>
       <main className="flex min-h-screen items-center px-6 py-20">
         <div className="mx-auto w-full max-w-2xl text-center">
-          {/* Main Content */}WWW
+          {/* Main Content */}
           <div className="space-y-6">
             {/* Large 403 Display */}
             <div className="relative">
@@ -46,7 +46,7 @@ export default function ForbiddenPage() {
             </div>
 
             {/* Info Card */}
-            <div className="mx-auto mt-8 max-w-md rounded-2xl border border-border/40 bg-white/85 p-6 text-left shadow-sm backdrop-blur-md dark:border-border/30 dark:bg-slate-950/70">
+            <div className="mx-auto mt-8 max-w-md rounded-2xl border border-border/40 bg-card/90 p-6 text-left shadow-sm backdrop-blur-md dark:bg-card/80">
               <h3 className="mb-2 text-sm font-semibold text-foreground">Why am I seeing this?</h3>
               <p className="text-sm text-muted-foreground">
                 This page or resource requires special permissions. You may need a different account

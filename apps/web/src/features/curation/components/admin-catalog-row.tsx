@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 import {
   deleteCuratedEntryAction,
@@ -100,7 +101,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border bg-background/80 px-4 py-3.5 transition-all hover:bg-card hover:shadow-sm lg:flex-row lg:items-center lg:justify-between lg:px-4.5 lg:py-4",
+        "flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 px-4 py-3.5 transition-all hover:bg-card/60 hover:shadow-sm lg:flex-row lg:items-center lg:justify-between lg:px-4.5 lg:py-4",
         isPending && "pointer-events-none opacity-60",
       )}
     >
@@ -118,10 +119,10 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate text-base font-semibold tracking-tight">{entry.title}</p>
-            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+            <Badge variant="outline">
               #{entry.tmdbId}
             </Badge>
-            <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+            <Badge variant="secondary">
               {entry.mediaType === "tv" ? (
                 <Tv data-icon="inline-start" />
               ) : (
@@ -135,7 +136,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
             {year && <span>{year}</span>}
             {voteAvg && <span>★ {voteAvg}</span>}
             {entry.contentRating && (
-              <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+              <Badge variant="outline">
                 {entry.contentRating}
               </Badge>
             )}
@@ -147,7 +148,6 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
                 <Badge
                   key={g.id}
                   variant="secondary"
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
                 >
                   {g.name}
                 </Badge>
@@ -157,7 +157,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
         </div>
       </div>
 
-      <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-2xl border bg-card/60 p-2.5 sm:flex-row sm:flex-wrap sm:items-end lg:w-auto lg:min-w-[310px] lg:justify-end">
+      <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-[calc(var(--radius)+2px)] border bg-card/60 p-2.5 sm:flex-row sm:flex-wrap sm:items-end lg:w-auto lg:min-w-[310px] lg:justify-end">
         <div className="flex min-w-[96px] flex-col gap-1">
           <label
             htmlFor={`rank-${entry.id}`}
@@ -165,7 +165,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
           >
             Rank
           </label>
-          <input
+          <Input
             id={`rank-${entry.id}`}
             type="number"
             min={1}
@@ -180,7 +180,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
             placeholder="—"
             disabled={isPending}
             className={cn(
-              "border-input h-9 w-full rounded-xl border bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] tabular-nums focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+              "tabular-nums",
               rankDirty &&
                 "border-amber-400/70 bg-amber-50/50 ring-amber-300/40 dark:bg-amber-950/20",
             )}

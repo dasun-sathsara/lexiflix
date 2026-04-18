@@ -1,9 +1,10 @@
 import { Eye, Film, Layers, LayoutGrid, Search, Tv } from "lucide-react";
 import Link from "next/link";
-import { type ComponentType, type ReactNode, Suspense } from "react";
+import { Suspense } from "react";
 
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { AppEmptyState, AppPanel, AppStat } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,31 +44,6 @@ function buildPageUrl(
   return `?${new URLSearchParams(entries).toString()}`;
 }
 
-function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  action?: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/50 px-5 py-10 text-center shadow-sm">
-      <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
-        <Icon className="size-6" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <p className="text-base font-semibold">{title}</p>
-        <p className="mx-auto max-w-sm text-sm leading-5 text-muted-foreground">{description}</p>
-      </div>
-      {action}
-    </div>
-  );
-}
-
 function ControlsSkeleton() {
   return <div className="h-[184px] animate-pulse rounded-2xl border bg-card/50" />;
 }
@@ -91,12 +67,11 @@ function PaginationRow({
     <div className="flex items-center justify-between pt-2">
       <div>
         {currentPage > 1 && (
-          <Link
-            href={buildPageUrl(baseParams, currentPage - 1)}
-            className="inline-flex items-center gap-1.5 rounded-xl border bg-card/70 px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-card hover:shadow-md"
-          >
-            ← Previous
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={buildPageUrl(baseParams, currentPage - 1)}>
+              ← Previous
+            </Link>
+          </Button>
         )}
       </div>
 
@@ -106,12 +81,11 @@ function PaginationRow({
 
       <div>
         {currentPage < totalPages && (
-          <Link
-            href={buildPageUrl(baseParams, currentPage + 1)}
-            className="inline-flex items-center gap-1.5 rounded-xl border bg-card/70 px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-card hover:shadow-md"
-          >
-            Next →
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={buildPageUrl(baseParams, currentPage + 1)}>
+              Next →
+            </Link>
+          </Button>
         )}
       </div>
     </div>
@@ -169,10 +143,7 @@ export function AdminCuratedWorkspace({
   const isCatalog = queryState.view === "catalog";
 
   return (
-    <AppPageShell className="gap-6 py-6">
-      <div className="pointer-events-none absolute -left-20 top-20 size-64 rounded-full bg-indigo-500/5 blur-[80px]" />
-      <div className="pointer-events-none absolute right-0 top-1/2 size-64 rounded-full bg-purple-500/5 blur-[80px]" />
-
+    <AppPageShell>
       <section className="flex flex-col gap-4">
         <AppPageHeader
           eyebrow={
@@ -189,66 +160,25 @@ export function AdminCuratedWorkspace({
           description="Content operations workspace — find titles, add to the catalog, and manage published entries."
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Layers className="size-4" />
-              Total entries
-            </div>
-            <div className="mt-2 flex items-end gap-2">
-              <span className="text-[2rem] leading-none font-semibold tabular-nums">
-                {stats.total}
-              </span>
-              <span className="pb-0.5 text-xs text-muted-foreground">catalog items</span>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Eye className="size-4 text-emerald-500" />
-              Published
-            </div>
-            <div className="mt-2 flex items-end gap-2">
-              <span className="text-[2rem] leading-none font-semibold tabular-nums">
-                {stats.published}
-              </span>
-              <span className="pb-0.5 text-xs text-muted-foreground">live titles</span>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Film className="size-4 text-indigo-500" />
-              Movies
-            </div>
-            <div className="mt-2 flex items-end gap-2">
-              <span className="text-[2rem] leading-none font-semibold tabular-nums">
-                {stats.movies}
-              </span>
-              <span className="pb-0.5 text-xs text-muted-foreground">film entries</span>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tv className="size-4 text-purple-500" />
-              TV shows
-            </div>
-            <div className="mt-2 flex items-end gap-2">
-              <span className="text-[2rem] leading-none font-semibold tabular-nums">
-                {stats.tv}
-              </span>
-              <span className="pb-0.5 text-xs text-muted-foreground">series entries</span>
-            </div>
-          </div>
+        <div className="flex flex-wrap gap-2.5">
+          <AppStat icon={Layers} label="Catalog" value={stats.total} hint="items" />
+          <AppStat
+            icon={Eye}
+            label="Published"
+            value={stats.published}
+            hint="live"
+            tone="success"
+          />
+          <AppStat icon={Film} label="Movies" value={stats.movies} />
+          <AppStat icon={Tv} label="TV Shows" value={stats.tv} />
         </div>
       </section>
 
-      <div className="inline-flex self-start items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
+      <AppPanel className="inline-flex self-start items-center gap-1 p-1">
         <Link
           href={discoverHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.75 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all",
             isDiscover
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -261,7 +191,7 @@ export function AdminCuratedWorkspace({
         <Link
           href={catalogHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.75 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all",
             isCatalog
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -282,7 +212,7 @@ export function AdminCuratedWorkspace({
             </span>
           )}
         </Link>
-      </div>
+      </AppPanel>
 
       {isDiscover && (
         <div className="flex flex-col gap-4">
@@ -292,7 +222,7 @@ export function AdminCuratedWorkspace({
 
           {queryState.mode === "browse" &&
             (discoverResults.length > 0 ? (
-              <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+              <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
                 <CardHeader className="gap-1.5 border-b py-3.5">
                   <CardTitle className="text-base font-semibold">Discovery results</CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -321,7 +251,7 @@ export function AdminCuratedWorkspace({
                 </CardContent>
               </Card>
             ) : (
-              <EmptyState
+              <AppEmptyState
                 icon={LayoutGrid}
                 title="No results found"
                 description="Try adjusting your filters, selecting a different genre, or changing the decade."
@@ -331,7 +261,7 @@ export function AdminCuratedWorkspace({
           {queryState.mode === "search" &&
             (queryState.query ? (
               discoverResults.length > 0 ? (
-                <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+                <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
                   <CardHeader className="gap-1.5 border-b py-3.5">
                     <CardTitle className="text-base font-semibold">Search results</CardTitle>
                     <p className="text-sm text-muted-foreground">
@@ -360,14 +290,14 @@ export function AdminCuratedWorkspace({
                   </CardContent>
                 </Card>
               ) : (
-                <EmptyState
+                <AppEmptyState
                   icon={Search}
                   title={`No results for "${queryState.query}"`}
                   description="Try different keywords or switch to Browse mode to discover by genre and decade."
                 />
               )
             ) : (
-              <EmptyState
+              <AppEmptyState
                 icon={Search}
                 title="Search for a title"
                 description="Type a title above to search TMDB, or switch to Browse mode to discover by filters."
@@ -383,7 +313,7 @@ export function AdminCuratedWorkspace({
           </Suspense>
 
           {catalogEntries.length > 0 ? (
-            <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+            <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
               <CardHeader className="gap-1.5 border-b py-3.5">
                 <CardTitle className="text-base font-semibold">Catalog entries</CardTitle>
                 <p className="text-sm text-muted-foreground">
@@ -391,14 +321,14 @@ export function AdminCuratedWorkspace({
                   metadata.
                 </p>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2.5 py-3.5">
+              <CardContent className="flex flex-col gap-3 py-3.5">
                 {catalogEntries.map((entry) => (
                   <AdminCatalogRow key={entry.id} entry={entry} />
                 ))}
               </CardContent>
             </Card>
           ) : allEntriesCount === 0 ? (
-            <EmptyState
+            <AppEmptyState
               icon={Layers}
               title="No titles in the catalog yet"
               description="Switch to Discover & Add to find titles on TMDB and add them to the catalog."
@@ -412,7 +342,7 @@ export function AdminCuratedWorkspace({
               }
             />
           ) : (
-            <EmptyState
+            <AppEmptyState
               icon={Layers}
               title="No entries match this filter"
               description="Try adjusting the media type or status filter above to see more entries."

@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { AppPageHeader, AppSectionHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listPublishedCuratedEntries } from "@/features/curation/server/catalog";
@@ -70,7 +71,7 @@ function FeaturedSpotlight({
   const year = formatYear(releaseDate);
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border bg-card/50 shadow-xl shadow-black/5">
+    <section className="relative overflow-hidden rounded-[calc(var(--radius)+4px)] border bg-card/50 shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
       {backdropUrl && (
         <Image
           src={backdropUrl}
@@ -182,7 +183,7 @@ function MoviePosterGrid({
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}`}
-              className="group flex flex-col gap-3 rounded-2xl border bg-card/40 p-3 shadow-sm transition-all hover:-translate-y-1 hover:border-amber-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-amber-500/10"
+              className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-amber-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-amber-500/10"
             >
               {/* Poster */}
               <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted">
@@ -225,7 +226,7 @@ function MoviePosterGrid({
                 {item.genres.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {item.genres.slice(0, 2).map((genre) => (
-                      <Badge key={genre.id} variant="secondary" className="text-xs">
+                      <Badge key={genre.id} variant="secondary">
                         {genre.name}
                       </Badge>
                     ))}
@@ -264,7 +265,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}`}
-              className="group grid gap-4 rounded-2xl border bg-card/40 p-4 shadow-sm transition-all hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
+              className="group grid gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm transition-all duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
             >
               {/* Poster */}
               <div className="relative hidden overflow-hidden rounded-xl border bg-muted transition-shadow group-hover:shadow-md md:block">
@@ -316,7 +317,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
                 {/* Genres + hint */}
                 <div className="flex flex-wrap items-center gap-2">
                   {item.genres.slice(0, 3).map((genre) => (
-                    <Badge key={genre.id} variant="secondary" className="text-xs">
+                    <Badge key={genre.id} variant="secondary">
                       {genre.name}
                     </Badge>
                   ))}
@@ -365,14 +366,7 @@ export default async function CuratedPage() {
     <>
       <AppTopbar title="Curated" />
 
-      <AppPageShell className="gap-8">
-        {/* Decorative background blobs */}
-        <div className="pointer-events-none absolute -left-16 top-24 size-72 rounded-full bg-amber-500/5 blur-[80px]" />
-        <div className="pointer-events-none absolute right-0 top-1/3 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Header                                                            */}
-        {/* ---------------------------------------------------------------- */}
+      <AppPageShell>
         <section>
           <AppPageHeader
             heading="Curated Picks"
@@ -380,32 +374,15 @@ export default async function CuratedPage() {
             stats={
               stats.total > 0 ? (
                 <>
-                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                    <Sparkles className="size-3.5 text-indigo-500" />
-                    <span className="font-semibold tabular-nums">{stats.total}</span>
-                    <span className="text-xs text-muted-foreground">titles</span>
-                  </div>
-
-                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                    <Film className="size-3.5 text-indigo-500" />
-                    <span className="font-semibold tabular-nums">{stats.movies}</span>
-                    <span className="text-xs text-muted-foreground">movies</span>
-                  </div>
-
-                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                    <Tv className="size-3.5 text-purple-500" />
-                    <span className="font-semibold tabular-nums">{stats.tv}</span>
-                    <span className="text-xs text-muted-foreground">TV shows</span>
-                  </div>
+                  <AppStat icon={Sparkles} label="Titles" value={stats.total} tone="accent" />
+                  <AppStat icon={Film} label="Movies" value={stats.movies} />
+                  <AppStat icon={Tv} label="TV Shows" value={stats.tv} />
                 </>
               ) : null
             }
           />
         </section>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Featured spotlight or empty state                                 */}
-        {/* ---------------------------------------------------------------- */}
         {featuredEntry ? (
           <FeaturedSpotlight
             title={featuredEntry.title}
@@ -418,23 +395,13 @@ export default async function CuratedPage() {
             tmdbId={featuredEntry.tmdbId}
           />
         ) : (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/20 py-14 text-center">
-            <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
-              <Sparkles className="size-6" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Nothing published yet</p>
-              <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
-                The catalog is live but empty — an admin needs to publish entries from the curation
-                workspace first.
-              </p>
-            </div>
-          </div>
+          <AppEmptyState
+            icon={Sparkles}
+            title="Nothing published yet"
+            description="The catalog is live but empty. An admin needs to publish entries from the curation workspace first."
+          />
         )}
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Content sections                                                  */}
-        {/* ---------------------------------------------------------------- */}
         {movieEntries.length > 0 && <MoviePosterGrid items={movieEntries} />}
         {tvEntries.length > 0 && <TvShowRows items={tvEntries} />}
       </AppPageShell>

@@ -21,22 +21,24 @@ export function AppPageHeader({
 }: AppPageHeaderProps) {
   return (
     <header
-      className={cn("flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between", className)}
+      className={cn("flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between", className)}
       {...props}
     >
-      <div className="max-w-3xl space-y-3">
+      <div className="max-w-3xl flex flex-col gap-5">
         {eyebrow ? <div className="flex flex-wrap items-center gap-2">{eyebrow}</div> : null}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{heading}</h1>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{heading}</h1>
           {description ? (
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px] sm:leading-relaxed">
               {description}
             </p>
           ) : null}
         </div>
-        {stats ? <div className="flex flex-wrap gap-2">{stats}</div> : null}
+        {stats ? <div className="flex flex-wrap gap-2.5">{stats}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div>
+      ) : null}
     </header>
   );
 }
@@ -59,13 +61,13 @@ export function AppSectionHeader({
   const TitleTag = titleAs;
 
   return (
-    <div className={cn("flex flex-col gap-1", className)} {...props}>
+    <div className={cn("flex flex-col gap-2", className)} {...props}>
       <div className="flex items-center gap-2">
         {icon}
-        <TitleTag className="text-lg font-semibold tracking-tight">{heading}</TitleTag>
+        <TitleTag className="text-xl font-semibold tracking-tight">{heading}</TitleTag>
       </div>
       {description ? (
-        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
     </div>
   );

@@ -62,7 +62,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
   ];
 
   return (
-    <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+    <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
       <CardHeader className="gap-1.5 border-b py-3.5">
         <CardTitle className="text-base font-semibold">Catalog filters</CardTitle>
         <CardDescription>
@@ -83,7 +83,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_type", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8.5 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.25 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -119,7 +119,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_status", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8.5 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.25 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",

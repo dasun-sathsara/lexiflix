@@ -15,6 +15,7 @@ import Link from "next/link";
 
 import { AppPageHeader, AppSectionHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
@@ -162,7 +163,7 @@ function CardCountPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs",
+        "inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs",
         styles[variant],
       )}
     >
@@ -177,7 +178,7 @@ function DeckRow({ deck }: { deck: Deck }) {
   const hasCardsToStudy = deck.newCards + deck.learningCards + deck.dueCards > 0;
 
   return (
-    <div className="group flex items-center gap-4 rounded-2xl border bg-card/40 p-4 shadow-sm backdrop-blur-sm transition-all hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30">
+    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30">
       {/* Poster */}
       <div className="relative h-[88px] w-[60px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm transition-shadow group-hover:shadow-md">
         <Image
@@ -258,7 +259,7 @@ function DeckRow({ deck }: { deck: Deck }) {
         </Button>
 
         {hasCardsToStudy ? (
-          <Button size="sm" className="gap-1.5 shadow-sm transition-all active:scale-95" asChild>
+          <Button size="sm" className="gap-1.5" asChild>
             <Link href={`/study/${deck.id}`}>
               <Play className="size-3.5 fill-current" />
               <span className="hidden sm:inline">Study</span>
@@ -286,16 +287,8 @@ export default function DecksPage() {
     <>
       <AppTopbar title="My Decks" />
 
-      <AppPageShell className="gap-6">
-        {/* Decorative background blobs */}
-        <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
-        <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
-        <div className="pointer-events-none absolute bottom-0 left-1/3 size-64 rounded-full bg-rose-500/5 blur-[80px]" />
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Header                                                            */}
-        {/* ---------------------------------------------------------------- */}
-        <section className="flex flex-col gap-3">
+      <AppPageShell>
+        <section className="flex flex-col gap-4">
           <AppPageHeader
             heading="My Decks"
             description={
@@ -314,7 +307,7 @@ export default function DecksPage() {
                 {totalCards > 0 && (
                   <Button
                     size="lg"
-                    className="gap-1.5 shadow-sm transition-all active:scale-95"
+                    className="gap-1.5"
                     asChild
                   >
                     <Link href={`/study/${MOCK_DECKS[0]?.id ?? "interstellar"}`}>
@@ -328,45 +321,36 @@ export default function DecksPage() {
             }
             stats={
               <>
-                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                  <Calendar className="size-3.5 text-rose-500" />
-                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalDue}</span>
-                  <span className="text-xs text-muted-foreground">due today</span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                  <Sparkles className="size-3.5 text-indigo-500" />
-                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalNew}</span>
-                  <span className="text-xs text-muted-foreground">new</span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                  <BookOpen className="size-3.5 text-amber-500" />
-                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalLearning}</span>
-                  <span className="text-xs text-muted-foreground">learning</span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                  <Clock className="size-3.5 text-emerald-500" />
-                  <span className="font-semibold tabular-nums">
-                    {MOCK_STATS.totalEstimatedMinutes}m
-                  </span>
-                  <span className="text-xs text-muted-foreground">est. today</span>
-                </div>
-
-                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                  <Flame className="size-3.5 text-amber-500" />
-                  <span className="font-semibold tabular-nums">{MOCK_STATS.longestStreak}</span>
-                  <span className="text-xs text-muted-foreground">top streak</span>
-                </div>
+                <AppStat
+                  icon={Calendar}
+                  label="Due Today"
+                  value={MOCK_STATS.totalDue}
+                  tone="danger"
+                />
+                <AppStat icon={Sparkles} label="New" value={MOCK_STATS.totalNew} tone="accent" />
+                <AppStat
+                  icon={BookOpen}
+                  label="Learning"
+                  value={MOCK_STATS.totalLearning}
+                  tone="warm"
+                />
+                <AppStat
+                  icon={Clock}
+                  label="Est. Today"
+                  value={`${MOCK_STATS.totalEstimatedMinutes}m`}
+                  tone="success"
+                />
+                <AppStat
+                  icon={Flame}
+                  label="Top Streak"
+                  value={MOCK_STATS.longestStreak}
+                  tone="warm"
+                />
               </>
             }
           />
         </section>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Deck list                                                         */}
-        {/* ---------------------------------------------------------------- */}
         {hasDecks ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
@@ -383,23 +367,19 @@ export default function DecksPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/20 py-14 text-center">
-            <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
-              <Layers className="size-6" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">No decks yet</p>
-              <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
-                Browse movies and TV shows to generate vocabulary decks and start learning.
-              </p>
-            </div>
-            <Button size="sm" asChild className="mt-1">
-              <Link href="/browse">
-                Browse Content
-                <ChevronRight className="size-4" />
-              </Link>
-            </Button>
-          </div>
+          <AppEmptyState
+            icon={Layers}
+            title="No decks yet"
+            description="Browse movies and TV shows to generate vocabulary decks and start learning."
+            action={
+              <Button size="sm" asChild>
+                <Link href="/browse">
+                  Browse Content
+                  <ChevronRight className="size-4" />
+                </Link>
+              </Button>
+            }
+          />
         )}
       </AppPageShell>
     </>

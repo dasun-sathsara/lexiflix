@@ -40,7 +40,7 @@ function SubmitButton({ isCurated }: { isCurated: boolean }) {
       size="sm"
       disabled={pending}
       className={cn(
-        "h-7 gap-1.5 text-xs shadow-sm",
+        "gap-1.5 text-xs",
         !isCurated &&
           "border-indigo-200/60 text-indigo-600 hover:bg-indigo-50/60 hover:text-indigo-700 dark:border-indigo-800/50 dark:text-indigo-400 dark:hover:bg-indigo-950/50",
       )}
@@ -79,9 +79,9 @@ export function AdminDiscoverRow({
   const action = isCurated ? refreshCuratedEntryAction : curateTmdbItemAction;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card/40 px-3 py-2.5 transition-all hover:bg-card/60 hover:shadow-sm">
+    <div className="flex items-center gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 transition-all hover:bg-card/60 hover:shadow-sm">
       {/* Poster thumbnail */}
-      <div className="relative h-[60px] w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+      <div className="relative h-[60px] w-10 shrink-0 overflow-hidden rounded-xl border bg-muted">
         {posterUrl ? (
           <Image src={posterUrl} alt={title} fill className="object-cover" sizes="40px" />
         ) : (
@@ -109,7 +109,7 @@ export function AdminDiscoverRow({
           )}
           <span>★ {result.vote_average.toFixed(1)}</span>
           {genreNames.map((name) => (
-            <Badge key={name} variant="secondary" className="h-4 rounded-sm px-1.5 text-[10px]">
+            <Badge key={name} variant="secondary">
               {name}
             </Badge>
           ))}

@@ -1,5 +1,9 @@
 "use client";
 
+import { Search } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,9 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Genre } from "@/lib/tmdb-shared";
-import { Search } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, useTransition } from "react";
 
 interface BrowseControlsProps {
   genres: Genre[];
@@ -88,7 +89,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
   const isSearching = !!searchTerm;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-5">
       <Tabs
         defaultValue="movie"
         value={currentType}
@@ -100,7 +101,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
 
           // Re-apply decade filter for the new type if active
           if (currentDecade !== "all") {
-            const startYear = parseInt(currentDecade);
+            const startYear = Number.parseInt(currentDecade, 10);
             const endYear = startYear + 9;
             const isNewTypeTv = val === "tv";
             const newKeyDate = isNewTypeTv ? "first_air_date" : "primary_release_date";
@@ -122,14 +123,14 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Select
             disabled={isSearching}
             value={currentGenre}
             onValueChange={(val) => updateParams({ with_genres: val === "all" ? null : val })}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full min-w-[11rem]">
               <SelectValue placeholder="Genre" />
             </SelectTrigger>
             <SelectContent>
@@ -147,7 +148,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
             value={currentSort}
             onValueChange={(val) => updateParams({ sort_by: val })}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full min-w-[11rem]">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
@@ -170,7 +171,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
                   "first_air_date.lte": null,
                 });
               } else {
-                const startYear = parseInt(val);
+                const startYear = Number.parseInt(val, 10);
                 const endYear = startYear + 9;
                 const isTv = currentType === "tv";
                 const keyDate = isTv ? "first_air_date" : "primary_release_date";
@@ -186,7 +187,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
               }
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full min-w-[11rem]">
               <SelectValue placeholder="Decade" />
             </SelectTrigger>
             <SelectContent>
@@ -200,11 +201,12 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
           </Select>
         </div>
 
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="relative w-full lg:max-w-xs">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search titles..."
-            className="pl-8"
+            aria-label="Search titles"
+            placeholder="Search Titles…"
+            className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

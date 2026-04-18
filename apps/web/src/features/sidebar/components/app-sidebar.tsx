@@ -290,7 +290,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
           <div className="bg-sidebar-primary/15 text-sidebar-primary flex size-6 items-center justify-center rounded-md">
             <Clapperboard className="size-4" />
           </div>
-          <h1 className="text-sm font-medium tracking-tight">{title}</h1>
+          <span className="text-sm font-medium tracking-tight">{title}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>

@@ -51,19 +51,19 @@ export default function NotFoundPage() {
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
                   href="/"
-                  className="rounded-lg border border-border/40 bg-white/85 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 dark:bg-slate-950/70 dark:border-border/30 dark:hover:bg-slate-900/80 dark:hover:border-indigo-500/40 dark:hover:text-indigo-300"
+                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Home
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="rounded-lg border border-border/40 bg-white/85 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 dark:bg-slate-950/70 dark:border-border/30 dark:hover:bg-slate-900/80 dark:hover:border-indigo-500/40 dark:hover:text-indigo-300"
+                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/settings"
-                  className="rounded-lg border border-border/40 bg-white/85 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 dark:bg-slate-950/70 dark:border-border/30 dark:hover:bg-slate-900/80 dark:hover:border-indigo-500/40 dark:hover:text-indigo-300"
+                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Settings
                 </Link>

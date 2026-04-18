@@ -97,7 +97,7 @@ function StatCard({
   return (
     <Card
       className={
-        "relative overflow-hidden border py-0 bg-card/40 backdrop-blur-lg shadow-md shadow-black/5 " +
+        "relative overflow-hidden border py-0 bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)] " +
         accentStyles.border
       }
     >
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
   return (
     <>
       <AppTopbar title="Dashboard" />
-      <AppPageShell className="gap-8">
+      <AppPageShell>
         {/* Decorative Background Blobs */}
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
         <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
@@ -166,7 +166,7 @@ export default async function DashboardPage() {
                   <span className="text-indigo-600 dark:text-indigo-300">{displayName}</span>
                 </>
               }
-              description="Your learning momentum is compounding. Keep the streak alive and clear today’s reviews."
+              description="Your learning momentum is compounding. Keep the streak alive and clear today's reviews."
               actions={
                 <>
                   <Button size="sm" asChild>
@@ -178,12 +178,11 @@ export default async function DashboardPage() {
                 </>
               }
             />
-            <div className="flex w-full max-w-sm flex-col gap-2 sm:items-end"></div>
           </CardContent>
         </Card>
 
         {showAssessmentBanner ? (
-          <Card className="group relative overflow-hidden border-2 border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-lg shadow-amber-500/5 dark:border-amber-500/30">
+          <Card className="group relative overflow-hidden border border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-[0_4px_16px_rgba(15,23,42,0.06)] dark:border-amber-500/30">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
             <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
             <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -224,25 +223,25 @@ export default async function DashboardPage() {
           <StatCard
             title="Current Streak"
             value={`${MOCK_STATS.currentStreakDays} days`}
-            icon={<Flame className="h-5 w-5" />}
-            hint="Don’t break the chain"
+            icon={<Flame className="size-5" />}
+            hint="Don't break the chain"
             accent="rose"
           />
           <StatCard
             title="Total Words Learned"
             value={`${MOCK_STATS.totalWordsLearned}`}
-            icon={<BookOpen className="h-5 w-5" />}
+            icon={<BookOpen className="size-5" />}
             hint="Lifetime mastered"
             accent="indigo"
           />
           <StatCard
             title="Reviews Due"
             value={`${MOCK_STATS.reviewsDue}`}
-            icon={<Play className="h-5 w-5" />}
+            icon={<Play className="size-5" />}
             hint="SRS queue waiting"
             accent="amber"
             right={
-              <Button size="sm" asChild className="shadow-sm">
+              <Button size="sm" asChild>
                 <Link href="/decks">Start</Link>
               </Button>
             }
@@ -250,14 +249,14 @@ export default async function DashboardPage() {
           <StatCard
             title="Time Spent"
             value={`${MOCK_STATS.timeSpentHours} hrs`}
-            icon={<Clock3 className="h-5 w-5" />}
+            icon={<Clock3 className="size-5" />}
             hint="This week"
             accent="emerald"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md shadow-black/5">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -281,7 +280,7 @@ export default async function DashboardPage() {
                 <Link
                   key={pack.id}
                   href={`/study/${pack.id}`}
-                  className="group block rounded-2xl border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors hover:bg-card/60"
+                  className="group block rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors hover:bg-card/60"
                 >
                   <div className="flex gap-4">
                     <div className="relative h-[92px] w-[64px] shrink-0 overflow-hidden rounded-xl border bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
@@ -322,7 +321,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md shadow-black/5">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5" />
             <CardHeader className="relative">
               <CardTitle>Review Plan</CardTitle>
@@ -349,7 +348,7 @@ export default async function DashboardPage() {
                 ].map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl border bg-card/60 p-3 shadow-sm backdrop-blur-sm"
+                    className="rounded-[calc(var(--radius)+2px)] border bg-card/60 p-3 shadow-sm backdrop-blur-sm"
                   >
                     <p className="text-xs text-muted-foreground">{item.label}</p>
                     <p className="mt-1 text-2xl font-semibold">{item.value}</p>
@@ -374,7 +373,7 @@ export default async function DashboardPage() {
                 {MOCK_REVIEW_PLAN.focusPacks.map((pack) => (
                   <div
                     key={pack.id}
-                    className="rounded-2xl border bg-card/50 p-3 shadow-sm backdrop-blur-sm"
+                    className="rounded-[calc(var(--radius)+2px)] border bg-card/50 p-3 shadow-sm backdrop-blur-sm"
                   >
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{pack.title}</span>

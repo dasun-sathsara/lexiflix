@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { AppPanel } from "@/components/common/app-surface";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -421,10 +422,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   };
 
   return (
-    <AppPageShell className="gap-8">
+    <AppPageShell>
       <AppPageHeader
         eyebrow={
-          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-500">
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
             Settings
           </span>
         }
@@ -432,14 +433,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         description="Manage how you show up in shared sessions and keep your LexiFlix account safeguarded."
       />
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-6">
         <TabsList className="w-full justify-start sm:w-fit">
-          <TabsTrigger value="account" className="px-4">
-            Account
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="px-4">
-            Preferences
-          </TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0">
@@ -684,7 +681,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
             <div className="flex flex-col gap-6">
               <Card id="danger" className="border-destructive/40 bg-destructive/5">
-                <CardHeader className="space-y-1.5">
+                <CardHeader>
                   <CardTitle>Delete account</CardTitle>
                   <CardDescription>Remove your LexiFlix data permanently.</CardDescription>
                 </CardHeader>
@@ -694,7 +691,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                     Export anything you need before you continue.
                   </p>
                 </CardContent>
-                <CardFooter className="flex flex-row gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     {deleteStatus ? (
                       <>
@@ -856,7 +853,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                   <Separator />
 
-                  <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <AppPanel className="flex flex-col gap-3 border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Retake CEFR assessment</p>
                       <p className="text-sm text-muted-foreground">
@@ -869,7 +866,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         Retake assessment
                       </Link>
                     </Button>
-                  </div>
+                  </AppPanel>
                 </CardContent>
               </Card>
 
@@ -879,7 +876,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                   <CardDescription>Control reminders and streak alerts.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                  <AppPanel className="flex items-start justify-between gap-4 p-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Email reminders</p>
                       <p className="text-sm text-muted-foreground">
@@ -894,9 +891,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       }}
                       aria-label="Toggle email reminders"
                     />
-                  </div>
+                  </AppPanel>
 
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+                  <AppPanel className="flex items-start justify-between gap-4 p-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Streak alerts</p>
                       <p className="text-sm text-muted-foreground">
@@ -911,9 +908,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       }}
                       aria-label="Toggle streak alerts"
                     />
-                  </div>
+                  </AppPanel>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-3">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex w-full items-center gap-2 text-sm">
                     {preferencesStatus ? (
                       <>
@@ -941,7 +938,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </>
                     )}
                   </div>
-                  <Button type="submit" disabled={preferencesSubmitDisabled} className="w-full">
+                  <Button type="submit" disabled={preferencesSubmitDisabled}>
                     {isSavingPreferences ? (
                       <>
                         <Loader2 className="mr-2 size-4 animate-spin" />
