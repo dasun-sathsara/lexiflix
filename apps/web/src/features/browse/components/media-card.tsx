@@ -58,7 +58,7 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
           <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground group-hover:text-primary">
             {title}
           </h3>
-          <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {year} • {isMovie ? "Movie" : "TV"}
             </span>

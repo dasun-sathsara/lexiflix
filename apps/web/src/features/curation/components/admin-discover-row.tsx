@@ -94,7 +94,7 @@ export function AdminDiscoverRow({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <p className="truncate text-sm font-medium">{title}</p>
+          <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
           {isCurated && (
             <span className="inline-flex shrink-0 items-center rounded-md border border-emerald-200/50 bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-600 dark:border-emerald-800/50 dark:text-emerald-400">
               In catalog

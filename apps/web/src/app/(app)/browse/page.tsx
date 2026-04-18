@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { BrowseControls } from "@/features/browse/components/browse-controls";
 import { MediaGrid } from "@/features/browse/components/media-grid";
@@ -75,7 +76,10 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* Zone A: Header & Controls */}
         <section className="relative space-y-4">
-          <h1 className="text-3xl font-bold tracking-tight">Browse</h1>
+          <AppPageHeader
+            heading="Browse"
+            description="Explore movies and TV shows, then narrow the catalog by title, genre, and release window."
+          />
           <BrowseControls genres={currentGenres} />
         </section>
 

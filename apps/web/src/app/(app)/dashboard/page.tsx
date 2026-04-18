@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,32 +150,34 @@ export default async function DashboardPage() {
         <Card className="relative overflow-hidden border-indigo-200/60 bg-card/40 backdrop-blur-lg shadow-xl shadow-indigo-500/5 dark:border-indigo-500/20">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10" />
           <CardContent className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
+            <AppPageHeader
+              className="w-full"
+              eyebrow={
                 <Badge
                   variant="secondary"
                   className="border border-indigo-200/60 bg-white/40 text-indigo-700 backdrop-blur-md dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
                 >
                   Command Center
                 </Badge>
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Welcome back,{" "}
-                <span className="text-indigo-600 dark:text-indigo-300">{displayName}</span>
-              </h1>
-              <p className="max-w-xl text-sm text-muted-foreground">
-                Your learning momentum is compounding. Keep the streak alive and clear today’s
-                reviews.
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <Button size="sm" asChild>
-                  <Link href="/decks">My Decks</Link>
-                </Button>
-                <Button size="sm" variant="secondary" asChild>
-                  <Link href="/browse">Browse</Link>
-                </Button>
-              </div>
-            </div>
+              }
+              heading={
+                <>
+                  Welcome back,{" "}
+                  <span className="text-indigo-600 dark:text-indigo-300">{displayName}</span>
+                </>
+              }
+              description="Your learning momentum is compounding. Keep the streak alive and clear today’s reviews."
+              actions={
+                <>
+                  <Button size="sm" asChild>
+                    <Link href="/decks">My Decks</Link>
+                  </Button>
+                  <Button size="sm" variant="secondary" asChild>
+                    <Link href="/browse">Browse</Link>
+                  </Button>
+                </>
+              }
+            />
             <div className="flex w-full max-w-sm flex-col gap-2 sm:items-end"></div>
           </CardContent>
         </Card>
@@ -350,7 +353,7 @@ export default async function DashboardPage() {
                   >
                     <p className="text-xs text-muted-foreground">{item.label}</p>
                     <p className="mt-1 text-2xl font-semibold">{item.value}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.note}</p>
+                    <p className="text-xs text-muted-foreground">{item.note}</p>
                   </div>
                 ))}
               </div>

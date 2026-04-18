@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { AppPageHeader, AppSectionHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,16 +165,11 @@ function MoviePosterGrid({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      {/* Section header */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <Film className="size-4 text-muted-foreground" />
-          <h2 className="text-lg font-semibold tracking-tight">Movies</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Fast starts for learners who want a single feature-length target.
-        </p>
-      </div>
+      <AppSectionHeader
+        icon={<Film className="size-4 text-muted-foreground" />}
+        heading="Movies"
+        description="Fast starts for learners who want a single feature-length target."
+      />
 
       {/* Grid */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
@@ -209,7 +205,7 @@ function MoviePosterGrid({
               <div className="flex flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium group-hover:text-amber-700 dark:group-hover:text-amber-200">
+                    <p className="truncate text-sm font-semibold tracking-tight group-hover:text-amber-700 dark:group-hover:text-amber-200">
                       {item.title}
                     </p>
                     {year && <p className="text-xs text-muted-foreground">{year}</p>}
@@ -251,16 +247,11 @@ function MoviePosterGrid({
 function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedCuratedEntries>> }) {
   return (
     <section className="flex flex-col gap-4">
-      {/* Section header */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <Tv className="size-4 text-muted-foreground" />
-          <h2 className="text-lg font-semibold tracking-tight">TV Shows</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Show-level picks first. Choose a season after you open the title.
-        </p>
-      </div>
+      <AppSectionHeader
+        icon={<Tv className="size-4 text-muted-foreground" />}
+        heading="TV Shows"
+        description="Show-level picks first. Choose a season after you open the title."
+      />
 
       {/* Rows */}
       <div className="flex flex-col gap-3">
@@ -296,7 +287,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
               <div className="flex min-w-0 flex-col gap-2.5">
                 {/* Title row */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+                  <p className="text-base font-semibold tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
                     {item.title}
                   </p>
                   {item.displaySubtitle && (
@@ -382,36 +373,34 @@ export default async function CuratedPage() {
         {/* ---------------------------------------------------------------- */}
         {/* Header                                                            */}
         {/* ---------------------------------------------------------------- */}
-        <section className="flex flex-col gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Curated Picks</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              A handpicked catalog of movies and TV shows selected for language learners.
-            </p>
-          </div>
+        <section>
+          <AppPageHeader
+            heading="Curated Picks"
+            description="A handpicked catalog of movies and TV shows selected for language learners."
+            stats={
+              stats.total > 0 ? (
+                <>
+                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                    <Sparkles className="size-3.5 text-indigo-500" />
+                    <span className="font-semibold tabular-nums">{stats.total}</span>
+                    <span className="text-xs text-muted-foreground">titles</span>
+                  </div>
 
-          {/* Stat pills — only shown when there is content */}
-          {stats.total > 0 && (
-            <div className="flex flex-wrap gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                <Sparkles className="size-3.5 text-indigo-500" />
-                <span className="font-semibold tabular-nums">{stats.total}</span>
-                <span className="text-xs text-muted-foreground">titles</span>
-              </div>
+                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                    <Film className="size-3.5 text-indigo-500" />
+                    <span className="font-semibold tabular-nums">{stats.movies}</span>
+                    <span className="text-xs text-muted-foreground">movies</span>
+                  </div>
 
-              <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                <Film className="size-3.5 text-indigo-500" />
-                <span className="font-semibold tabular-nums">{stats.movies}</span>
-                <span className="text-xs text-muted-foreground">movies</span>
-              </div>
-
-              <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-                <Tv className="size-3.5 text-purple-500" />
-                <span className="font-semibold tabular-nums">{stats.tv}</span>
-                <span className="text-xs text-muted-foreground">TV shows</span>
-              </div>
-            </div>
-          )}
+                  <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                    <Tv className="size-3.5 text-purple-500" />
+                    <span className="font-semibold tabular-nums">{stats.tv}</span>
+                    <span className="text-xs text-muted-foreground">TV shows</span>
+                  </div>
+                </>
+              ) : null
+            }
+          />
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -435,7 +424,7 @@ export default async function CuratedPage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Nothing published yet</p>
-              <p className="mx-auto max-w-xs text-xs text-muted-foreground">
+              <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
                 The catalog is live but empty — an admin needs to publish entries from the curation
                 workspace first.
               </p>

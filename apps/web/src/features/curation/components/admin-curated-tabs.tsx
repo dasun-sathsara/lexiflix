@@ -2,6 +2,7 @@ import { Eye, Film, Layers, LayoutGrid, Search, Tv } from "lucide-react";
 import Link from "next/link";
 import { type ComponentType, type ReactNode, Suspense } from "react";
 
+import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -173,25 +174,20 @@ export function AdminCuratedWorkspace({
       <div className="pointer-events-none absolute right-0 top-1/2 size-64 rounded-full bg-purple-500/5 blur-[80px]" />
 
       <section className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2">
+        <AppPageHeader
+          eyebrow={
+            <>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] font-medium">
                 Curation Workspace
               </Badge>
               <Badge variant="outline" className="rounded-full px-3 py-1 text-[11px] font-medium">
                 Admin
               </Badge>
-            </div>
-            <h1 className="mt-2.5 text-3xl font-semibold tracking-tight sm:text-[2rem]">
-              Curated Catalog
-            </h1>
-            <p className="mt-1.5 max-w-2xl text-sm leading-5 text-muted-foreground sm:text-[15px]">
-              Content operations workspace — find titles, add to the catalog, and manage published
-              entries.
-            </p>
-          </div>
-        </div>
+            </>
+          }
+          heading="Curated Catalog"
+          description="Content operations workspace — find titles, add to the catalog, and manage published entries."
+        />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">

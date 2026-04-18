@@ -13,6 +13,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import { AppPageHeader, AppSectionHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -200,7 +201,7 @@ function DeckRow({ deck }: { deck: Deck }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {/* Row 1: Title + subtitle + streak */}
         <div className="flex items-center gap-2">
-          <h3 className="truncate text-base font-medium">{deck.title}</h3>
+          <h3 className="truncate text-base font-semibold tracking-tight">{deck.title}</h3>
           {deck.subtitle && (
             <span className="hidden shrink-0 rounded-md border bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground sm:inline-block">
               {deck.subtitle}
@@ -295,73 +296,72 @@ export default function DecksPage() {
         {/* Header                                                            */}
         {/* ---------------------------------------------------------------- */}
         <section className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">My Decks</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {totalCards > 0
-                  ? `${totalCards} cards lined up for review today.`
-                  : "All caught up — excellent work keeping your streak alive."}
-              </p>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/browse">
-                  <Layers className="size-4" />
-                  Browse Content
-                </Link>
-              </Button>
-              {totalCards > 0 && (
-                <Button
-                  size="lg"
-                  className="gap-1.5 shadow-sm transition-all active:scale-95"
-                  asChild
-                >
-                  <Link href={`/study/${MOCK_DECKS[0]?.id ?? "interstellar"}`}>
-                    <Play className="size-3.5 fill-current" />
-                    Start Session
-                    <ChevronRight className="size-3.5 opacity-60" />
+          <AppPageHeader
+            heading="My Decks"
+            description={
+              totalCards > 0
+                ? `${totalCards} cards lined up for review today.`
+                : "All caught up — excellent work keeping your streak alive."
+            }
+            actions={
+              <>
+                <Button variant="outline" size="lg" asChild>
+                  <Link href="/browse">
+                    <Layers className="size-4" />
+                    Browse Content
                   </Link>
                 </Button>
-              )}
-            </div>
-          </div>
+                {totalCards > 0 && (
+                  <Button
+                    size="lg"
+                    className="gap-1.5 shadow-sm transition-all active:scale-95"
+                    asChild
+                  >
+                    <Link href={`/study/${MOCK_DECKS[0]?.id ?? "interstellar"}`}>
+                      <Play className="size-3.5 fill-current" />
+                      Start Session
+                      <ChevronRight className="size-3.5 opacity-60" />
+                    </Link>
+                  </Button>
+                )}
+              </>
+            }
+            stats={
+              <>
+                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                  <Calendar className="size-3.5 text-rose-500" />
+                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalDue}</span>
+                  <span className="text-xs text-muted-foreground">due today</span>
+                </div>
 
-          {/* Stat pills */}
-          <div className="flex flex-wrap gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-              <Calendar className="size-3.5 text-rose-500" />
-              <span className="font-semibold tabular-nums">{MOCK_STATS.totalDue}</span>
-              <span className="text-xs text-muted-foreground">due today</span>
-            </div>
+                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                  <Sparkles className="size-3.5 text-indigo-500" />
+                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalNew}</span>
+                  <span className="text-xs text-muted-foreground">new</span>
+                </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-              <Sparkles className="size-3.5 text-indigo-500" />
-              <span className="font-semibold tabular-nums">{MOCK_STATS.totalNew}</span>
-              <span className="text-xs text-muted-foreground">new</span>
-            </div>
+                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                  <BookOpen className="size-3.5 text-amber-500" />
+                  <span className="font-semibold tabular-nums">{MOCK_STATS.totalLearning}</span>
+                  <span className="text-xs text-muted-foreground">learning</span>
+                </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-              <BookOpen className="size-3.5 text-amber-500" />
-              <span className="font-semibold tabular-nums">{MOCK_STATS.totalLearning}</span>
-              <span className="text-xs text-muted-foreground">learning</span>
-            </div>
+                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                  <Clock className="size-3.5 text-emerald-500" />
+                  <span className="font-semibold tabular-nums">
+                    {MOCK_STATS.totalEstimatedMinutes}m
+                  </span>
+                  <span className="text-xs text-muted-foreground">est. today</span>
+                </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-              <Clock className="size-3.5 text-emerald-500" />
-              <span className="font-semibold tabular-nums">
-                {MOCK_STATS.totalEstimatedMinutes}m
-              </span>
-              <span className="text-xs text-muted-foreground">est. today</span>
-            </div>
-
-            <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-              <Flame className="size-3.5 text-amber-500" />
-              <span className="font-semibold tabular-nums">{MOCK_STATS.longestStreak}</span>
-              <span className="text-xs text-muted-foreground">top streak</span>
-            </div>
-          </div>
+                <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
+                  <Flame className="size-3.5 text-amber-500" />
+                  <span className="font-semibold tabular-nums">{MOCK_STATS.longestStreak}</span>
+                  <span className="text-xs text-muted-foreground">top streak</span>
+                </div>
+              </>
+            }
+          />
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -370,7 +370,7 @@ export default function DecksPage() {
         {hasDecks ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-sm font-medium text-muted-foreground">Active Decks</h2>
+              <AppSectionHeader heading="Active Decks" className="gap-0" />
               <span className="text-xs text-muted-foreground">
                 {MOCK_DECKS.length} {MOCK_DECKS.length === 1 ? "deck" : "decks"}
               </span>
@@ -389,7 +389,7 @@ export default function DecksPage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">No decks yet</p>
-              <p className="mx-auto max-w-xs text-xs text-muted-foreground">
+              <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
                 Browse movies and TV shows to generate vocabulary decks and start learning.
               </p>
             </div>

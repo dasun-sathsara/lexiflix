@@ -22,6 +22,7 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
+import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import {
   AlertDialog,
@@ -421,15 +422,15 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
   return (
     <AppPageShell className="gap-8">
-      <header className="space-y-3">
-        <span className="text-xs font-semibold uppercase text-indigo-500">Settings</span>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">User settings</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">
-            Manage how you show up in shared sessions and keep your LexiFlix account safeguarded.
-          </p>
-        </div>
-      </header>
+      <AppPageHeader
+        eyebrow={
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-500">
+            Settings
+          </span>
+        }
+        heading="User settings"
+        description="Manage how you show up in shared sessions and keep your LexiFlix account safeguarded."
+      />
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="w-full justify-start sm:w-fit">
@@ -857,7 +858,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                   <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">Retake CEFR assessment</p>
+                      <p className="text-sm font-medium">Retake CEFR assessment</p>
                       <p className="text-sm text-muted-foreground">
                         Run a new adaptive test if you want a fresh estimated level.
                       </p>
@@ -880,7 +881,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                 <CardContent className="space-y-4">
                   <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="space-y-1">
-                      <p className="font-medium">Email reminders</p>
+                      <p className="text-sm font-medium">Email reminders</p>
                       <p className="text-sm text-muted-foreground">
                         Receive a reminder email when your study queue is waiting.
                       </p>
@@ -897,7 +898,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                   <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
                     <div className="space-y-1">
-                      <p className="font-medium">Streak alerts</p>
+                      <p className="text-sm font-medium">Streak alerts</p>
                       <p className="text-sm text-muted-foreground">
                         Get notified when your current streak is at risk.
                       </p>
