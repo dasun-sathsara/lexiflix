@@ -22,7 +22,7 @@ import {
   useTransition,
 } from "react";
 import { toast } from "sonner";
-
+import { AppPageShell } from "@/components/common/app-page-shell";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -420,7 +420,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
+    <AppPageShell className="gap-8">
       <header className="space-y-3">
         <span className="text-xs font-semibold uppercase text-indigo-500">Settings</span>
         <div className="space-y-2">
@@ -956,6 +956,6 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
           </form>
         </TabsContent>
       </Tabs>
-    </div>
+    </AppPageShell>
   );
 }

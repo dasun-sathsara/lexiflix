@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { listPublishedCuratedEntries } from "@/features/curation/server/catalog";
@@ -373,7 +374,7 @@ export default async function CuratedPage() {
     <>
       <AppTopbar title="Curated" />
 
-      <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 p-6">
+      <AppPageShell className="gap-8">
         {/* Decorative background blobs */}
         <div className="pointer-events-none absolute -left-16 top-24 size-72 rounded-full bg-amber-500/5 blur-[80px]" />
         <div className="pointer-events-none absolute right-0 top-1/3 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
@@ -447,7 +448,7 @@ export default async function CuratedPage() {
         {/* ---------------------------------------------------------------- */}
         {movieEntries.length > 0 && <MoviePosterGrid items={movieEntries} />}
         {tvEntries.length > 0 && <TvShowRows items={tvEntries} />}
-      </div>
+      </AppPageShell>
     </>
   );
 }

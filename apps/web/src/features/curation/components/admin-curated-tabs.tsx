@@ -1,7 +1,11 @@
 import { Eye, Film, Layers, LayoutGrid, Search, Tv } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
+import { type ComponentType, type ReactNode, Suspense } from "react";
 
+import { AppPageShell } from "@/components/common/app-page-shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   AnnotatedTMDBResult,
   CuratedAdminCatalogFilter,
@@ -16,10 +20,6 @@ import { AdminCatalogRow } from "./admin-catalog-row";
 import { AdminDiscoverControls } from "./admin-curated-controls";
 import { AdminDiscoverRow } from "./admin-discover-row";
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-
 interface AdminCuratedWorkspaceProps {
   queryState: CuratedAdminQueryState;
   catalogFilter: CuratedAdminCatalogFilter;
@@ -32,10 +32,6 @@ interface AdminCuratedWorkspaceProps {
   genreMap: Record<number, string>;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function buildPageUrl(
   baseParams: Record<string, string | number | null | undefined>,
   page: number,
@@ -46,29 +42,25 @@ function buildPageUrl(
   return `?${new URLSearchParams(entries).toString()}`;
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
 function EmptyState({
   icon: Icon,
   title,
   description,
   action,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   description: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card/20 py-12 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed bg-card/50 px-5 py-10 text-center shadow-sm">
       <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
         <Icon className="size-6" />
       </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="mx-auto max-w-xs text-xs text-muted-foreground">{description}</p>
+      <div className="flex flex-col gap-1">
+        <p className="text-base font-semibold">{title}</p>
+        <p className="mx-auto max-w-sm text-sm leading-5 text-muted-foreground">{description}</p>
       </div>
       {action}
     </div>
@@ -76,11 +68,11 @@ function EmptyState({
 }
 
 function ControlsSkeleton() {
-  return <div className="h-[136px] animate-pulse rounded-xl border bg-card/40" />;
+  return <div className="h-[184px] animate-pulse rounded-2xl border bg-card/50" />;
 }
 
 function FiltersSkeleton() {
-  return <div className="h-12 animate-pulse rounded-lg border bg-card/40" />;
+  return <div className="h-[132px] animate-pulse rounded-2xl border bg-card/50" />;
 }
 
 function PaginationRow({
@@ -100,7 +92,7 @@ function PaginationRow({
         {currentPage > 1 && (
           <Link
             href={buildPageUrl(baseParams, currentPage - 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border bg-card/40 px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-card/60 hover:shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-xl border bg-card/70 px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-card hover:shadow-md"
           >
             ← Previous
           </Link>
@@ -115,7 +107,7 @@ function PaginationRow({
         {currentPage < totalPages && (
           <Link
             href={buildPageUrl(baseParams, currentPage + 1)}
-            className="inline-flex items-center gap-1.5 rounded-lg border bg-card/40 px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-card/60 hover:shadow-md"
+            className="inline-flex items-center gap-1.5 rounded-xl border bg-card/70 px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-card hover:shadow-md"
           >
             Next →
           </Link>
@@ -124,10 +116,6 @@ function PaginationRow({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main workspace component (server)
-// ---------------------------------------------------------------------------
 
 export function AdminCuratedWorkspace({
   queryState,
@@ -140,7 +128,6 @@ export function AdminCuratedWorkspace({
   genres,
   genreMap,
 }: AdminCuratedWorkspaceProps) {
-  // Build tab hrefs preserving relevant params
   const discoverHref = [
     "?view=discover",
     queryState.mode !== "search" ? `&mode=${queryState.mode}` : "",
@@ -159,7 +146,6 @@ export function AdminCuratedWorkspace({
     .filter(Boolean)
     .join("");
 
-  // Base params object for pagination — null/undefined values are filtered by buildPageUrl
   const discoverBaseParams: Record<string, string | null | undefined> = {
     view: "discover",
     mode: queryState.mode !== "search" ? queryState.mode : undefined,
@@ -182,83 +168,115 @@ export function AdminCuratedWorkspace({
   const isCatalog = queryState.view === "catalog";
 
   return (
-    <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
-      {/* Decorative background blobs */}
+    <AppPageShell className="gap-6 py-6">
       <div className="pointer-events-none absolute -left-20 top-20 size-64 rounded-full bg-indigo-500/5 blur-[80px]" />
       <div className="pointer-events-none absolute right-0 top-1/2 size-64 rounded-full bg-purple-500/5 blur-[80px]" />
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Header                                                               */}
-      {/* ------------------------------------------------------------------ */}
-      <section className="flex flex-col gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Curated Catalog</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Content operations workspace — find titles, add to the catalog, and manage published
-            entries.
-          </p>
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] font-medium">
+                Curation Workspace
+              </Badge>
+              <Badge variant="outline" className="rounded-full px-3 py-1 text-[11px] font-medium">
+                Admin
+              </Badge>
+            </div>
+            <h1 className="mt-2.5 text-3xl font-semibold tracking-tight sm:text-[2rem]">
+              Curated Catalog
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-sm leading-5 text-muted-foreground sm:text-[15px]">
+              Content operations workspace — find titles, add to the catalog, and manage published
+              entries.
+            </p>
+          </div>
         </div>
 
-        {/* Stats pills */}
-        <div className="flex flex-wrap gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-            <Layers className="size-3.5 text-muted-foreground" />
-            <span className="font-semibold">{stats.total}</span>
-            <span className="text-xs text-muted-foreground">total entries</span>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Layers className="size-4" />
+              Total entries
+            </div>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-[2rem] leading-none font-semibold tabular-nums">
+                {stats.total}
+              </span>
+              <span className="pb-0.5 text-xs text-muted-foreground">catalog items</span>
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-            <Eye className="size-3.5 text-emerald-500" />
-            <span className="font-semibold">{stats.published}</span>
-            <span className="text-xs text-muted-foreground">published</span>
+          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Eye className="size-4 text-emerald-500" />
+              Published
+            </div>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-[2rem] leading-none font-semibold tabular-nums">
+                {stats.published}
+              </span>
+              <span className="pb-0.5 text-xs text-muted-foreground">live titles</span>
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-            <Film className="size-3.5 text-indigo-500" />
-            <span className="font-semibold">{stats.movies}</span>
-            <span className="text-xs text-muted-foreground">movies</span>
+          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Film className="size-4 text-indigo-500" />
+              Movies
+            </div>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-[2rem] leading-none font-semibold tabular-nums">
+                {stats.movies}
+              </span>
+              <span className="pb-0.5 text-xs text-muted-foreground">film entries</span>
+            </div>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 rounded-md border bg-card/40 px-3 py-1.5 text-sm">
-            <Tv className="size-3.5 text-purple-500" />
-            <span className="font-semibold">{stats.tv}</span>
-            <span className="text-xs text-muted-foreground">TV shows</span>
+          <div className="rounded-2xl border bg-card/70 px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Tv className="size-4 text-purple-500" />
+              TV shows
+            </div>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-[2rem] leading-none font-semibold tabular-nums">
+                {stats.tv}
+              </span>
+              <span className="pb-0.5 text-xs text-muted-foreground">series entries</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Workspace tab switcher (Link-based — server-safe)                   */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="inline-flex self-start items-center gap-0.5 rounded-lg border bg-muted/50 p-0.5">
+      <div className="inline-flex self-start items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
         <Link
           href={discoverHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.75 text-sm font-medium transition-all",
             isDiscover
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <LayoutGrid className="size-3.5" />
+          <LayoutGrid className="size-4" />
           Discover & Add
         </Link>
 
         <Link
           href={catalogHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-xl px-3.5 py-1.75 text-sm font-medium transition-all",
             isCatalog
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Layers className="size-3.5" />
+          <Layers className="size-4" />
           Manage Catalog
           {allEntriesCount > 0 && (
             <span
               className={cn(
-                "rounded-full px-1.5 py-0.5 text-xs tabular-nums",
+                "rounded-full px-2 py-0.5 text-xs tabular-nums",
                 isCatalog
                   ? "bg-muted text-muted-foreground"
                   : "bg-muted/80 text-muted-foreground/60",
@@ -270,30 +288,25 @@ export function AdminCuratedWorkspace({
         </Link>
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Discover workspace                                                   */}
-      {/* ------------------------------------------------------------------ */}
       {isDiscover && (
         <div className="flex flex-col gap-4">
-          {/* Controls — client component, wrapped in Suspense */}
           <Suspense fallback={<ControlsSkeleton />}>
             <AdminDiscoverControls queryState={queryState} genres={genres} />
           </Suspense>
 
-          {/* ---- Browse mode ---- */}
           {queryState.mode === "browse" &&
             (discoverResults.length > 0 ? (
-              <>
-                <div className="flex items-center justify-between">
+              <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+                <CardHeader className="gap-1.5 border-b py-3.5">
+                  <CardTitle className="text-base font-semibold">Discovery results</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">
                       {discoverMeta.totalResults.toLocaleString()}
                     </span>{" "}
                     results · page {discoverMeta.page} of {discoverMeta.totalPages}
                   </p>
-                </div>
-
-                <div className="flex flex-col gap-2">
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 py-3.5">
                   {discoverResults.map((result) => (
                     <AdminDiscoverRow
                       key={result.id}
@@ -303,14 +316,14 @@ export function AdminCuratedWorkspace({
                       isCurated={result.isCurated}
                     />
                   ))}
-                </div>
 
-                <PaginationRow
-                  currentPage={discoverMeta.page}
-                  totalPages={discoverMeta.totalPages}
-                  baseParams={discoverBaseParams}
-                />
-              </>
+                  <PaginationRow
+                    currentPage={discoverMeta.page}
+                    totalPages={discoverMeta.totalPages}
+                    baseParams={discoverBaseParams}
+                  />
+                </CardContent>
+              </Card>
             ) : (
               <EmptyState
                 icon={LayoutGrid}
@@ -319,21 +332,20 @@ export function AdminCuratedWorkspace({
               />
             ))}
 
-          {/* ---- Search mode ---- */}
           {queryState.mode === "search" &&
             (queryState.query ? (
               discoverResults.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-between">
+                <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+                  <CardHeader className="gap-1.5 border-b py-3.5">
+                    <CardTitle className="text-base font-semibold">Search results</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       <span className="font-medium text-foreground">
                         {discoverMeta.totalResults.toLocaleString()}
                       </span>{" "}
                       results for &ldquo;{queryState.query}&rdquo;
                     </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-3 py-3.5">
                     {discoverResults.map((result) => (
                       <AdminDiscoverRow
                         key={result.id}
@@ -343,14 +355,14 @@ export function AdminCuratedWorkspace({
                         isCurated={result.isCurated}
                       />
                     ))}
-                  </div>
 
-                  <PaginationRow
-                    currentPage={discoverMeta.page}
-                    totalPages={discoverMeta.totalPages}
-                    baseParams={discoverBaseParams}
-                  />
-                </>
+                    <PaginationRow
+                      currentPage={discoverMeta.page}
+                      totalPages={discoverMeta.totalPages}
+                      baseParams={discoverBaseParams}
+                    />
+                  </CardContent>
+                </Card>
               ) : (
                 <EmptyState
                   icon={Search}
@@ -368,35 +380,39 @@ export function AdminCuratedWorkspace({
         </div>
       )}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Catalog workspace                                                    */}
-      {/* ------------------------------------------------------------------ */}
       {isCatalog && (
         <div className="flex flex-col gap-4">
-          {/* Filters — client component, wrapped in Suspense */}
           <Suspense fallback={<FiltersSkeleton />}>
             <AdminCatalogFilters filter={catalogFilter} counts={catalogCounts} />
           </Suspense>
 
           {catalogEntries.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {catalogEntries.map((entry) => (
-                <AdminCatalogRow key={entry.id} entry={entry} />
-              ))}
-            </div>
+            <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+              <CardHeader className="gap-1.5 border-b py-3.5">
+                <CardTitle className="text-base font-semibold">Catalog entries</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Review ordering, publish status, and TMDB snapshots without compressing the row
+                  metadata.
+                </p>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2.5 py-3.5">
+                {catalogEntries.map((entry) => (
+                  <AdminCatalogRow key={entry.id} entry={entry} />
+                ))}
+              </CardContent>
+            </Card>
           ) : allEntriesCount === 0 ? (
             <EmptyState
               icon={Layers}
               title="No titles in the catalog yet"
               description="Switch to Discover & Add to find titles on TMDB and add them to the catalog."
               action={
-                <Link
-                  href={discoverHref}
-                  className="inline-flex items-center gap-1.5 rounded-lg border bg-card/40 px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-card/60"
-                >
-                  <LayoutGrid className="size-3.5" />
-                  Go to Discover & Add
-                </Link>
+                <Button asChild variant="outline" className="rounded-xl px-4">
+                  <Link href={discoverHref}>
+                    <LayoutGrid data-icon="inline-start" />
+                    Go to Discover & Add
+                  </Link>
+                </Button>
               }
             />
           ) : (
@@ -408,6 +424,6 @@ export function AdminCuratedWorkspace({
           )}
         </div>
       )}
-    </div>
+    </AppPageShell>
   );
 }

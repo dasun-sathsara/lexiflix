@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import type * as React from "react";
+import { AppPageContainer } from "@/components/common/app-page-shell";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
@@ -29,7 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppInset>
         {needsEmailVerification ? (
           <div className="border-b border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2">
+            <AppPageContainer className="flex flex-wrap items-center gap-x-4 gap-y-2 px-2 sm:px-6">
               <span>
                 Your email is not verified yet. Check your inbox and click the verification link.
               </span>
@@ -39,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               >
                 Account settings
               </Link>
-            </div>
+            </AppPageContainer>
           </div>
         ) : null}
         {children}

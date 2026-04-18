@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,7 +52,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
     queryState.decade != null ? String(queryState.decade) : "all",
   );
 
-  // Sync local state when queryState changes after navigation
   const prevQueryRef = useRef(queryState);
   useEffect(() => {
     if (prevQueryRef.current !== queryState) {
@@ -67,7 +67,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
 
   function handleMediaTypeChange(newType: TMDBMediaType) {
     setMediaType(newType);
-    // Genre IDs differ between movie and TV — reset to avoid stale filter
     setGenreId("all");
     setSortBy(getDefaultAdminSort(newType));
   }
@@ -134,137 +133,155 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   const sortOptions = getAdminSortOptions(mediaType);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card/40 p-4">
-      {/* Row 1: Mode toggle + Media type toggle */}
-      <div className="flex flex-wrap items-end gap-4">
-        {/* Mode toggle */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Mode</span>
-          <div className="inline-flex items-center gap-0.5 rounded-lg border bg-muted/50 p-0.5">
-            {(["search", "browse"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={cn(
-                  "inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-                  mode === m
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {m === "search" ? "Search by Title" : "Browse & Discover"}
-              </button>
-            ))}
+    <Card className="gap-0 rounded-2xl border bg-card/60 py-0 shadow-sm">
+      <CardHeader className="gap-1 border-b py-3">
+        <CardTitle className="text-base font-semibold">Discovery controls</CardTitle>
+        <CardDescription>
+          Search a specific title or browse TMDB with curated filters before adding entries.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2.5 py-3">
+        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Mode
+            </span>
+            <div className="inline-flex w-full flex-wrap items-center gap-0.75 rounded-2xl border bg-muted/50 p-0.5 shadow-sm">
+              {(["search", "browse"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    "inline-flex min-h-7.5 flex-1 items-center justify-center rounded-xl px-2.5 py-0.75 text-sm font-medium transition-all",
+                    mode === m
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {m === "search" ? "Search by Title" : "Browse & Discover"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Type
+            </span>
+            <div className="inline-flex w-full flex-wrap items-center gap-0.75 rounded-2xl border bg-muted/50 p-0.5 shadow-sm">
+              {(["movie", "tv"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleMediaTypeChange(t)}
+                  className={cn(
+                    "inline-flex min-h-7.5 flex-1 items-center justify-center rounded-xl px-2.5 py-0.75 text-sm font-medium transition-all",
+                    mediaType === t
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {t === "movie" ? "Movies" : "TV Shows"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Media type toggle */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-muted-foreground">Type</span>
-          <div className="inline-flex items-center gap-0.5 rounded-lg border bg-muted/50 p-0.5">
-            {(["movie", "tv"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => handleMediaTypeChange(t)}
-                className={cn(
-                  "inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-                  mediaType === t
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {t === "movie" ? "Movies" : "TV Shows"}
-              </button>
-            ))}
+        {mode === "search" ? (
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+              Title Search
+            </Label>
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search titles..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleApply();
+                }}
+                className="h-8.5 rounded-xl pl-10 text-sm"
+              />
+            </div>
           </div>
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                Genre
+              </Label>
+              <Select value={genreId} onValueChange={setGenreId}>
+                <SelectTrigger className="h-9 w-full rounded-xl text-sm">
+                  <SelectValue placeholder="All genres" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All genres</SelectItem>
+                  {genres.map((g) => (
+                    <SelectItem key={g.id} value={String(g.id)}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                Sort by
+              </Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-9 w-full rounded-xl text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {SORT_LABELS[opt] ?? opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                Decade
+              </Label>
+              <Select value={decade} onValueChange={setDecade}>
+                <SelectTrigger className="h-9 w-full rounded-xl text-sm">
+                  <SelectValue placeholder="Any decade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any decade</SelectItem>
+                  {DECADES.map((d) => (
+                    <SelectItem key={d} value={String(d)}>
+                      {d}s
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-1">
+          <Button size="sm" onClick={handleApply} className="h-7.5 rounded-xl px-2.5 text-sm">
+            Apply Filters
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleReset}
+            className="h-7.5 rounded-xl px-2.5 text-sm"
+          >
+            Reset
+          </Button>
         </div>
-      </div>
-
-      {/* Row 2: Search input or browse filters */}
-      {mode === "search" ? (
-        <div className="flex items-center gap-2">
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search titles..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleApply();
-              }}
-              className="pl-8 text-sm"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-end gap-3">
-          {/* Genre select */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Genre</Label>
-            <Select value={genreId} onValueChange={setGenreId}>
-              <SelectTrigger className="h-8 w-40 text-xs">
-                <SelectValue placeholder="All genres" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All genres</SelectItem>
-                {genres.map((g) => (
-                  <SelectItem key={g.id} value={String(g.id)}>
-                    {g.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Sort select */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Sort by</Label>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="h-8 w-36 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {SORT_LABELS[opt] ?? opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Decade select */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Decade</Label>
-            <Select value={decade} onValueChange={setDecade}>
-              <SelectTrigger className="h-8 w-28 text-xs">
-                <SelectValue placeholder="Any decade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any decade</SelectItem>
-                {DECADES.map((d) => (
-                  <SelectItem key={d} value={String(d)}>
-                    {d}s
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
-
-      {/* Row 3: Apply + Reset */}
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={handleApply} className="h-8 text-xs shadow-sm">
-          Apply Filters
-        </Button>
-        <Button size="sm" variant="ghost" onClick={handleReset} className="h-8 text-xs">
-          Reset
-        </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

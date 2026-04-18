@@ -721,24 +721,6 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
               </CardContent>
             </Card>
 
-            {/* Study Tips */}
-            <Card className="border-indigo-200/60 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 dark:border-indigo-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                    <GraduationCap className="size-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Staging Area</div>
-                    <p className="text-xs text-muted-foreground">
-                      Review your flashcards before studying. Remove any words you already know or
-                      don't want to learn to focus on what matters.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Deck Stats */}
             <Card>
               <CardHeader className="pb-3">

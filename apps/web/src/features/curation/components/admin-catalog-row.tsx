@@ -2,7 +2,7 @@
 
 import { Film, Loader2, RotateCcw, Trash2, Tv } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import {
   AlertDialog,
@@ -38,7 +38,6 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
     entry.featuredRank != null ? String(entry.featuredRank) : "",
   );
   const [rankDirty, setRankDirty] = useState(false);
-  const rankInputRef = useRef<HTMLInputElement>(null);
 
   const posterUrl = entry.posterPath
     ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.sm}${entry.posterPath}`
@@ -101,59 +100,72 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border bg-card/40 px-3 py-2.5 transition-all hover:bg-card/60 hover:shadow-sm",
+        "flex flex-col gap-3 rounded-2xl border bg-background/80 px-4 py-3.5 transition-all hover:bg-card hover:shadow-sm lg:flex-row lg:items-center lg:justify-between lg:px-4.5 lg:py-4",
         isPending && "pointer-events-none opacity-60",
       )}
     >
-      {/* Poster thumbnail */}
-      <div className="relative h-[54px] w-9 shrink-0 overflow-hidden rounded-lg border bg-muted">
-        {posterUrl ? (
-          <Image src={posterUrl} alt={entry.title} fill className="object-cover" sizes="36px" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            {entry.mediaType === "tv" ? <Tv className="size-3.5" /> : <Film className="size-3.5" />}
-          </div>
-        )}
-      </div>
-
-      {/* Content section */}
-      <div className="min-w-0 flex-1">
-        {/* Title row */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="truncate text-sm font-medium">{entry.title}</p>
-          <span className="shrink-0 text-xs text-muted-foreground">#{entry.tmdbId}</span>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground">
-            {entry.mediaType === "tv" ? <Tv className="size-3" /> : <Film className="size-3" />}
-            {entry.mediaType === "tv" ? "TV" : "Movie"}
-          </span>
-        </div>
-
-        {/* Meta row */}
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-          {year && <span>{year}</span>}
-          {voteAvg && <span>★ {voteAvg}</span>}
-          {entry.contentRating && (
-            <span className="rounded border border-border/60 px-1 py-px text-[10px]">
-              {entry.contentRating}
-            </span>
+      <div className="flex min-w-0 flex-1 items-start gap-3.5">
+        <div className="relative h-[76px] w-[52px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
+          {posterUrl ? (
+            <Image src={posterUrl} alt={entry.title} fill className="object-cover" sizes="52px" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+              {entry.mediaType === "tv" ? <Tv className="size-4" /> : <Film className="size-4" />}
+            </div>
           )}
-          {entry.genres.slice(0, 2).map((g) => (
-            <Badge key={g.id} variant="secondary" className="h-4 rounded-sm px-1.5 text-[10px]">
-              {g.name}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-base font-semibold tracking-tight">{entry.title}</p>
+            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+              #{entry.tmdbId}
             </Badge>
-          ))}
+            <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+              {entry.mediaType === "tv" ? (
+                <Tv data-icon="inline-start" />
+              ) : (
+                <Film data-icon="inline-start" />
+              )}
+              {entry.mediaType === "tv" ? "TV Series" : "Movie"}
+            </Badge>
+          </div>
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            {year && <span>{year}</span>}
+            {voteAvg && <span>★ {voteAvg}</span>}
+            {entry.contentRating && (
+              <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs font-medium">
+                {entry.contentRating}
+              </Badge>
+            )}
+          </div>
+
+          {entry.genres.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {entry.genres.slice(0, 3).map((g) => (
+                <Badge
+                  key={g.id}
+                  variant="secondary"
+                  className="rounded-full px-2.5 py-1 text-xs font-medium"
+                >
+                  {g.name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right controls */}
-      <div className="flex shrink-0 items-center gap-2">
-        {/* Featured rank input */}
-        <div className="flex items-center gap-1.5">
-          <label htmlFor={`rank-${entry.id}`} className="shrink-0 text-xs text-muted-foreground">
+      <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-2xl border bg-card/60 p-2.5 sm:flex-row sm:flex-wrap sm:items-end lg:w-auto lg:min-w-[310px] lg:justify-end">
+        <div className="flex min-w-[96px] flex-col gap-1">
+          <label
+            htmlFor={`rank-${entry.id}`}
+            className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
+          >
             Rank
           </label>
           <input
-            ref={rankInputRef}
             id={`rank-${entry.id}`}
             type="number"
             min={1}
@@ -168,85 +180,86 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
             placeholder="—"
             disabled={isPending}
             className={cn(
-              "h-7 w-16 rounded-md border bg-background px-2 text-xs tabular-nums",
-              "focus:outline-none focus:ring-1 focus:ring-ring",
-              "disabled:cursor-not-allowed disabled:opacity-50",
+              "border-input h-9 w-full rounded-xl border bg-transparent px-3 py-1 text-sm shadow-xs outline-none transition-[color,box-shadow] tabular-nums focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
               rankDirty &&
                 "border-amber-400/70 bg-amber-50/50 ring-amber-300/40 dark:bg-amber-950/20",
             )}
           />
         </div>
 
-        {/* Published toggle */}
-        <button
-          type="button"
-          onClick={handleTogglePublished}
-          disabled={isPending}
-          title={entry.isPublished ? "Click to hide" : "Click to publish"}
-          className={cn(
-            "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            entry.isPublished
-              ? "border-emerald-200/60 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-950/50"
-              : "border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          {entry.isPublished ? "Published" : "Hidden"}
-        </button>
+        <div className="flex min-w-[120px] flex-col gap-1">
+          <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Status
+          </span>
+          <Button
+            type="button"
+            variant={entry.isPublished ? "secondary" : "outline"}
+            onClick={handleTogglePublished}
+            disabled={isPending}
+            title={entry.isPublished ? "Click to hide" : "Click to publish"}
+            className={cn(
+              "h-9 justify-center rounded-xl",
+              entry.isPublished &&
+                "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-950/50",
+            )}
+          >
+            {entry.isPublished ? "Published" : "Hidden"}
+          </Button>
+        </div>
 
-        {/* Refresh button */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground hover:text-foreground"
-          disabled={isPending}
-          onClick={handleRefresh}
-          title="Refresh snapshot from TMDB"
-        >
-          {isPending ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <RotateCcw className="size-3.5" />
-          )}
-          <span className="sr-only">Refresh from TMDB</span>
-        </Button>
+        <div className="flex items-center gap-2 self-stretch sm:self-auto">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-xl text-muted-foreground hover:text-foreground"
+            disabled={isPending}
+            onClick={handleRefresh}
+            title="Refresh snapshot from TMDB"
+          >
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <RotateCcw className="size-4" />
+            )}
+            <span className="sr-only">Refresh from TMDB</span>
+          </Button>
 
-        {/* Delete button + confirmation dialog */}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-destructive"
-              disabled={isPending}
-              title="Delete entry"
-            >
-              <Trash2 className="size-3.5" />
-              <span className="sr-only">Delete entry</span>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete catalog entry?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently remove{" "}
-                <strong className="text-foreground">{entry.title}</strong> from the curated catalog.
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 rounded-xl text-muted-foreground hover:text-destructive"
+                disabled={isPending}
+                title="Delete entry"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <Trash2 className="size-4" />
+                <span className="sr-only">Delete entry</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete catalog entry?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove{" "}
+                  <strong className="text-foreground">{entry.title}</strong> from the curated
+                  catalog. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );

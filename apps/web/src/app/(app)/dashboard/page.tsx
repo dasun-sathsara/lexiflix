@@ -1,3 +1,9 @@
+import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
+import { headers } from "next/headers";
+import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,11 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import { shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { auth } from "@/lib/auth";
-import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
-import { headers } from "next/headers";
-import Image from "next/image";
-import Link from "next/link";
-import type { ReactNode } from "react";
 
 const MOCK_STATS = {
   dailyGoal: {
@@ -139,7 +140,7 @@ export default async function DashboardPage() {
   return (
     <>
       <AppTopbar title="Dashboard" />
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
+      <AppPageShell className="gap-8">
         {/* Decorative Background Blobs */}
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
         <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
@@ -389,7 +390,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AppPageShell>
     </>
   );
 }

@@ -13,6 +13,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
@@ -284,7 +285,7 @@ export default function DecksPage() {
     <>
       <AppTopbar title="My Decks" />
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-6 p-6">
+      <AppPageShell className="gap-6">
         {/* Decorative background blobs */}
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
         <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
@@ -305,7 +306,7 @@ export default function DecksPage() {
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="" asChild>
                 <Link href="/browse">
                   <Layers className="size-4" />
                   Browse Content
@@ -400,7 +401,7 @@ export default function DecksPage() {
             </Button>
           </div>
         )}
-      </div>
+      </AppPageShell>
     </>
   );
 }

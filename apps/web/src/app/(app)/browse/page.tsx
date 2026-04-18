@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { BrowseControls } from "@/features/browse/components/browse-controls";
 import { MediaGrid } from "@/features/browse/components/media-grid";
 import { PaginationControls } from "@/features/browse/components/pagination-controls";
@@ -38,36 +39,35 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   // Fetch Data
   const q = typeof params.q === "string" ? params.q : undefined;
-  const page = typeof params.page === "string" ? parseInt(params.page) : 1;
+  const page = typeof params.page === "string" ? Number.parseInt(params.page, 10) : 1;
 
-  let data;
-  if (q) {
-    data = await searchMedia(q, type, page);
-  } else {
-    // Discover
-    const discoverParams: any = {
-      page,
-      sort_by: typeof params.sort_by === "string" ? params.sort_by : undefined,
-      with_genres: typeof params.with_genres === "string" ? params.with_genres : undefined,
-    };
+  const data = q
+    ? await searchMedia(q, type, page)
+    : await (async () => {
+        const discoverParams: Record<string, string | number | boolean | undefined> = {
+          page,
+          sort_by: typeof params.sort_by === "string" ? params.sort_by : undefined,
+          with_genres: typeof params.with_genres === "string" ? params.with_genres : undefined,
+        };
 
-    const dateKeys = [
-      "primary_release_date.gte",
-      "primary_release_date.lte",
-      "first_air_date.gte",
-      "first_air_date.lte",
-    ];
-    dateKeys.forEach((k) => {
-      if (typeof params[k] === "string") discoverParams[k] = params[k];
-    });
+        const dateKeys = [
+          "primary_release_date.gte",
+          "primary_release_date.lte",
+          "first_air_date.gte",
+          "first_air_date.lte",
+        ] as const;
 
-    data = await discoverMedia(type, discoverParams);
-  }
+        dateKeys.forEach((k) => {
+          if (typeof params[k] === "string") discoverParams[k] = params[k];
+        });
+
+        return discoverMedia(type, discoverParams);
+      })();
 
   return (
     <>
       <AppTopbar title="Browse" />
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
+      <AppPageShell className="gap-8">
         {/* Decorative Background Blobs */}
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-indigo-500/5 blur-[80px]" />
         <div className="pointer-events-none absolute -right-20 top-1/2 size-72 rounded-full bg-purple-500/5 blur-[80px]" />
@@ -88,7 +88,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
         <section className="relative flex justify-center">
           <PaginationControls currentPage={data.page} totalPages={data.total_pages} />
         </section>
-      </div>
+      </AppPageShell>
     </>
   );
 }
