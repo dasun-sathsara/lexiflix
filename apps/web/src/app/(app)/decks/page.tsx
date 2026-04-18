@@ -306,7 +306,7 @@ export default function DecksPage() {
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" size="" asChild>
+              <Button variant="outline" size="lg" asChild>
                 <Link href="/browse">
                   <Layers className="size-4" />
                   Browse Content
@@ -314,7 +314,7 @@ export default function DecksPage() {
               </Button>
               {totalCards > 0 && (
                 <Button
-                  size="sm"
+                  size="lg"
                   className="gap-1.5 shadow-sm transition-all active:scale-95"
                   asChild
                 >

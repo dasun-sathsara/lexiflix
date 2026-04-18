@@ -1,0 +1,41 @@
+meta {
+  name: Analyze SRT
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{host}}/api/v1/analyze
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "job_id": "bruno-srt-001",
+    "content_type": "srt",
+    "content": "1\n00:00:01,000 --> 00:00:04,000\nThe quick brown fox jumped over the lazy dog.\n\n2\n00:00:05,000 --> 00:00:08,000\nShe sells seashells by the seashore.",
+    "options": {
+      "include_propn": false,
+      "dedup_lines": true,
+      "batch_size": 200
+    }
+  }
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns metadata and candidates", function() {
+    const body = res.getBody();
+    expect(body.metadata.job_id).to.equal("bruno-srt-001");
+    expect(body.metadata.unique_candidates).to.be.a("number");
+    expect(body.candidates).to.be.an("array");
+  });
+}
