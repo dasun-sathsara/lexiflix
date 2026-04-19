@@ -207,8 +207,8 @@ export default function StudyPage({ params }: { params: Promise<{ id: string }> 
                       {card.examples.length === 1 ? "Example" : "Examples"}
                     </div>
                     <div className="space-y-3">
-                      {card.examples.map((example, idx) => (
-                        <div key={idx} className="pl-3 border-l-2 border-primary/30">
+                      {card.examples.map((example) => (
+                        <div key={example} className="pl-3 border-l-2 border-primary/30">
                           <p className="text-sm leading-relaxed italic text-foreground/80">
                             "{example}"
                           </p>

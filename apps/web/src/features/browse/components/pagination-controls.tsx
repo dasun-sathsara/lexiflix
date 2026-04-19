@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -9,8 +11,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -18,7 +18,6 @@ interface PaginationControlsProps {
 }
 
 export function PaginationControls({ currentPage, totalPages }: PaginationControlsProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -39,6 +38,7 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
   // Re-write logic cleanly
   const renderPageItems = () => {
     const items = [];
+    let ellipsisKey = 0;
 
     // Always show Prev
     if (currentPage > 1) {
@@ -62,10 +62,11 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
       }
     }
 
-    pages.forEach((p, idx) => {
+    pages.forEach((p) => {
       if (p === "...") {
+        ellipsisKey += 1;
         items.push(
-          <PaginationItem key={`ellipsis-${idx}`}>
+          <PaginationItem key={`ellipsis-${ellipsisKey}`}>
             <PaginationEllipsis />
           </PaginationItem>,
         );

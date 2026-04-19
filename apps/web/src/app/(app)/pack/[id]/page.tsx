@@ -8,7 +8,6 @@ import {
   Eye,
   Film,
   Filter,
-  GraduationCap,
   Layers,
   Play,
   RotateCcw,
@@ -217,7 +216,7 @@ function statusLabel(status: CardStatus) {
 
 function truncate(text: string, max = 120) {
   if (text.length <= max) return text;
-  return text.slice(0, max - 1).trimEnd() + "…";
+  return `${text.slice(0, max - 1).trimEnd()}…`;
 }
 
 type TabValue = "all" | "new" | "learning" | "due" | "mastered";
@@ -225,33 +224,6 @@ type TabValue = "all" | "new" | "learning" | "due" | "mastered";
 function toTabValue(tab: string): TabValue {
   if (tab === "new" || tab === "learning" || tab === "due" || tab === "mastered") return tab;
   return "all";
-}
-
-// Stat Badge for header
-function StatBadge({
-  count,
-  label,
-  variant,
-}: {
-  count: number;
-  label: string;
-  variant: "new" | "learning" | "due" | "mastered";
-}) {
-  const styles = {
-    new: "bg-indigo-500/10 text-indigo-700 border-indigo-200/60 dark:text-indigo-300 dark:border-indigo-500/20",
-    learning:
-      "bg-amber-500/10 text-amber-700 border-amber-200/60 dark:text-amber-300 dark:border-amber-500/20",
-    due: "bg-rose-500/10 text-rose-700 border-rose-200/60 dark:text-rose-300 dark:border-rose-500/20",
-    mastered:
-      "bg-emerald-500/10 text-emerald-700 border-emerald-200/60 dark:text-emerald-300 dark:border-emerald-500/20",
-  };
-
-  return (
-    <div className={cn("flex items-center gap-1.5 rounded-xl border px-2 py-1", styles[variant])}>
-      <span className="text-base font-normal tabular-nums">{count}</span>
-      <span className="text-[11px] opacity-80">{label}</span>
-    </div>
-  );
 }
 
 export default function PackDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -366,7 +338,7 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
                     Study Pack
                   </Badge>
                   <Badge
-                    className={"border " + cefrBadgeClass(MOVIE_DATA.difficulty.level as CefrLevel)}
+                    className={`border ${cefrBadgeClass(MOVIE_DATA.difficulty.level as CefrLevel)}`}
                   >
                     {MOVIE_DATA.difficulty.level} — {MOVIE_DATA.difficulty.label}
                   </Badge>
@@ -599,10 +571,10 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
                                 {item.term}
                               </span>
                               <Badge variant="secondary">{item.partOfSpeech}</Badge>
-                              <Badge className={"border " + cefrBadgeClass(item.cefr)}>
+                              <Badge className={`border ${cefrBadgeClass(item.cefr)}`}>
                                 {item.cefr}
                               </Badge>
-                              <Badge className={"border gap-1 " + statusBadgeClass(item.status)}>
+                              <Badge className={`border gap-1 ${statusBadgeClass(item.status)}`}>
                                 {statusIcon(item.status)}
                                 {statusLabel(item.status)}
                               </Badge>

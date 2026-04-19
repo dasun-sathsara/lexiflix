@@ -204,6 +204,18 @@ export function ShapeHero({
 
       <div className="relative z-10 container mx-auto px-4 md:px-6">
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          {badge ? (
+            <motion.div
+              custom={0}
+              initial="hidden"
+              animate="visible"
+              variants={fadeUpVariants}
+              className="mb-4"
+            >
+              {badge}
+            </motion.div>
+          ) : null}
+
           <motion.div
             custom={1}
             initial="hidden"

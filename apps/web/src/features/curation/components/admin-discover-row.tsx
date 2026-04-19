@@ -4,7 +4,6 @@ import { Film, Loader2, Plus, RotateCcw, Tv } from "lucide-react";
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   curateTmdbItemAction,

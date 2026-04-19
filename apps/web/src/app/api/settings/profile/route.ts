@@ -6,6 +6,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/storage/r2";
 
+type UpdateUserBody = Parameters<typeof auth.api.updateUser>[0]["body"];
+
 const profileSchema = z.object({
   name: z
     .string({ message: "Display name is required." })
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   try {
     await auth.api.updateUser({
-      body: updates as any,
+      body: updates as UpdateUserBody,
       headers: request.headers,
     });
 

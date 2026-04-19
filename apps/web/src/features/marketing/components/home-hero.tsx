@@ -1,6 +1,6 @@
+import Link from "next/link";
 import ShapeHero from "@/components/common/shape-hero";
 import { ElegantButton } from "@/components/ui/button";
-import Link from "next/link";
 
 export function HomeHero() {
   return (

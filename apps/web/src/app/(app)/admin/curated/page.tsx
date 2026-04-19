@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AdminCuratedWorkspace } from "@/features/curation/components/admin-curated-tabs";
 import {
   type AnnotatedTMDBResult,
@@ -9,7 +10,6 @@ import { listCuratedEntriesForAdmin } from "@/features/curation/server/catalog";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireAdmin } from "@/lib/auth-guards";
 import { discoverMedia, getGenres, searchMedia } from "@/lib/tmdb";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Curated Admin — LexiFlix",

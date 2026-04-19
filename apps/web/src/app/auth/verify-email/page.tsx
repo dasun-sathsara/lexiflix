@@ -1,6 +1,6 @@
+import { Suspense } from "react";
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { VerifyEmailForm } from "@/features/auth/components/verify-email-form";
-import { Suspense } from "react";
 
 function VerifyEmailContent() {
   return (

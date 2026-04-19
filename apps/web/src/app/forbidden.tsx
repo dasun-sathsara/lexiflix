@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { ElegantButton } from "@/components/ui/button";
-import Link from "next/link";
 
 export default function ForbiddenPage() {
   return (

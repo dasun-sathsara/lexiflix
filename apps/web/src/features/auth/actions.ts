@@ -1,9 +1,9 @@
 "use server";
 
-import { SignInSchema, SignUpSchema } from "@/features/auth/schemas";
-import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
+import { SignInSchema, SignUpSchema } from "@/features/auth/schemas";
+import { auth } from "@/lib/auth";
 
 type ActionSuccess = { success: true };
 type ActionError = {
