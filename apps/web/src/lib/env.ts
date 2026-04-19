@@ -43,12 +43,39 @@ const serverSchema = z.object({
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
   GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+  OPENSUBTITLES_API_KEY: z.string().min(1, "OPENSUBTITLES_API_KEY is required"),
+  OPENSUBTITLES_USERNAME: z.string().min(1, "OPENSUBTITLES_USERNAME is required"),
+  OPENSUBTITLES_PASSWORD: z.string().min(1, "OPENSUBTITLES_PASSWORD is required"),
+  OPENSUBTITLES_API_BASE_URL: z
+    .url("OPENSUBTITLES_API_BASE_URL must be a valid URL")
+    .default("https://api.opensubtitles.com/api/v1"),
+  OPENSUBTITLES_REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive("OPENSUBTITLES_REQUEST_TIMEOUT_MS must be a positive integer")
+    .default(20_000),
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
   R2_ACCESS_KEY_ID: z.string().min(1, "R2_ACCESS_KEY_ID is required"),
   R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
   R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
   R2_ENDPOINT: z.string().min(1, "R2_ENDPOINT is required"),
   R2_PUBLIC_BASE_URL: z.url("R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com"),
+  GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+  TRIGGER_SECRET_KEY: z.string().min(1, "TRIGGER_SECRET_KEY is required"),
+  ANALYSIS_LLM_MODE: z
+    .enum(["live", "record", "replay", "mock"])
+    .default(process.env.NODE_ENV === "production" ? "live" : "mock"),
+  ANALYSIS_LLM_MODEL: z
+    .string()
+    .min(1, "ANALYSIS_LLM_MODEL must not be empty")
+    .default("gemini-2.5-flash"),
+  ANALYSIS_LLM_RECORDING_DIR: z.string().min(1).optional(),
+  NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
+  NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive("NLP_SERVICE_REQUEST_TIMEOUT_MS must be a positive integer")
+    .default(60_000),
   TMDB_API_KEY: z.string().min(1, "TMDB_API_KEY is required"),
 });
 

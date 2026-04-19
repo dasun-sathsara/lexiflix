@@ -38,6 +38,12 @@ Current required server-side envs include:
 - `AUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
+- `OPENSUBTITLES_API_KEY`
+- `OPENSUBTITLES_USERNAME`
+- `OPENSUBTITLES_PASSWORD`
+- `GEMINI_API_KEY`
+- `TRIGGER_SECRET_KEY`
+- `NLP_SERVICE_BASE_URL`
 - `RESEND_API_KEY`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
@@ -45,6 +51,15 @@ Current required server-side envs include:
 - `R2_ENDPOINT`
 - `R2_PUBLIC_BASE_URL`
 - `TMDB_API_KEY`
+
+The media-analysis foundation also supports optional server-side tuning vars:
+
+- `OPENSUBTITLES_API_BASE_URL`
+- `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
+- `NLP_SERVICE_REQUEST_TIMEOUT_MS`
+- `ANALYSIS_LLM_MODE`
+- `ANALYSIS_LLM_MODEL`
+- `ANALYSIS_LLM_RECORDING_DIR`
 
 Current public envs include:
 

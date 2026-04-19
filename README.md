@@ -39,6 +39,24 @@ The current defaults assume:
 - Doppler config: `dev`
 - Vercel preview branch: `dev`
 
+For the media-analysis foundation in `apps/web`, Doppler also needs to provide:
+
+- `OPENSUBTITLES_API_KEY`
+- `OPENSUBTITLES_USERNAME`
+- `OPENSUBTITLES_PASSWORD`
+- `GEMINI_API_KEY`
+- `TRIGGER_SECRET_KEY`
+- `NLP_SERVICE_BASE_URL`
+
+Optional tuning variables now supported by the web app are:
+
+- `OPENSUBTITLES_API_BASE_URL`
+- `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
+- `NLP_SERVICE_REQUEST_TIMEOUT_MS`
+- `ANALYSIS_LLM_MODE` (`live`, `record`, `replay`, `mock`)
+- `ANALYSIS_LLM_MODEL`
+- `ANALYSIS_LLM_RECORDING_DIR`
+
 If you need different values, override them at command time.
 
 ## Web App
