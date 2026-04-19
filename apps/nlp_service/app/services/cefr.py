@@ -7,11 +7,14 @@ conservative advanced-level labels for aggregated vocabulary candidates.
 from __future__ import annotations
 
 import csv
+import logging
 from dataclasses import dataclass
 from importlib.resources import files
 from io import StringIO
 
 from cefrpy import CEFRAnalyzer  # type: ignore[import-untyped]
+
+logger = logging.getLogger(__name__)
 
 LABEL_TO_NUM: dict[str, int] = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6}
 NUM_TO_LABEL: dict[int, str] = {v: k for k, v in LABEL_TO_NUM.items()}
@@ -150,7 +153,14 @@ class EFLLexLexicon:
         return self._signal_from_aggregate(aggregate)
 
     def _load(self) -> None:
-        path = files("app.data").joinpath("EFLLex.tsv")
+        path = self._resolve_dataset_path()
+        if path is None:
+            logger.warning(
+                "EFLLex dataset not found in app.data; falling back to cefrpy-only CEFR resolution."
+            )
+            self._by_pos = {}
+            self._by_lemma = {}
+            return
         buckets_by_pos: dict[tuple[str, str], list[float]] = {}
         buckets_by_lemma: dict[str, list[float]] = {}
 
@@ -178,6 +188,15 @@ class EFLLexLexicon:
             key: self._aggregate_from_bucket(bucket)
             for key, bucket in buckets_by_lemma.items()
         }
+
+    @staticmethod
+    def _resolve_dataset_path():
+        package_dir = files("app.data")
+        for candidate in ("EFLLex.tsv", "efl_lex.tsv"):
+            path = package_dir.joinpath(candidate)
+            if path.is_file():
+                return path
+        return None
 
     @staticmethod
     def _extract_values(row: dict[str, str]) -> list[float]:
