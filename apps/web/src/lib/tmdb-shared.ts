@@ -72,6 +72,7 @@ export interface TMDBMovieDetails {
   genres: Genre[];
   original_language: string | null;
   imdb_id: string | null;
+  runtime: number | null;
   popularity: number | null;
   vote_average: number | null;
   vote_count: number | null;
@@ -108,4 +109,18 @@ export interface TMDBTvDetails {
   content_ratings?: {
     results: TMDBTvContentRatingResult[];
   };
+}
+
+export interface TMDBTvSeasonEpisode {
+  episode_number: number;
+}
+
+export interface TMDBTvSeasonDetails {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  air_date: string | null;
+  season_number: number;
+  episodes?: TMDBTvSeasonEpisode[];
 }

@@ -8,11 +8,18 @@ import type {
   TMDBResponse,
   TMDBResult,
   TMDBTvDetails,
+  TMDBTvSeasonDetails,
 } from "@/lib/tmdb-shared";
 
 const BASE_URL = "https://api.themoviedb.org/3";
 
-export type { TMDBMediaType, TMDBMovieDetails, TMDBResult, TMDBTvDetails } from "@/lib/tmdb-shared";
+export type {
+  TMDBMediaType,
+  TMDBMovieDetails,
+  TMDBResult,
+  TMDBTvDetails,
+  TMDBTvSeasonDetails,
+} from "@/lib/tmdb-shared";
 
 type FetchOptions = {
   tags?: string[];
@@ -113,6 +120,16 @@ export async function getTvDetails(tvId: number) {
     },
     {
       tags: [`tv-details-${tvId}`],
+    },
+  );
+}
+
+export async function getTvSeasonDetails(tvId: number, seasonNumber: number) {
+  return fetchTMDB<TMDBTvSeasonDetails>(
+    `/tv/${tvId}/season/${seasonNumber}`,
+    { language: "en-US" },
+    {
+      tags: [`tv-season-details-${tvId}-${seasonNumber}`],
     },
   );
 }
