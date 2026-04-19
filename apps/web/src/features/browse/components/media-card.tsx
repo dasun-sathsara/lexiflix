@@ -27,7 +27,10 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
     .filter(Boolean);
 
   return (
-    <Link href={`/media/${media.id}`} className="group block h-full">
+    <Link
+      href={`/media/${media.id}?type=${isMovie ? "movie" : "tv"}`}
+      className="group block h-full"
+    >
       <Card className="h-full gap-2.5 overflow-hidden p-1.5 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:border-primary/20">
         <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted">
           {posterUrl ? (

@@ -145,7 +145,7 @@ function FeaturedSpotlight({
               size="sm"
               className="rounded-full shadow-lg shadow-black/20 text-xs h-8"
             >
-              <Link href={`/media/${tmdbId}`}>
+              <Link href={`/media/${tmdbId}?type=${mediaType}`}>
                 <Play className="size-3.5 fill-current" />
                 Open title
               </Link>
@@ -184,7 +184,7 @@ function MoviePosterGrid({
           return (
             <Link
               key={item.id}
-              href={`/media/${item.tmdbId}`}
+              href={`/media/${item.tmdbId}?type=movie`}
               className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-amber-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-amber-500/10"
             >
               {/* Poster */}
@@ -266,7 +266,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
           return (
             <Link
               key={item.id}
-              href={`/media/${item.tmdbId}`}
+              href={`/media/${item.tmdbId}?type=tv`}
               className="group grid gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm transition-all duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
             >
               {/* Poster */}
