@@ -200,12 +200,17 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" variant={"plane"} asChild>
+            <SidebarMenuButton
+              size="lg"
+              variant={"plane"}
+              className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+              asChild
+            >
               <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
-                  <Clapperboard className="size-[18px]" />
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-9 items-center justify-center rounded-xl shadow-sm">
+                  <Clapperboard className="size-5" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="flex items-center gap-2 truncate font-semibold">
                     <span className="truncate">LexiFlix</span>
                     {isAdmin ? (
@@ -278,7 +283,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
         "bg-sidebar/80 backdrop-blur-md supports-[backdrop-filter]:bg-sidebar/60",
       )}
     >
-      <div className="flex h-14 items-center gap-3 px-4">
+      <div className="flex h-12 items-center gap-3 px-4">
         <SidebarTrigger className="-ml-1" />
         <div
           className={cn(
