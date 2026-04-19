@@ -69,7 +69,7 @@ export function NavUser({
             >
               <Avatar
                 className={
-                  "h-8 w-8 rounded-lg " +
+                  "size-8 rounded-lg " +
                   (isAdmin ? "ring-2 ring-amber-400/70 ring-offset-2 ring-offset-sidebar" : "")
                 }
               >
@@ -86,7 +86,7 @@ export function NavUser({
                 <span className="flex items-center gap-2 truncate font-medium">
                   <span className="truncate">{user.name}</span>
                   {isAdmin ? (
-                    <Badge className="border border-amber-300/70 bg-amber-500/15 text-[10px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
+                    <Badge className="border border-amber-300/70 bg-amber-500/15 text-[11px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
                       Admin
                     </Badge>
                   ) : null}
@@ -106,7 +106,7 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar
                   className={
-                    "h-8 w-8 rounded-lg " +
+                    "size-8 rounded-lg " +
                     (isAdmin ? "ring-2 ring-amber-400/70 ring-offset-2 ring-offset-background" : "")
                   }
                 >
@@ -123,7 +123,7 @@ export function NavUser({
                   <span className="flex items-center gap-2 truncate font-medium">
                     <span className="truncate">{user.name}</span>
                     {isAdmin ? (
-                      <Badge className="border border-amber-300/70 bg-amber-500/15 text-[10px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
+                      <Badge className="border border-amber-300/70 bg-amber-500/15 text-[11px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
                         Admin
                       </Badge>
                     ) : null}
