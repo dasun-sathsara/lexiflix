@@ -109,22 +109,33 @@ Minimal operational role for demo support only.
 ### 6. Pack Generation
 
 1. Pack generation shall begin only after the learner explicitly requests it.
-2. Before generation starts, the system shall allow the learner to choose generation preferences such as frequency preference and vocabulary type selection.
+2. Before generation starts, the system shall allow the learner to choose generation preferences such as vocabulary type selection, CEFR selection mode, pack size, known-term handling, example count, and custom instructions.
 3. Pack generation shall read from stored reusable analysis rather than re-running subtitle fetch, NLP analysis, or analysis LLM extraction.
 4. The system shall select candidate items based on learner state, learner level, and generation preferences.
 5. The system shall generate meanings and example sentences with an LLM.
-6. The system shall generate pronunciation audio for pack items.
-7. The system may generate contextual imagery when that feature is enabled.
-8. The system shall store generated pack content as user-specific output.
-9. Generated pack content may be adapted to the learner’s current CEFR level at generation time.
-10. The system shall persist pack generation job state and progress events for polling.
-11. The system shall prevent accidental duplicate generation requests through idempotent handling.
+6. In V1, the system shall generate meanings in English only.
+7. In V1, the system shall generate newly written example sentences rather than reusing subtitle excerpts.
+8. In V1, the default example count shall be one per item, with request-time configuration allowed up to three.
+9. The system shall generate pronunciation audio for pack items.
+10. In V1, pronunciation audio shall read only the vocabulary item itself.
+11. Audio generation shall be treated as best-effort in V1 and missing audio shall result in warnings rather than total pack failure.
+12. The system may generate contextual imagery when that feature is enabled.
+13. In V1, contextual imagery shall remain env-gated rather than learner-configurable by default.
+14. Image generation shall be best-effort in V1.
+15. The system shall store generated pack content as user-specific output.
+16. Generated pack content may be adapted to the learner’s current CEFR level at generation time.
+17. The system shall persist pack generation job state and progress events for polling.
+18. The system shall prevent accidental duplicate generation requests through idempotent handling.
+19. The system shall enforce a server-side hard cap of `100` items per generation request in V1.
+20. V1 CEFR selection modes shall be `same_level`, `one_level_above`, and `all_levels_above`.
+21. V1 known-term handling modes shall be `exclude_known`, `downrank_known`, and `include_known`.
 
 ### 7. Study Experience
 
 1. The system shall present generated pack items with learner-facing study content.
 2. The system shall support playback of generated pronunciation audio.
 3. The system shall track learner progress within a generated pack.
+4. In V1, long-running generation progress shall be accessible both from a dedicated progress view and from the decks surface through one shared app-owned polling contract.
 
 ### 8. Review And Ongoing Learner State
 

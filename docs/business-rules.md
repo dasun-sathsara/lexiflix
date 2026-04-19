@@ -44,6 +44,9 @@
 - Reusable analysis outputs are shared across users and rerun only when the analysis pipeline fingerprint changes or the cached analysis is manually invalidated.
 - Pack generation is a separate **on-demand** model.
 - The Content Generation Pipeline starts only after a user explicitly requests pack generation and confirms their generation preferences.
+- In V1, generation preferences come from a dialog-driven request snapshot rather than from hidden defaults alone.
+- That request may control vocabulary kinds, CEFR selection mode, pack size, known-term handling, example count, and custom instructions.
+- The server-side hard cap for `packSize` is `100` in V1.
 - Pack generation reads from stored reusable analysis instead of repeating subtitle fetch, NLP analysis, or phrase-classification LLM work.
 
 - The learner-facing curated catalog at `/curated` is a signed-in surface.
@@ -95,8 +98,21 @@
 - generated meanings, examples, and related assets may take the learner's current CEFR level into account
 - standard housekeeping metadata for the content-generation pass
 
+- In V1, generated meanings remain English-only.
+- In V1, example sentences are newly generated and should not reuse subtitle excerpts.
+- In V1, the default example count is one per item, with the request allowed to increase that to two or three.
+- In V1, pronunciation audio reads only the vocabulary item itself.
+
 - Pack selection is personalized per user.
 - When generating a pack, the system considers the learner's CEFR level, their frequency preference, and the vocabulary types they want to study.
+- V1 CEFR selection options are:
+- `same_level`
+- `one_level_above`
+- `all_levels_above`
+- Known-term handling is request-driven in V1:
+- `exclude_known`
+- `downrank_known`
+- `include_known`
 - Those preferences determine which candidate items are included in the resulting pack.
 
 - There is only **one pack per user per content item**.
@@ -137,6 +153,9 @@
 - In the first real implementation pass:
 - pronunciation audio is in scope
 - contextual images remain optional and may be added later without reshaping the schema
+- image generation is best-effort and env-gated in V1 rather than learner-configurable by default
+- image generation should run only for items that plausibly benefit from imagery
+- audio generation is also best-effort in V1; missing audio should produce warnings rather than fail the whole pack
 
 - JSONB fields that store pipeline-derived payloads use one active contract at a time.
 - If the NLP or LLM service changes those payload shapes in a breaking way, the correct response for this project is to purge and rebuild the affected derived data rather than maintain multiple historical JSON parsers/schemas.

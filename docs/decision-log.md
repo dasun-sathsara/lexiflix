@@ -91,3 +91,59 @@
 - Decision: learner-facing curated pages read only published curated rows from Postgres.
 - Reasoning: curated shelves should be stable and fast, and should not depend on live TMDB summary responses at render time.
 - Consequence: TMDB detail data is normalized and cached on write, and `/curated` renders published entries only.
+
+## 2026-04-19
+
+### Pack generation request shape
+
+- Decision: pack generation in V1 is driven by an explicit generation dialog rather than by hidden defaults alone.
+- Reasoning: pack composition is no longer just a backend heuristic; the learner should control the main inclusion levers up front.
+- Consequence: the request snapshot needs to capture vocabulary kinds, CEFR selection mode, pack size, known-term handling, example count, and custom instructions.
+
+### Pack size cap
+
+- Decision: the server-side hard cap for `packSize` is `100` in V1.
+- Reasoning: this keeps prompt size, asset fan-out, and wall-clock latency within a manageable range for the demo without making packs trivially small.
+- Consequence: the backend must enforce the cap regardless of any client-side dialog controls.
+
+### CEFR selection modes
+
+- Decision: V1 CEFR selection modes are `same_level`, `one_level_above`, and `all_levels_above`.
+- Reasoning: these cover the meaningful learner choices without introducing arbitrary range builders or overcomplicated selection UI.
+- Consequence: generation request schemas and selection logic should model those options directly.
+
+### Known-term handling
+
+- Decision: known-term handling is explicit and request-driven in V1.
+- Reasoning: excluding known terms, down-ranking them, or including them are materially different learning strategies and should not be silently inferred.
+- Consequence: generation request schemas and selection logic should support `exclude_known`, `downrank_known`, and `include_known`.
+
+### Content generation language and examples
+
+- Decision: generated meanings stay English-only in V1, and example sentences must be newly generated rather than adapted from subtitle excerpts.
+- Reasoning: English-only explanations keep the first pass simpler, and newly generated examples reduce spoiler risk and avoid subtitle reuse in learner-facing output.
+- Consequence: prompts and output contracts should reflect English-only meanings and generated examples by default.
+
+### Example count
+
+- Decision: the default example count is one per item, with request-time configuration allowed up to three.
+- Reasoning: one example is enough for the baseline study loop, while allowing up to three preserves flexibility without making every pack bloated by default.
+- Consequence: the request snapshot and prompt contracts should include example count as an explicit field.
+
+### Audio failure policy
+
+- Decision: audio generation is best-effort in V1, and pronunciation audio reads only the vocabulary item itself.
+- Reasoning: missing audio should not destroy an otherwise usable pack, and vocabulary-only audio keeps the first implementation narrower and cheaper.
+- Consequence: the workflow should persist warning state for missing audio instead of failing the whole job.
+
+### Image generation exposure
+
+- Decision: image generation remains env-gated in V1 rather than learner-configurable by default.
+- Reasoning: image usefulness and quality are less predictable than text generation, so the capability should be tested operationally before being exposed as a normal learner control.
+- Consequence: the architecture should support images now, but the first shipped learner dialog should not depend on a visible image toggle.
+
+### Generation progress surfaces
+
+- Decision: long-running generation progress should be visible both in a dedicated progress view and in the decks surface.
+- Reasoning: users need a clear active-job view, but they also need to be able to leave and return later without losing the job trail.
+- Consequence: both surfaces should read from one shared app-owned polling contract rather than separate progress systems.
