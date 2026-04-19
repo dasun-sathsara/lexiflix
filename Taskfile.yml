@@ -115,34 +115,34 @@ tasks:
         msg: "apps/web is not linked to Vercel yet. Run: task vercel:web:link"
     cmds:
       - |
-        set -euo pipefail
+          set -euo pipefail
 
-        for key in $(doppler secrets --only-names --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" --json | jq -r 'keys[]'); do
-          case "${key}" in
-            DOPPLER_CONFIG|DOPPLER_ENVIRONMENT|DOPPLER_PROJECT)
-              continue
-              ;;
-          esac
+          for key in $(doppler secrets --only-names --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" --json | jq -r 'keys[]'); do
+            case "${key}" in
+              DOPPLER_CONFIG|DOPPLER_ENVIRONMENT|DOPPLER_PROJECT)
+                continue
+                ;;
+            esac
 
-          echo "Syncing ${key} -> {{.VERCEL_ENV}}"
-          value="$(doppler secrets get "${key}" --plain --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}")"
-          cmd=(vercel env add "${key}" "{{.VERCEL_ENV}}")
+            echo "Syncing ${key} -> {{.VERCEL_ENV}}"
+            value="$(doppler secrets get "${key}" --plain --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}")"
+            cmd=(vercel env add "${key}" "{{.VERCEL_ENV}}")
+            if [ "{{.VERCEL_ENV}}" = "preview" ]; then
+              cmd+=("{{.VERCEL_GIT_BRANCH}}")
+            fi
+            cmd+=(--value "${value}" --force --yes --non-interactive)
+
+            if ! "${cmd[@]}"; then
+              echo "Failed syncing ${key} to Vercel environment '{{.VERCEL_ENV}}'."
+              exit 1
+            fi
+          done
+
           if [ "{{.VERCEL_ENV}}" = "preview" ]; then
-            cmd+=("{{.VERCEL_GIT_BRANCH}}")
+            echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}' for branch '{{.VERCEL_GIT_BRANCH}}'."
+          else
+            echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}'."
           fi
-          cmd+=(--value "${value}" --force --yes --non-interactive)
-
-          if ! "${cmd[@]}"; then
-            echo "Failed syncing ${key} to Vercel environment '{{.VERCEL_ENV}}'."
-            exit 1
-          fi
-        done
-
-        if [ "{{.VERCEL_ENV}}" = "preview" ]; then
-          echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}' for branch '{{.VERCEL_GIT_BRANCH}}'."
-        else
-          echo "Synced apps/web env vars from Doppler config '{{.DOPPLER_CONFIG}}' to Vercel environment '{{.VERCEL_ENV}}'."
-        fi
 
   vercel:web:sync-envs:prod:
     desc: Sync required apps/web env vars from Doppler into the Vercel production environment

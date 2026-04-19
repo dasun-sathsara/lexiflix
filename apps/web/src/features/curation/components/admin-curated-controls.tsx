@@ -141,22 +141,22 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 py-3.5">
-        <div className="grid gap-2 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div className="flex flex-wrap gap-4">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Mode
             </span>
-            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
               {(["search", "browse"] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
                   className={cn(
-                    "inline-flex min-h-8 flex-1 items-center justify-center rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                     mode === m
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
                   {m === "search" ? "Search by Title" : "Browse & Discover"}
@@ -169,17 +169,17 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Type
             </span>
-            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
               {(["movie", "tv"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => handleMediaTypeChange(t)}
                   className={cn(
-                    "inline-flex min-h-8 flex-1 items-center justify-center rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                     mediaType === t
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
                   {t === "movie" ? "Movies" : "TV Shows"}
@@ -194,7 +194,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Title Search
             </Label>
-            <div className="relative max-w-2xl">
+            <div className="relative max-w-lg">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
@@ -204,18 +204,18 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleApply();
                 }}
-                className="pl-10"
+                className="pl-10 shadow-sm"
               />
             </div>
           </div>
         ) : (
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 max-w-3xl">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 Genre
               </Label>
               <Select value={genreId} onValueChange={setGenreId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full shadow-sm">
                   <SelectValue placeholder="All genres" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,7 +234,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
                 Sort by
               </Label>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full shadow-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -252,7 +252,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
                 Decade
               </Label>
               <Select value={decade} onValueChange={setDecade}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full shadow-sm">
                   <SelectValue placeholder="Any decade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,15 +268,11 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 pt-2">
           <Button size="sm" onClick={handleApply}>
             Apply Filters
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleReset}
-          >
+          <Button size="sm" variant="ghost" onClick={handleReset}>
             Reset
           </Button>
         </div>

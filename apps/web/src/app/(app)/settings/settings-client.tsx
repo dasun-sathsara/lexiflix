@@ -1,27 +1,5 @@
 "use client";
 
-import {
-  Bell,
-  CheckCircle2,
-  GraduationCap,
-  Loader2,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  type ChangeEvent,
-  type FormEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
-import { toast } from "sonner";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppPanel } from "@/components/common/app-surface";
@@ -62,6 +40,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
 import { changePasswordAction, deleteAccountAction } from "@/features/settings/actions";
 import type { SettingsPreferences } from "@/features/settings/types";
+import {
+  Bell,
+  CheckCircle2,
+  GraduationCap,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { toast } from "sonner";
 
 type StatusState = {
   type: "success" | "error";
@@ -930,8 +930,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         </span>
                       </>
                     ) : (
-                      <>
-                      </>
+                      <></>
                     )}
                   </div>
                   <Button type="submit" disabled={preferencesSubmitDisabled}>

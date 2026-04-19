@@ -79,13 +79,13 @@ export function AdminDiscoverRow({
   const action = isCurated ? refreshCuratedEntryAction : curateTmdbItemAction;
 
   return (
-    <div className="flex items-center gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 transition-all hover:bg-card/60 hover:shadow-sm">
+    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] p-3 transition-all hover:bg-muted/40">
       {/* Poster thumbnail */}
-      <div className="relative h-[60px] w-10 shrink-0 overflow-hidden rounded-xl border bg-muted">
+      <div className="relative h-16 w-[42px] shrink-0 overflow-hidden rounded-md bg-muted ring-1 ring-border/50">
         {posterUrl ? (
-          <Image src={posterUrl} alt={title} fill className="object-cover" sizes="40px" />
+          <Image src={posterUrl} alt={title} fill className="object-cover" sizes="42px" />
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-muted-foreground/50">
             {mediaType === "tv" ? <Tv className="size-4" /> : <Film className="size-4" />}
           </div>
         )}
@@ -93,31 +93,38 @@ export function AdminDiscoverRow({
 
       {/* Content */}
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium tracking-tight text-foreground">{title}</p>
           {isCurated && (
-            <span className="inline-flex shrink-0 items-center rounded-md border border-emerald-200/50 bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-600 dark:border-emerald-800/50 dark:text-emerald-400">
+            <span className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               In catalog
             </span>
           )}
         </div>
 
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-          {year && <span>{year}</span>}
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {year && <span className="font-medium text-foreground/80">{year}</span>}
           {result.original_language && (
             <span className="uppercase">{result.original_language}</span>
           )}
-          <span>★ {result.vote_average.toFixed(1)}</span>
-          {genreNames.map((name) => (
-            <Badge key={name} variant="secondary">
-              {name}
-            </Badge>
-          ))}
+          <span className="flex items-center gap-1">
+            <span className="text-amber-500">★</span> {result.vote_average.toFixed(1)}
+          </span>
+          {genreNames.length > 0 && (
+            <div className="flex items-center gap-1.5 border-l border-border/50 pl-2 ml-1">
+              {genreNames.map((name) => (
+                <span key={name}>{name}</span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Action form */}
-      <form action={action} className="shrink-0">
+      <form
+        action={action}
+        className="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 lg:opacity-100"
+      >
         <input type="hidden" name="mediaType" value={mediaType} />
         <input type="hidden" name="tmdbId" value={String(result.id)} />
         <SubmitButton isCurated={isCurated} />

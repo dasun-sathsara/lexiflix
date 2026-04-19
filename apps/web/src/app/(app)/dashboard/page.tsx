@@ -1,8 +1,3 @@
-import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
-import { headers } from "next/headers";
-import Image from "next/image";
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +7,11 @@ import { Progress } from "@/components/ui/progress";
 import { shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { auth } from "@/lib/auth";
+import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Play } from "lucide-react";
+import { headers } from "next/headers";
+import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
 
 const MOCK_STATS = {
   dailyGoal: {

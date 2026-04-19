@@ -83,9 +83,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
     <motion.div
       animate={{
         backdropFilter: visible ? "blur(10px)" : "none",
-        boxShadow: visible
-          ? "var(--shadow-popover)"
-          : "none",
+        boxShadow: visible ? "var(--shadow-popover)" : "none",
         width: visible ? "40%" : "100%",
         y: visible ? 20 : 0,
       }}
@@ -149,9 +147,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
     <motion.div
       animate={{
         backdropFilter: visible ? "blur(10px)" : "none",
-        boxShadow: visible
-          ? "var(--shadow-popover)"
-          : "none",
+        boxShadow: visible ? "var(--shadow-popover)" : "none",
         width: visible ? "90%" : "100%",
         paddingRight: visible ? "12px" : "0px",
         paddingLeft: visible ? "12px" : "0px",

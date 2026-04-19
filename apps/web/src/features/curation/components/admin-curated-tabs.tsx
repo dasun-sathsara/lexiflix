@@ -45,11 +45,15 @@ function buildPageUrl(
 }
 
 function ControlsSkeleton() {
-  return <div className="h-[184px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />;
+  return (
+    <div className="h-[184px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
+  );
 }
 
 function FiltersSkeleton() {
-  return <div className="h-[132px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />;
+  return (
+    <div className="h-[132px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
+  );
 }
 
 function PaginationRow({
@@ -68,9 +72,7 @@ function PaginationRow({
       <div>
         {currentPage > 1 && (
           <Button variant="outline" size="sm" asChild>
-            <Link href={buildPageUrl(baseParams, currentPage - 1)}>
-              ← Previous
-            </Link>
+            <Link href={buildPageUrl(baseParams, currentPage - 1)}>← Previous</Link>
           </Button>
         )}
       </div>
@@ -82,9 +84,7 @@ function PaginationRow({
       <div>
         {currentPage < totalPages && (
           <Button variant="outline" size="sm" asChild>
-            <Link href={buildPageUrl(baseParams, currentPage + 1)}>
-              Next →
-            </Link>
+            <Link href={buildPageUrl(baseParams, currentPage + 1)}>Next →</Link>
           </Button>
         )}
       </div>
@@ -145,9 +145,7 @@ export function AdminCuratedWorkspace({
   return (
     <AppPageShell>
       <section className="flex flex-col gap-2">
-        <AppPageHeader
-          heading="Curated Catalog"
-        />
+        <AppPageHeader heading="Curated Catalog" />
 
         <div className="flex flex-wrap gap-2.5">
           <AppStat icon={Layers} label="Catalog" value={stats.total} hint="items" />
@@ -204,7 +202,7 @@ export function AdminCuratedWorkspace({
       </AppPanel>
 
       {isDiscover && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 pt-2">
           <Suspense fallback={<ControlsSkeleton />}>
             <AdminDiscoverControls queryState={queryState} genres={genres} />
           </Suspense>
@@ -296,7 +294,7 @@ export function AdminCuratedWorkspace({
       )}
 
       {isCatalog && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 pt-2">
           <Suspense fallback={<FiltersSkeleton />}>
             <AdminCatalogFilters filter={catalogFilter} counts={catalogCounts} />
           </Suspense>

@@ -101,70 +101,64 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 px-4 py-3.5 transition-all hover:bg-card/60 hover:shadow-sm lg:flex-row lg:items-center lg:justify-between lg:px-4.5 lg:py-4",
-        isPending && "pointer-events-none opacity-60",
+        "group flex flex-row items-center justify-between gap-4 rounded-[calc(var(--radius)+2px)] p-3 transition-all hover:bg-muted/30 border border-transparent hover:border-border/50",
+        isPending && "pointer-events-none opacity-50",
       )}
     >
-      <div className="flex min-w-0 flex-1 items-start gap-3.5">
-        <div className="relative h-[76px] w-[52px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="relative h-[72px] w-[48px] shrink-0 overflow-hidden rounded-md bg-muted shadow-sm ring-1 ring-border/50">
           {posterUrl ? (
-            <Image src={posterUrl} alt={entry.title} fill className="object-cover" sizes="52px" />
+            <Image src={posterUrl} alt={entry.title} fill className="object-cover" sizes="48px" />
           ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              {entry.mediaType === "tv" ? <Tv className="size-4" /> : <Film className="size-4" />}
+            <div className="flex h-full items-center justify-center text-muted-foreground/50">
+              {entry.mediaType === "tv" ? <Tv className="size-5" /> : <Film className="size-5" />}
             </div>
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-base font-semibold tracking-tight">{entry.title}</p>
-            <Badge variant="outline">
-              #{entry.tmdbId}
-            </Badge>
-            <Badge variant="secondary">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-base font-semibold tracking-tight text-foreground">
+              {entry.title}
+            </p>
+            <span className="text-xs font-mono text-muted-foreground/60">#{entry.tmdbId}</span>
+          </div>
+
+          <div className="mt-0.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground/80">
               {entry.mediaType === "tv" ? (
-                <Tv data-icon="inline-start" />
+                <Tv className="size-3.5" />
               ) : (
-                <Film data-icon="inline-start" />
+                <Film className="size-3.5" />
               )}
               {entry.mediaType === "tv" ? "TV Series" : "Movie"}
-            </Badge>
-          </div>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            {year && <span>{year}</span>}
-            {voteAvg && <span>★ {voteAvg}</span>}
+            </span>
+            {year && <span className="font-medium">{year}</span>}
+            {voteAvg && (
+              <span className="flex items-center gap-1">
+                <span className="text-amber-500">★</span> {voteAvg}
+              </span>
+            )}
             {entry.contentRating && (
-              <Badge variant="outline">
+              <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {entry.contentRating}
-              </Badge>
+              </span>
+            )}
+            {entry.genres.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80 truncate">
+                <span>•</span>
+                {entry.genres
+                  .slice(0, 3)
+                  .map((g) => g.name)
+                  .join(", ")}
+              </div>
             )}
           </div>
-
-          {entry.genres.length > 0 && (
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {entry.genres.slice(0, 3).map((g) => (
-                <Badge
-                  key={g.id}
-                  variant="secondary"
-                >
-                  {g.name}
-                </Badge>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      <div className="flex w-full shrink-0 flex-col gap-2.5 rounded-[calc(var(--radius)+2px)] border bg-card/60 p-2.5 sm:flex-row sm:flex-wrap sm:items-end lg:w-auto lg:min-w-[310px] lg:justify-end">
-        <div className="flex min-w-[96px] flex-col gap-1">
-          <label
-            htmlFor={`rank-${entry.id}`}
-            className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground"
-          >
-            Rank
-          </label>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Input
             id={`rank-${entry.id}`}
             type="number"
@@ -180,39 +174,31 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
             placeholder="—"
             disabled={isPending}
             className={cn(
-              "tabular-nums",
-              rankDirty &&
-                "border-amber-400/70 bg-amber-50/50 ring-amber-300/40 dark:bg-amber-950/20",
+              "h-9 w-16 tabular-nums text-center text-sm font-medium shadow-none transition-colors",
+              rankDirty && "border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400",
             )}
           />
-        </div>
-
-        <div className="flex min-w-[120px] flex-col gap-1">
-          <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            Status
-          </span>
           <Button
             type="button"
-            variant={entry.isPublished ? "secondary" : "outline"}
+            variant={entry.isPublished ? "default" : "secondary"}
             onClick={handleTogglePublished}
             disabled={isPending}
-            title={entry.isPublished ? "Click to hide" : "Click to publish"}
             className={cn(
-              "h-9 justify-center rounded-xl",
+              "h-9 px-3 text-sm shadow-none",
               entry.isPublished &&
-                "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-950/50",
+                "border-transparent bg-emerald-500 hover:bg-emerald-600 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700",
             )}
           >
             {entry.isPublished ? "Published" : "Hidden"}
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 self-stretch sm:self-auto">
+        <div className="flex items-center gap-1 opacity-100 transition-opacity">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="size-9 rounded-xl text-muted-foreground hover:text-foreground"
+            className="size-9 text-muted-foreground hover:text-foreground"
             disabled={isPending}
             onClick={handleRefresh}
             title="Refresh snapshot from TMDB"
@@ -231,7 +217,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-9 rounded-xl text-muted-foreground hover:text-destructive"
+                className="size-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 disabled={isPending}
                 title="Delete entry"
               >

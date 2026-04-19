@@ -239,7 +239,9 @@ class EFLLexLexicon:
 
         doc_support = aggregate.docs_by_level[chosen_index]
         support_factor = min(1.0, (doc_support + aggregate.total_docs) / 18.0)
-        confidence = 0.42 + (chosen_score * 0.28) + (margin * 0.18) + (support_factor * 0.12)
+        confidence = (
+            0.42 + (chosen_score * 0.28) + (margin * 0.18) + (support_factor * 0.12)
+        )
         if note != "cefr:efllex":
             confidence -= 0.08
 
@@ -469,10 +471,7 @@ class CEFRLookup:
 
         final_num = efllex_num
         if raw_num <= 4 and efllex_num == 5:
-            can_promote_to_c1 = (
-                raw_num >= 3
-                and strong_direct_advanced_support
-            )
+            can_promote_to_c1 = raw_num >= 3 and strong_direct_advanced_support
             final_num = 5 if can_promote_to_c1 else raw_num
         elif raw_num <= 4 and efllex_num <= 4:
             final_num = min(raw_num, efllex_num)
@@ -491,9 +490,17 @@ class CEFRLookup:
             if raw_num == 6 and final_num == 5 and efllex_num == 5:
                 return final_num, final_label, "cefr:downgraded_from_c2_to_c1_efllex"
             if raw_num == 5 and final_num == 4 and efllex_num <= 4:
-                return final_num, final_label, "cefr:downgraded_from_c1_to_b2_efllex_cap"
+                return (
+                    final_num,
+                    final_label,
+                    "cefr:downgraded_from_c1_to_b2_efllex_cap",
+                )
             if raw_num > final_num:
-                return final_num, final_label, f"cefr:downgraded_from_{raw_label.lower()}_to_{final_label.lower()}_efllex_cap"
+                return (
+                    final_num,
+                    final_label,
+                    f"cefr:downgraded_from_{raw_label.lower()}_to_{final_label.lower()}_efllex_cap",
+                )
             return final_num, final_label, "cefr:efllex+cefrpy"
 
         if raw_num == 6 and final_num == 6:

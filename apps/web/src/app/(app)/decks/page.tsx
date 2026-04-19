@@ -300,11 +300,7 @@ export default function DecksPage() {
                   </Link>
                 </Button>
                 {totalCards > 0 && (
-                  <Button
-                    size="lg"
-                    className="gap-1.5"
-                    asChild
-                  >
+                  <Button size="lg" className="gap-1.5" asChild>
                     <Link href={`/study/${MOCK_DECKS[0]?.id ?? "interstellar"}`}>
                       <Play className="size-3.5 fill-current" />
                       Start Session

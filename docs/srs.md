@@ -180,10 +180,10 @@ Only the requirements that materially affect the current architecture are kept h
 
 ## Glossary
 
-| Term | Definition |
-| --- | --- |
-| CEFR | Common European Framework of Reference proficiency scale from A1 to C2 |
-| Content analysis | Reusable subtitle-derived analysis for a title |
-| Analysis LLM pipeline | Batched LLM calls used to extract and classify idioms, phrasal verbs, and slang |
-| Content Generation Pipeline | User-specific generation of meanings, examples, audio, and optional imagery |
-| Study pack | Generated learner-specific set of items for one title |
+| Term                        | Definition                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| CEFR                        | Common European Framework of Reference proficiency scale from A1 to C2          |
+| Content analysis            | Reusable subtitle-derived analysis for a title                                  |
+| Analysis LLM pipeline       | Batched LLM calls used to extract and classify idioms, phrasal verbs, and slang |
+| Content Generation Pipeline | User-specific generation of meanings, examples, audio, and optional imagery     |
+| Study pack                  | Generated learner-specific set of items for one title                           |

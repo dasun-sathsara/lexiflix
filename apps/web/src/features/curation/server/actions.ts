@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import {
   deleteCuratedEntryById,
   setCuratedEntryFeaturedRank,
@@ -9,6 +7,8 @@ import {
   upsertCuratedEntryFromTmdb,
 } from "@/features/curation/server/catalog";
 import { requireAdmin } from "@/lib/auth-guards";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 const tmdbMutationSchema = z.object({
   mediaType: z.enum(["movie", "tv"]),

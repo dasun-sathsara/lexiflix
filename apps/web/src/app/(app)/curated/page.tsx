@@ -82,12 +82,13 @@ function FeaturedSpotlight({
           sizes="(max-width: 1280px) 100vw, 1200px"
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/20" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.22),transparent_38%)]" />
+      <div className="absolute inset-0 bg-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent lg:bg-gradient-to-r lg:from-black/95 lg:via-black/75 lg:to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.15),transparent_40%)]" />
 
       <div className="relative grid gap-6 p-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:p-8">
         {/* Poster — desktop only */}
-        <div className="relative hidden overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl lg:block">
+        <div className="relative hidden overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/20 lg:block">
           {posterUrl ? (
             <Image
               src={posterUrl}
@@ -106,48 +107,49 @@ function FeaturedSpotlight({
         {/* Text content */}
         <div className="flex flex-col justify-end gap-4 text-white">
           {/* Meta badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs">
-              <Sparkles className="size-3.5" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-white/90 shadow-sm">
+              <Sparkles className="size-3" />
               Featured pick
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs">
-              {mediaType === "movie" ? <Film className="size-3.5" /> : <Tv className="size-3.5" />}
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-white/90 shadow-sm">
+              {mediaType === "movie" ? <Film className="size-3" /> : <Tv className="size-3" />}
               {mediaType === "movie" ? "Movie" : "TV show"}
             </span>
             {year && (
-              <span className="inline-flex items-center rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-white/90 shadow-sm">
                 {year}
               </span>
             )}
             {contentRating && (
-              <span className="inline-flex items-center rounded-md border border-white/15 bg-white/10 px-2 py-1 text-xs">
+              <span className="inline-flex items-center rounded-full border border-white/20 bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[11px] font-medium text-white/90 shadow-sm">
                 {contentRating}
               </span>
             )}
           </div>
 
           {/* Title + overview */}
-          <div className="flex flex-col gap-3">
-            <h2 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">{title}</h2>
-            <p className="max-w-2xl text-sm leading-relaxed text-white/75 sm:text-base">
+          <div className="flex flex-col gap-2">
+            <h2 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl drop-shadow-md">
+              {title}
+            </h2>
+            <p className="max-w-2xl text-xs leading-relaxed text-white/80 sm:text-sm drop-shadow">
               {overview ?? "A curated pick chosen to give learners a strong starting point."}
             </p>
           </div>
 
           {/* CTA */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <Button
+              asChild
+              size="sm"
+              className="rounded-full shadow-lg shadow-black/20 text-xs h-8"
+            >
               <Link href={`/media/${tmdbId}`}>
-                <Play className="size-4 fill-current" />
+                <Play className="size-3.5 fill-current" />
                 Open title
               </Link>
             </Button>
-            {mediaType === "tv" && (
-              <p className="text-sm text-white/70">
-                Season choice happens after you open the show.
-              </p>
-            )}
           </div>
         </div>
       </div>

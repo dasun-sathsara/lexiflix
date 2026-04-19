@@ -69,12 +69,12 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
           Narrow the catalog by media type and publish state without crowding the results list.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3 py-3.5 lg:grid-cols-2">
+      <CardContent className="flex flex-wrap gap-4 py-3">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Type
           </span>
-          <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
             {typeOptions.map((opt) => {
               const isActive = filter.mediaType === opt.value;
               return (
@@ -83,19 +83,19 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_type", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                     isActive
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
                   {opt.label}
                   <span
                     className={cn(
-                      "rounded-full px-2 py-0.5 text-xs tabular-nums",
+                      "rounded-md px-1.5 py-0.5 text-[10px] tabular-nums leading-none",
                       isActive
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-background/70 text-muted-foreground/70",
+                        ? "bg-muted text-muted-foreground font-semibold"
+                        : "bg-background/50 text-muted-foreground/70",
                     )}
                   >
                     {opt.count}
@@ -110,7 +110,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
           <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Status
           </span>
-          <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
             {statusOptions.map((opt) => {
               const isActive = filter.status === opt.value;
               return (
@@ -119,19 +119,19 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_status", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                     isActive
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
                   {opt.label}
                   <span
                     className={cn(
-                      "rounded-full px-2 py-0.5 text-xs tabular-nums",
+                      "rounded-md px-1.5 py-0.5 text-[10px] tabular-nums leading-none",
                       isActive
-                        ? "bg-muted text-muted-foreground"
-                        : "bg-background/70 text-muted-foreground/70",
+                        ? "bg-muted text-muted-foreground font-semibold"
+                        : "bg-background/50 text-muted-foreground/70",
                     )}
                   >
                     {opt.count}
