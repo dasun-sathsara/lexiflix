@@ -247,7 +247,7 @@ function StatBadge({
   };
 
   return (
-    <div className={cn("flex items-center gap-1.5 rounded-lg border px-2 py-1", styles[variant])}>
+    <div className={cn("flex items-center gap-1.5 rounded-xl border px-2 py-1", styles[variant])}>
       <span className="text-base font-normal tabular-nums">{count}</span>
       <span className="text-[11px] opacity-80">{label}</span>
     </div>
@@ -528,7 +528,7 @@ export default function PackDetailPage({ params }: { params: Promise<{ id: strin
 
                   <TabsContent value={activeTab}>
                     {isSelectionMode && filtered.length > 0 && (
-                      <div className="mb-3 flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+                      <div className="mb-3 flex items-center gap-3 rounded-xl border bg-muted/30 px-3 py-2">
                         <Checkbox
                           checked={selectedIds.size === filtered.length && filtered.length > 0}
                           onCheckedChange={handleSelectAll}

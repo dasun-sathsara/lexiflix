@@ -51,19 +51,19 @@ export default function NotFoundPage() {
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
                   href="/"
-                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
+                  className="rounded-xl border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Home
                 </Link>
                 <Link
                   href="/dashboard"
-                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
+                  className="rounded-xl border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/settings"
-                  className="rounded-lg border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
+                  className="rounded-xl border border-border/40 bg-card/90 px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-primary/5 hover:border-primary/30 hover:text-primary dark:bg-card/80 dark:hover:bg-primary/10 dark:hover:text-primary"
                 >
                   Settings
                 </Link>

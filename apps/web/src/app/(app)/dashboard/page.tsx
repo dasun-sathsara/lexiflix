@@ -104,7 +104,7 @@ function StatCard({
       <div
         className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accentStyles.glow}`}
       />
-      <CardContent className="relative flex items-start justify-between gap-4 p-4">
+      <CardContent className="relative flex items-start justify-between gap-4 p-5">
         <div className="flex items-start gap-3">
           <div
             className={
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
           <Card className="group relative overflow-hidden border border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-[0_4px_16px_rgba(15,23,42,0.06)] dark:border-amber-500/30">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
             <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
-            <CardContent className="relative flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardContent className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-4">
                 <div className="grid size-12 shrink-0 place-items-center rounded-xl border border-amber-200/60 bg-gradient-to-br from-amber-500/10 to-orange-500/10 text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
                   <GraduationCap className="size-6" />

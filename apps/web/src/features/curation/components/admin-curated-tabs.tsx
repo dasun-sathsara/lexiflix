@@ -45,11 +45,11 @@ function buildPageUrl(
 }
 
 function ControlsSkeleton() {
-  return <div className="h-[184px] animate-pulse rounded-2xl border bg-card/50" />;
+  return <div className="h-[184px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />;
 }
 
 function FiltersSkeleton() {
-  return <div className="h-[132px] animate-pulse rounded-2xl border bg-card/50" />;
+  return <div className="h-[132px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />;
 }
 
 function PaginationRow({

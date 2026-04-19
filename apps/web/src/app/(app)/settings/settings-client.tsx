@@ -451,7 +451,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="flex flex-col gap-4 rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
+                    <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
                       <Avatar className="size-16 sm:size-20">
                         {avatarPreview ? (
                           <AvatarImage
@@ -692,7 +692,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                   </p>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     {deleteStatus ? (
                       <>
                         {deleteStatus.type === "success" ? (

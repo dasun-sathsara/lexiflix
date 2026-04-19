@@ -26,7 +26,7 @@ export default function BrowseLoading() {
       <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {Array.from({ length: 10 }, (_, index) => `browse-loading-${index}`).map((key) => (
           <div key={key} className="space-y-3">
-            <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+            <Skeleton className="aspect-[2/3] w-full rounded-xl" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-1/2" />

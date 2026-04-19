@@ -163,7 +163,7 @@ function CardCountPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs",
+        "inline-flex items-center gap-1 rounded-xl border px-2 py-0.5 text-xs",
         styles[variant],
       )}
     >
@@ -248,9 +248,9 @@ function DeckRow({ deck }: { deck: Deck }) {
       {/* Actions */}
       <div className="flex shrink-0 items-center gap-2">
         <Button
-          size="sm"
+          size="icon"
           variant="ghost"
-          className="size-8 p-0 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground"
           asChild
         >
           <Link href={`/pack/${deck.id}`} aria-label="Manage deck">

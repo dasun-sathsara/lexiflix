@@ -373,11 +373,11 @@ function AnalysisStatusCard({
       <CardHeader>
         <div className="flex items-center gap-2">
           {analysisComplete ? (
-            <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 animate-in zoom-in duration-300">
+            <div className="grid size-8 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 animate-in zoom-in duration-300">
               <CheckCircle2 className="size-4" />
             </div>
           ) : (
-            <div className="grid size-8 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="grid size-8 place-items-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
               <Loader2 className="size-4 animate-spin" />
             </div>
           )}
@@ -913,7 +913,7 @@ export default function MediaDetailPage({ params }: { params: Promise<{ id: stri
               <Card className="border-indigo-200/60 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 dark:border-indigo-500/20">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                    <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                       <Sparkles className="size-4" />
                     </div>
                     <div className="space-y-1">

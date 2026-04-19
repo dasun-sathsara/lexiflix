@@ -46,7 +46,7 @@ export default function ForbiddenPage() {
             </div>
 
             {/* Info Card */}
-            <div className="mx-auto mt-8 max-w-md rounded-2xl border border-border/40 bg-card/90 p-6 text-left shadow-sm backdrop-blur-md dark:bg-card/80">
+            <div className="mx-auto mt-8 max-w-md rounded-[calc(var(--radius)+2px)] border border-border/40 bg-card/90 p-5 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-md dark:bg-card/80">
               <h3 className="mb-2 text-sm font-semibold text-foreground">Why am I seeing this?</h3>
               <p className="text-sm text-muted-foreground">
                 This page or resource requires special permissions. You may need a different account

@@ -209,7 +209,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <span className="flex items-center gap-2 truncate font-semibold">
                     <span className="truncate">LexiFlix</span>
                     {isAdmin ? (
-                      <Badge className="border border-amber-300/70 bg-amber-500/15 text-[10px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
+                      <Badge className="border border-amber-300/70 bg-amber-500/15 text-[11px] text-amber-900 dark:border-amber-500/30 dark:text-amber-100">
                         Admin
                       </Badge>
                     ) : null}

@@ -100,7 +100,7 @@ export default function StudyPage({ params }: { params: Promise<{ id: string }> 
           <div className="flex items-center justify-between gap-4">
             <Button variant="ghost" size="sm" asChild className="-ml-2 hover:bg-background/80">
               <Link href="/decks" className="gap-2">
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="size-4" />
                 <span className="font-medium">Exit</span>
               </Link>
             </Button>
@@ -188,7 +188,7 @@ export default function StudyPage({ params }: { params: Promise<{ id: string }> 
                         console.log("play audio (mock)", { cardId: card.id });
                       }}
                     >
-                      <Volume2 className="h-4 w-4" />
+                      <Volume2 className="size-4" />
                       Play
                     </Button>
                   </div>

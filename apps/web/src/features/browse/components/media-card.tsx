@@ -48,7 +48,7 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
               variant="outline"
               className="border-white/15 bg-black/60 text-white backdrop-blur-sm"
             >
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <Star className="size-3 fill-yellow-400 text-yellow-400" />
               {media.vote_average.toFixed(1)}
             </Badge>
           </div>

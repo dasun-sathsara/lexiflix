@@ -146,7 +146,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Mode
             </span>
-            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
               {(["search", "browse"] as const).map((m) => (
                 <button
                   key={m}
@@ -169,7 +169,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Type
             </span>
-            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-2xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex w-full flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
               {(["movie", "tv"] as const).map((t) => (
                 <button
                   key={t}

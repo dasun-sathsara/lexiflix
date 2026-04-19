@@ -213,13 +213,13 @@ export function AssessmentFlow() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border p-4">
+              <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Theta estimate
                 </p>
                 <p className="mt-1 text-lg font-semibold">{result.thetaMean.toFixed(2)}</p>
               </div>
-              <div className="rounded-lg border p-4">
+              <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   95% credible interval
                 </p>
@@ -230,7 +230,7 @@ export function AssessmentFlow() {
             </div>
 
             {result.borderlineLabel ? (
-              <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-100">
+              <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-100">
                 Borderline result: {result.borderlineLabel}
               </div>
             ) : null}
@@ -324,7 +324,7 @@ export function AssessmentFlow() {
           </button>
 
           {error ? (
-            <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </p>
           ) : null}
