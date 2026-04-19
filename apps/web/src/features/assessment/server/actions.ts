@@ -1,15 +1,24 @@
+"use server";
+
 import { and, eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  ASSESSMENT_LIMITS,
   applyAnswerToState,
   getItemById,
+  initializeAssessmentState,
   parseAssessmentState,
   toPublicItem,
 } from "@/features/assessment/lib/engine";
-import type { AnswerAssessmentResponse, AssessmentState } from "@/features/assessment/lib/types";
-import { auth } from "@/lib/auth";
+import type {
+  AnswerAssessmentActionResult,
+  AnswerAssessmentResponse,
+  AssessmentState,
+  StartAssessmentActionResult,
+  StartAssessmentResponse,
+} from "@/features/assessment/lib/types";
+import { getSessionOrNull } from "@/lib/auth-guards";
 import { db } from "@/lib/server/db";
 import { cefrAssessmentAttempt, cefrAssessmentResponse, cefrProfile } from "@/lib/server/db/schema";
 
@@ -20,18 +29,64 @@ const answerSchema = z.object({
   responseTimeMs: z.number().int().min(0).max(300_000).nullable().optional(),
 });
 
-export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
+export async function startAssessmentAction(): Promise<StartAssessmentActionResult> {
+  const session = await getSessionOrNull();
 
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
   }
 
-  const json = await request.json().catch(() => null);
-  const parsed = answerSchema.safeParse(json);
+  const { state, firstItem } = initializeAssessmentState();
+  const attemptId = crypto.randomUUID();
+
+  await db.insert(cefrAssessmentAttempt).values({
+    id: attemptId,
+    userId: session.user.id,
+    status: "in_progress",
+    state,
+    answeredCount: 0,
+  });
+
+  const data: StartAssessmentResponse = {
+    status: "in_progress",
+    attemptId,
+    question: toPublicItem(firstItem),
+    answeredCount: 0,
+    minItems: ASSESSMENT_LIMITS.minItems,
+    maxItems: ASSESSMENT_LIMITS.maxItems,
+  };
+
+  return {
+    success: true,
+    data,
+  };
+}
+
+export async function answerAssessmentAction(input: {
+  attemptId: string;
+  itemId: string;
+  selectedIndex: number | null;
+  responseTimeMs?: number | null;
+}): Promise<AnswerAssessmentActionResult> {
+  const session = await getSessionOrNull();
+
+  if (!session?.user) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
+  const parsed = answerSchema.safeParse(input);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+    return {
+      success: false,
+      error: "Invalid request payload.",
+    };
   }
 
   const { attemptId, itemId, selectedIndex, responseTimeMs } = parsed.data;
@@ -48,37 +103,49 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (!attempt) {
-    return NextResponse.json({ error: "Assessment attempt not found." }, { status: 404 });
+    return {
+      success: false,
+      error: "Assessment attempt not found.",
+    };
   }
 
   if (attempt.status !== "in_progress") {
-    return NextResponse.json(
-      { error: "Assessment attempt is already completed." },
-      { status: 409 },
-    );
+    return {
+      success: false,
+      error: "Assessment attempt is already completed.",
+    };
   }
 
   let state: AssessmentState;
   try {
     state = parseAssessmentState(attempt.state);
   } catch {
-    return NextResponse.json({ error: "Assessment state is invalid." }, { status: 500 });
+    return {
+      success: false,
+      error: "Assessment state is invalid.",
+    };
   }
 
   if (!state.pendingItemId) {
-    return NextResponse.json({ error: "No pending question for this attempt." }, { status: 409 });
+    return {
+      success: false,
+      error: "No pending question for this attempt.",
+    };
   }
 
   if (state.pendingItemId !== itemId) {
-    return NextResponse.json(
-      { error: "Answered item does not match current question." },
-      { status: 409 },
-    );
+    return {
+      success: false,
+      error: "Answered item does not match current question.",
+    };
   }
 
   const item = getItemById(itemId);
   if (!item) {
-    return NextResponse.json({ error: "Assessment item not found." }, { status: 400 });
+    return {
+      success: false,
+      error: "Assessment item not found.",
+    };
   }
 
   const isDontKnow = selectedIndex === null;
@@ -107,6 +174,7 @@ export async function POST(request: Request) {
 
   if (next.status === "completed") {
     const { result } = next;
+    const now = new Date();
 
     await db
       .update(cefrAssessmentAttempt)
@@ -121,7 +189,7 @@ export async function POST(request: Request) {
         confidence: result.confidence,
         borderlineLabel: result.borderlineLabel,
         levelProbabilities: result.levelProbabilities,
-        completedAt: new Date(),
+        completedAt: now,
       })
       .where(eq(cefrAssessmentAttempt.id, attemptId));
 
@@ -131,19 +199,19 @@ export async function POST(request: Request) {
         userId: session.user.id,
         assessedLevel: result.bestLevel,
         assessedConfidence: result.confidence,
-        assessedAt: new Date(),
+        assessedAt: now,
       })
       .onConflictDoUpdate({
         target: cefrProfile.userId,
         set: {
           assessedLevel: result.bestLevel,
           assessedConfidence: result.confidence,
-          assessedAt: new Date(),
-          updatedAt: new Date(),
+          assessedAt: now,
+          updatedAt: now,
         },
       });
 
-    const payload: AnswerAssessmentResponse = {
+    const data: AnswerAssessmentResponse = {
       status: "completed",
       attemptId,
       result,
@@ -151,7 +219,10 @@ export async function POST(request: Request) {
       maxItems: next.maxItems,
     };
 
-    return NextResponse.json(payload);
+    return {
+      success: true,
+      data,
+    };
   }
 
   await db
@@ -169,7 +240,7 @@ export async function POST(request: Request) {
     })
     .where(eq(cefrAssessmentAttempt.id, attemptId));
 
-  const payload: AnswerAssessmentResponse = {
+  const data: AnswerAssessmentResponse = {
     status: "in_progress",
     attemptId,
     question: toPublicItem(next.nextItem),
@@ -179,5 +250,8 @@ export async function POST(request: Request) {
     summary: next.summary,
   };
 
-  return NextResponse.json(payload);
+  return {
+    success: true,
+    data,
+  };
 }

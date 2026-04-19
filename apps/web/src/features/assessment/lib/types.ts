@@ -51,6 +51,16 @@ export type StartAssessmentResponse = {
   maxItems: number;
 };
 
+export type StartAssessmentActionResult =
+  | {
+      success: true;
+      data: StartAssessmentResponse;
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
 export type AnswerAssessmentResponse =
   | {
       status: "in_progress";
@@ -67,4 +77,14 @@ export type AnswerAssessmentResponse =
       result: AssessmentResult;
       minItems: number;
       maxItems: number;
+    };
+
+export type AnswerAssessmentActionResult =
+  | {
+      success: true;
+      data: AnswerAssessmentResponse;
+    }
+  | {
+      success: false;
+      error: string;
     };

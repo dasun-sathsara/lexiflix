@@ -8,12 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type {
-  AnswerAssessmentResponse,
-  AssessmentResult,
-  PublicAssessmentItem,
-  StartAssessmentResponse,
-} from "@/features/assessment/lib/types";
+import type { AssessmentResult, PublicAssessmentItem } from "@/features/assessment/lib/types";
+import {
+  answerAssessmentAction,
+  startAssessmentAction,
+} from "@/features/assessment/server/actions";
 import { cn } from "@/lib/utils";
 
 type Selection = number | "idk" | null;
@@ -40,21 +39,15 @@ export function AssessmentFlow() {
       setError(null);
 
       try {
-        const response = await fetch("/api/assessment/start", {
-          method: "POST",
-        });
+        const response = await startAssessmentAction();
 
-        const payload = (await response.json()) as StartAssessmentResponse | { error?: string };
-
-        if (!response.ok) {
-          const message =
-            typeof payload === "object" && payload && "error" in payload
-              ? payload.error
-              : undefined;
-          throw new Error(message ?? "Unable to start the assessment.");
+        if (!response.success) {
+          throw new Error(response.error ?? "Unable to start the assessment.");
         }
 
-        if (!("status" in payload) || payload.status !== "in_progress") {
+        const payload = response.data;
+
+        if (payload.status !== "in_progress") {
           throw new Error("Unable to start the assessment.");
         }
 
@@ -111,28 +104,18 @@ export function AssessmentFlow() {
       setError(null);
 
       try {
-        const response = await fetch("/api/assessment/answer", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            attemptId,
-            itemId: question.id,
-            selectedIndex,
-            responseTimeMs,
-          }),
+        const response = await answerAssessmentAction({
+          attemptId,
+          itemId: question.id,
+          selectedIndex,
+          responseTimeMs,
         });
 
-        const payload = (await response.json()) as AnswerAssessmentResponse | { error?: string };
-
-        if (!response.ok) {
-          const message =
-            typeof payload === "object" && payload && "error" in payload
-              ? payload.error
-              : undefined;
-          throw new Error(message ?? "Unable to submit answer.");
+        if (!response.success) {
+          throw new Error(response.error ?? "Unable to submit answer.");
         }
+
+        const payload = response.data;
 
         if (!("status" in payload)) {
           throw new Error("Unable to submit answer.");
