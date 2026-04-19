@@ -71,7 +71,7 @@ function FeaturedSpotlight({
   const year = formatYear(releaseDate);
 
   return (
-    <section className="relative overflow-hidden rounded-[calc(var(--radius)+4px)] border bg-card/50 shadow-[0_4px_24px_rgba(15,23,42,0.08)]">
+    <section className="relative overflow-hidden rounded-[calc(var(--radius)+4px)] border bg-card/50 shadow-lg">
       {backdropUrl && (
         <Image
           src={backdropUrl}
@@ -370,7 +370,6 @@ export default async function CuratedPage() {
         <section>
           <AppPageHeader
             heading="Curated Picks"
-            description="A handpicked catalog of movies and TV shows selected for language learners."
             stats={
               stats.total > 0 ? (
                 <>

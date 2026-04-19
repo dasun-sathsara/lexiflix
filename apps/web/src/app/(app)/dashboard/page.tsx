@@ -97,7 +97,7 @@ function StatCard({
   return (
     <Card
       className={
-        "relative overflow-hidden border py-0 bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)] " +
+        "relative overflow-hidden border py-0 bg-card/40 backdrop-blur-lg shadow-md " +
         accentStyles.border
       }
     >
@@ -182,7 +182,7 @@ export default async function DashboardPage() {
         </Card>
 
         {showAssessmentBanner ? (
-          <Card className="group relative overflow-hidden border border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-[0_4px_16px_rgba(15,23,42,0.06)] dark:border-amber-500/30">
+          <Card className="group relative overflow-hidden border border-amber-200/60 bg-card/40 py-0 backdrop-blur-lg shadow-md dark:border-amber-500/30">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/10" />
             <div className="pointer-events-none absolute -right-12 -top-12 size-32 rotate-12 rounded-full bg-gradient-to-br from-amber-400/20 to-orange-400/20 blur-2xl transition-transform duration-500 group-hover:scale-150" />
             <CardContent className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -256,7 +256,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -321,7 +321,7 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-[0_4px_12px_rgba(15,23,42,0.06)]">
+          <Card className="relative overflow-hidden bg-card/40 backdrop-blur-lg shadow-md">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5" />
             <CardHeader className="relative">
               <CardTitle>Review Plan</CardTitle>

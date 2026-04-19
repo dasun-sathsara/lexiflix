@@ -29,7 +29,7 @@ export function AppStat({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-2 text-sm shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        "inline-flex items-center gap-2 rounded-full border border-border/80 bg-card px-3 py-2 text-sm shadow-xs",
         className,
       )}
     >
@@ -80,7 +80,7 @@ export function AppPanel({ className, ...props }: HTMLAttributes<HTMLDivElement>
   return (
     <div
       className={cn(
-        "rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        "rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 shadow-xs",
         className,
       )}
       {...props}

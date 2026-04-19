@@ -11,7 +11,7 @@ export function AppPageContainer({ className, ...props }: HTMLAttributes<HTMLDiv
 export function AppPageShell({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <AppPageContainer
-      className={cn("relative flex flex-col gap-10 py-8 lg:py-12", className)}
+      className={cn("relative flex flex-col gap-3 py-4", className)}
       {...props}
     />
   );

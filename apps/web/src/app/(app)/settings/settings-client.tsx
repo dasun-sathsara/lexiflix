@@ -931,10 +931,6 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </>
                     ) : (
                       <>
-                        <Bell className="size-4 text-indigo-500" />
-                        <span className="text-muted-foreground">
-                          Personalization updates apply immediately after saving.
-                        </span>
                       </>
                     )}
                   </div>

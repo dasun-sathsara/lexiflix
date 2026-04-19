@@ -291,11 +291,6 @@ export default function DecksPage() {
         <section className="flex flex-col gap-4">
           <AppPageHeader
             heading="My Decks"
-            description={
-              totalCards > 0
-                ? `${totalCards} cards lined up for review today.`
-                : "All caught up — excellent work keeping your streak alive."
-            }
             actions={
               <>
                 <Button variant="outline" size="lg" asChild>

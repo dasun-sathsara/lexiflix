@@ -144,20 +144,9 @@ export function AdminCuratedWorkspace({
 
   return (
     <AppPageShell>
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-2">
         <AppPageHeader
-          eyebrow={
-            <>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-[11px] font-medium">
-                Curation Workspace
-              </Badge>
-              <Badge variant="outline" className="rounded-full px-3 py-1 text-[11px] font-medium">
-                Admin
-              </Badge>
-            </>
-          }
           heading="Curated Catalog"
-          description="Content operations workspace — find titles, add to the catalog, and manage published entries."
         />
 
         <div className="flex flex-wrap gap-2.5">

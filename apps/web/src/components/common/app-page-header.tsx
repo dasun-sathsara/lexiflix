@@ -21,13 +21,13 @@ export function AppPageHeader({
 }: AppPageHeaderProps) {
   return (
     <header
-      className={cn("flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between", className)}
+      className={cn("flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between", className)}
       {...props}
     >
-      <div className="max-w-3xl flex flex-col gap-5">
+      <div className="max-w-3xl flex flex-col gap-2">
         {eyebrow ? <div className="flex flex-wrap items-center gap-2">{eyebrow}</div> : null}
-        <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{heading}</h1>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">{heading}</h1>
           {description ? (
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px] sm:leading-relaxed">
               {description}

@@ -10,13 +10,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border border-primary bg-primary text-primary-foreground shadow-[0_1px_2px_rgba(15,23,42,0.08),0_10px_24px_-18px_rgba(59,91,219,0.45)] hover:bg-primary/92 hover:border-primary/90",
+          "border border-primary bg-primary text-primary-foreground shadow-button-primary hover:bg-primary/92 hover:border-primary/90",
         destructive:
-          "border border-destructive bg-destructive text-white shadow-[0_1px_2px_rgba(15,23,42,0.08)] hover:bg-destructive/92 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "border border-destructive bg-destructive text-white shadow-xs hover:bg-destructive/92 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-card text-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-accent hover:border-border/90 hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-card text-foreground shadow-xs hover:bg-accent hover:border-border/90 hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "border border-transparent bg-secondary text-secondary-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-secondary/85",
+          "border border-transparent bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/85",
         ghost:
           "border border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
@@ -64,9 +64,9 @@ const elegantButtonVariants = cva(
     variants: {
       variant: {
         elegant:
-          "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(79,70,229,0.35)] hover:bg-primary/90 hover:shadow-[0_10px_24px_rgba(79,70,229,0.38)] active:bg-primary/80 active:shadow-[0_6px_16px_rgba(55,48,163,0.45)]",
+          "bg-primary text-primary-foreground shadow-button-primary hover:bg-primary/90 hover:shadow-lg active:bg-primary/80 active:shadow-md",
         elegantSecondary:
-          "bg-primary/8 text-primary shadow-[0_2px_8px_rgba(15,23,42,0.12)] border border-primary/15 hover:bg-primary/12 hover:text-primary active:bg-primary/18 dark:bg-primary/10 dark:text-primary dark:border-primary/20 dark:hover:bg-primary/15",
+          "bg-primary/8 text-primary shadow-sm border border-primary/15 hover:bg-primary/12 hover:text-primary active:bg-primary/18 dark:bg-primary/10 dark:text-primary dark:border-primary/20 dark:hover:bg-primary/15",
       },
       size: {
         elegant: "px-6 py-3 text-sm",

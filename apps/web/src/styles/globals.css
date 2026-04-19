@@ -54,6 +54,25 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
+  /* ── Shadow / Elevation Scale ──────────────────────────────────
+   * xs  → form controls (inputs, selects, textareas, checkboxes)
+   * sm  → pills, inner panels, tab indicators, stat badges
+   * md  → default card elevation
+   * lg  → hover-state cards, emphasized surfaces
+   * xl  → hero cards, featured spotlights
+   * 2xl → modals, dialogs, overlays
+   * popover → floating menus, select dropdowns, popovers
+   * button-primary → primary button brand glow
+   */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+  --shadow-lg: 0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 32px -8px rgba(15, 23, 42, 0.22);
+  --shadow-xl: 0 4px 8px rgba(15, 23, 42, 0.08), 0 20px 48px -12px rgba(15, 23, 42, 0.28);
+  --shadow-2xl: 0 24px 80px -36px rgba(15, 23, 42, 0.45);
+  --shadow-popover: 0 4px 12px rgba(15, 23, 42, 0.08), 0 16px 40px -12px rgba(15, 23, 42, 0.30);
+  --shadow-button-primary: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 20px -14px rgba(59, 91, 219, 0.45);
+
   /* Aurora animation */
   --animate-aurora: aurora 60s linear infinite;
   @keyframes aurora {
@@ -274,7 +293,9 @@
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 28%, transparent);
   }
 
-  /* Smoother focus outlines globally */
+  /* Focus outlines — defer to component-level focus-visible:ring-*.
+   * The global outline is only a fallback for elements without explicit
+   * focus styling (e.g. raw <a> or <summary>). */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
