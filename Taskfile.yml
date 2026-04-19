@@ -96,6 +96,18 @@ tasks:
     cmds:
       - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm build
 
+  web:trigger:dev:
+    desc: Run the Trigger.dev worker for the web app locally
+    dir: "{{.WEB_DIR}}"
+    env:
+      DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+      DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+    cmds:
+      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm trigger:dev
+
   vercel:web:sync-envs:
     desc: Sync required apps/web env vars from Doppler into a Vercel environment
     dir: "{{.WEB_DIR}}"
