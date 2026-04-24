@@ -30,9 +30,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh | sh
+    curl -LsSf https://astral.sh/uv/${UV_VERSION}/install.sh -o /tmp/uv-install.sh \
+    && sh /tmp/uv-install.sh \
+    && rm /tmp/uv-install.sh
 
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv sync --frozen --no-dev --no-install-project
 
