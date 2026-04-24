@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { getCefrProfile } from "@/features/assessment/server/profile";
@@ -9,9 +9,17 @@ import type {
   MediaAnalysisSnapshot,
   MediaDetailPageData,
   MediaDetailView,
+  PackGenerationSnapshot,
 } from "@/features/media/types";
 import { db } from "@/lib/server/db";
-import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
+import {
+  contentAnalysisItem,
+  contentAnalysisRun,
+  pack,
+  packGenerationJob,
+  userPreferences,
+  vocabularyTerm,
+} from "@/lib/server/db/schema";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { computeMediaAnalysisPipelineFingerprint } from "@/lib/server/media-analysis/pipeline-fingerprint";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
@@ -154,6 +162,62 @@ async function getCompletedItems(runId: string): Promise<MediaAnalysisItemView[]
     .slice(0, 24);
 }
 
+async function getGenerationSnapshotForContent(input: {
+  userId: string;
+  contentId: string;
+}): Promise<PackGenerationSnapshot | null> {
+  const latest = await db.query.packGenerationJob.findFirst({
+    where: and(
+      eq(packGenerationJob.userId, input.userId),
+      eq(packGenerationJob.contentId, input.contentId),
+    ),
+    orderBy: desc(packGenerationJob.createdAt),
+  });
+  if (!latest) {
+    return null;
+  }
+
+  const generatedPack = await db.query.pack.findFirst({
+    where: and(eq(pack.userId, input.userId), eq(pack.sourceJobId, latest.id)),
+  });
+
+  return {
+    jobId: latest.id,
+    status: latest.status,
+    stage: latest.stage,
+    progressMessage: latest.progressMessage,
+    errorCode: latest.errorCode,
+    errorMessage: latest.errorMessage,
+    packId: generatedPack?.id ?? null,
+  };
+}
+
+export async function getPackGenerationSnapshotByJobId(input: {
+  userId: string;
+  jobId: string;
+}): Promise<PackGenerationSnapshot | null> {
+  const latest = await db.query.packGenerationJob.findFirst({
+    where: and(eq(packGenerationJob.userId, input.userId), eq(packGenerationJob.id, input.jobId)),
+  });
+  if (!latest) {
+    return null;
+  }
+
+  const generatedPack = await db.query.pack.findFirst({
+    where: and(eq(pack.userId, input.userId), eq(pack.sourceJobId, latest.id)),
+  });
+
+  return {
+    jobId: latest.id,
+    status: latest.status,
+    stage: latest.stage,
+    progressMessage: latest.progressMessage,
+    errorCode: latest.errorCode,
+    errorMessage: latest.errorMessage,
+    packId: generatedPack?.id ?? null,
+  };
+}
+
 export async function getAnalysisSnapshotByRunId(
   runId: string,
 ): Promise<MediaAnalysisSnapshot | null> {
@@ -225,6 +289,25 @@ export async function getMediaDetailPageData(input: {
 }): Promise<MediaDetailPageData> {
   const resolved = await resolveTmdbDetail(input.tmdbId, input.mediaTypeHint);
   const learnerProfile = await getCefrProfile(input.userId);
+  const preferences = await db.query.userPreferences.findFirst({
+    where: eq(userPreferences.userId, input.userId),
+  });
+  const learnerLevel = learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null;
+  const generationDefaults = {
+    learnerCefrLevel: learnerLevel,
+    frequencyPreference: preferences?.frequencyPreference ?? "balanced",
+    selectedVocabularyTypes: preferences?.studyVocabularyTypes ?? [
+      "word",
+      "phrasal_verb",
+      "idiom",
+      "slang",
+    ],
+    cefrWindowMode: "same_level" as const,
+    packSize: 20,
+    knownTermHandling: "exclude_known" as const,
+    exampleSentenceCount: 1 as const,
+    customInstructions: null,
+  };
 
   if (resolved.mediaType === "movie") {
     const target = await resolveOrCreateContentTarget({
@@ -240,11 +323,16 @@ export async function getMediaDetailPageData(input: {
 
     return {
       media: mapMovieToView(resolved.detail),
-      learnerLevel: learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null,
+      learnerLevel,
       analysis: await getAnalysisSnapshotForResolvedTarget({
         contentId: target.content.id,
         pipelineFingerprint: fingerprint,
       }),
+      generation: await getGenerationSnapshotForContent({
+        userId: input.userId,
+        contentId: target.content.id,
+      }),
+      generationDefaults,
     };
   }
 
@@ -254,7 +342,7 @@ export async function getMediaDetailPageData(input: {
   if (!selectedSeasonNumber) {
     return {
       media,
-      learnerLevel: learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null,
+      learnerLevel,
       analysis: {
         runId: null,
         status: "season_selection_required",
@@ -266,6 +354,8 @@ export async function getMediaDetailPageData(input: {
         summary: null,
         items: [],
       },
+      generation: null,
+      generationDefaults,
     };
   }
 
@@ -278,7 +368,7 @@ export async function getMediaDetailPageData(input: {
   if (target.status !== "resolved") {
     return {
       media,
-      learnerLevel: learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null,
+      learnerLevel,
       analysis: {
         runId: null,
         status: "season_selection_required",
@@ -290,6 +380,8 @@ export async function getMediaDetailPageData(input: {
         summary: null,
         items: [],
       },
+      generation: null,
+      generationDefaults,
     };
   }
 
@@ -297,11 +389,16 @@ export async function getMediaDetailPageData(input: {
 
   return {
     media,
-    learnerLevel: learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null,
+    learnerLevel,
     analysis: await getAnalysisSnapshotForResolvedTarget({
       contentId: target.content.id,
       pipelineFingerprint: fingerprint,
     }),
+    generation: await getGenerationSnapshotForContent({
+      userId: input.userId,
+      contentId: target.content.id,
+    }),
+    generationDefaults,
   };
 }
 

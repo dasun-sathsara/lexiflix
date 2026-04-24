@@ -6,14 +6,28 @@ import {
   getAnalysisSnapshotByRunId,
   getAnalysisSnapshotForContentTarget,
   getAnalysisSnapshotForRunAndContent,
+  getPackGenerationSnapshotByJobId,
 } from "@/features/media/server/analysis";
 import type {
   AnalysisStatusActionResult,
+  PackGenerationStatusActionResult,
   StartAnalysisActionResult,
   StartAnalysisInput,
+  StartPackGenerationActionResult,
+  StartPackGenerationInput,
 } from "@/features/media/types";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
+import {
+  fingerprintCapabilities,
+  resolveEffectiveGenerationCapabilities,
+} from "@/lib/server/content-generation/capabilities";
+import { generationRequestSchema } from "@/lib/server/content-generation/contracts";
+import {
+  computePackGenerationIdempotencyKey,
+  createOrReusePackGenerationJob,
+  recordPackGenerationJobTransition,
+} from "@/lib/server/content-generation/jobs";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { computeMediaAnalysisPipelineFingerprint } from "@/lib/server/media-analysis/pipeline-fingerprint";
 import {
@@ -23,6 +37,7 @@ import {
   resetFailedContentAnalysisRunForRetry,
 } from "@/lib/server/media-analysis/runs";
 import type { analyzeMediaSubtitlesTask } from "@/trigger/analyze-media-subtitles";
+import type { generateContentPackTask } from "@/trigger/generate-content-pack";
 
 const startAnalysisInputSchema = z.discriminatedUnion("mediaType", [
   z.object({
@@ -41,6 +56,18 @@ const statusInputSchema = z.object({
   tmdbId: z.number().int().positive(),
   mediaType: z.enum(["movie", "tv"]),
   seasonNumber: z.number().int().positive().nullable().optional(),
+});
+
+const startGenerationInputSchema = startAnalysisInputSchema.and(
+  z.object({
+    request: generationRequestSchema.partial().extend({
+      forceRegenerate: z.boolean().optional(),
+    }),
+  }),
+);
+
+const generationStatusInputSchema = z.object({
+  jobId: z.string().min(1),
 });
 
 async function triggerAnalysisRun(runId: string) {
@@ -63,6 +90,26 @@ async function triggerAnalysisRun(runId: string) {
       },
     });
 
+    throw error;
+  }
+}
+
+async function triggerPackGenerationJob(jobId: string) {
+  try {
+    await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", { jobId });
+  } catch (error) {
+    await recordPackGenerationJobTransition({
+      jobId,
+      status: "failed",
+      stage: "failed",
+      message: "Failed to trigger pack generation.",
+      errorCode: "WORKFLOW_TRIGGER_FAILED",
+      errorMessage: error instanceof Error ? error.message : "Failed to trigger pack generation.",
+      payload: {
+        triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
+        triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
+      },
+    });
     throw error;
   }
 }
@@ -174,4 +221,97 @@ export async function getAnalysisStatusAction(input: {
     success: true,
     analysis: snapshot,
   };
+}
+
+export async function startPackGenerationAction(
+  input: StartPackGenerationInput,
+): Promise<StartPackGenerationActionResult> {
+  const session = await requireSession();
+  const parsed = startGenerationInputSchema.parse(input);
+  const target = await resolveOrCreateContentTarget({
+    mediaType: parsed.mediaType,
+    tmdbId: parsed.tmdbId,
+    ...(parsed.mediaType === "tv" && parsed.seasonNumber
+      ? { seasonNumber: parsed.seasonNumber }
+      : {}),
+  });
+
+  if (target.status !== "resolved") {
+    return { success: false, message: "Choose a season before generating a pack." };
+  }
+
+  const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
+  const analysisRun = await getContentAnalysisRunByFingerprint(target.content.id, fingerprint);
+  if (!analysisRun || analysisRun.status !== "completed") {
+    return {
+      success: false,
+      message: "Reusable subtitle analysis must complete before pack generation.",
+    };
+  }
+
+  const requestSnapshot = generationRequestSchema.parse({
+    learnerCefrLevel: parsed.request.learnerCefrLevel ?? null,
+    frequencyPreference: parsed.request.frequencyPreference ?? "balanced",
+    selectedVocabularyTypes: parsed.request.selectedVocabularyTypes ?? [
+      "word",
+      "phrasal_verb",
+      "idiom",
+      "slang",
+    ],
+    cefrWindowMode: parsed.request.cefrWindowMode ?? "same_level",
+    packSize: parsed.request.packSize ?? 20,
+    knownTermHandling: parsed.request.knownTermHandling ?? "exclude_known",
+    exampleSentenceCount: parsed.request.exampleSentenceCount ?? 1,
+    customInstructions: parsed.request.customInstructions ?? null,
+    forceRegenerate: parsed.request.forceRegenerate ?? false,
+  });
+
+  const capabilities = resolveEffectiveGenerationCapabilities();
+  const idempotencyKey = computePackGenerationIdempotencyKey({
+    userId: session.user.id,
+    contentId: target.content.id,
+    analysisRunId: analysisRun.id,
+    requestSnapshot,
+    capabilityFingerprint: fingerprintCapabilities(capabilities),
+  });
+
+  const { job, wasCreated } = await createOrReusePackGenerationJob({
+    userId: session.user.id,
+    contentId: target.content.id,
+    analysisRunId: analysisRun.id,
+    requestSnapshot,
+    idempotencyKey,
+  });
+
+  if (wasCreated) {
+    await triggerPackGenerationJob(job.id);
+  }
+
+  const generation = await getPackGenerationSnapshotByJobId({
+    userId: session.user.id,
+    jobId: job.id,
+  });
+
+  if (!generation) {
+    throw new Error(`Pack generation job ${job.id} disappeared after creation.`);
+  }
+
+  return { success: true, generation };
+}
+
+export async function getPackGenerationStatusAction(input: {
+  jobId: string;
+}): Promise<PackGenerationStatusActionResult> {
+  const session = await requireSession();
+  const parsed = generationStatusInputSchema.parse(input);
+  const generation = await getPackGenerationSnapshotByJobId({
+    userId: session.user.id,
+    jobId: parsed.jobId,
+  });
+
+  if (!generation) {
+    return { success: false, message: "Pack generation job was not found." };
+  }
+
+  return { success: true, generation };
 }

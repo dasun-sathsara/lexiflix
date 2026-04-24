@@ -10,6 +10,8 @@
 export type StoredCefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 export type StoredVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
 export type StoredFrequencyPreference = "balanced" | "common_first" | "challenge_first";
+export type GenerationCefrWindowMode = "same_level" | "one_level_above" | "all_levels_above";
+export type GenerationKnownTermHandling = "exclude_known" | "downrank_known" | "include_known";
 export type CuratedSourceProvider = "tmdb";
 export type CuratedMediaType = "movie" | "tv";
 export type CuratedCurationScope = "movie" | "show" | "season";
@@ -66,11 +68,15 @@ export type NlpCandidateContext = {
 export type ExampleSentenceList = string[];
 
 export type GenerationRequestSnapshot = {
-  learnerCefrLevel?: StoredCefrLevel | null;
-  frequencyPreference?: StoredFrequencyPreference;
-  selectedVocabularyTypes?: StoredVocabularyKind[];
-  forceRegenerate?: boolean;
-  [key: string]: unknown;
+  learnerCefrLevel: StoredCefrLevel | null;
+  frequencyPreference: StoredFrequencyPreference;
+  selectedVocabularyTypes: StoredVocabularyKind[];
+  cefrWindowMode: GenerationCefrWindowMode;
+  packSize: number;
+  knownTermHandling: GenerationKnownTermHandling;
+  exampleSentenceCount: 1 | 2 | 3;
+  customInstructions: string | null;
+  forceRegenerate: boolean;
 };
 
 export type WorkflowEventPayload = JsonMap;

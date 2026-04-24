@@ -70,6 +70,24 @@ const serverSchema = z.object({
     .min(1, "ANALYSIS_LLM_MODEL must not be empty")
     .default("gemini-2.5-flash"),
   ANALYSIS_LLM_RECORDING_DIR: z.string().min(1).optional(),
+  CONTENT_GENERATION_TEXT_MODE: z
+    .enum(["live", "record", "replay", "mock"])
+    .default(process.env.NODE_ENV === "production" ? "live" : "mock"),
+  CONTENT_GENERATION_TEXT_MODEL: z
+    .string()
+    .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
+    .default("gemini-2.5-flash"),
+  CONTENT_GENERATION_RECORDING_DIR: z.string().min(1).optional(),
+  CONTENT_GENERATION_AUDIO_MODE: z.enum(["live", "replay", "mock", "disabled"]).default("mock"),
+  CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("mock"),
+  CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
+  CONTENT_GENERATION_IMAGE_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  CONTENT_GENERATION_IMAGE_MODE: z.enum(["live", "replay", "mock", "disabled"]).default("disabled"),
+  CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).default("mock"),
+  CONTENT_GENERATION_IMAGE_CONCURRENCY: z.coerce.number().int().positive().default(3),
   NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
   NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce
     .number()

@@ -21,6 +21,15 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -30,8 +39,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAnalysisStatusAction, startAnalysisAction } from "@/features/media/server/actions";
-import type { MediaAnalysisSnapshot, MediaDetailPageData } from "@/features/media/types";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  getAnalysisStatusAction,
+  getPackGenerationStatusAction,
+  startAnalysisAction,
+  startPackGenerationAction,
+} from "@/features/media/server/actions";
+import type {
+  GenerationDialogDefaults,
+  MediaAnalysisSnapshot,
+  MediaDetailPageData,
+  PackGenerationSnapshot,
+} from "@/features/media/types";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { cn } from "@/lib/utils";
 
@@ -207,6 +227,10 @@ function AnalysisSidebar({
   isStarting,
   actionMessage,
   onStart,
+  generation,
+  generationDefaults,
+  isGenerating,
+  onStartGeneration,
 }: {
   media: MediaDetailPageData["media"];
   learnerLevel: MediaDetailPageData["learnerLevel"];
@@ -214,6 +238,10 @@ function AnalysisSidebar({
   isStarting: boolean;
   actionMessage: string | null;
   onStart: () => void;
+  generation: PackGenerationSnapshot | null;
+  generationDefaults: GenerationDialogDefaults;
+  isGenerating: boolean;
+  onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
 }) {
   const isProcessing = snapshot.status === "queued" || snapshot.status === "running";
   const isCompleted = snapshot.status === "completed";
@@ -321,7 +349,209 @@ function AnalysisSidebar({
           ) : null}
         </CardContent>
       </Card>
+
+      {isCompleted ? (
+        <PackGenerationPanel
+          generation={generation}
+          generationDefaults={generationDefaults}
+          isGenerating={isGenerating}
+          onStartGeneration={onStartGeneration}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function PackGenerationPanel({
+  generation,
+  generationDefaults,
+  isGenerating,
+  onStartGeneration,
+}: {
+  generation: PackGenerationSnapshot | null;
+  generationDefaults: GenerationDialogDefaults;
+  isGenerating: boolean;
+  onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [form, setForm] = React.useState(generationDefaults);
+  const isProcessing = generation?.status === "queued" || generation?.status === "running";
+
+  React.useEffect(() => {
+    setForm(generationDefaults);
+  }, [generationDefaults]);
+
+  const submit = (forceRegenerate = false) => {
+    onStartGeneration({ ...form, forceRegenerate });
+    setOpen(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          {isProcessing ? (
+            <Loader2 className="size-4 animate-spin text-indigo-600 dark:text-indigo-400" />
+          ) : generation?.status === "completed" ? (
+            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Sparkles className="size-4 text-indigo-600 dark:text-indigo-400" />
+          )}
+          Pack Generation
+        </CardTitle>
+        <CardDescription>
+          {generation?.progressMessage ??
+            "Generate learner-specific study content from this analysis."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {generation ? (
+          <div className="rounded-xl border bg-card/60 p-3 text-sm">
+            <div className="font-medium">{generation.stage.replaceAll("_", " ")}</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Job id: <code>{generation.jobId}</code>
+            </div>
+          </div>
+        ) : null}
+        {generation?.errorMessage ? (
+          <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
+            {generation.errorMessage}
+          </div>
+        ) : null}
+        {generation?.packId ? (
+          <Button className="w-full gap-2" asChild>
+            <Link href={`/pack/${generation.packId}`}>
+              <BookOpen className="size-4" />
+              Open Pack
+            </Link>
+          </Button>
+        ) : null}
+        <Button
+          className="w-full gap-2"
+          variant={generation?.status === "completed" ? "outline" : "default"}
+          onClick={() => setOpen(true)}
+          disabled={isGenerating || isProcessing}
+        >
+          {isGenerating ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          {generation?.status === "completed" ? "Regenerate Pack" : "Start Generation"}
+        </Button>
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Generate Pack</DialogTitle>
+            <DialogDescription>
+              Choose the learner-specific request snapshot for this run.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 text-sm">
+              <span className="font-medium">CEFR window</span>
+              <Select
+                value={form.cefrWindowMode}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    cefrWindowMode: value as GenerationDialogDefaults["cefrWindowMode"],
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="same_level">Same level</SelectItem>
+                  <SelectItem value="one_level_above">One level above</SelectItem>
+                  <SelectItem value="all_levels_above">All levels above</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <span className="font-medium">Known terms</span>
+              <Select
+                value={form.knownTermHandling}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    knownTermHandling: value as GenerationDialogDefaults["knownTermHandling"],
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exclude_known">Exclude known</SelectItem>
+                  <SelectItem value="downrank_known">Downrank known</SelectItem>
+                  <SelectItem value="include_known">Include known</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <span className="font-medium">Pack size</span>
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={form.packSize}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    packSize: Math.min(100, Math.max(1, Number(event.target.value) || 1)),
+                  }))
+                }
+              />
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <span className="font-medium">Examples</span>
+              <Select
+                value={String(form.exampleSentenceCount)}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    exampleSentenceCount: Number(value) as 1 | 2 | 3,
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 sentence</SelectItem>
+                  <SelectItem value="2">2 sentences</SelectItem>
+                  <SelectItem value="3">3 sentences</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="space-y-1.5 text-sm">
+            <span className="font-medium">Custom instructions</span>
+            <Textarea
+              value={form.customInstructions ?? ""}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  customInstructions: event.target.value || null,
+                }))
+              }
+            />
+          </div>
+          <DialogFooter>
+            {generation?.status === "completed" ? (
+              <Button variant="outline" onClick={() => submit(true)}>
+                Regenerate
+              </Button>
+            ) : null}
+            <Button onClick={() => submit(false)}>Start</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
 
@@ -330,13 +560,16 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const { media, learnerLevel } = pageData;
 
   const [analysis, setAnalysis] = React.useState(pageData.analysis);
+  const [generation, setGeneration] = React.useState(pageData.generation);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
   const [isPending, startTransition] = React.useTransition();
+  const [isGenerationPending, startGenerationTransition] = React.useTransition();
 
   React.useEffect(() => {
     setAnalysis(pageData.analysis);
+    setGeneration(pageData.generation);
     setActionMessage(null);
-  }, [pageData.analysis]);
+  }, [pageData.analysis, pageData.generation]);
 
   React.useEffect(() => {
     if (!analysis.runId) {
@@ -385,6 +618,35 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
     };
   }, [analysis.runId, analysis.status, media.mediaType, media.selectedSeasonNumber, media.tmdbId]);
 
+  React.useEffect(() => {
+    if (!generation?.jobId || (generation.status !== "queued" && generation.status !== "running")) {
+      return;
+    }
+
+    let cancelled = false;
+    const jobId = generation.jobId;
+    const poll = async () => {
+      const result = await getPackGenerationStatusAction({ jobId });
+      if (cancelled) {
+        return;
+      }
+      if (result.success) {
+        setGeneration(result.generation);
+      } else {
+        setActionMessage(result.message);
+      }
+    };
+
+    void poll();
+    const interval = window.setInterval(() => {
+      void poll();
+    }, 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [generation?.jobId, generation?.status]);
+
   const handleStartAnalysis = () => {
     setActionMessage(null);
 
@@ -414,6 +676,28 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
     }
 
     router.replace(`/media/${media.tmdbId}?type=tv&season=${season}`);
+  };
+
+  const handleStartGeneration = (
+    request: GenerationDialogDefaults & { forceRegenerate?: boolean },
+  ) => {
+    setActionMessage(null);
+    startGenerationTransition(async () => {
+      const result = await startPackGenerationAction({
+        tmdbId: media.tmdbId,
+        mediaType: media.mediaType,
+        seasonNumber: media.selectedSeasonNumber,
+        request,
+      });
+      if (result.success) {
+        setGeneration(result.generation);
+        return;
+      }
+      setActionMessage(result.message);
+      if (result.generation) {
+        setGeneration(result.generation);
+      }
+    });
   };
 
   const posterUrl = media.posterPath ? `https://image.tmdb.org/t/p/w500${media.posterPath}` : null;
@@ -647,6 +931,10 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
             isStarting={isPending}
             actionMessage={actionMessage}
             onStart={handleStartAnalysis}
+            generation={generation}
+            generationDefaults={pageData.generationDefaults}
+            isGenerating={isGenerationPending}
+            onStartGeneration={handleStartGeneration}
           />
         </div>
       </div>
