@@ -61,8 +61,9 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
     setOpen(false);
   }, [setOpen]);
 
+  const hasCards = session.cards.length > 0;
   const card = cardIndex < session.cards.length ? session.cards[cardIndex] : null;
-  const isComplete = cardIndex >= session.cards.length;
+  const isComplete = hasCards && cardIndex >= session.cards.length;
   const progressPct = clampToInt(
     (Math.min(sessionIndex, session.cards.length) / Math.max(1, session.cards.length)) * 100,
   );
@@ -101,23 +102,28 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
       setReviewedCount(previousReviewedCount);
       toast.error(result.error);
     } else {
-      setNextDueAt(result.nextDueAt ?? result.dueAt);
+      setNextDueAt(result.nextDueAt ?? (result.nextState === "mastered" ? null : result.dueAt));
     }
 
     setPendingRating(null);
   }
 
-  if (!card && !isComplete) {
+  if (!hasCards) {
     return (
       <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
         <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center gap-4 px-6 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">No active cards</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">No cards queued</h1>
           <p className="text-sm text-muted-foreground">
-            This pack has no active cards to study. Reset the pack to restore removed cards.
+            This pack has no active cards ready for the default study queue.
           </p>
-          <Button asChild>
-            <Link href={`/pack/${session.packId}`}>Back to pack</Link>
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button asChild>
+              <Link href={`/pack/${session.packId}`}>Back to pack</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/decks">My decks</Link>
+            </Button>
+          </div>
         </div>
       </SoftGradientBackground>
     );

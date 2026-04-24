@@ -198,6 +198,7 @@ export async function ratePackItemAction(input: {
     reviewedAt,
     previousState:
       item.state === "mastered" ? "mastered" : item.state === "new" ? "new" : "learning",
+    previousRating: item.lastRating,
     repetitionCount: item.repetitionCount,
     lapseCount: item.lapseCount,
     intervalDays: item.intervalDays,
@@ -205,69 +206,6 @@ export async function ratePackItemAction(input: {
   });
   const knownAfterReview =
     next.state === "mastered" && (input.rating === "good" || input.rating === "easy");
-
-  await db.insert(reviewEvent).values({
-    id: crypto.randomUUID(),
-    userId: session.user.id,
-    packItemId: item.id,
-    termId: item.termId,
-    rating: input.rating,
-    reviewedAt,
-    responseTimeMs: input.responseTimeMs ?? null,
-  });
-
-  await db
-    .update(packItem)
-    .set({
-      state: next.state,
-      dueAt: next.dueAt,
-      lastReviewedAt: reviewedAt,
-      lastRating: input.rating,
-      repetitionCount: next.repetitionCount,
-      lapseCount: next.lapseCount,
-      intervalDays: next.intervalDays,
-      easeFactor: next.easeFactor,
-      firstStudiedAt: item.firstStudiedAt ?? reviewedAt,
-      masteredAt: next.masteredAt,
-      updatedAt: reviewedAt,
-    })
-    .where(eq(packItem.id, item.id));
-
-  await db
-    .insert(userTermState)
-    .values({
-      userId: session.user.id,
-      termId: item.termId,
-      state: knownAfterReview ? "known" : "learning",
-      source: "review",
-      totalReviews: 1,
-      totalLapses: input.rating === "again" ? 1 : 0,
-      lastPackItemId: item.id,
-      firstSeenAt: reviewedAt,
-      lastSeenAt: reviewedAt,
-      lastReviewedAt: reviewedAt,
-      knownAt: knownAfterReview ? reviewedAt : null,
-    })
-    .onConflictDoUpdate({
-      target: [userTermState.userId, userTermState.termId],
-      set: {
-        state: knownAfterReview ? "known" : "learning",
-        source: "review",
-        totalReviews: sql`${userTermState.totalReviews} + 1`,
-        totalLapses:
-          input.rating === "again"
-            ? sql`${userTermState.totalLapses} + 1`
-            : userTermState.totalLapses,
-        lastPackItemId: item.id,
-        firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
-        lastSeenAt: reviewedAt,
-        lastReviewedAt: reviewedAt,
-        knownAt: knownAfterReview
-          ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
-          : userTermState.knownAt,
-        updatedAt: reviewedAt,
-      },
-    });
 
   const [existingStreak] = await db
     .select()
@@ -281,28 +219,90 @@ export async function ratePackItemAction(input: {
     reviewedAt,
   });
 
-  await db
-    .insert(userStreak)
-    .values({
+  await db.batch([
+    db.insert(reviewEvent).values({
+      id: crypto.randomUUID(),
       userId: session.user.id,
-      currentStreakDays: nextStreak.currentStreakDays,
-      longestStreakDays: nextStreak.longestStreakDays,
-      lastStudyAt: reviewedAt,
-      streakStartedAt: nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-    })
-    .onConflictDoUpdate({
-      target: userStreak.userId,
-      set: {
+      packItemId: item.id,
+      termId: item.termId,
+      rating: input.rating,
+      reviewedAt,
+      responseTimeMs: input.responseTimeMs ?? null,
+    }),
+    db
+      .update(packItem)
+      .set({
+        state: next.state,
+        dueAt: next.dueAt,
+        lastReviewedAt: reviewedAt,
+        lastRating: input.rating,
+        repetitionCount: next.repetitionCount,
+        lapseCount: next.lapseCount,
+        intervalDays: next.intervalDays,
+        easeFactor: next.easeFactor,
+        firstStudiedAt: item.firstStudiedAt ?? reviewedAt,
+        masteredAt: next.masteredAt,
+        updatedAt: reviewedAt,
+      })
+      .where(eq(packItem.id, item.id)),
+    db
+      .insert(userTermState)
+      .values({
+        userId: session.user.id,
+        termId: item.termId,
+        state: knownAfterReview ? "known" : "learning",
+        source: "review",
+        totalReviews: 1,
+        totalLapses: input.rating === "again" ? 1 : 0,
+        lastPackItemId: item.id,
+        firstSeenAt: reviewedAt,
+        lastSeenAt: reviewedAt,
+        lastReviewedAt: reviewedAt,
+        knownAt: knownAfterReview ? reviewedAt : null,
+      })
+      .onConflictDoUpdate({
+        target: [userTermState.userId, userTermState.termId],
+        set: {
+          state: knownAfterReview ? "known" : "learning",
+          source: "review",
+          totalReviews: sql`${userTermState.totalReviews} + 1`,
+          totalLapses:
+            input.rating === "again"
+              ? sql`${userTermState.totalLapses} + 1`
+              : userTermState.totalLapses,
+          lastPackItemId: item.id,
+          firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
+          lastSeenAt: reviewedAt,
+          lastReviewedAt: reviewedAt,
+          knownAt: knownAfterReview
+            ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
+            : userTermState.knownAt,
+          updatedAt: reviewedAt,
+        },
+      }),
+    db
+      .insert(userStreak)
+      .values({
+        userId: session.user.id,
         currentStreakDays: nextStreak.currentStreakDays,
         longestStreakDays: nextStreak.longestStreakDays,
         lastStudyAt: reviewedAt,
         streakStartedAt:
           nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-        updatedAt: reviewedAt,
-      },
-    });
-
-  await db.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId));
+      })
+      .onConflictDoUpdate({
+        target: userStreak.userId,
+        set: {
+          currentStreakDays: nextStreak.currentStreakDays,
+          longestStreakDays: nextStreak.longestStreakDays,
+          lastStudyAt: reviewedAt,
+          streakStartedAt:
+            nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
+          updatedAt: reviewedAt,
+        },
+      }),
+    db.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId)),
+  ]);
 
   const nextDueRows = await db
     .select({ dueAt: packItem.dueAt })
@@ -310,6 +310,8 @@ export async function ratePackItemAction(input: {
     .where(
       and(
         eq(packItem.packId, input.packId),
+        ne(packItem.state, "new"),
+        ne(packItem.state, "mastered"),
         ne(packItem.state, "removed"),
         isNull(packItem.removedAt),
       ),

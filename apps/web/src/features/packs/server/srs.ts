@@ -23,6 +23,7 @@ export type ComputeNextReviewStateInput = {
   rating: PackReviewRating;
   reviewedAt: Date;
   previousState: SrsLifecycleState;
+  previousRating?: PackReviewRating | null;
   repetitionCount: number;
   lapseCount: number;
   intervalDays: number | null;
@@ -100,9 +101,12 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
 
   if (!reviewCard) {
     const repetitionCount = input.repetitionCount + 1;
+    const isSecondLearningStep = input.repetitionCount > 0 && input.previousRating === "good";
     const hardDueAt = addMs(
       reviewedAt,
-      Math.round((SRS.firstLearningStepMs + SRS.secondLearningStepMs) / 2),
+      isSecondLearningStep
+        ? SRS.secondLearningStepMs
+        : Math.round((SRS.firstLearningStepMs + SRS.secondLearningStepMs) / 2),
     );
 
     const learningResult = {
@@ -112,11 +116,10 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
         easeFactor,
       },
       good: {
-        dueAt:
-          input.repetitionCount === 0
-            ? addMs(reviewedAt, SRS.secondLearningStepMs)
-            : addDays(reviewedAt, SRS.graduatingIntervalDays),
-        intervalDays: input.repetitionCount === 0 ? null : SRS.graduatingIntervalDays,
+        dueAt: !isSecondLearningStep
+          ? addMs(reviewedAt, SRS.secondLearningStepMs)
+          : addDays(reviewedAt, SRS.graduatingIntervalDays),
+        intervalDays: isSecondLearningStep ? SRS.graduatingIntervalDays : null,
         easeFactor,
       },
       easy: {

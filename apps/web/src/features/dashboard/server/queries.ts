@@ -2,7 +2,12 @@ import "server-only";
 
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
 import { getEffectivePackCardState } from "@/features/packs/server/srs";
-import { getAppWeekStart } from "@/features/packs/server/study-time";
+import {
+  addUtcDays,
+  getAppDateKey,
+  getAppDayStartUtc,
+  getAppWeekStart,
+} from "@/features/packs/server/study-time";
 import type { PackCardState } from "@/features/packs/types";
 import { db } from "@/lib/server/db";
 import {
@@ -60,21 +65,12 @@ function buildPosterUrl(path: string | null) {
   return path ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.md}${path}` : null;
 }
 
-function startOfTomorrow(now: Date) {
-  const date = new Date(now);
-  date.setHours(24, 0, 0, 0);
-  return date;
-}
-
-function startOfDayAfterTomorrow(now: Date) {
-  const date = new Date(now);
-  date.setHours(48, 0, 0, 0);
-  return date;
-}
-
 export async function getDashboardView({ userId }: { userId: string }): Promise<DashboardView> {
   const now = new Date();
   const weekStart = getAppWeekStart(now);
+  const todayKey = getAppDateKey(now);
+  const tomorrow = getAppDayStartUtc(addUtcDays(todayKey, 1));
+  const dayAfterTomorrow = getAppDayStartUtc(addUtcDays(todayKey, 2));
 
   const [streakRows, knownRows, reviewRows, packRows] = await Promise.all([
     db.select().from(userStreak).where(eq(userStreak.userId, userId)).limit(1),
@@ -130,9 +126,6 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
   let dueNow = 0;
   let dueLaterToday = 0;
   let dueTomorrow = 0;
-  const tomorrow = startOfTomorrow(now);
-  const dayAfterTomorrow = startOfDayAfterTomorrow(now);
-
   const packs = Array.from(grouped.values()).map(
     ({ pack: packRow, content: contentRow, items }) => {
       let masteredCount = 0;
