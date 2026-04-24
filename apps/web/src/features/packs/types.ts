@@ -85,3 +85,14 @@ export type StudySessionView = {
 };
 
 export type PackActionResult = { ok: true; activeCount: number } | { ok: false; error: string };
+
+export type PackRatingActionResult =
+  | {
+      ok: true;
+      itemId: string;
+      nextState: Exclude<PackCardState, "due" | "removed">;
+      dueAt: string;
+      nextDueAt: string | null;
+      reviewedCards: number;
+    }
+  | { ok: false; error: string };

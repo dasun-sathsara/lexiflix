@@ -5,6 +5,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type {
   DeckSummary,
   PackCardCounts,
+  PackCardState,
   PackCardView,
   PackContentKind,
   PackMediaSummary,
@@ -22,6 +23,7 @@ import {
   vocabularyTerm,
 } from "@/lib/server/db/schema";
 import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { getEffectivePackCardState } from "./srs";
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
 const imageArtifact = alias(artifactObject, "image_artifact");
@@ -83,6 +85,21 @@ function deriveCounts(cards: Pick<PackCardView, "state">[]): PackCardCounts {
   );
 }
 
+function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
+  return {
+    ...card,
+    state: getEffectivePackCardState({
+      state: card.state,
+      dueAt: card.dueAt ? new Date(card.dueAt) : null,
+      now,
+    }) as Exclude<PackCardState, "removed">,
+  };
+}
+
+function studyQueueRank(state: PackCardView["state"]) {
+  return { due: 0, new: 1, learning: 2, mastered: 3 }[state];
+}
+
 async function getOwnedPackRow(packId: string, userId: string) {
   const rows = await db
     .select({ pack, content })
@@ -95,6 +112,7 @@ async function getOwnedPackRow(packId: string, userId: string) {
 }
 
 async function getActivePackCards(packId: string): Promise<PackCardView[]> {
+  const now = new Date();
   const rows = await db
     .select({
       item: packItem,
@@ -115,29 +133,34 @@ async function getActivePackCards(packId: string): Promise<PackCardView[]> {
     )
     .orderBy(asc(packItem.sortOrder));
 
-  return rows.map(({ item, itemContent, term, analysis, audioArtifactId, imageArtifactId }) => ({
-    id: item.id,
-    termId: item.termId,
-    displayText: term.displayText,
-    kind: term.kind,
-    partOfSpeech: term.partOfSpeech,
-    cefrLevel: analysis.cefrLevel ?? term.baseCefrLevel,
-    meaning: itemContent.meaning,
-    exampleSentences: itemContent.exampleSentences ?? [],
-    occurrenceCount: analysis.occurrenceCount,
-    frequencyRank: analysis.frequencyRank,
-    includedReason: item.includedReason,
-    state: item.state as PackCardView["state"],
-    dueAt: toIso(item.dueAt),
-    lastReviewedAt: toIso(item.lastReviewedAt),
-    lastRating: item.lastRating,
-    repetitionCount: item.repetitionCount,
-    lapseCount: item.lapseCount,
-    intervalDays: item.intervalDays,
-    masteredAt: toIso(item.masteredAt),
-    audioUrl: artifactUrl(audioArtifactId),
-    imageUrl: artifactUrl(imageArtifactId),
-  }));
+  return rows.map(({ item, itemContent, term, analysis, audioArtifactId, imageArtifactId }) =>
+    toEffectiveCardView(
+      {
+        id: item.id,
+        termId: item.termId,
+        displayText: term.displayText,
+        kind: term.kind,
+        partOfSpeech: term.partOfSpeech,
+        cefrLevel: analysis.cefrLevel ?? term.baseCefrLevel,
+        meaning: itemContent.meaning,
+        exampleSentences: itemContent.exampleSentences ?? [],
+        occurrenceCount: analysis.occurrenceCount,
+        frequencyRank: analysis.frequencyRank,
+        includedReason: item.includedReason,
+        state: item.state as PackCardView["state"],
+        dueAt: toIso(item.dueAt),
+        lastReviewedAt: toIso(item.lastReviewedAt),
+        lastRating: item.lastRating,
+        repetitionCount: item.repetitionCount,
+        lapseCount: item.lapseCount,
+        intervalDays: item.intervalDays,
+        masteredAt: toIso(item.masteredAt),
+        audioUrl: artifactUrl(audioArtifactId),
+        imageUrl: artifactUrl(imageArtifactId),
+      },
+      now,
+    ),
+  );
 }
 
 export async function getPackStagingView({
@@ -185,17 +208,27 @@ export async function getStudySessionView({
   }
 
   const cards = await getActivePackCards(packId);
-  const resolvedInitialCardId =
+  const defaultQueue = cards
+    .filter((card) => card.state !== "mastered")
+    .toSorted((a, b) => studyQueueRank(a.state) - studyQueueRank(b.state));
+  const requestedCard =
     initialCardId && cards.some((card) => card.id === initialCardId)
+      ? cards.find((card) => card.id === initialCardId)
+      : null;
+  const queue = requestedCard
+    ? [requestedCard, ...defaultQueue.filter((card) => card.id !== requestedCard.id)]
+    : defaultQueue;
+  const resolvedInitialCardId =
+    initialCardId && queue.some((card) => card.id === initialCardId)
       ? initialCardId
-      : (cards[0]?.id ?? null);
+      : (queue[0]?.id ?? null);
 
   return {
     packId: owned.pack.id,
     packName: owned.pack.name,
     mediaTitle: owned.content.title,
     initialCardId: resolvedInitialCardId,
-    cards,
+    cards: queue,
   };
 }
 
@@ -242,8 +275,16 @@ export async function getDeckSummariesForUser({
 
   return Array.from(grouped.values()).map(({ pack: packRow, content: contentRow, cards }) => {
     const media = buildMediaSummary(contentRow);
+    const now = new Date();
     const counts = deriveCounts(
-      cards.map((card) => ({ state: card.state as PackCardView["state"] })),
+      cards.map((card) => ({
+        state: getEffectivePackCardState({
+          state: card.state,
+          dueAt: card.dueAt,
+          now,
+          removedAt: card.removedAt,
+        }) as PackCardView["state"],
+      })),
     );
     const lastStudiedAt = cards
       .map((card) => card.lastReviewedAt)

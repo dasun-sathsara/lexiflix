@@ -4,6 +4,7 @@ import { ArrowLeft, Volume2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +12,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useSidebar } from "@/components/ui/sidebar";
-import type { StudySessionView } from "@/features/packs/types";
+import { ratePackItemAction } from "@/features/packs/server/actions";
+import type { PackReviewRating, StudySessionView } from "@/features/packs/types";
 
 function clampToInt(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function formatDueLabel(value: string | null) {
+  if (!value) {
+    return "No reviewed cards are scheduled yet.";
+  }
+
+  const dueAt = new Date(value);
+  const diffMs = dueAt.getTime() - Date.now();
+  if (diffMs <= 0) {
+    return "Next card is due now.";
+  }
+
+  const minutes = Math.ceil(diffMs / (60 * 1000));
+  if (minutes < 60) {
+    return `Next card is due in ${minutes}m.`;
+  }
+
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 24) {
+    return `Next card is due in ${hours}h.`;
+  }
+
+  return `Next card is due in ${Math.ceil(hours / 24)}d.`;
 }
 
 export function StudySessionClient({ session }: { session: StudySessionView }) {
@@ -25,22 +51,63 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   const [sessionIndex, setSessionIndex] = React.useState(initialIndex + 1);
   const [cardIndex, setCardIndex] = React.useState(initialIndex);
   const [isFlipped, setIsFlipped] = React.useState(false);
+  const [pendingRating, setPendingRating] = React.useState<PackReviewRating | null>(null);
+  const [reviewedCount, setReviewedCount] = React.useState(0);
+  const [nextDueAt, setNextDueAt] = React.useState<string | null>(null);
+  const cardStartedAtRef = React.useRef(Date.now());
   const { setOpen } = useSidebar();
 
   React.useEffect(() => {
     setOpen(false);
   }, [setOpen]);
 
-  const card = session.cards[cardIndex];
-  const progressPct = clampToInt((sessionIndex / Math.max(1, session.cards.length)) * 100);
+  const card = cardIndex < session.cards.length ? session.cards[cardIndex] : null;
+  const isComplete = cardIndex >= session.cards.length;
+  const progressPct = clampToInt(
+    (Math.min(sessionIndex, session.cards.length) / Math.max(1, session.cards.length)) * 100,
+  );
 
-  function goNext() {
+  function advanceToNext() {
     setIsFlipped(false);
-    setCardIndex((index) => (index + 1) % session.cards.length);
-    setSessionIndex((index) => (index >= session.cards.length ? 1 : index + 1));
+    setCardIndex((index) => index + 1);
+    setSessionIndex((index) => Math.min(session.cards.length, index + 1));
+    cardStartedAtRef.current = Date.now();
   }
 
-  if (!card) {
+  async function rateCard(rating: PackReviewRating) {
+    if (!card || pendingRating) {
+      return;
+    }
+
+    const previousCardIndex = cardIndex;
+    const previousSessionIndex = sessionIndex;
+    const previousReviewedCount = reviewedCount;
+    const responseTimeMs = Date.now() - cardStartedAtRef.current;
+
+    setPendingRating(rating);
+    setReviewedCount((count) => count + 1);
+    advanceToNext();
+
+    const result = await ratePackItemAction({
+      packId: session.packId,
+      itemId: card.id,
+      rating,
+      responseTimeMs,
+    });
+
+    if (!result.ok) {
+      setCardIndex(previousCardIndex);
+      setSessionIndex(previousSessionIndex);
+      setReviewedCount(previousReviewedCount);
+      toast.error(result.error);
+    } else {
+      setNextDueAt(result.nextDueAt ?? result.dueAt);
+    }
+
+    setPendingRating(null);
+  }
+
+  if (!card && !isComplete) {
     return (
       <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
         <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center gap-4 px-6 text-center">
@@ -54,6 +121,38 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
         </div>
       </SoftGradientBackground>
     );
+  }
+
+  if (isComplete) {
+    return (
+      <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
+        <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center gap-5 px-6 text-center">
+          <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
+            Session complete
+          </Badge>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">Reviews saved</h1>
+            <p className="text-sm text-muted-foreground">
+              {reviewedCount} {reviewedCount === 1 ? "card" : "cards"} reviewed.{" "}
+              {formatDueLabel(nextDueAt)}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button asChild>
+              <Link href={`/pack/${session.packId}`}>Back to pack</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/decks">My decks</Link>
+            </Button>
+          </div>
+        </div>
+      </SoftGradientBackground>
+    );
+  }
+
+  const activeCard = card;
+  if (!activeCard) {
+    return null;
   }
 
   return (
@@ -115,13 +214,15 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                 >
                   <div className="space-y-4 text-center">
                     <div className="text-4xl font-bold tracking-tight text-primary sm:text-5xl">
-                      {card.displayText}
+                      {activeCard.displayText}
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-                      {card.partOfSpeech ? (
-                        <Badge variant="outline">{card.partOfSpeech}</Badge>
+                      {activeCard.partOfSpeech ? (
+                        <Badge variant="outline">{activeCard.partOfSpeech}</Badge>
                       ) : null}
-                      {card.cefrLevel ? <Badge variant="secondary">{card.cefrLevel}</Badge> : null}
+                      {activeCard.cefrLevel ? (
+                        <Badge variant="secondary">{activeCard.cefrLevel}</Badge>
+                      ) : null}
                       <span>Tap to reveal</span>
                     </div>
                   </div>
@@ -138,16 +239,16 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                   <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
                     <div className="min-w-0">
                       <div className="text-2xl font-bold tracking-tight text-primary">
-                        {card.displayText}
+                        {activeCard.displayText}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                        <Badge variant="outline">{card.kind.replaceAll("_", " ")}</Badge>
-                        {card.cefrLevel ? (
-                          <Badge variant="secondary">{card.cefrLevel}</Badge>
+                        <Badge variant="outline">{activeCard.kind.replaceAll("_", " ")}</Badge>
+                        {activeCard.cefrLevel ? (
+                          <Badge variant="secondary">{activeCard.cefrLevel}</Badge>
                         ) : null}
                       </div>
                     </div>
-                    {card.audioUrl ? (
+                    {activeCard.audioUrl ? (
                       <Button
                         type="button"
                         variant="outline"
@@ -155,7 +256,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                         className="gap-1.5"
                         onClick={(event) => {
                           event.stopPropagation();
-                          new Audio(card.audioUrl ?? undefined).play();
+                          new Audio(activeCard.audioUrl ?? undefined).play();
                         }}
                       >
                         <Volume2 className="size-4" />
@@ -169,17 +270,18 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                       Generated meaning
                     </div>
                     <p className="text-base leading-relaxed text-foreground/90">
-                      {card.meaning ?? "No generated meaning was saved for this card."}
+                      {activeCard.meaning ?? "No generated meaning was saved for this card."}
                     </p>
                   </div>
 
-                  {card.exampleSentences.length > 0 ? (
+                  {activeCard.exampleSentences.length > 0 ? (
                     <div className="space-y-2">
                       <div className="text-xs font-semibold uppercase text-muted-foreground">
-                        Generated {card.exampleSentences.length === 1 ? "example" : "examples"}
+                        Generated{" "}
+                        {activeCard.exampleSentences.length === 1 ? "example" : "examples"}
                       </div>
                       <div className="space-y-3">
-                        {card.exampleSentences.map((example) => (
+                        {activeCard.exampleSentences.map((example) => (
                           <div key={example} className="border-l-2 border-primary/30 pl-3">
                             <p className="text-sm leading-relaxed italic text-foreground/80">
                               &quot;{example}&quot;
@@ -190,15 +292,15 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                     </div>
                   ) : null}
 
-                  {card.imageUrl ? (
+                  {activeCard.imageUrl ? (
                     <div className="space-y-2">
                       <div className="text-xs font-semibold uppercase text-muted-foreground">
                         Generated image
                       </div>
                       <div className="relative h-56 w-full overflow-hidden rounded-xl border bg-muted">
                         <Image
-                          src={card.imageUrl}
-                          alt={`Generated image for ${card.displayText}`}
+                          src={activeCard.imageUrl}
+                          alt={`Generated image for ${activeCard.displayText}`}
                           fill
                           sizes="(max-width: 768px) 100vw, 768px"
                           className="object-cover"
@@ -221,20 +323,23 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
       >
         <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-2 px-4 py-4 sm:grid-cols-4 sm:gap-3 sm:px-6">
           {[
-            ["again", "< 1m", "Again", "bg-rose-600 hover:bg-rose-600/90"],
-            ["hard", "10m", "Hard", "bg-amber-600 hover:bg-amber-600/90"],
-            ["good", "2d", "Good", "bg-sky-600 hover:bg-sky-600/90"],
-            ["easy", "4d", "Easy", "bg-emerald-600 hover:bg-emerald-600/90"],
-          ].map(([rating, timing, copy, className]) => (
+            ["again", "Again", "Retry soon", "bg-rose-600 hover:bg-rose-600/90"],
+            ["hard", "Hard", "Still shaky", "bg-amber-600 hover:bg-amber-600/90"],
+            ["good", "Good", "Remembered", "bg-sky-600 hover:bg-sky-600/90"],
+            ["easy", "Easy", "Known well", "bg-emerald-600 hover:bg-emerald-600/90"],
+          ].map(([rating, copy, hint, className]) => (
             <Button
               key={rating}
               type="button"
               className={`h-12 text-white ${className}`}
-              onClick={goNext}
+              disabled={Boolean(pendingRating)}
+              onClick={() => rateCard(rating as PackReviewRating)}
             >
               <div className="flex w-full flex-col items-center leading-tight">
-                <span className="text-[11px] opacity-90">{timing}</span>
-                <span className="font-semibold">{copy}</span>
+                <span className="font-semibold">
+                  {pendingRating === rating ? "Saving..." : copy}
+                </span>
+                <span className="text-[11px] opacity-90">{hint}</span>
               </div>
             </Button>
           ))}
