@@ -1,5 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 
 import { env } from "@/lib/env";
 
@@ -108,6 +113,26 @@ export async function deleteObjectByUrl(url: string | null | undefined) {
   } catch (error) {
     console.error("Failed to delete R2 object", { url, error });
   }
+}
+
+export async function getObjectBytesByKey(key: string) {
+  const response = await r2Client.send(
+    new GetObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+    }),
+  );
+
+  if (!response.Body) {
+    throw new Error("R2 object response did not include a body.");
+  }
+
+  const bytes = await response.Body.transformToByteArray();
+  return {
+    bytes,
+    contentType: response.ContentType ?? "application/octet-stream",
+    contentLength: response.ContentLength,
+  };
 }
 
 export { buildPublicUrl, getKeyFromUrl };
