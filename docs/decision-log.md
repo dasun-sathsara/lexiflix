@@ -147,3 +147,47 @@
 - Decision: long-running generation progress should be visible both in a dedicated progress view and in the decks surface.
 - Reasoning: users need a clear active-job view, but they also need to be able to leave and return later without losing the job trail.
 - Consequence: both surfaces should read from one shared app-owned polling contract rather than separate progress systems.
+
+## 2026-04-25
+
+### Real pack study surfaces
+
+- Decision: `/pack/[id]`, `/decks`, and `/study/[id]` render learner-owned generated pack data from Postgres rather than mock data.
+- Reasoning: once pack generation is durable, adjacent learner surfaces need to read the same generated output or the demo hides integration bugs behind fake UI.
+- Consequence: pack ownership checks, explicit Drizzle joins, generated meanings/examples, optional artifact URLs, and active-card filtering live behind the pack feature read models.
+
+### Pack-local card removal and reset
+
+- Decision: card removal is a pack-local soft removal, while reset restores removed cards and clears mutable pack scheduling fields without deleting review history.
+- Reasoning: a learner's cleanup action inside one pack should not rewrite global term knowledge or destroy historical study evidence.
+- Consequence: removed cards are excluded from active counts and study queues, `pack.itemCount` is recalculated from active cards, and `review_event` plus `user_term_state` remain intact on reset.
+
+### Effective due state
+
+- Decision: due status is computed from `dueAt <= now` for active non-new, non-mastered cards rather than by persisting `pack_item.state = 'due'`.
+- Reasoning: a persisted due state drifts without a background updater, which is unnecessary complexity for this demo.
+- Consequence: `pack_item.state` remains a lifecycle state, and `/pack/[id]`, `/decks`, `/study/[id]`, and `/dashboard` must use the shared effective-state rule.
+
+### V1 SRS scheduling
+
+- Decision: V1 scheduling uses an Anki-inspired legacy SM-2 baseline rather than FSRS.
+- Reasoning: LexiFlix needs familiar four-button review behavior and understandable interval growth, not a more advanced scheduling model before the core study loop is stable.
+- Consequence: learning/relearning steps stay sub-day, review intervals grow by rating and ease, non-again review intervals do not shrink, and the constants remain centralized for later replacement.
+
+### Mastery threshold
+
+- Decision: a pack item becomes mastered only after a `good` or `easy` rating when repetition count reaches at least `5` or the next interval reaches at least `21` days.
+- Reasoning: mastery should be a durable product milestone, not an eager result of the first successful review.
+- Consequence: `user_term_state.state = 'known'` is only set when the same threshold is met, while other ratings keep the canonical term in `learning`.
+
+### Durable rating writes
+
+- Decision: a successful rating writes one immutable review event and updates `pack_item`, `user_term_state`, `user_streak`, and the parent pack timestamp together through the Neon HTTP batch path.
+- Reasoning: review history, current scheduling, cross-pack knowledge, streaks, and dashboard freshness are one practical product update even though full interactive transactions are not available through the current Drizzle Neon HTTP driver.
+- Consequence: the action keeps validation narrow, rejects removed cards, revalidates the affected study/pack/decks/dashboard routes, and avoids fake transaction comments.
+
+### Dashboard data source
+
+- Decision: `/dashboard` reads persisted learner state and no longer uses mock pack or review data.
+- Reasoning: the dashboard becomes misleading as soon as reviews are durable if it keeps displaying invented progress.
+- Consequence: dashboard stats derive from `review_event`, `user_term_state`, `user_streak`, and effective pack due state; the old mock "Time Spent" stat is replaced with "Reviews This Week."

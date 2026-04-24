@@ -136,6 +136,17 @@ Minimal operational role for demo support only.
 2. The system shall support playback of generated pronunciation audio.
 3. The system shall track learner progress within a generated pack.
 4. In V1, long-running generation progress shall be accessible both from a dedicated progress view and from the decks surface through one shared app-owned polling contract.
+5. The system shall provide a generated pack staging surface at `/pack/[id]`.
+6. The system shall provide a generated decks surface at `/decks`.
+7. The system shall provide a study session surface at `/study/[id]`.
+8. These pack, decks, and study surfaces shall render persisted generated pack data rather than mock pack data.
+9. These surfaces shall verify that the signed-in learner owns the requested pack before exposing pack content.
+10. The staging surface shall support pack-local soft removal of cards.
+11. The staging surface shall support pack reset that restores removed cards and clears mutable pack scheduling fields.
+12. Pack reset shall not delete immutable review history or rewrite cross-pack learner term state.
+13. The study surface shall support opening a specific active card with `?card=<packItemId>`.
+14. The default study queue shall exclude mastered and removed cards.
+15. The default study queue shall order effective due cards before new cards, and new cards before learning cards.
 
 ### 8. Review And Ongoing Learner State
 
@@ -143,8 +154,30 @@ Minimal operational role for demo support only.
 2. The system shall record immutable review events.
 3. The system shall maintain learner term state across packs for the same canonical term.
 4. The system shall maintain a learner streak summary.
+5. A successful review rating shall create exactly one immutable `review_event` row.
+6. A successful review rating shall update pack-local scheduling fields on `pack_item`.
+7. A successful review rating shall update cross-pack learner knowledge in `user_term_state`.
+8. A successful review rating shall update the learner streak snapshot in `user_streak`.
+9. Removed cards shall be rejected from review rating actions.
+10. In V1, review scheduling shall use an Anki-inspired legacy SM-2 baseline rather than FSRS.
+11. In V1, effective due status shall be computed from `dueAt <= now` for active non-new, non-mastered cards.
+12. In V1, `pack_item.state` shall remain a lifecycle state rather than a persisted clock-driven due state.
+13. In V1, `user_term_state.state = 'known'` shall be set only when the mastery threshold is met.
+14. In V1, streak day boundaries shall use one shared server-side app-day helper.
 
-### 9. Notifications And Preferences
+### 9. Dashboard
+
+1. The dashboard shall read persisted learner state rather than mock pack or review data.
+2. The dashboard shall derive current streak from `user_streak`.
+3. The dashboard shall derive known term count from `user_term_state`.
+4. The dashboard shall derive due review counts from effective pack-card due state.
+5. The dashboard shall derive weekly completed reviews from `review_event`.
+6. The dashboard shall use "Reviews This Week" instead of a mock "Time Spent" stat.
+7. The dashboard shall route the primary study CTA to the first due study pack when due cards exist.
+8. The dashboard shall route the primary CTA to `/decks` when packs exist but no cards are due.
+9. The dashboard shall route the primary CTA to `/browse` when the learner has no packs.
+
+### 10. Notifications And Preferences
 
 1. The system shall store learner preferences relevant to study and generation defaults.
 2. The system shall support notification records for events such as pack completion or due reviews.

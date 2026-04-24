@@ -129,10 +129,36 @@
 - current SRS state such as due date, interval, easiness factor, repetition count, and lapse count
 - standard housekeeping metadata
 
+- Generated pack surfaces render real learner-owned pack data.
+- `/pack/[id]`, `/decks`, and `/study/[id]` must verify pack ownership before exposing pack data.
+- Pack read models exclude removed cards when `pack_item.state = 'removed'` or `removedAt IS NOT NULL`.
+- Card removal is soft and reversible through pack reset.
+- `pack.itemCount` represents the current active non-removed card count after removals or restores.
+- Pack reset is pack-local: it restores cards and clears mutable scheduling fields, but it does not delete `review_event` history and does not rewrite `user_term_state`.
+
+- `pack_item.state` is a lifecycle state, not a persisted clock-driven due flag.
+- The effective due state is derived from `dueAt <= now` for active non-new, non-mastered cards.
+- The system should not rely on a background job to flip rows into a persisted `due` state.
+- Mastered cards stay out of the default study queue unless explicitly opened through a card-specific route.
+- The default study queue orders effective due cards first, then new cards, then learning cards.
+- `/study/[id]?card=<packItemId>` may open a specific active card first, including a mastered card, but that does not reintroduce mastered cards into the normal queue.
+
 - Review history is immutable and stored separately from the mutable current card state.
 - Dashboard metrics, streak calculations, and future analytics should come from review history rather than from lossy status snapshots alone.
 - Review history is intentionally thin in V1.
 - The system stores immutable per-review events such as references, rating, and timing, but it does not persist before/after JSON state snapshots for each review.
+- A successful review rating creates exactly one `review_event` row.
+- The same successful rating updates pack-local SRS fields on `pack_item`, cross-pack learner knowledge in `user_term_state`, and the learner's streak snapshot in `user_streak`.
+- Study ratings must never set `user_term_state.state = 'ignored'`.
+- `user_term_state.state = 'known'` is set only when the pack item reaches the mastery threshold.
+- V1 scheduling uses an Anki-inspired legacy SM-2 baseline, not FSRS.
+- V1 learning and relearning steps stay under one day.
+- V1 mastery is a LexiFlix product milestone, not an Anki state.
+- The V1 mastery threshold is reached after a good/easy rating when either repetition count is at least `5` or the next interval is at least `21` days.
+- Streak calculations use the shared server-side app-day helper in V1 so the day-boundary rule can be replaced later with learner time zones.
+- Dashboard review counts are derived from persisted review and pack state.
+- The dashboard "Reviews This Week" metric comes from `review_event`, not from a client counter or mock data.
+- Dashboard next-action CTAs route to the first due study pack when due cards exist, `/decks` when packs exist but no cards are due, and `/browse` when the learner has no packs.
 
 - Mastered vocabulary should carry across titles for the same user.
 - This means user knowledge state is tracked at the canonical term level, not only at the pack-item level.

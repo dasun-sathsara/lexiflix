@@ -104,6 +104,22 @@ The pack-generation workflow begins only when the user clicks `Start Generation`
 
 That workflow reads the stored content-analysis output, selects items according to the learner’s level and preferences, runs the Content Generation Pipeline for meanings, newly generated example sentences, pronunciation audio, and optional images, persists the resulting pack and related entities, and finally marks the job as completed or failed. In V1, meanings stay English-only, audio reads only the vocabulary item itself, text generation remains strict, and generated assets remain best-effort. The generated `pack_item_content` rows are explicitly user-specific output, not reusable content facts, and they may be shaped by the learner’s current CEFR level at generation time.
 
+## Pack And Study Surfaces
+
+Generated packs become real learner-facing product state after the workflow completes. The web app reads that state through the pack feature boundary rather than through mock route-local data. `/pack/[id]` is the staging and management surface for a generated pack, `/decks` is the learner's generated-pack list, and `/study/[id]` is the review surface for active pack cards. Each route verifies the signed-in learner owns the pack before exposing pack data.
+
+The staging and study read models are intentionally explicit. Pack cards join the generated pack item, generated learner content, canonical vocabulary term, reusable analysis item, and optional artifact metadata. The UI renders generated meanings and generated examples, not source subtitle excerpts. Audio and images are optional; missing artifacts should remove the corresponding controls rather than breaking the card.
+
+Pack management stays pack-local. Removing a card soft-removes that `pack_item` and recalculates the active count. Reset restores removed cards and clears mutable scheduling fields, but it does not delete `review_event` history and does not rewrite canonical learner knowledge in `user_term_state`.
+
+## Study Progress
+
+The study loop is durable. A review rating creates immutable review history in `review_event`, updates mutable pack-local scheduling fields on `pack_item`, updates cross-pack learner knowledge in `user_term_state`, and updates the learner's streak snapshot in `user_streak`. Those writes belong to the web app domain layer because they define product state, not workflow execution state.
+
+V1 scheduling uses an Anki-inspired legacy SM-2 baseline. It keeps short learning and relearning steps below one day, grows review intervals by rating and ease, and treats mastery as a LexiFlix product milestone rather than an Anki state. `pack_item.state` remains a lifecycle field (`new`, `learning`, `mastered`, `removed`); effective due status is derived from `dueAt <= now` for active non-new, non-mastered cards. This avoids a background job whose only purpose would be flipping rows from learning to due.
+
+The default study queue orders effective due cards first, then new cards, then learning cards. Mastered cards stay out of the default queue, although a card-specific route can open an active card first for preview or inspection.
+
 ## Progress Reporting
 
 The easiest progress model is also the correct one for this project: coarse stage-based progress stored in Postgres and polled by the frontend through the web app. We do not need Redis for this. We do not need WebSockets. We do not need fine-grained real-time streaming of sub-steps.
@@ -111,6 +127,10 @@ The easiest progress model is also the correct one for this project: coarse stag
 That does not mean the user sees nothing. A content-analysis run can move through stages such as `queued`, `fetching_subtitles`, `running_nlp`, `running_llm`, `merging_analysis`, `saving_analysis`, `completed`, and `failed`. A pack-generation job can move through stages such as `queued`, `selecting_terms`, `generating_content`, `generating_assets`, `saving_pack`, `completed`, and `failed`. The frontend can poll the app every few seconds and display the current stage with an indeterminate progress treatment. In V1, the same app-owned polling contract should support both a dedicated generation-progress view and visibility from the decks surface so users can leave and come back later. For a demo, this is exactly the right balance. It feels alive without forcing us to invent fake percentages or build an ephemeral progress infrastructure that adds more moving parts than value.
 
 The key principle is that durable status belongs in the database, while highly transient ticks do not belong anywhere until they are proven necessary. If the project later needs richer progress, that can be added with a transient store. It should not be the baseline.
+
+## Dashboard Read Model
+
+The dashboard is a read model over persisted learner state, not a mock planning surface. Streaks come from `user_streak`, known terms come from `user_term_state`, reviews completed this week come from `review_event`, and due counts come from effective pack-card due state. The dashboard can combine these facts into compact operational CTAs, but it should not own a separate progress model or copy counters from the client.
 
 ## AI Integration and Cost Control
 
