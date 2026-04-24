@@ -81,6 +81,32 @@ export class OpenSubtitlesClientError extends Error {
 }
 
 let cachedToken: string | null = null;
+let pendingAuthPromise: Promise<string> | null = null;
+let lastAuthAttemptAt = 0;
+
+const OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS = 1_100;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function summarizeOpenSubtitlesPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return payload;
+  }
+
+  const source = payload as Record<string, unknown>;
+  const summary: Record<string, unknown> = {};
+
+  for (const key of ["status", "message", "error", "errors"]) {
+    if (key in source) {
+      summary[key] = source[key];
+    }
+  }
+
+  summary.keys = Object.keys(source);
+  return summary;
+}
 
 async function readJsonSafely(response: Response) {
   const text = await response.text();
@@ -155,6 +181,27 @@ async function authenticateOpenSubtitles(forceRefresh: boolean = false) {
     return cachedToken;
   }
 
+  if (pendingAuthPromise && !forceRefresh) {
+    return pendingAuthPromise;
+  }
+
+  pendingAuthPromise = performOpenSubtitlesLogin();
+
+  try {
+    return await pendingAuthPromise;
+  } finally {
+    pendingAuthPromise = null;
+  }
+}
+
+async function performOpenSubtitlesLogin() {
+  const elapsedSinceLastAttempt = Date.now() - lastAuthAttemptAt;
+  if (elapsedSinceLastAttempt < OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS) {
+    await sleep(OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS - elapsedSinceLastAttempt);
+  }
+
+  lastAuthAttemptAt = Date.now();
+
   const response = await openSubtitlesFetch(
     "/login",
     {
@@ -177,11 +224,23 @@ async function authenticateOpenSubtitles(forceRefresh: boolean = false) {
     typeof payload !== "object" ||
     typeof payload.token !== "string"
   ) {
+    const diagnostic = {
+      status: response.status,
+      statusText: response.statusText,
+      apiBaseUrl: env.OPENSUBTITLES_API_BASE_URL,
+      hasApiKey: Boolean(env.OPENSUBTITLES_API_KEY),
+      hasUsername: Boolean(env.OPENSUBTITLES_USERNAME),
+      hasPassword: Boolean(env.OPENSUBTITLES_PASSWORD),
+      payload: summarizeOpenSubtitlesPayload(payload),
+    };
+
+    console.error("[media-analysis] OpenSubtitles authentication failed", diagnostic);
+
     throw new OpenSubtitlesClientError(
       "Failed to authenticate with OpenSubtitles.",
       response.status === 429 ? "RATE_LIMITED" : "AUTH_FAILED",
       response.status,
-      payload,
+      diagnostic,
     );
   }
 

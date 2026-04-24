@@ -36,41 +36,39 @@ export async function POST(request: Request) {
   const { manualOverrideLevel, dailyWordsGoal, emailRemindersEnabled, streakAlertsEnabled } =
     parsed.data;
 
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(userPreferences)
-      .values({
-        userId: session.user.id,
+  await db
+    .insert(userPreferences)
+    .values({
+      userId: session.user.id,
+      studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
+      dailyWordsGoal,
+      emailRemindersEnabled,
+      streakAlertsEnabled,
+    })
+    .onConflictDoUpdate({
+      target: userPreferences.userId,
+      set: {
         studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
         dailyWordsGoal,
         emailRemindersEnabled,
         streakAlertsEnabled,
-      })
-      .onConflictDoUpdate({
-        target: userPreferences.userId,
-        set: {
-          studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
-          dailyWordsGoal,
-          emailRemindersEnabled,
-          streakAlertsEnabled,
-        },
-      });
+      },
+    });
 
-    await tx
-      .insert(cefrProfile)
-      .values({
-        userId: session.user.id,
+  await db
+    .insert(cefrProfile)
+    .values({
+      userId: session.user.id,
+      manualOverrideLevel,
+      manualOverrideAt: manualOverrideLevel ? new Date() : null,
+    })
+    .onConflictDoUpdate({
+      target: cefrProfile.userId,
+      set: {
         manualOverrideLevel,
         manualOverrideAt: manualOverrideLevel ? new Date() : null,
-      })
-      .onConflictDoUpdate({
-        target: cefrProfile.userId,
-        set: {
-          manualOverrideLevel,
-          manualOverrideAt: manualOverrideLevel ? new Date() : null,
-        },
-      });
-  });
+      },
+    });
 
   const preferences: SettingsPreferences = await getSettingsPreferences(session.user.id);
 

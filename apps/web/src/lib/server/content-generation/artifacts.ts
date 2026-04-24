@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { logger } from "@trigger.dev/sdk";
 import { env } from "@/lib/env";
 import type { GeneratedBinaryArtifact } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
@@ -26,6 +27,16 @@ export async function persistGeneratedArtifact(input: {
 }) {
   const checksumSha256 = createHash("sha256").update(input.artifact.bytes).digest("hex");
   const objectKey = `generated/${input.userId}/${input.contentId}/${input.jobId}/${input.kind}/${input.artifact.itemKey}.${input.artifact.extension}`;
+
+  logger.info("[content-generation:artifact] uploading artifact", {
+    jobId: input.jobId,
+    kind: input.kind,
+    itemKey: input.artifact.itemKey,
+    bucketName: env.R2_BUCKET_NAME,
+    objectKey,
+    mimeType: input.artifact.mimeType,
+    byteLength: input.artifact.bytes.byteLength,
+  });
 
   await r2Client.send(
     new PutObjectCommand({
@@ -57,6 +68,14 @@ export async function persistGeneratedArtifact(input: {
   if (!row) {
     throw new Error(`Failed to persist ${input.kind} artifact metadata.`);
   }
+
+  logger.info("[content-generation:artifact] artifact persisted", {
+    jobId: input.jobId,
+    artifactId: row.id,
+    kind: input.kind,
+    itemKey: input.artifact.itemKey,
+    objectKey,
+  });
 
   return row;
 }

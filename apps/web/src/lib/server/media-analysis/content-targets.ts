@@ -16,9 +16,6 @@ import {
   type TMDBTvSeasonDetails,
 } from "@/lib/tmdb";
 
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type DbExecutor = typeof db | DbTransaction;
-
 type ContentRow = typeof content.$inferSelect;
 
 type BaseResolvedContentTarget = {
@@ -131,8 +128,8 @@ function buildSeasonContentValues(show: TMDBTvDetails, season: TMDBTvSeasonDetai
   };
 }
 
-async function getExistingMovieContent(tmdbMovieId: number, executor: DbExecutor = db) {
-  const [row] = await executor
+async function getExistingMovieContent(tmdbMovieId: number) {
+  const [row] = await db
     .select()
     .from(content)
     .where(and(eq(content.kind, "movie"), eq(content.tmdbMovieId, tmdbMovieId)))
@@ -141,12 +138,8 @@ async function getExistingMovieContent(tmdbMovieId: number, executor: DbExecutor
   return row ?? null;
 }
 
-async function getExistingSeasonContent(
-  tmdbShowId: number,
-  seasonNumber: number,
-  executor: DbExecutor = db,
-) {
-  const [row] = await executor
+async function getExistingSeasonContent(tmdbShowId: number, seasonNumber: number) {
+  const [row] = await db
     .select()
     .from(content)
     .where(
@@ -164,89 +157,85 @@ async function getExistingSeasonContent(
 async function persistMovieContent(detail: TMDBMovieDetails) {
   const values = buildMovieContentValues(detail);
 
-  return db.transaction(async (tx) => {
-    const existing = await getExistingMovieContent(detail.id, tx);
+  const existing = await getExistingMovieContent(detail.id);
 
-    if (existing) {
-      const [updated] = await tx
-        .update(content)
-        .set(values)
-        .where(eq(content.id, existing.id))
-        .returning();
-
-      return updated;
-    }
-
-    const [inserted] = await tx
-      .insert(content)
-      .values({
-        id: crypto.randomUUID(),
-        ...values,
-      })
-      .onConflictDoNothing()
-      .returning();
-
-    if (inserted) {
-      return inserted;
-    }
-
-    const collided = await getExistingMovieContent(detail.id, tx);
-    if (!collided) {
-      throw new Error("Failed to resolve a durable movie content row after insert collision.");
-    }
-
-    const [updated] = await tx
+  if (existing) {
+    const [updated] = await db
       .update(content)
       .set(values)
-      .where(eq(content.id, collided.id))
+      .where(eq(content.id, existing.id))
       .returning();
 
     return updated;
-  });
+  }
+
+  const [inserted] = await db
+    .insert(content)
+    .values({
+      id: crypto.randomUUID(),
+      ...values,
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted) {
+    return inserted;
+  }
+
+  const collided = await getExistingMovieContent(detail.id);
+  if (!collided) {
+    throw new Error("Failed to resolve a durable movie content row after insert collision.");
+  }
+
+  const [updated] = await db
+    .update(content)
+    .set(values)
+    .where(eq(content.id, collided.id))
+    .returning();
+
+  return updated;
 }
 
 async function persistSeasonContent(show: TMDBTvDetails, season: TMDBTvSeasonDetails) {
   const values = buildSeasonContentValues(show, season);
 
-  return db.transaction(async (tx) => {
-    const existing = await getExistingSeasonContent(show.id, season.season_number, tx);
+  const existing = await getExistingSeasonContent(show.id, season.season_number);
 
-    if (existing) {
-      const [updated] = await tx
-        .update(content)
-        .set(values)
-        .where(eq(content.id, existing.id))
-        .returning();
-
-      return updated;
-    }
-
-    const [inserted] = await tx
-      .insert(content)
-      .values({
-        id: crypto.randomUUID(),
-        ...values,
-      })
-      .onConflictDoNothing()
-      .returning();
-
-    if (inserted) {
-      return inserted;
-    }
-
-    const collided = await getExistingSeasonContent(show.id, season.season_number, tx);
-    if (!collided) {
-      throw new Error("Failed to resolve a durable season content row after insert collision.");
-    }
-
-    const [updated] = await tx
+  if (existing) {
+    const [updated] = await db
       .update(content)
       .set(values)
-      .where(eq(content.id, collided.id))
+      .where(eq(content.id, existing.id))
       .returning();
 
     return updated;
-  });
+  }
+
+  const [inserted] = await db
+    .insert(content)
+    .values({
+      id: crypto.randomUUID(),
+      ...values,
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted) {
+    return inserted;
+  }
+
+  const collided = await getExistingSeasonContent(show.id, season.season_number);
+  if (!collided) {
+    throw new Error("Failed to resolve a durable season content row after insert collision.");
+  }
+
+  const [updated] = await db
+    .update(content)
+    .set(values)
+    .where(eq(content.id, collided.id))
+    .returning();
+
+  return updated;
 }
 
 export async function resolveOrCreateContentTarget(

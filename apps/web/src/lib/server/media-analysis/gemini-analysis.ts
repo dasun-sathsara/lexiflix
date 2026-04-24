@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
+import { logger } from "@trigger.dev/sdk";
 
 import { env } from "@/lib/env";
 import {
@@ -321,6 +322,17 @@ function buildMockItems(input: AnalyzeWithGeminiInput) {
 
 async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
   const prompt = buildPrompt(input);
+
+  logger.info("[media-analysis:llm] sending live Gemini request", {
+    chunkIndex: input.chunkIndex + 1,
+    totalChunks: input.totalChunks,
+    model: env.ANALYSIS_LLM_MODEL,
+    promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
+    schemaVersion: MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
+    chunkCharacters: input.chunkText.length,
+    promptCharacters: prompt.length,
+  });
+
   const response = await geminiClient.models.generateContent({
     model: env.ANALYSIS_LLM_MODEL,
     contents: prompt,
@@ -332,6 +344,12 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
   });
 
   if (!response.text) {
+    logger.info("[media-analysis:llm] Gemini returned empty text", {
+      chunkIndex: input.chunkIndex + 1,
+      totalChunks: input.totalChunks,
+      model: env.ANALYSIS_LLM_MODEL,
+    });
+
     return analysisLlmResponseSchema.parse({ items: [] });
   }
 
@@ -344,6 +362,14 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
 
   const itemsArray = Array.isArray(parsedJson) ? parsedJson : [];
   const normalized = normalizeGeminiItems(itemsArray);
+
+  logger.info("[media-analysis:llm] Gemini response parsed", {
+    chunkIndex: input.chunkIndex + 1,
+    totalChunks: input.totalChunks,
+    rawItemCount: itemsArray.length,
+    normalizedItemCount: normalized.items.length,
+    warningCount: normalized.warnings.length,
+  });
 
   return analysisLlmResponseSchema.parse({
     items: normalized.items,
@@ -358,16 +384,42 @@ export async function analyzeChunkWithGemini(
   const warnings: string[] = [];
   let response = analysisLlmResponseSchema.parse({ items: [] });
 
+  logger.info("[media-analysis:llm] chunk started", {
+    chunkIndex: input.chunkIndex + 1,
+    totalChunks: input.totalChunks,
+    mode: executionMode,
+    model: env.ANALYSIS_LLM_MODEL,
+    requestFingerprint,
+    chunkCharacters: input.chunkText.length,
+  });
+
   if (executionMode === "mock") {
     response = analysisLlmResponseSchema.parse({ items: buildMockItems(input) });
+    logger.info("[media-analysis:llm] mock response generated", {
+      chunkIndex: input.chunkIndex + 1,
+      totalChunks: input.totalChunks,
+      itemCount: response.items.length,
+    });
   } else if (executionMode === "replay") {
     const recorded = await readRecordedResponse(requestFingerprint);
     response = recorded.response;
+    logger.info("[media-analysis:llm] replay response loaded", {
+      chunkIndex: input.chunkIndex + 1,
+      totalChunks: input.totalChunks,
+      itemCount: response.items.length,
+      requestFingerprint,
+    });
   } else {
     response = await runLiveGeminiAnalysis(input);
 
     if (executionMode === "record") {
       await writeRecordedResponse(requestFingerprint, response);
+      logger.info("[media-analysis:llm] response recorded", {
+        chunkIndex: input.chunkIndex + 1,
+        totalChunks: input.totalChunks,
+        itemCount: response.items.length,
+        requestFingerprint,
+      });
     }
   }
 
@@ -376,7 +428,7 @@ export async function analyzeChunkWithGemini(
     cefrNumeric: cefrNumericFromLevel(item.cefrLevel),
   }));
 
-  return {
+  const result = {
     executionMode,
     model: env.ANALYSIS_LLM_MODEL,
     promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
@@ -385,4 +437,15 @@ export async function analyzeChunkWithGemini(
     items: normalized,
     warnings,
   };
+
+  logger.info("[media-analysis:llm] chunk completed", {
+    chunkIndex: input.chunkIndex + 1,
+    totalChunks: input.totalChunks,
+    mode: executionMode,
+    itemCount: result.items.length,
+    warningCount: result.warnings.length,
+    requestFingerprint,
+  });
+
+  return result;
 }

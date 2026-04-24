@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
+import { logger } from "@trigger.dev/sdk";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import type {
@@ -164,18 +165,46 @@ export async function generateTextContent(input: {
   requestSnapshot: GenerationRequestSnapshot;
   capabilities: EffectiveGenerationCapabilities;
 }): Promise<GeneratedTextItem[]> {
+  logger.info("[content-generation:text] started", {
+    mode: input.capabilities.textMode,
+    model: input.capabilities.textModel,
+    itemCount: input.items.length,
+    packSize: input.requestSnapshot.packSize,
+    exampleSentenceCount: input.requestSnapshot.exampleSentenceCount,
+  });
+
   if (input.capabilities.textMode === "mock") {
-    return input.items.map((item) => buildMockItem(item, input.requestSnapshot));
+    const items = input.items.map((item) => buildMockItem(item, input.requestSnapshot));
+    logger.info("[content-generation:text] mock content generated", {
+      itemCount: items.length,
+      warningCount: items.reduce((count, item) => count + item.warnings.length, 0),
+    });
+    return items;
   }
 
   const fingerprint = requestFingerprint(input);
   if (input.capabilities.textMode === "replay") {
-    return readFixture(fingerprint);
+    logger.info("[content-generation:text] loading replay fixture", { fingerprint });
+    const items = await readFixture(fingerprint);
+    logger.info("[content-generation:text] replay fixture loaded", {
+      fingerprint,
+      itemCount: items.length,
+    });
+    return items;
   }
+
+  const prompt = buildPrompt(input);
+  logger.info("[content-generation:text] sending Gemini request", {
+    mode: input.capabilities.textMode,
+    model: input.capabilities.textModel,
+    fingerprint,
+    itemCount: input.items.length,
+    promptCharacters: prompt.length,
+  });
 
   const response = await geminiClient.models.generateContent({
     model: input.capabilities.textModel,
-    contents: buildPrompt(input),
+    contents: prompt,
     config: {
       responseMimeType: "application/json",
       responseSchema,
@@ -183,8 +212,21 @@ export async function generateTextContent(input: {
   });
 
   const parsed = generatedTextBatchSchema.parse(JSON.parse(response.text ?? "{}")).items;
+  logger.info("[content-generation:text] Gemini response parsed", {
+    mode: input.capabilities.textMode,
+    model: input.capabilities.textModel,
+    fingerprint,
+    itemCount: parsed.length,
+    warningCount: parsed.reduce((count, item) => count + item.warnings.length, 0),
+  });
+
   if (input.capabilities.textMode === "record") {
     await writeFixture(fingerprint, parsed);
+    logger.info("[content-generation:text] response recorded", {
+      fingerprint,
+      itemCount: parsed.length,
+    });
   }
+
   return parsed;
 }

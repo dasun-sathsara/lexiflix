@@ -1,5 +1,6 @@
 import "server-only";
 
+import { logger } from "@trigger.dev/sdk";
 import { and, eq } from "drizzle-orm";
 import SrtParser from "srt-parser-2";
 
@@ -41,7 +42,6 @@ import { recordContentAnalysisRunTransition } from "@/lib/server/media-analysis/
 
 type ContentRow = typeof content.$inferSelect;
 type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 type WorkflowRunContext = {
   run: ContentAnalysisRunRow;
@@ -105,7 +105,7 @@ const parser = new SrtParser();
 
 const MAX_SUBTITLE_SEARCH_PAGES = 3;
 const MAX_CONTEXTS_PER_ITEM = 5;
-const MAX_CHUNK_DURATION_SECONDS = 180;
+const MAX_CHUNK_DURATION_SECONDS = 1_800;
 const MIN_CHUNK_DURATION_SECONDS = 45;
 const MAX_CHUNK_CHARACTERS = 3_200;
 const LONG_GAP_SECONDS = 12;
@@ -688,8 +688,8 @@ function buildSummary(
   } satisfies ContentAnalysisSummary;
 }
 
-async function resolveVocabularyTerm(tx: DbTransaction, item: WorkflowAnalysisItem) {
-  const [existing] = await tx
+async function resolveVocabularyTerm(item: WorkflowAnalysisItem) {
+  const [existing] = await db
     .select()
     .from(vocabularyTerm)
     .where(
@@ -712,7 +712,7 @@ async function resolveVocabularyTerm(tx: DbTransaction, item: WorkflowAnalysisIt
   };
 
   if (existing) {
-    const [updated] = await tx
+    const [updated] = await db
       .update(vocabularyTerm)
       .set(values)
       .where(eq(vocabularyTerm.id, existing.id))
@@ -720,7 +720,7 @@ async function resolveVocabularyTerm(tx: DbTransaction, item: WorkflowAnalysisIt
     return updated;
   }
 
-  const [inserted] = await tx
+  const [inserted] = await db
     .insert(vocabularyTerm)
     .values({
       id: crypto.randomUUID(),
@@ -733,7 +733,7 @@ async function resolveVocabularyTerm(tx: DbTransaction, item: WorkflowAnalysisIt
     return inserted;
   }
 
-  const [collided] = await tx
+  const [collided] = await db
     .select()
     .from(vocabularyTerm)
     .where(
@@ -762,67 +762,65 @@ async function persistAnalysisOutput(input: {
 }) {
   const completedAt = new Date();
 
-  await db.transaction(async (tx) => {
-    await tx
-      .delete(contentAnalysisItem)
-      .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id));
+  await db
+    .delete(contentAnalysisItem)
+    .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id));
 
-    for (const item of input.items) {
-      const term = await resolveVocabularyTerm(tx, item);
+  for (const item of input.items) {
+    const term = await resolveVocabularyTerm(item);
 
-      await tx.insert(contentAnalysisItem).values({
-        id: crypto.randomUUID(),
-        analysisRunId: input.context.run.id,
-        contentId: input.context.content.id,
-        termId: term.id,
-        analysisSource: item.analysisSource,
-        surfaceForm: item.surfaceForm,
-        representativeContext: item.representativeContext,
-        contexts: item.contexts,
-        occurrenceCount: item.occurrenceCount,
-        frequencyRank: item.frequencyRank,
-        cefrLevel: item.cefrLevel,
-        cefrNumeric: item.cefrNumeric,
-        cefrConfidence: item.cefrConfidence,
-        cefrNote: item.cefrNote,
-        isSelectable: item.isSelectable,
-        filteredOutReason: item.filteredOutReason,
-        analyzedAt: completedAt,
-      });
-    }
-
-    const [updated] = await tx
-      .update(contentAnalysisRun)
-      .set({
-        status: "completed",
-        stage: "completed",
-        progressMessage: "Analysis completed.",
-        summary: input.summary,
-        warnings: input.warnings,
-        errorCode: null,
-        errorMessage: null,
-        completedAt,
-      })
-      .where(eq(contentAnalysisRun.id, input.context.run.id))
-      .returning();
-
-    if (!updated) {
-      throw new MediaAnalysisWorkflowError(
-        "PERSISTENCE_FAILED",
-        `Content analysis run ${input.context.run.id} disappeared during save.`,
-      );
-    }
-
-    await tx.insert(contentAnalysisRunEvent).values({
+    await db.insert(contentAnalysisItem).values({
       id: crypto.randomUUID(),
-      runId: input.context.run.id,
-      stage: "completed",
-      message: "Analysis completed.",
-      payload: {
-        itemCount: input.items.length,
-        warningCount: input.warnings.length,
-      },
+      analysisRunId: input.context.run.id,
+      contentId: input.context.content.id,
+      termId: term.id,
+      analysisSource: item.analysisSource,
+      surfaceForm: item.surfaceForm,
+      representativeContext: item.representativeContext,
+      contexts: item.contexts,
+      occurrenceCount: item.occurrenceCount,
+      frequencyRank: item.frequencyRank,
+      cefrLevel: item.cefrLevel,
+      cefrNumeric: item.cefrNumeric,
+      cefrConfidence: item.cefrConfidence,
+      cefrNote: item.cefrNote,
+      isSelectable: item.isSelectable,
+      filteredOutReason: item.filteredOutReason,
+      analyzedAt: completedAt,
     });
+  }
+
+  const [updated] = await db
+    .update(contentAnalysisRun)
+    .set({
+      status: "completed",
+      stage: "completed",
+      progressMessage: "Analysis completed.",
+      summary: input.summary,
+      warnings: input.warnings,
+      errorCode: null,
+      errorMessage: null,
+      completedAt,
+    })
+    .where(eq(contentAnalysisRun.id, input.context.run.id))
+    .returning();
+
+  if (!updated) {
+    throw new MediaAnalysisWorkflowError(
+      "PERSISTENCE_FAILED",
+      `Content analysis run ${input.context.run.id} disappeared during save.`,
+    );
+  }
+
+  await db.insert(contentAnalysisRunEvent).values({
+    id: crypto.randomUUID(),
+    runId: input.context.run.id,
+    stage: "completed",
+    message: "Analysis completed.",
+    payload: {
+      itemCount: input.items.length,
+      warningCount: input.warnings.length,
+    },
   });
 }
 
@@ -871,6 +869,15 @@ async function transitionRun(input: {
   const stageStatus =
     input.stage === "completed" ? "completed" : input.stage === "failed" ? "failed" : "running";
 
+  logger.info(`[media-analysis] ${input.stage}`, {
+    runId: input.runId,
+    status: stageStatus,
+    message: input.message,
+    progressMessage: input.progressMessage,
+    warningCount: input.warnings?.length ?? 0,
+    ...input.payload,
+  });
+
   await recordContentAnalysisRunTransition({
     runId: input.runId,
     status: stageStatus,
@@ -889,9 +896,25 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
   let context: WorkflowRunContext | null = null;
 
   try {
+    logger.info("[media-analysis] starting workflow", { runId });
+
     context = await getRunContext(runId);
 
+    logger.info("[media-analysis] resolved run context", {
+      runId,
+      contentId: context.content.id,
+      contentKind: context.content.kind,
+      title: context.content.title,
+      status: context.run.status,
+      stage: context.run.stage,
+    });
+
     if (context.run.status === "completed" && context.run.stage === "completed") {
+      logger.info("[media-analysis] run already completed", {
+        runId: context.run.id,
+        contentId: context.content.id,
+      });
+
       return {
         runId: context.run.id,
         contentId: context.content.id,
@@ -914,6 +937,15 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     const plainTextCorpus = buildPlainTextCorpus(subtitleCorpus.lines);
     const chunks = buildSubtitleChunks(subtitleCorpus.lines);
 
+    logger.info("[media-analysis] subtitles ready", {
+      runId,
+      subtitleLineCount: subtitleCorpus.lines.length,
+      subtitleSourceCount: subtitleCorpus.sourceCount,
+      warningCount: subtitleCorpus.warnings.length,
+      plainTextCharacters: plainTextCorpus.length,
+      chunkCount: chunks.length,
+    });
+
     await transitionRun({
       runId,
       stage: "running_nlp",
@@ -926,6 +958,12 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       warnings: subtitleCorpus.warnings,
     });
 
+    logger.info("[media-analysis] calling NLP service", {
+      runId,
+      plainTextCharacters: plainTextCorpus.length,
+      requestTimeoutMs: Number(process.env.NLP_SERVICE_REQUEST_TIMEOUT_MS ?? 60_000),
+    });
+
     const nlpResponse = await analyzeWithNlpService({
       job_id: runId,
       content: plainTextCorpus,
@@ -936,6 +974,13 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         dedup_lines: true,
         batch_size: 200,
       },
+    });
+
+    logger.info("[media-analysis] NLP service completed", {
+      runId,
+      candidateCount: nlpResponse.candidates.length,
+      warningCount: nlpResponse.warnings.length,
+      pipelineVersion: nlpResponse.metadata.pipeline_version,
     });
 
     await transitionRun({
@@ -952,6 +997,14 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     const llmResponses: Array<Awaited<ReturnType<typeof analyzeChunkWithGemini>>> = [];
 
     for (const chunk of chunks) {
+      logger.info("[media-analysis] analyzing subtitle chunk", {
+        runId,
+        chunkIndex: chunk.chunkIndex + 1,
+        totalChunks: chunks.length,
+        lineCount: chunk.lineCount,
+        characters: chunk.text.length,
+      });
+
       llmResponses.push(
         await analyzeChunkWithGemini({
           chunkText: chunk.text,
@@ -960,6 +1013,12 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         }),
       );
     }
+
+    logger.info("[media-analysis] phrase analysis completed", {
+      runId,
+      chunkCount: llmResponses.length,
+      warningCount: llmResponses.reduce((count, response) => count + response.warnings.length, 0),
+    });
 
     await transitionRun({
       runId,
@@ -976,6 +1035,14 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     const merged = mergeAnalysisItems(nlpResponse, llmResponses);
     const summary = buildSummary(subtitleCorpus.lines, nlpResponse, merged.items);
     const warnings = [...subtitleCorpus.warnings, ...merged.warnings];
+
+    logger.info("[media-analysis] merged analysis", {
+      runId,
+      itemCount: merged.items.length,
+      warningCount: warnings.length,
+      selectableItemCount: summary.selectableItemCount,
+      totalWordCount: summary.totalWordCount,
+    });
 
     await transitionRun({
       runId,
@@ -995,6 +1062,13 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       summary,
     });
 
+    logger.info("[media-analysis] workflow completed", {
+      runId: context.run.id,
+      contentId: context.content.id,
+      itemCount: merged.items.length,
+      warningCount: warnings.length,
+    });
+
     return {
       runId: context.run.id,
       contentId: context.content.id,
@@ -1005,6 +1079,14 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     };
   } catch (error) {
     const failure = classifyWorkflowError(error);
+
+    logger.error("[media-analysis] workflow failed", {
+      runId,
+      contentId: context?.content.id,
+      code: failure.code,
+      message: failure.message,
+      details: failure.details,
+    });
 
     if (context) {
       await recordContentAnalysisRunTransition({
