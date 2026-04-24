@@ -39,7 +39,8 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv sync --frozen --no-dev --no-install-project
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
-    uv run python -m spacy download "${SPACY_MODEL}"
+    uv pip install pip \
+    && uv run python -m spacy download "${SPACY_MODEL}"
 
 COPY app ./app
 COPY main.py ./main.py
