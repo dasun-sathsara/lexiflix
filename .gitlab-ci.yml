@@ -22,7 +22,8 @@ nlp_service_image:
   before_script:
     - docker info
     - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
-    - docker buildx create --use --name lexiflix-builder
+    - docker context create lexiflix-dind
+    - docker buildx create lexiflix-dind --use --name lexiflix-builder
   script:
     - |
       set -eu
