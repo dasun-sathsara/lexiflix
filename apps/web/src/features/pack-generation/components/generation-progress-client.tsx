@@ -1,8 +1,9 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
+import { AppNotice } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,13 +25,6 @@ function formatDate(value: string | null) {
     : "Not recorded";
 }
 
-function statusIcon(status: PackGenerationProgressView["status"]) {
-  if (status === "completed") return CheckCircle2;
-  if (status === "failed" || status === "cancelled") return XCircle;
-  if (status === "running") return Loader2;
-  return Clock;
-}
-
 export function GenerationProgressClient({
   initialGeneration,
 }: {
@@ -40,7 +34,6 @@ export function GenerationProgressClient({
   const [isPending, startTransition] = useTransition();
   const status = getGenerationStatusCopy(generation.status);
   const isActive = isGenerationActive(generation.status);
-  const StatusIcon = statusIcon(generation.status);
 
   useEffect(() => {
     if (!isActive) return;
@@ -105,37 +98,27 @@ export function GenerationProgressClient({
           </div>
         </CardHeader>
         <CardContent className="space-y-5 p-6">
-          <div
-            className={cn(
-              "flex items-start gap-3 rounded-lg border p-4",
+          <AppNotice
+            tone={
               generation.status === "failed"
-                ? "border-rose-200 bg-rose-500/10 text-rose-800 dark:border-rose-500/20 dark:text-rose-200"
+                ? "error"
                 : generation.status === "completed"
-                  ? "border-emerald-200 bg-emerald-500/10 text-emerald-800 dark:border-emerald-500/20 dark:text-emerald-200"
-                  : "bg-card",
-            )}
+                  ? "success"
+                  : "info"
+            }
+            title={getGenerationStatusMessage(generation)}
           >
-            <StatusIcon className={cn("mt-0.5 size-5", isActive && "animate-spin")} />
-            <div className="space-y-1">
-              <p className="font-medium">{getGenerationStatusMessage(generation)}</p>
-              {generation.errorMessage ? (
-                <p className="text-sm">{generation.errorMessage}</p>
-              ) : null}
-            </div>
-          </div>
+            {generation.errorMessage ? generation.errorMessage : null}
+          </AppNotice>
 
           {generation.warnings.length > 0 ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-500/10 p-4 text-sm text-amber-900 dark:border-amber-500/20 dark:text-amber-100">
-              <div className="mb-2 flex items-center gap-2 font-medium">
-                <AlertTriangle className="size-4" />
-                Warnings
-              </div>
+            <AppNotice tone="warning" title="Warnings">
               <ul className="space-y-1">
                 {generation.warnings.slice(0, 4).map((warning) => (
                   <li key={warning}>{warning}</li>
                 ))}
               </ul>
-            </div>
+            </AppNotice>
           ) : null}
 
           <div className="grid gap-3 md:grid-cols-3">

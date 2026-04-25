@@ -38,6 +38,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { removePackItemsAction, resetPackProgressAction } from "@/features/packs/server/actions";
 import type { PackCardView, PackStagingView } from "@/features/packs/types";
 import { cn } from "@/lib/utils";
@@ -460,17 +461,25 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
 
                         {!isSelectionMode ? (
                           <div className="flex shrink-0 items-start gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-muted-foreground hover:text-foreground"
-                              asChild
-                            >
-                              <Link href={`/study/${pack.id}?card=${item.id}`}>
-                                <Eye className="size-4" />
-                                <span className="sr-only">Preview</span>
-                              </Link>
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-foreground"
+                                  asChild
+                                >
+                                  <Link
+                                    href={`/study/${pack.id}?card=${item.id}`}
+                                    aria-label={`Preview ${item.displayText}`}
+                                  >
+                                    <Eye className="size-4" />
+                                    <span className="sr-only">Preview {item.displayText}</span>
+                                  </Link>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Preview card</TooltipContent>
+                            </Tooltip>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -478,9 +487,11 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                                   size="icon"
                                   className="size-8 text-muted-foreground hover:text-destructive"
                                   disabled={pendingAction}
+                                  aria-label={`Remove ${item.displayText}`}
+                                  title="Remove card"
                                 >
                                   <Trash2 className="size-4" />
-                                  <span className="sr-only">Remove</span>
+                                  <span className="sr-only">Remove {item.displayText}</span>
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -526,12 +537,19 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full gap-2" size="lg" asChild disabled={cardsToStudy === 0}>
-                <Link href={`/study/${pack.id}`}>
+              {cardsToStudy > 0 ? (
+                <Button className="w-full gap-2" size="lg" asChild>
+                  <Link href={`/study/${pack.id}`}>
+                    <Play className="size-4" />
+                    Start Learning
+                  </Link>
+                </Button>
+              ) : (
+                <Button className="w-full gap-2" size="lg" disabled>
                   <Play className="size-4" />
                   Start Learning
-                </Link>
-              </Button>
+                </Button>
+              )}
 
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
@@ -540,18 +558,19 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                     Decks
                   </Link>
                 </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 gap-1.5"
-                  size="sm"
-                  asChild
-                  disabled={!pack.media.mediaInfoHref}
-                >
-                  <Link href={pack.media.mediaInfoHref ?? "/decks"}>
+                {pack.media.mediaInfoHref ? (
+                  <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
+                    <Link href={pack.media.mediaInfoHref}>
+                      <BookOpen className="size-3.5" />
+                      Media Info
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="flex-1 gap-1.5" size="sm" disabled>
                     <BookOpen className="size-3.5" />
                     Media Info
-                  </Link>
-                </Button>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

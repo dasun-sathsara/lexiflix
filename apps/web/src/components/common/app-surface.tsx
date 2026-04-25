@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -93,8 +94,8 @@ export function AppEmptyState({
 }) {
   return (
     <Card className={cn("border-dashed bg-card/70", className)}>
-      <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+      <CardContent className="flex flex-col items-center gap-3 px-4 py-8 text-center sm:py-10">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
           <Icon className="size-5" />
         </div>
         <div className="flex max-w-sm flex-col gap-1.5">
@@ -104,6 +105,52 @@ export function AppEmptyState({
         {action}
       </CardContent>
     </Card>
+  );
+}
+
+export function AppNotice({
+  tone,
+  title,
+  children,
+  className,
+}: {
+  tone: "info" | "success" | "warning" | "error";
+  title: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  const toneStyles = {
+    info: "border-blue-200/70 bg-blue-500/10 text-blue-900 dark:border-blue-500/20 dark:text-blue-100",
+    success:
+      "border-emerald-200/70 bg-emerald-500/10 text-emerald-900 dark:border-emerald-500/20 dark:text-emerald-100",
+    warning:
+      "border-amber-200/70 bg-amber-500/10 text-amber-900 dark:border-amber-500/20 dark:text-amber-100",
+    error:
+      "border-rose-200/70 bg-rose-500/10 text-rose-900 dark:border-rose-500/20 dark:text-rose-100",
+  };
+  const icons = {
+    info: Info,
+    success: CheckCircle2,
+    warning: AlertTriangle,
+    error: XCircle,
+  };
+  const Icon = icons[tone];
+
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-lg border p-4 text-sm",
+        toneStyles[tone],
+        className,
+      )}
+      role={tone === "error" || tone === "warning" ? "alert" : "status"}
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <div className="min-w-0 space-y-1">
+        <p className="font-medium">{title}</p>
+        {children ? <div className="leading-6 opacity-90">{children}</div> : null}
+      </div>
+    </div>
   );
 }
 
