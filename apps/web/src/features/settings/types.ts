@@ -31,3 +31,18 @@ export type UpdateSettingsPreferencesActionResult =
       success: false;
       message: string;
     };
+
+export type UpdateProfileActionResult =
+  | {
+      ok: true;
+      data: {
+        user: {
+          name: string;
+          image: string | null;
+        };
+      };
+    }
+  | {
+      ok: false;
+      error: string;
+    };

@@ -64,6 +64,7 @@ import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
 import {
   changePasswordAction,
   deleteAccountAction,
+  updateProfileAction,
   updateSettingsPreferencesAction,
 } from "@/features/settings/actions";
 import type { SettingsPreferences } from "@/features/settings/types";
@@ -324,21 +325,16 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
     startSavingProfile(async () => {
       try {
-        const response = await fetch("/api/settings/profile", {
-          method: "POST",
-          body: formData,
-        });
-        const payload = await response.json();
+        const result = await updateProfileAction(formData);
 
-        if (!response.ok || !payload.success) {
-          const message = payload.error || "Failed to update profile.";
-          setProfileStatus({ type: "error", message });
-          toast.error(message);
+        if (!result.ok) {
+          setProfileStatus({ type: "error", message: result.error });
+          toast.error(result.error);
           return;
         }
 
-        const nextName: string = payload.user?.name ?? trimmedDisplayName;
-        const nextImage: string | null = payload.user?.image ?? null;
+        const nextName = result.data.user.name;
+        const nextImage = result.data.user.image;
 
         setInitialProfile({
           name: nextName,

@@ -14,12 +14,16 @@ import {
   STUDY_VOCABULARY_TYPES,
   settingsPreferenceDefaults,
 } from "@/features/settings/server/preferences";
-import type { UpdateSettingsPreferencesActionResult } from "@/features/settings/types";
+import type {
+  UpdateProfileActionResult,
+  UpdateSettingsPreferencesActionResult,
+} from "@/features/settings/types";
 import { auth } from "@/lib/auth";
 import { requireSession } from "@/lib/auth-guards";
 import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
+import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/storage/r2";
 
 type ActionResponse =
   | {
@@ -29,6 +33,17 @@ type ActionResponse =
       success: false;
       message: string;
     };
+
+type UpdateUserBody = Parameters<typeof auth.api.updateUser>[0]["body"];
+
+const profileSchema = z.object({
+  name: z
+    .string({ message: "Display name is required." })
+    .trim()
+    .min(2, "Use at least 2 characters for your display name.")
+    .max(80, "Display name must be 80 characters or fewer."),
+  removeAvatar: z.boolean().optional(),
+});
 
 const updateSettingsPreferencesSchema = z.object({
   manualOverrideLevel: z.enum(CEFR_LEVELS).nullable(),
@@ -48,6 +63,117 @@ const updateSettingsPreferencesSchema = z.object({
   emailRemindersEnabled: z.boolean(),
   streakAlertsEnabled: z.boolean(),
 });
+
+export async function updateProfileAction(formData: FormData): Promise<UpdateProfileActionResult> {
+  const session = await requireSession();
+  const requestHeaders = await headers();
+  const rawName = formData.get("name");
+  const removeAvatarRaw = formData.get("removeAvatar");
+  const avatarEntry = formData.get("avatar");
+
+  const parsed = profileSchema.safeParse({
+    name: typeof rawName === "string" ? rawName : "",
+    removeAvatar: typeof removeAvatarRaw === "string" ? removeAvatarRaw === "true" : undefined,
+  });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid input.",
+    };
+  }
+
+  const { name, removeAvatar } = parsed.data;
+  const currentUser = session.user;
+  const updates: { name?: string; image?: string | null } = {};
+
+  if (name !== currentUser.name) {
+    updates.name = name;
+  }
+
+  const avatarFile = avatarEntry instanceof File && avatarEntry.size > 0 ? avatarEntry : null;
+  let uploadedKey: string | null = null;
+  let oldKey: string | null = null;
+
+  if (avatarFile) {
+    try {
+      const result = await uploadUserAvatar({
+        userId: currentUser.id,
+        file: avatarFile,
+      });
+      uploadedKey = result.key;
+      updates.image = result.url;
+      oldKey = getKeyFromUrl(currentUser.image ?? null);
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to upload profile photo.",
+      };
+    }
+  } else if (removeAvatar && currentUser.image) {
+    updates.image = null;
+    oldKey = getKeyFromUrl(currentUser.image);
+  }
+
+  if (!Object.keys(updates).length) {
+    return {
+      ok: true,
+      data: {
+        user: {
+          name: currentUser.name,
+          image: currentUser.image ?? null,
+        },
+      },
+    };
+  }
+
+  try {
+    await auth.api.updateUser({
+      body: updates as UpdateUserBody,
+      headers: requestHeaders,
+    });
+
+    if (oldKey) {
+      await deleteObjectByKey(oldKey).catch((error) => {
+        console.error("Failed to delete previous avatar", { error, oldKey });
+      });
+    }
+
+    revalidatePath("/settings");
+
+    return {
+      ok: true,
+      data: {
+        user: {
+          name: updates.name ?? currentUser.name,
+          image: updates.image === undefined ? (currentUser.image ?? null) : updates.image,
+        },
+      },
+    };
+  } catch (error) {
+    if (uploadedKey) {
+      await deleteObjectByKey(uploadedKey).catch((cleanupError) => {
+        console.error("Failed to clean up uploaded avatar after error", {
+          error: cleanupError,
+          uploadedKey,
+        });
+      });
+    }
+
+    if (error instanceof APIError) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+
+    console.error("Unexpected error updating profile", { error });
+    return {
+      ok: false,
+      error: "Failed to update profile.",
+    };
+  }
+}
 
 export async function updateSettingsPreferencesAction(
   input: z.input<typeof updateSettingsPreferencesSchema>,

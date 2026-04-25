@@ -33,6 +33,11 @@ export async function getSessionOrNull() {
   return syncAdminRoleIfNeeded(session);
 }
 
+export async function getSessionFromRequestHeaders(requestHeaders: Headers) {
+  const session = (await auth.api.getSession({ headers: requestHeaders })) as Session | null;
+  return syncAdminRoleIfNeeded(session);
+}
+
 export async function requireSession() {
   const session = await getSessionOrNull();
 

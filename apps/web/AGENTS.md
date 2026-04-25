@@ -105,6 +105,43 @@ That means:
 - do not reintroduce Celery/Redis assumptions into the web layer
 - do not scatter Gemini calls across route handlers; AI integration should stay behind internal adapters
 
+## Web Boundary Standards
+
+Use Server Actions for app-internal writes, preference changes, and app-owned mutation or polling flows. Route handlers are reserved for protocol boundaries, webhooks or provider callbacks, binary streaming, and file upload boundaries that cannot be cleanly represented as Server Actions. Any new route handler outside those cases needs a short code or docs justification that explains why a Server Action is not the right boundary.
+
+Current route-handler exceptions:
+
+- `app/api/auth/[...all]/route.ts` is an allowed Better Auth protocol route.
+- `app/api/pack-artifacts/[id]/route.ts` is an allowed binary streaming route for generated artifacts.
+
+Preferred feature shape for non-trivial product features:
+
+```text
+src/features/<feature>/
+  components/
+  server/
+    actions.ts
+    queries.ts
+  lib/
+  types.ts
+```
+
+`server/actions.ts` owns Server Actions and mutation boundaries. `server/queries.ts` owns read models and ownership-aware reads. `components/` owns feature UI. `lib/` owns pure feature logic, constants, engines, and type helpers. UI-only features do not need empty server folders, and `features/auth/actions.ts` remains an acceptable narrow auth exception.
+
+New normalized Server Actions should return:
+
+```ts
+type ActionResult<T = undefined> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+```
+
+Use `ok`, not `success`; use `error`, not `message`; put successful payloads under `data`; parse untrusted input with Zod at the action boundary; enforce session ownership or admin authorization before writes; and revalidate only the affected routes.
+
+Auth checks for app-owned surfaces should go through `src/lib/auth-guards.ts`: `getSessionOrNull()` for optional session reads, `requireSession()` for signed-in app routes and actions, and `requireAdmin()` for admin-only surfaces. Do not call `auth.api.getSession` directly from signed-in app routes. Route handlers that need request headers should use a shared auth helper instead of duplicating Better Auth calls.
+
+Route files under `src/app` should stay thin: parse params and search params, require session/admin access, call feature read-model functions, choose `notFound()` or redirects, and render feature components. Keep Drizzle query construction, domain state transitions, TMDB mapping, repeated authorization logic, and mock data out of route files unless there is a documented reason.
+
 ## Validation Expectations
 
 There is no established test suite here yet. Do not pretend Vitest, Playwright, or CI coverage exists unless you add it.
