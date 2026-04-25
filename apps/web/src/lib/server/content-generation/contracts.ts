@@ -9,6 +9,7 @@ import type {
 
 export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v1";
 export const CONTENT_GENERATION_TEXT_PROMPT_VERSION = "content-generation-text-v1";
+export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 
 export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const vocabularyKinds = ["word", "phrasal_verb", "idiom", "slang"] as const;
@@ -31,7 +32,8 @@ export const generationRequestSchema = z.object({
   customInstructions: z
     .string()
     .trim()
-    .max(1200)
+    .max(CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH)
+    .nullable()
     .optional()
     .transform((value) => value || null),
   forceRegenerate: z.boolean().default(false),

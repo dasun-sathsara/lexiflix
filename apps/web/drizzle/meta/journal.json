@@ -43,6 +43,13 @@
       "when": 1775497419408,
       "tag": "0005_curated_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777096931475,
+      "tag": "0006_elite_the_hand",
+      "breakpoints": true
     }
   ]
 }

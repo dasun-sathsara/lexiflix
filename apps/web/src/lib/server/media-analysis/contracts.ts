@@ -35,7 +35,7 @@ export type ContentAnalysisFailureCode = (typeof contentAnalysisFailureCodes)[nu
 export type ContentAnalysisStage = (typeof contentAnalysisStages)[number];
 
 export const MEDIA_ANALYSIS_NORMALIZATION_VERSION = "media-analysis-normalization-v1";
-export const MEDIA_ANALYSIS_CHUNKING_VERSION = "media-analysis-chunking-v1";
+export const MEDIA_ANALYSIS_CHUNKING_VERSION = "media-analysis-chunking-v3";
 export const MEDIA_ANALYSIS_NLP_PIPELINE_VERSION = "nlp-service-v1";
 export const MEDIA_ANALYSIS_LLM_PROMPT_VERSION = "media-analysis-phrases-v1";
 export const MEDIA_ANALYSIS_LLM_SCHEMA_VERSION = "media-analysis-phrases-schema-v1";

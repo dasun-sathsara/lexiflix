@@ -46,6 +46,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -58,9 +59,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
-import { changePasswordAction, deleteAccountAction } from "@/features/settings/actions";
+import {
+  changePasswordAction,
+  deleteAccountAction,
+  updateSettingsPreferencesAction,
+} from "@/features/settings/actions";
 import type { SettingsPreferences } from "@/features/settings/types";
+import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
 type StatusState = {
   type: "success" | "error";
@@ -81,6 +88,20 @@ type SettingsTab = "account" | "preferences";
 
 function toSettingsTab(value: string | null): SettingsTab {
   return value === "preferences" ? "preferences" : "account";
+}
+
+const vocabularyTypeLabels: Record<StoredVocabularyKind, string> = {
+  word: "Words",
+  phrasal_verb: "Phrasal verbs",
+  idiom: "Idioms",
+  slang: "Slang",
+};
+const STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = ["word", "phrasal_verb", "idiom", "slang"];
+const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
+
+function normalizeCustomInstructions(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function SettingsClient({ user, preferences }: SettingsClientProps) {
@@ -114,6 +135,25 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     preferences.manualOverrideLevel ?? "assessed",
   );
   const [dailyWordsGoal, setDailyWordsGoal] = useState(String(preferences.dailyWordsGoal));
+  const [frequencyPreference, setFrequencyPreference] = useState(preferences.frequencyPreference);
+  const [studyVocabularyTypes, setStudyVocabularyTypes] = useState<StoredVocabularyKind[]>(
+    preferences.studyVocabularyTypes,
+  );
+  const [generationPackSizeDefault, setGenerationPackSizeDefault] = useState(
+    String(preferences.generationPackSizeDefault),
+  );
+  const [generationCefrWindowMode, setGenerationCefrWindowMode] = useState(
+    preferences.generationCefrWindowMode,
+  );
+  const [generationKnownTermHandling, setGenerationKnownTermHandling] = useState(
+    preferences.generationKnownTermHandling,
+  );
+  const [generationExampleSentenceCount, setGenerationExampleSentenceCount] = useState(
+    String(preferences.generationExampleSentenceCount),
+  );
+  const [generationCustomInstructionsDefault, setGenerationCustomInstructionsDefault] = useState(
+    preferences.generationCustomInstructionsDefault ?? "",
+  );
   const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(
     preferences.emailRemindersEnabled,
   );
@@ -169,15 +209,45 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     Number.isInteger(parsedDailyWordsGoal) &&
     parsedDailyWordsGoal >= 1 &&
     parsedDailyWordsGoal <= 500;
+  const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
+  const generationPackSizeIsValid =
+    Number.isInteger(parsedGenerationPackSize) &&
+    parsedGenerationPackSize >= 1 &&
+    parsedGenerationPackSize <= 100;
+  const parsedGenerationExampleSentenceCount = Number.parseInt(generationExampleSentenceCount, 10);
+  const generationExampleSentenceCountIsValid =
+    parsedGenerationExampleSentenceCount === 1 ||
+    parsedGenerationExampleSentenceCount === 2 ||
+    parsedGenerationExampleSentenceCount === 3;
+  const normalizedCustomInstructions = normalizeCustomInstructions(
+    generationCustomInstructionsDefault,
+  );
+  const customInstructionsIsValid =
+    generationCustomInstructionsDefault.trim().length <= CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH;
+  const vocabularyTypesAreValid = studyVocabularyTypes.length > 0;
   const manualOverrideLevel: CefrLevel | null =
     manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
   const preferencesChanged =
     manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
     parsedDailyWordsGoal !== initialPreferences.dailyWordsGoal ||
+    frequencyPreference !== initialPreferences.frequencyPreference ||
+    [...studyVocabularyTypes].sort().join("|") !==
+      [...initialPreferences.studyVocabularyTypes].sort().join("|") ||
+    parsedGenerationPackSize !== initialPreferences.generationPackSizeDefault ||
+    generationCefrWindowMode !== initialPreferences.generationCefrWindowMode ||
+    generationKnownTermHandling !== initialPreferences.generationKnownTermHandling ||
+    parsedGenerationExampleSentenceCount !== initialPreferences.generationExampleSentenceCount ||
+    normalizedCustomInstructions !== initialPreferences.generationCustomInstructionsDefault ||
     emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
     streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
   const preferencesSubmitDisabled =
-    isSavingPreferences || !dailyWordsGoalIsValid || !preferencesChanged;
+    isSavingPreferences ||
+    !dailyWordsGoalIsValid ||
+    !generationPackSizeIsValid ||
+    !generationExampleSentenceCountIsValid ||
+    !customInstructionsIsValid ||
+    !vocabularyTypesAreValid ||
+    !preferencesChanged;
   const effectiveCefrLevel = manualOverrideLevel ?? initialPreferences.assessedLevel;
 
   const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -297,38 +367,45 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const handlePreferencesSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!dailyWordsGoalIsValid || preferencesSubmitDisabled) {
+    if (preferencesSubmitDisabled) {
       return;
     }
 
     startSavingPreferences(async () => {
       try {
-        const response = await fetch("/api/settings/preferences", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            manualOverrideLevel,
-            dailyWordsGoal: parsedDailyWordsGoal,
-            emailRemindersEnabled,
-            streakAlertsEnabled,
-          }),
+        const result = await updateSettingsPreferencesAction({
+          manualOverrideLevel,
+          dailyWordsGoal: parsedDailyWordsGoal,
+          frequencyPreference,
+          studyVocabularyTypes,
+          generationPackSizeDefault: parsedGenerationPackSize,
+          generationCefrWindowMode,
+          generationKnownTermHandling,
+          generationExampleSentenceCount: parsedGenerationExampleSentenceCount as 1 | 2 | 3,
+          generationCustomInstructionsDefault: normalizedCustomInstructions,
+          emailRemindersEnabled,
+          streakAlertsEnabled,
         });
 
-        const payload = await response.json();
-
-        if (!response.ok || !payload.success) {
-          const message = payload.error || "Failed to update preferences.";
-          setPreferencesStatus({ type: "error", message });
-          toast.error(message);
+        if (!result.success) {
+          setPreferencesStatus({ type: "error", message: result.message });
+          toast.error(result.message);
           return;
         }
 
-        const nextPreferences = payload.preferences as SettingsPreferences;
+        const nextPreferences = result.preferences;
         setInitialPreferences(nextPreferences);
         setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
         setDailyWordsGoal(String(nextPreferences.dailyWordsGoal));
+        setFrequencyPreference(nextPreferences.frequencyPreference);
+        setStudyVocabularyTypes(nextPreferences.studyVocabularyTypes);
+        setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
+        setGenerationCefrWindowMode(nextPreferences.generationCefrWindowMode);
+        setGenerationKnownTermHandling(nextPreferences.generationKnownTermHandling);
+        setGenerationExampleSentenceCount(String(nextPreferences.generationExampleSentenceCount));
+        setGenerationCustomInstructionsDefault(
+          nextPreferences.generationCustomInstructionsDefault ?? "",
+        );
         setEmailRemindersEnabled(nextPreferences.emailRemindersEnabled);
         setStreakAlertsEnabled(nextPreferences.streakAlertsEnabled);
         setPreferencesStatus({
@@ -403,6 +480,18 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
       toast.success("Account deleted");
       window.location.href = "/";
     });
+  };
+
+  const toggleVocabularyType = (kind: StoredVocabularyKind, checked: boolean) => {
+    setStudyVocabularyTypes((current) => {
+      if (checked) {
+        return current.includes(kind) ? current : [...current, kind];
+      }
+
+      const next = current.filter((value) => value !== kind);
+      return next.length > 0 ? next : current;
+    });
+    setPreferencesStatus(null);
   };
 
   const handleTabChange = (tab: string) => {
@@ -848,6 +937,178 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         Enter a whole number between 1 and 500.
                       </p>
                     ) : null}
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium">Generation defaults</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Used as the starting point when creating a pack from a media page.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="generation-pack-size">Pack size</Label>
+                        <Input
+                          id="generation-pack-size"
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={generationPackSizeDefault}
+                          onChange={(event) => {
+                            setGenerationPackSizeDefault(event.target.value);
+                            setPreferencesStatus(null);
+                          }}
+                        />
+                        {!generationPackSizeIsValid ? (
+                          <p className="text-xs text-destructive">
+                            Enter a whole number between 1 and 100.
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="generation-example-count">Example sentences</Label>
+                        <Select
+                          value={generationExampleSentenceCount}
+                          onValueChange={(value) => {
+                            setGenerationExampleSentenceCount(value);
+                            setPreferencesStatus(null);
+                          }}
+                        >
+                          <SelectTrigger id="generation-example-count" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 sentence</SelectItem>
+                            <SelectItem value="2">2 sentences</SelectItem>
+                            <SelectItem value="3">3 sentences</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="generation-cefr-window">CEFR window</Label>
+                        <Select
+                          value={generationCefrWindowMode}
+                          onValueChange={(value) => {
+                            setGenerationCefrWindowMode(
+                              value as SettingsPreferences["generationCefrWindowMode"],
+                            );
+                            setPreferencesStatus(null);
+                          }}
+                        >
+                          <SelectTrigger id="generation-cefr-window" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="same_level">Same level</SelectItem>
+                            <SelectItem value="one_level_above">One level above</SelectItem>
+                            <SelectItem value="all_levels_above">All levels above</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="generation-known-terms">Known terms</Label>
+                        <Select
+                          value={generationKnownTermHandling}
+                          onValueChange={(value) => {
+                            setGenerationKnownTermHandling(
+                              value as SettingsPreferences["generationKnownTermHandling"],
+                            );
+                            setPreferencesStatus(null);
+                          }}
+                        >
+                          <SelectTrigger id="generation-known-terms" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="exclude_known">Exclude known</SelectItem>
+                            <SelectItem value="downrank_known">Downrank known</SelectItem>
+                            <SelectItem value="include_known">Include known</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="frequency-preference">Frequency preference</Label>
+                        <Select
+                          value={frequencyPreference}
+                          onValueChange={(value) => {
+                            setFrequencyPreference(
+                              value as SettingsPreferences["frequencyPreference"],
+                            );
+                            setPreferencesStatus(null);
+                          }}
+                        >
+                          <SelectTrigger id="frequency-preference" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="balanced">Balanced</SelectItem>
+                            <SelectItem value="common_first">Common first</SelectItem>
+                            <SelectItem value="challenge_first">Challenge first</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Vocabulary types</Label>
+                        <div className="grid gap-2 rounded-lg border p-3">
+                          {STUDY_VOCABULARY_TYPES.map((kind) => (
+                            <label
+                              key={kind}
+                              htmlFor={`vocabulary-type-${kind}`}
+                              className="flex items-center gap-2 text-sm leading-none"
+                            >
+                              <Checkbox
+                                id={`vocabulary-type-${kind}`}
+                                checked={studyVocabularyTypes.includes(kind)}
+                                onCheckedChange={(checked) =>
+                                  toggleVocabularyType(kind, checked === true)
+                                }
+                              />
+                              {vocabularyTypeLabels[kind]}
+                            </label>
+                          ))}
+                        </div>
+                        {!vocabularyTypesAreValid ? (
+                          <p className="text-xs text-destructive">
+                            Select at least one vocabulary type.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="generation-custom-instructions">
+                        Default custom instructions
+                      </Label>
+                      <Textarea
+                        id="generation-custom-instructions"
+                        value={generationCustomInstructionsDefault}
+                        maxLength={CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH}
+                        onChange={(event) => {
+                          setGenerationCustomInstructionsDefault(event.target.value);
+                          setPreferencesStatus(null);
+                        }}
+                        placeholder="Optional guidance copied into each new generation request."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {generationCustomInstructionsDefault.trim().length}/
+                        {CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH} characters
+                      </p>
+                      {!customInstructionsIsValid ? (
+                        <p className="text-xs text-destructive">
+                          Custom instructions must stay under{" "}
+                          {CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH} characters.
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <Separator />

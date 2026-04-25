@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { getCefrProfile } from "@/features/assessment/server/profile";
@@ -11,15 +11,13 @@ import type {
   MediaDetailView,
   PackGenerationSnapshot,
 } from "@/features/media/types";
-import { db } from "@/lib/server/db";
 import {
-  contentAnalysisItem,
-  contentAnalysisRun,
-  pack,
-  packGenerationJob,
-  userPreferences,
-  vocabularyTerm,
-} from "@/lib/server/db/schema";
+  getLatestPackGenerationProgressForContent,
+  getPackGenerationProgressView,
+} from "@/features/pack-generation/server/queries";
+import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { db } from "@/lib/server/db";
+import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { computeMediaAnalysisPipelineFingerprint } from "@/lib/server/media-analysis/pipeline-fingerprint";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
@@ -166,56 +164,14 @@ async function getGenerationSnapshotForContent(input: {
   userId: string;
   contentId: string;
 }): Promise<PackGenerationSnapshot | null> {
-  const latest = await db.query.packGenerationJob.findFirst({
-    where: and(
-      eq(packGenerationJob.userId, input.userId),
-      eq(packGenerationJob.contentId, input.contentId),
-    ),
-    orderBy: desc(packGenerationJob.createdAt),
-  });
-  if (!latest) {
-    return null;
-  }
-
-  const generatedPack = await db.query.pack.findFirst({
-    where: and(eq(pack.userId, input.userId), eq(pack.sourceJobId, latest.id)),
-  });
-
-  return {
-    jobId: latest.id,
-    status: latest.status,
-    stage: latest.stage,
-    progressMessage: latest.progressMessage,
-    errorCode: latest.errorCode,
-    errorMessage: latest.errorMessage,
-    packId: generatedPack?.id ?? null,
-  };
+  return getLatestPackGenerationProgressForContent(input);
 }
 
 export async function getPackGenerationSnapshotByJobId(input: {
   userId: string;
   jobId: string;
 }): Promise<PackGenerationSnapshot | null> {
-  const latest = await db.query.packGenerationJob.findFirst({
-    where: and(eq(packGenerationJob.userId, input.userId), eq(packGenerationJob.id, input.jobId)),
-  });
-  if (!latest) {
-    return null;
-  }
-
-  const generatedPack = await db.query.pack.findFirst({
-    where: and(eq(pack.userId, input.userId), eq(pack.sourceJobId, latest.id)),
-  });
-
-  return {
-    jobId: latest.id,
-    status: latest.status,
-    stage: latest.stage,
-    progressMessage: latest.progressMessage,
-    errorCode: latest.errorCode,
-    errorMessage: latest.errorMessage,
-    packId: generatedPack?.id ?? null,
-  };
+  return getPackGenerationProgressView(input);
 }
 
 export async function getAnalysisSnapshotByRunId(
@@ -289,24 +245,17 @@ export async function getMediaDetailPageData(input: {
 }): Promise<MediaDetailPageData> {
   const resolved = await resolveTmdbDetail(input.tmdbId, input.mediaTypeHint);
   const learnerProfile = await getCefrProfile(input.userId);
-  const preferences = await db.query.userPreferences.findFirst({
-    where: eq(userPreferences.userId, input.userId),
-  });
+  const preferences = await getSettingsPreferences(input.userId);
   const learnerLevel = learnerProfile?.manualOverrideLevel ?? learnerProfile?.assessedLevel ?? null;
   const generationDefaults = {
     learnerCefrLevel: learnerLevel,
-    frequencyPreference: preferences?.frequencyPreference ?? "balanced",
-    selectedVocabularyTypes: preferences?.studyVocabularyTypes ?? [
-      "word",
-      "phrasal_verb",
-      "idiom",
-      "slang",
-    ],
-    cefrWindowMode: "same_level" as const,
-    packSize: 20,
-    knownTermHandling: "exclude_known" as const,
-    exampleSentenceCount: 1 as const,
-    customInstructions: null,
+    frequencyPreference: preferences.frequencyPreference,
+    selectedVocabularyTypes: preferences.studyVocabularyTypes,
+    cefrWindowMode: preferences.generationCefrWindowMode,
+    packSize: preferences.generationPackSizeDefault,
+    knownTermHandling: preferences.generationKnownTermHandling,
+    exampleSentenceCount: preferences.generationExampleSentenceCount,
+    customInstructions: preferences.generationCustomInstructionsDefault,
   };
 
   if (resolved.mediaType === "movie") {

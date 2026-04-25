@@ -418,11 +418,19 @@ function PackGenerationPanel({
             {generation.errorMessage}
           </div>
         ) : null}
-        {generation?.packId ? (
+        {generation?.packHref ? (
           <Button className="w-full gap-2" asChild>
-            <Link href={`/pack/${generation.packId}`}>
+            <Link href={generation.packHref}>
               <BookOpen className="size-4" />
               Open Pack
+            </Link>
+          </Button>
+        ) : null}
+        {generation ? (
+          <Button className="w-full gap-2" variant="outline" asChild>
+            <Link href={generation.progressHref}>
+              <Clock className="size-4" />
+              Open Progress
             </Link>
           </Button>
         ) : null}

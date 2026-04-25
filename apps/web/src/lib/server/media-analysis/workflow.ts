@@ -106,9 +106,7 @@ const parser = new SrtParser();
 const MAX_SUBTITLE_SEARCH_PAGES = 3;
 const MAX_CONTEXTS_PER_ITEM = 5;
 const MAX_CHUNK_DURATION_SECONDS = 1_800;
-const MIN_CHUNK_DURATION_SECONDS = 45;
-const MAX_CHUNK_CHARACTERS = 3_200;
-const LONG_GAP_SECONDS = 12;
+const MAX_CHUNK_CHARACTERS = 30_000;
 
 class MediaAnalysisWorkflowError extends Error {
   constructor(
@@ -461,20 +459,14 @@ function buildSubtitleChunks(lines: WorkflowSubtitleLine[]) {
   };
 
   for (const line of lines) {
-    const previous = currentLines[currentLines.length - 1];
     const nextChars = currentChars + line.text.length + 1;
     const nextDuration =
       currentLines.length === 0 ? 0 : line.endSeconds - currentLines[0].startSeconds;
-    const gap = previous ? line.startSeconds - previous.endSeconds : 0;
-    const shouldFlushForGap =
-      currentLines.length > 0 &&
-      gap >= LONG_GAP_SECONDS &&
-      nextDuration >= MIN_CHUNK_DURATION_SECONDS;
     const shouldFlushForSize =
       currentLines.length > 0 &&
       (nextDuration > MAX_CHUNK_DURATION_SECONDS || nextChars > MAX_CHUNK_CHARACTERS);
 
-    if (shouldFlushForGap || shouldFlushForSize) {
+    if (shouldFlushForSize) {
       flushCurrentChunk();
     }
 

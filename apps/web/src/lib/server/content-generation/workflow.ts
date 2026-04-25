@@ -2,6 +2,10 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import { and, eq } from "drizzle-orm";
+import {
+  createPackFailedNotification,
+  createPackReadyNotification,
+} from "@/features/notifications/server/queries";
 import { persistGeneratedArtifact } from "@/lib/server/content-generation/artifacts";
 import {
   fingerprintCapabilities,
@@ -21,7 +25,16 @@ import { generateSpeechArtifacts } from "@/lib/server/content-generation/provide
 import { generateTextContent } from "@/lib/server/content-generation/providers/text/gemini";
 import { selectGenerationItems } from "@/lib/server/content-generation/selection";
 import { db } from "@/lib/server/db";
-import { content, pack, packItem, packItemContent } from "@/lib/server/db/schema";
+import {
+  artifactObject,
+  content,
+  pack,
+  packGenerationJob,
+  packGenerationJobEvent,
+  packItem,
+  packItemContent,
+} from "@/lib/server/db/schema";
+import { deleteObjectByKey } from "@/lib/storage/r2";
 
 function textByAnalysisItem(items: GeneratedTextItem[]) {
   return new Map(items.map((item) => [item.analysisItemId, item]));
@@ -168,6 +181,8 @@ export async function runPackGenerationWorkflow(jobId: string) {
 
     const audioArtifacts = new Map<string, string>();
     const imageArtifacts = new Map<string, string>();
+    const uploadedObjectKeys: string[] = [];
+    const uploadedArtifactIds: string[] = [];
 
     for (const artifact of speechResult.artifacts) {
       try {
@@ -186,6 +201,8 @@ export async function runPackGenerationWorkflow(jobId: string) {
           artifact,
         });
         audioArtifacts.set(artifact.itemKey, row.id);
+        uploadedObjectKeys.push(row.objectKey);
+        uploadedArtifactIds.push(row.id);
       } catch (error) {
         logger.error("[content-generation] failed to persist audio artifact", {
           jobId,
@@ -213,6 +230,8 @@ export async function runPackGenerationWorkflow(jobId: string) {
           artifact,
         });
         imageArtifacts.set(artifact.itemKey, row.id);
+        uploadedObjectKeys.push(row.objectKey);
+        uploadedArtifactIds.push(row.id);
       } catch (error) {
         logger.error("[content-generation] failed to persist image artifact", {
           jobId,
@@ -241,17 +260,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
     const packId = crypto.randomUUID();
     const now = new Date();
 
-    const existingPack = await db.query.pack.findFirst({
-      where: and(eq(pack.userId, job.userId), eq(pack.contentId, job.contentId)),
-    });
-    if (existingPack) {
-      logger.info("[content-generation] replacing existing pack", {
-        jobId,
-        existingPackId: existingPack.id,
-      });
-      await db.delete(pack).where(eq(pack.id, existingPack.id));
-    }
-
     logger.info("[content-generation] creating pack", {
       jobId,
       packId,
@@ -259,68 +267,119 @@ export async function runPackGenerationWorkflow(jobId: string) {
       estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
     });
 
-    await db.insert(pack).values({
-      id: packId,
-      userId: job.userId,
-      contentId: job.contentId,
-      sourceJobId: job.id,
-      analysisRunId: job.analysisRunId ?? "",
-      status: "active",
-      name: `${contentRow?.title ?? "Generated"} vocabulary`,
-      learnerCefrLevelAtGeneration: job.requestSnapshot.learnerCefrLevel,
-      frequencyPreferenceAtGeneration: job.requestSnapshot.frequencyPreference,
-      selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
-      contentGenerationPipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
-      contentGenerationPromptVersion: CONTENT_GENERATION_TEXT_PROMPT_VERSION,
-      itemCount: selectedItems.length,
-      estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
-    });
+    try {
+      await db.transaction(async (tx) => {
+        const existingPack = await tx.query.pack.findFirst({
+          where: and(eq(pack.userId, job.userId), eq(pack.contentId, job.contentId)),
+        });
+        if (existingPack) {
+          logger.info("[content-generation] replacing existing pack", {
+            jobId,
+            existingPackId: existingPack.id,
+          });
+          await tx.delete(pack).where(eq(pack.id, existingPack.id));
+        }
 
-    for (const [index, item] of selectedItems.entries()) {
-      const packItemId = crypto.randomUUID();
-      const generated = textMap.get(item.analysisItemId);
-      if (!generated) {
-        throw new Error(`Missing generated text for ${item.displayText}.`);
-      }
+        await tx.insert(pack).values({
+          id: packId,
+          userId: job.userId,
+          contentId: job.contentId,
+          sourceJobId: job.id,
+          analysisRunId: job.analysisRunId ?? "",
+          status: "active",
+          name: `${contentRow?.title ?? "Generated"} vocabulary`,
+          learnerCefrLevelAtGeneration: job.requestSnapshot.learnerCefrLevel,
+          frequencyPreferenceAtGeneration: job.requestSnapshot.frequencyPreference,
+          selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
+          contentGenerationPipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
+          contentGenerationPromptVersion: CONTENT_GENERATION_TEXT_PROMPT_VERSION,
+          itemCount: selectedItems.length,
+          estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
+        });
 
-      logger.info("[content-generation] saving pack item", {
-        jobId,
-        packId,
-        packItemId,
-        sortOrder: index + 1,
-        analysisItemId: item.analysisItemId,
-        termId: item.termId,
-        displayText: item.displayText,
-        hasAudio: audioArtifacts.has(item.analysisItemId),
-        hasImage: imageArtifacts.has(item.analysisItemId),
-      });
+        for (const [index, item] of selectedItems.entries()) {
+          const packItemId = crypto.randomUUID();
+          const generated = textMap.get(item.analysisItemId);
+          if (!generated) {
+            throw new Error(`Missing generated text for ${item.displayText}.`);
+          }
 
-      await db.insert(packItem).values({
-        id: packItemId,
-        packId,
-        contentAnalysisItemId: item.analysisItemId,
-        termId: item.termId,
-        sortOrder: index + 1,
-        includedReason: item.includedReason,
-        dueAt: now,
+          logger.info("[content-generation] saving pack item", {
+            jobId,
+            packId,
+            packItemId,
+            sortOrder: index + 1,
+            analysisItemId: item.analysisItemId,
+            termId: item.termId,
+            displayText: item.displayText,
+            hasAudio: audioArtifacts.has(item.analysisItemId),
+            hasImage: imageArtifacts.has(item.analysisItemId),
+          });
+
+          await tx.insert(packItem).values({
+            id: packItemId,
+            packId,
+            contentAnalysisItemId: item.analysisItemId,
+            termId: item.termId,
+            sortOrder: index + 1,
+            includedReason: item.includedReason,
+            dueAt: now,
+          });
+          await tx.insert(packItemContent).values({
+            packItemId,
+            meaning: generated.meaning,
+            exampleSentences: generated.exampleSentences,
+            audioArtifactId: audioArtifacts.get(item.analysisItemId) ?? null,
+            imageArtifactId: imageArtifacts.get(item.analysisItemId) ?? null,
+            generatedAt: now,
+          });
+        }
+
+        await tx
+          .update(packGenerationJob)
+          .set({
+            status: "completed",
+            stage: "completed",
+            progressMessage: "Pack generation complete.",
+            completedAt: now,
+            updatedAt: now,
+          })
+          .where(eq(packGenerationJob.id, jobId));
+        await tx.insert(packGenerationJobEvent).values({
+          id: crypto.randomUUID(),
+          jobId,
+          stage: "completed",
+          message: "Pack generation complete.",
+          payload: { packId, warnings },
+        });
       });
-      await db.insert(packItemContent).values({
-        packItemId,
-        meaning: generated.meaning,
-        exampleSentences: generated.exampleSentences,
-        audioArtifactId: audioArtifacts.get(item.analysisItemId) ?? null,
-        imageArtifactId: imageArtifacts.get(item.analysisItemId) ?? null,
-        generatedAt: now,
-      });
+    } catch (error) {
+      await Promise.allSettled(uploadedObjectKeys.map((key) => deleteObjectByKey(key)));
+      await Promise.allSettled(
+        uploadedArtifactIds.map((id) => db.delete(artifactObject).where(eq(artifactObject.id, id))),
+      );
+      throw error;
     }
 
-    await transitionPackGenerationJob({
-      jobId,
-      status: "completed",
-      stage: "completed",
-      message: "Pack generation complete.",
-      payload: { packId, warnings },
-    });
+    try {
+      await createPackReadyNotification({
+        userId: job.userId,
+        jobId,
+        packId,
+        title: contentRow?.title ?? "Generated",
+      });
+    } catch (error) {
+      const warning =
+        error instanceof Error ? error.message : "Failed to create pack-ready notification.";
+      warnings.push(warning);
+      await transitionPackGenerationJob({
+        jobId,
+        status: "completed",
+        stage: "completed",
+        message: "Pack generation complete, but notification creation failed.",
+        payload: { packId, warnings },
+      });
+    }
 
     logger.info("[content-generation] workflow completed", {
       jobId,
@@ -346,6 +405,27 @@ export async function runPackGenerationWorkflow(jobId: string) {
       errorMessage: message,
       payload: { warnings },
     });
+    const failedJob = await getPackGenerationJobById(jobId);
+    const failedContent = failedJob
+      ? await db.query.content.findFirst({ where: eq(content.id, failedJob.contentId) })
+      : null;
+    if (failedJob) {
+      try {
+        await createPackFailedNotification({
+          userId: failedJob.userId,
+          jobId,
+          title: failedContent?.title ?? "Generated",
+        });
+      } catch (notificationError) {
+        logger.warn("[content-generation] failed to create failure notification", {
+          jobId,
+          message:
+            notificationError instanceof Error
+              ? notificationError.message
+              : String(notificationError),
+        });
+      }
+    }
     throw error;
   }
 }

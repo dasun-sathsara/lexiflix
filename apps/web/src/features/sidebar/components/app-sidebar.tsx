@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   Clapperboard,
   Film,
   Home,
@@ -10,22 +9,11 @@ import {
   Settings2,
   Shield,
   Sparkles,
-  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
-import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +31,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +62,6 @@ const platformItems: NavItem[] = [
     title: "My Decks",
     url: "/decks",
     icon: Sparkles,
-    badge: "4",
   },
 ];
 
@@ -92,63 +80,6 @@ const adminItems: NavItem[] = [
     icon: Shield,
   },
 ];
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  description: string;
-  createdAt: Date;
-  read: boolean;
-};
-
-function createInitialNotifications(): NotificationItem[] {
-  const now = Date.now();
-
-  return [
-    {
-      id: "lexiflix-orig",
-      title: "LexiFlix Original premieres tonight",
-      description: 'Catch the global debut of "Midnight in Neon City" at 8PM.',
-      createdAt: new Date(now - 1000 * 60 * 6),
-      read: false,
-    },
-    {
-      id: "watchlist-update",
-      title: "New episodes added to your watchlist",
-      description: 'Season 2 of "The Time Weavers" now streaming.',
-      createdAt: new Date(now - 1000 * 60 * 32),
-      read: false,
-    },
-    {
-      id: "recommendations",
-      title: "Three new picks just for you",
-      description: "Based on your recent thrillers binge.",
-      createdAt: new Date(now - 1000 * 60 * 60 * 5),
-      read: true,
-    },
-  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-}
-
-function formatRelativeTime(date: Date) {
-  const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) {
-    return `${diffInSeconds}s ago`;
-  }
-
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) {
-    return `${diffInMinutes} min${diffInMinutes === 1 ? "" : "s"} ago`;
-  }
-
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) {
-    return `${diffInHours} hr${diffInHours === 1 ? "" : "s"} ago`;
-  }
-
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
-}
 
 // Clean navigation menu component with proper active states
 function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
@@ -249,32 +180,7 @@ export function AppInset({ className, children }: React.ComponentProps<typeof Si
 
 // Simple, branded top bar that pairs with the inset layout
 export function AppTopbar({ title, right }: { title: string; right?: React.ReactNode }) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    createInitialNotifications(),
-  );
-
   const { state } = useSidebar();
-
-  const unreadCount = useMemo(
-    () => notifications.filter((notification) => !notification.read).length,
-    [notifications],
-  );
-
-  const handleMarkAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
-  }, []);
-
-  const handleMarkAsRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      ),
-    );
-  }, []);
-
-  const handleRemoveNotification = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id));
-  }, []);
 
   return (
     <header
@@ -298,98 +204,7 @@ export function AppTopbar({ title, right }: { title: string; right?: React.React
           <span className="text-sm font-medium tracking-tight">{title}</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                aria-label={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
-              >
-                <Bell className="size-[18px]" />
-                {unreadCount > 0 && (
-                  <span className="bg-destructive absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full">
-                    <span className="sr-only">Unread notifications</span>
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
-              <DropdownMenuLabel className="flex items-start justify-between gap-2 px-4 py-3 text-sm font-medium">
-                <div className="flex flex-col gap-0.5">
-                  <span>Notifications</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"}
-                  </span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    handleMarkAllAsRead();
-                  }}
-                  disabled={unreadCount === 0}
-                >
-                  Mark all as read
-                </Button>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-80 overflow-y-auto py-1">
-                {notifications.length === 0 ? (
-                  <div className="text-muted-foreground flex flex-col items-center gap-1 px-6 py-8 text-center text-sm">
-                    <p>No notifications yet.</p>
-                    <p className="text-xs">We'll keep you posted when something new arrives.</p>
-                  </div>
-                ) : (
-                  notifications.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      className={cn(
-                        "items-start gap-3 px-4 py-3",
-                        !notification.read && "bg-accent/10",
-                      )}
-                      onSelect={(event) => {
-                        event.preventDefault();
-                        handleMarkAsRead(notification.id);
-                      }}
-                    >
-                      <span
-                        className={cn(
-                          "mt-1 flex size-2.5 rounded-full",
-                          notification.read ? "bg-muted" : "bg-primary",
-                        )}
-                      />
-                      <div className="flex flex-1 flex-col gap-1 text-left">
-                        <p className="text-sm font-medium leading-none">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground">{notification.description}</p>
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelativeTime(notification.createdAt)}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="-mr-1 size-7 text-muted-foreground hover:text-foreground"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          handleRemoveNotification(notification.id);
-                        }}
-                        aria-label="Remove notification"
-                      >
-                        <X className="size-4" />
-                      </Button>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationBell />
           {right}
         </div>
       </div>

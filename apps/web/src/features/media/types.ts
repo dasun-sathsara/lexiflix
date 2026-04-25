@@ -1,3 +1,4 @@
+import type { PackGenerationProgressView } from "@/features/pack-generation/types";
 import type {
   ContentAnalysisSummary,
   GenerationCefrWindowMode,
@@ -106,22 +107,7 @@ export type AnalysisStatusActionResult =
       message: string;
     };
 
-export type PackGenerationSnapshot = {
-  jobId: string;
-  status: "queued" | "running" | "completed" | "failed" | "cancelled";
-  stage:
-    | "queued"
-    | "selecting_terms"
-    | "generating_content"
-    | "generating_assets"
-    | "saving_pack"
-    | "completed"
-    | "failed";
-  progressMessage: string | null;
-  errorCode: string | null;
-  errorMessage: string | null;
-  packId: string | null;
-};
+export type PackGenerationSnapshot = PackGenerationProgressView;
 
 export type StartPackGenerationInput = {
   tmdbId: number;

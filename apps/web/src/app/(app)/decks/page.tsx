@@ -18,6 +18,8 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { DeckGenerationJobsClient } from "@/features/pack-generation/components/deck-generation-jobs-client";
+import { listPackGenerationProgressForDecks } from "@/features/pack-generation/server/queries";
 import { getDeckSummariesForUser } from "@/features/packs/server/queries";
 import type { DeckSummary } from "@/features/packs/types";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
@@ -188,8 +190,14 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
 
 export default async function DecksPage() {
   const session = await requireSession();
-  const decks = await getDeckSummariesForUser({ userId: session.user.id });
+  const [decks, generationJobs] = await Promise.all([
+    getDeckSummariesForUser({ userId: session.user.id }),
+    listPackGenerationProgressForDecks({ userId: session.user.id }),
+  ]);
   const hasDecks = decks.length > 0;
+  const activeGenerationCount = generationJobs.filter(
+    (job) => job.status === "queued" || job.status === "running",
+  ).length;
   const stats = decks.reduce(
     (totals, deck) => {
       totals.totalDue += deck.counts.due;
@@ -239,6 +247,12 @@ export default async function DecksPage() {
                 <AppStat icon={Sparkles} label="New" value={stats.totalNew} tone="accent" />
                 <AppStat icon={BookOpen} label="Learning" value={stats.totalLearning} tone="warm" />
                 <AppStat
+                  icon={Sparkles}
+                  label="Generating"
+                  value={activeGenerationCount}
+                  tone="accent"
+                />
+                <AppStat
                   icon={Clock}
                   label="Est. Today"
                   value={`${stats.totalEstimatedMinutes}m`}
@@ -249,6 +263,8 @@ export default async function DecksPage() {
             }
           />
         </section>
+
+        <DeckGenerationJobsClient initialJobs={generationJobs} />
 
         {hasDecks ? (
           <div className="flex flex-col gap-3">

@@ -249,6 +249,13 @@ export const userPreferences = pgTable("user_preferences", {
     .array()
     .default(sql`ARRAY['word', 'phrasal_verb', 'idiom', 'slang']::vocabulary_kind[]`)
     .notNull(),
+  generationPackSizeDefault: integer("generation_pack_size_default").default(20).notNull(),
+  generationCefrWindowMode: text("generation_cefr_window_mode").default("same_level").notNull(),
+  generationKnownTermHandling: text("generation_known_term_handling")
+    .default("exclude_known")
+    .notNull(),
+  generationExampleSentenceCount: integer("generation_example_sentence_count").default(1).notNull(),
+  generationCustomInstructionsDefault: text("generation_custom_instructions_default"),
   emailRemindersEnabled: boolean("email_reminders_enabled").default(true).notNull(),
   streakAlertsEnabled: boolean("streak_alerts_enabled").default(true).notNull(),
   ...auditColumns,

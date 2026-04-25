@@ -16,6 +16,7 @@ import type {
   StartPackGenerationActionResult,
   StartPackGenerationInput,
 } from "@/features/media/types";
+import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import {
@@ -249,20 +250,19 @@ export async function startPackGenerationAction(
     };
   }
 
+  const preferences = await getSettingsPreferences(session.user.id);
   const requestSnapshot = generationRequestSchema.parse({
     learnerCefrLevel: parsed.request.learnerCefrLevel ?? null,
-    frequencyPreference: parsed.request.frequencyPreference ?? "balanced",
-    selectedVocabularyTypes: parsed.request.selectedVocabularyTypes ?? [
-      "word",
-      "phrasal_verb",
-      "idiom",
-      "slang",
-    ],
-    cefrWindowMode: parsed.request.cefrWindowMode ?? "same_level",
-    packSize: parsed.request.packSize ?? 20,
-    knownTermHandling: parsed.request.knownTermHandling ?? "exclude_known",
-    exampleSentenceCount: parsed.request.exampleSentenceCount ?? 1,
-    customInstructions: parsed.request.customInstructions ?? null,
+    frequencyPreference: parsed.request.frequencyPreference ?? preferences.frequencyPreference,
+    selectedVocabularyTypes:
+      parsed.request.selectedVocabularyTypes ?? preferences.studyVocabularyTypes,
+    cefrWindowMode: parsed.request.cefrWindowMode ?? preferences.generationCefrWindowMode,
+    packSize: parsed.request.packSize ?? preferences.generationPackSizeDefault,
+    knownTermHandling: parsed.request.knownTermHandling ?? preferences.generationKnownTermHandling,
+    exampleSentenceCount:
+      parsed.request.exampleSentenceCount ?? preferences.generationExampleSentenceCount,
+    customInstructions:
+      parsed.request.customInstructions ?? preferences.generationCustomInstructionsDefault,
     forceRegenerate: parsed.request.forceRegenerate ?? false,
   });
 
