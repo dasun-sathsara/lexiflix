@@ -24,7 +24,7 @@ export default async function GenerationProgressPage({
 
   return (
     <>
-      <AppTopbar title="Generation" />
+      <AppTopbar title="Generation Jobs" />
       <AppPageShell>
         <AppPageHeader
           eyebrow="Pack generation"

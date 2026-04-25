@@ -121,7 +121,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
               <Link href={`/pack/${session.packId}`}>Back to pack</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/decks">My decks</Link>
+              <Link href="/decks">Decks</Link>
             </Button>
           </div>
         </div>
@@ -148,7 +148,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
               <Link href={`/pack/${session.packId}`}>Back to pack</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/decks">My decks</Link>
+              <Link href="/decks">Decks</Link>
             </Button>
           </div>
         </div>

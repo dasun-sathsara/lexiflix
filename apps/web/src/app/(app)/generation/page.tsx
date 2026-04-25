@@ -21,10 +21,10 @@ export default async function GenerationStatusPage() {
 
   return (
     <>
-      <AppTopbar title="Generation Status" />
+      <AppTopbar title="Generation Jobs" />
       <AppPageShell>
         <AppPageHeader
-          heading="Generation Status"
+          heading="Generation Jobs"
           description="Track active and recent pack-generation jobs without mixing them into your study decks."
           stats={
             <>

@@ -208,12 +208,12 @@ export default async function DecksPage() {
 
   return (
     <>
-      <AppTopbar title="My Decks" />
+      <AppTopbar title="Decks" />
 
       <AppPageShell>
         <section className="flex flex-col gap-4">
           <AppPageHeader
-            heading="My Decks"
+            heading="Decks"
             actions={
               <>
                 <Button variant="outline" size="lg" asChild>

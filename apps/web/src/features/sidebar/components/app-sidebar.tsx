@@ -4,7 +4,7 @@ import {
   CirclePlay,
   Clapperboard,
   Film,
-  Home,
+  LayoutDashboard,
   type LucideIcon,
   Search,
   Settings2,
@@ -45,9 +45,9 @@ type NavItem = {
 
 const platformItems: NavItem[] = [
   {
-    title: "Home",
+    title: "Dashboard",
     url: "/dashboard",
-    icon: Home,
+    icon: LayoutDashboard,
   },
   {
     title: "Browse",
@@ -60,12 +60,12 @@ const platformItems: NavItem[] = [
     icon: Film,
   },
   {
-    title: "My Decks",
+    title: "Decks",
     url: "/decks",
     icon: Sparkles,
   },
   {
-    title: "Generation",
+    title: "Generation Jobs",
     url: "/generation",
     icon: CirclePlay,
   },

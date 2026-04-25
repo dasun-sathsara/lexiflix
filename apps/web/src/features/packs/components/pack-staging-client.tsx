@@ -537,7 +537,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
                   <Link href="/decks">
                     <Layers className="size-3.5" />
-                    All Decks
+                    Decks
                   </Link>
                 </Button>
                 <Button
