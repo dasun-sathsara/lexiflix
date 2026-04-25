@@ -219,8 +219,8 @@ export async function ratePackItemAction(input: {
     reviewedAt,
   });
 
-  await db.batch([
-    db.insert(reviewEvent).values({
+  await db.transaction(async (tx) => {
+    await tx.insert(reviewEvent).values({
       id: crypto.randomUUID(),
       userId: session.user.id,
       packItemId: item.id,
@@ -228,8 +228,8 @@ export async function ratePackItemAction(input: {
       rating: input.rating,
       reviewedAt,
       responseTimeMs: input.responseTimeMs ?? null,
-    }),
-    db
+    });
+    await tx
       .update(packItem)
       .set({
         state: next.state,
@@ -244,8 +244,8 @@ export async function ratePackItemAction(input: {
         masteredAt: next.masteredAt,
         updatedAt: reviewedAt,
       })
-      .where(eq(packItem.id, item.id)),
-    db
+      .where(eq(packItem.id, item.id));
+    await tx
       .insert(userTermState)
       .values({
         userId: session.user.id,
@@ -279,8 +279,8 @@ export async function ratePackItemAction(input: {
             : userTermState.knownAt,
           updatedAt: reviewedAt,
         },
-      }),
-    db
+      });
+    await tx
       .insert(userStreak)
       .values({
         userId: session.user.id,
@@ -300,9 +300,9 @@ export async function ratePackItemAction(input: {
             nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
           updatedAt: reviewedAt,
         },
-      }),
-    db.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId)),
-  ]);
+      });
+    await tx.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId));
+  });
 
   const nextDueRows = await db
     .select({ dueAt: packItem.dueAt })
