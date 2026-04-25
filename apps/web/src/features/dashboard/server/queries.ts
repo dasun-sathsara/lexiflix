@@ -18,7 +18,7 @@ import {
   userStreak,
   userTermState,
 } from "@/lib/server/db/schema";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 export type DashboardPackSummary = {
   id: string;
@@ -59,10 +59,6 @@ export type DashboardView = {
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
-}
-
-function buildPosterUrl(path: string | null) {
-  return path ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.md}${path}` : null;
 }
 
 export async function getDashboardView({ userId }: { userId: string }): Promise<DashboardView> {
@@ -166,7 +162,7 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
         id: packRow.id,
         title: contentRow.title,
         kind: (contentRow.kind === "movie" ? "Movie" : "TV") as "Movie" | "TV",
-        posterUrl: buildPosterUrl(contentRow.posterPath),
+        posterUrl: buildTmdbImageUrl(contentRow.posterPath, TMDB_IMAGE_SIZES.poster.md),
         masteredCount,
         totalCount,
         dueCount,

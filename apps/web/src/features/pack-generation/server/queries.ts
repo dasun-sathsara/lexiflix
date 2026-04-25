@@ -1,10 +1,11 @@
 import "server-only";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { buildContentMediaHref } from "@/features/media/lib/content-media";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { content, pack, packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import type {
   PackGenerationProgressEvent,
   PackGenerationProgressView,
@@ -19,20 +20,6 @@ function toIso(value: Date | null | undefined) {
 
 function contentSubtitle(row: typeof content.$inferSelect) {
   return row.kind === "season" && row.tmdbSeasonNumber ? `Season ${row.tmdbSeasonNumber}` : null;
-}
-
-function contentMediaHref(row: typeof content.$inferSelect) {
-  if (row.kind === "movie" && row.tmdbMovieId) {
-    return `/media/${row.tmdbMovieId}?type=movie`;
-  }
-  if (row.kind === "season" && row.tmdbShowId && row.tmdbSeasonNumber) {
-    return `/media/${row.tmdbShowId}?type=tv&season=${row.tmdbSeasonNumber}`;
-  }
-  return null;
-}
-
-function buildTmdbImageUrl(path: string | null, size: string) {
-  return path ? `${IMAGE_BASE_URL}${size}${path}` : null;
 }
 
 function requestSummary(
@@ -104,7 +91,7 @@ async function mapJobView({
       title: contentRow.title,
       subtitle: contentSubtitle(contentRow),
       posterUrl: buildTmdbImageUrl(contentRow.posterPath, TMDB_IMAGE_SIZES.poster.md),
-      mediaHref: contentMediaHref(contentRow),
+      mediaHref: buildContentMediaHref(contentRow),
     },
     request: requestSummary(job.requestSnapshot),
     packId: generatedPack?.id ?? null,

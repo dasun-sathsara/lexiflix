@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, asc, desc, eq, isNull, ne, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { buildContentMediaHref } from "@/features/media/lib/content-media";
 import type {
   DeckSummary,
   PackCardCounts,
@@ -22,7 +23,7 @@ import {
   packItemContent,
   vocabularyTerm,
 } from "@/lib/server/db/schema";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { getEffectivePackCardState } from "./srs";
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
@@ -30,10 +31,6 @@ const imageArtifact = alias(artifactObject, "image_artifact");
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
-}
-
-function buildTmdbImageUrl(path: string | null, size: string) {
-  return path ? `${IMAGE_BASE_URL}${size}${path}` : null;
 }
 
 function releaseYear(value: Date | null) {
@@ -47,14 +44,6 @@ function buildMediaSummary(row: typeof content.$inferSelect): PackMediaSummary {
     : row.tmdbSeasonNumber
       ? `Season ${row.tmdbSeasonNumber}`
       : "Season";
-  const mediaInfoHref = isMovie
-    ? row.tmdbMovieId
-      ? `/media/${row.tmdbMovieId}?type=movie`
-      : null
-    : row.tmdbShowId
-      ? `/media/${row.tmdbShowId}?type=tv&season=${row.tmdbSeasonNumber ?? 1}`
-      : null;
-
   return {
     id: row.id,
     kind: row.kind as PackContentKind,
@@ -66,7 +55,7 @@ function buildMediaSummary(row: typeof content.$inferSelect): PackMediaSummary {
     releaseYear: releaseYear(row.releaseDate ?? row.firstAirDate),
     posterUrl: buildTmdbImageUrl(row.posterPath, TMDB_IMAGE_SIZES.poster.md),
     backdropUrl: buildTmdbImageUrl(row.backdropPath, TMDB_IMAGE_SIZES.backdrop.lg),
-    mediaInfoHref,
+    mediaInfoHref: buildContentMediaHref(row, { fallbackSeasonNumber: 1 }),
   };
 }
 

@@ -53,6 +53,7 @@ import type {
   PackGenerationSnapshot,
 } from "@/features/media/types";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
 type MediaDetailClientProps = {
@@ -702,10 +703,8 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
     });
   };
 
-  const posterUrl = media.posterPath ? `https://image.tmdb.org/t/p/w500${media.posterPath}` : null;
-  const backdropUrl = media.backdropPath
-    ? `https://image.tmdb.org/t/p/original${media.backdropPath}`
-    : null;
+  const posterUrl = buildTmdbImageUrl(media.posterPath, TMDB_IMAGE_SIZES.poster.md);
+  const backdropUrl = buildTmdbImageUrl(media.backdropPath, TMDB_IMAGE_SIZES.backdrop.original);
 
   return (
     <div className="relative mx-auto w-full max-w-6xl">

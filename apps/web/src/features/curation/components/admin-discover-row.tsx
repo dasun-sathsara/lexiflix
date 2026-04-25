@@ -9,7 +9,7 @@ import {
   curateTmdbItemAction,
   refreshCuratedEntryAction,
 } from "@/features/curation/server/actions";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
 interface AdminDiscoverRowProps {
@@ -66,9 +66,7 @@ export function AdminDiscoverRow({
   const dateStr = result.release_date ?? result.first_air_date ?? null;
   const year = dateStr ? dateStr.slice(0, 4) : null;
 
-  const posterUrl = result.poster_path
-    ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.sm}${result.poster_path}`
-    : null;
+  const posterUrl = buildTmdbImageUrl(result.poster_path, TMDB_IMAGE_SIZES.poster.sm);
 
   const genreNames = result.genre_ids
     .slice(0, 2)

@@ -24,7 +24,7 @@ import {
   saveCuratedEntryFeaturedRankAction,
   setCuratedEntryPublishedAction,
 } from "@/features/curation/server/actions";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
 interface AdminCatalogRowProps {
@@ -39,9 +39,7 @@ export function AdminCatalogRow({ entry }: AdminCatalogRowProps) {
   );
   const [rankDirty, setRankDirty] = useState(false);
 
-  const posterUrl = entry.posterPath
-    ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.sm}${entry.posterPath}`
-    : null;
+  const posterUrl = buildTmdbImageUrl(entry.posterPath, TMDB_IMAGE_SIZES.poster.sm);
 
   const year = entry.releaseDate ? entry.releaseDate.slice(0, 4) : null;
   const voteAvg =

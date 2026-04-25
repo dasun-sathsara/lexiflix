@@ -15,6 +15,10 @@ export const TMDB_IMAGE_SIZES = {
   },
 } as const;
 
+export function buildTmdbImageUrl(path: string | null | undefined, size: string) {
+  return path ? `${IMAGE_BASE_URL}${size}${path}` : null;
+}
+
 export type TMDBMediaType = "movie" | "tv";
 
 export interface TMDBResult {

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb-shared";
 
 interface MediaCardProps {
   media: TMDBResult;
@@ -17,9 +17,7 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
   const title = media.title || media.name || "Untitled";
   const date = media.release_date || media.first_air_date;
   const year = date ? new Date(date).getFullYear() : "Unknown";
-  const posterUrl = media.poster_path
-    ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.md}${media.poster_path}`
-    : null;
+  const posterUrl = buildTmdbImageUrl(media.poster_path, TMDB_IMAGE_SIZES.poster.md);
 
   const genres = media.genre_ids
     .slice(0, 2)
