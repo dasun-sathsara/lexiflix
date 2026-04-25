@@ -85,16 +85,16 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
   const hasCardsToStudy = deck.counts.new + deck.counts.learning + deck.counts.due > 0;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30">
+    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 dark:hover:border-indigo-500/30">
       {/* Poster */}
-      <div className="relative h-[88px] w-[60px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm transition-shadow group-hover:shadow-md">
+      <div className="relative h-[88px] w-[60px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
         {deck.posterUrl ? (
           <Image
             src={deck.posterUrl}
             alt={deck.title}
             fill
             sizes="60px"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="grid h-full place-items-center text-muted-foreground">

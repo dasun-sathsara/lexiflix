@@ -18,6 +18,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -776,7 +778,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const backdropUrl = buildTmdbImageUrl(media.backdropPath, TMDB_IMAGE_SIZES.backdrop.original);
 
   return (
-    <div className="relative mx-auto w-full max-w-6xl">
+    <AppPageShell className="gap-0 py-0">
       <div className="relative h-[320px] w-full overflow-hidden sm:h-[400px]">
         {backdropUrl ? (
           <>
@@ -812,7 +814,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
 
       <div className="relative -mt-32 space-y-6 px-4 pb-8 sm:-mt-40 sm:px-6">
         <div className="flex flex-col gap-6 sm:flex-row">
-          <div className="relative mx-auto h-[240px] w-[160px] shrink-0 overflow-hidden rounded-xl border-2 border-white/20 shadow-2xl sm:mx-0 sm:h-[280px] sm:w-[187px]">
+          <div className="relative mx-auto h-[240px] w-[160px] shrink-0 overflow-hidden rounded-xl border-2 border-white/20 shadow-sm sm:mx-0 sm:h-[280px] sm:w-[187px]">
             {posterUrl ? (
               <Image
                 src={posterUrl}
@@ -1008,6 +1010,6 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
           />
         </div>
       </div>
-    </div>
+    </AppPageShell>
   );
 }

@@ -9,6 +9,7 @@ export function AppStat({
   hint,
   icon: Icon,
   tone = "default",
+  variant = "pill",
   className,
 }: {
   label: string;
@@ -16,6 +17,7 @@ export function AppStat({
   hint?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
   tone?: "default" | "accent" | "warm" | "success" | "danger";
+  variant?: "pill" | "card";
   className?: string;
 }) {
   const toneStyles = {
@@ -25,6 +27,35 @@ export function AppStat({
     success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
     danger: "bg-rose-500/10 text-rose-700 dark:text-rose-200",
   };
+
+  if (variant === "card") {
+    return (
+      <div
+        className={cn(
+          "flex min-h-[104px] items-start justify-between gap-4 rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 p-4 shadow-xs",
+          className,
+        )}
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          {Icon ? (
+            <span
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                toneStyles[tone],
+              )}
+            >
+              <Icon className="size-4" />
+            </span>
+          ) : null}
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            <p className="text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+            {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

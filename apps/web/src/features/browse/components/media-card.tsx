@@ -29,14 +29,14 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
       href={`/media/${media.id}?type=${isMovie ? "movie" : "tv"}`}
       className="group block h-full"
     >
-      <Card className="h-full gap-2.5 overflow-hidden p-1.5 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:border-primary/20">
+      <Card className="h-full gap-2.5 overflow-hidden p-1.5 transition-colors duration-200 ease-out group-hover:border-primary/25 group-hover:bg-muted/30">
         <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted">
           {posterUrl ? (
             <Image
               src={posterUrl}
               alt={title}
               fill
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+              className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
             />
           ) : (

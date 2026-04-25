@@ -1,10 +1,10 @@
 import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Layers, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { AppEmptyState, AppPanel, AppStat } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,38 +16,6 @@ import { requireSession } from "@/lib/auth-guards";
 
 function clampToInt(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function StatCard({
-  title,
-  value,
-  icon,
-  hint,
-  right,
-}: {
-  title: string;
-  value: string;
-  icon: ReactNode;
-  hint?: string;
-  right?: ReactNode;
-}) {
-  return (
-    <Card className="border py-0 shadow-sm">
-      <CardContent className="flex items-start justify-between gap-4 p-4">
-        <div className="flex items-start gap-3">
-          <div className="grid size-9 place-items-center rounded-lg border bg-muted/50 text-muted-foreground">
-            {icon}
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-xs font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-semibold tracking-tight">{value}</p>
-            {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-          </div>
-        </div>
-        {right ? <div className="shrink-0">{right}</div> : null}
-      </CardContent>
-    </Card>
-  );
 }
 
 export default async function DashboardPage() {
@@ -68,33 +36,28 @@ export default async function DashboardPage() {
     <>
       <AppTopbar title="Dashboard" />
       <AppPageShell>
-        <Card className="border py-0 shadow-sm">
-          <CardContent className="p-5">
-            <AppPageHeader
-              className="w-full"
-              eyebrow={<Badge variant="secondary">Dashboard</Badge>}
-              heading={
-                <>
-                  Welcome back, <span className="text-primary">{displayName}</span>
-                </>
-              }
-              description="Your current review queue, streak, and generated packs."
-              actions={
-                <>
-                  <Button size="sm" asChild>
-                    <Link href={dashboard.nextStudyHref}>
-                      <Play className="size-4" />
-                      {dashboard.nextStudyLabel}
-                    </Link>
-                  </Button>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href="/browse">Browse</Link>
-                  </Button>
-                </>
-              }
-            />
-          </CardContent>
-        </Card>
+        <AppPageHeader
+          eyebrow={<Badge variant="secondary">Dashboard</Badge>}
+          heading={
+            <>
+              Welcome back, <span className="text-primary">{displayName}</span>
+            </>
+          }
+          description="Your current review queue, streak, and generated packs."
+          actions={
+            <>
+              <Button size="sm" asChild>
+                <Link href={dashboard.nextStudyHref}>
+                  <Play className="size-4" />
+                  {dashboard.nextStudyLabel}
+                </Link>
+              </Button>
+              <Button size="sm" variant="outline" asChild>
+                <Link href="/browse">Browse</Link>
+              </Button>
+            </>
+          }
+        />
 
         {showAssessmentBanner ? (
           <Card className="border-amber-200/70 py-0 shadow-sm dark:border-amber-500/30">
@@ -121,34 +84,37 @@ export default async function DashboardPage() {
         ) : null}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Current Streak"
+          <AppStat
+            variant="card"
+            label="Current Streak"
             value={`${dashboard.stats.currentStreakDays} days`}
-            icon={<Flame className="size-5" />}
+            icon={Flame}
             hint="Server-tracked study days"
+            tone="warm"
           />
-          <StatCard
-            title="Terms Known"
+          <AppStat
+            variant="card"
+            label="Terms Known"
             value={`${dashboard.stats.totalTermsKnown}`}
-            icon={<BookOpen className="size-5" />}
+            icon={BookOpen}
             hint="Across all packs"
+            tone="accent"
           />
-          <StatCard
-            title="Reviews Due"
+          <AppStat
+            variant="card"
+            label="Reviews Due"
             value={`${dashboard.stats.reviewsDue}`}
-            icon={<Play className="size-5" />}
+            icon={Play}
             hint={`${dashboard.stats.estimatedDueMinutes}m estimated`}
-            right={
-              <Button size="sm" asChild>
-                <Link href={dashboard.nextStudyHref}>Start</Link>
-              </Button>
-            }
+            tone="danger"
           />
-          <StatCard
-            title="Reviews This Week"
+          <AppStat
+            variant="card"
+            label="Reviews This Week"
             value={`${dashboard.stats.reviewsCompletedThisWeek}`}
-            icon={<Clock3 className="size-5" />}
+            icon={Clock3}
             hint="From review history"
+            tone="success"
           />
         </div>
 
@@ -224,15 +190,17 @@ export default async function DashboardPage() {
                   );
                 })
               ) : (
-                <div className="rounded-lg border border-dashed p-6 text-center">
-                  <p className="text-sm font-medium">No packs yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Browse content to generate your first vocabulary pack.
-                  </p>
-                  <Button className="mt-4" size="sm" asChild>
-                    <Link href="/browse">Browse Content</Link>
-                  </Button>
-                </div>
+                <AppEmptyState
+                  icon={Layers}
+                  title="No packs yet"
+                  description="Browse content to generate your first vocabulary pack."
+                  className="border-dashed shadow-none"
+                  action={
+                    <Button size="sm" asChild>
+                      <Link href="/browse">Browse Content</Link>
+                    </Button>
+                  }
+                />
               )}
             </CardContent>
           </Card>
@@ -249,10 +217,10 @@ export default async function DashboardPage() {
                   { label: "Later today", value: dashboard.reviewPlan.dueLaterToday },
                   { label: "Tomorrow", value: dashboard.reviewPlan.dueTomorrow },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-lg border bg-card p-3">
+                  <AppPanel key={item.label} className="p-3">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
                     <p className="mt-1 text-2xl font-semibold">{item.value}</p>
-                  </div>
+                  </AppPanel>
                 ))}
               </div>
 
@@ -291,19 +259,23 @@ export default async function DashboardPage() {
                     </Link>
                   ))
                 ) : (
-                  <div className="rounded-lg border border-dashed p-5 text-center">
-                    <p className="text-sm font-medium">No due reviews</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {hasPacks
+                  <AppEmptyState
+                    icon={Play}
+                    title="No due reviews"
+                    description={
+                      hasPacks
                         ? "Open decks to review new or learning cards."
-                        : "Generate a pack to start building a review queue."}
-                    </p>
-                    <Button className="mt-4" size="sm" variant="outline" asChild>
-                      <Link href={hasPacks ? "/decks" : "/browse"}>
-                        {hasPacks ? "View Decks" : "Browse Content"}
-                      </Link>
-                    </Button>
-                  </div>
+                        : "Generate a pack to start building a review queue."
+                    }
+                    className="border-dashed shadow-none"
+                    action={
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href={hasPacks ? "/decks" : "/browse"}>
+                          {hasPacks ? "View Decks" : "Browse Content"}
+                        </Link>
+                      </Button>
+                    }
+                  />
                 )}
               </div>
             </CardContent>

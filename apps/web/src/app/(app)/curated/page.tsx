@@ -71,7 +71,7 @@ function FeaturedSpotlight({
   const year = formatYear(releaseDate);
 
   return (
-    <section className="relative overflow-hidden rounded-[calc(var(--radius)+4px)] border bg-card/50 shadow-lg">
+    <section className="relative overflow-hidden rounded-[calc(var(--radius)+4px)] border bg-card/50 shadow-sm">
       {backdropUrl && (
         <Image
           src={backdropUrl}
@@ -88,7 +88,7 @@ function FeaturedSpotlight({
 
       <div className="relative grid gap-6 p-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:p-8">
         {/* Poster — desktop only */}
-        <div className="relative hidden overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/20 lg:block">
+        <div className="relative hidden overflow-hidden rounded-xl shadow-sm ring-1 ring-white/20 lg:block">
           {posterUrl ? (
             <Image
               src={posterUrl}
@@ -130,21 +130,15 @@ function FeaturedSpotlight({
 
           {/* Title + overview */}
           <div className="flex flex-col gap-2">
-            <h2 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl drop-shadow-md">
-              {title}
-            </h2>
-            <p className="max-w-2xl text-xs leading-relaxed text-white/80 sm:text-sm drop-shadow">
+            <h2 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
+            <p className="max-w-2xl text-xs leading-relaxed text-white/80 sm:text-sm">
               {overview ?? "A curated pick chosen to give learners a strong starting point."}
             </p>
           </div>
 
           {/* CTA */}
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <Button
-              asChild
-              size="sm"
-              className="rounded-full shadow-lg shadow-black/20 text-xs h-8"
-            >
+            <Button asChild size="sm" className="h-8 rounded-full text-xs">
               <Link href={`/media/${tmdbId}?type=${mediaType}`}>
                 <Play className="size-3.5 fill-current" />
                 Open title
@@ -185,7 +179,7 @@ function MoviePosterGrid({
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}?type=movie`}
-              className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-amber-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-amber-500/10"
+              className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-colors duration-200 ease-out hover:border-amber-300/50 hover:bg-card/60"
             >
               {/* Poster */}
               <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted">
@@ -194,7 +188,7 @@ function MoviePosterGrid({
                     src={posterUrl}
                     alt={item.title}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 22vw"
                   />
                 ) : (
@@ -267,17 +261,17 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}?type=tv`}
-              className="group grid gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm transition-all duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 hover:shadow-md hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
+              className="group grid gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm transition-colors duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
             >
               {/* Poster */}
-              <div className="relative hidden overflow-hidden rounded-xl border bg-muted transition-shadow group-hover:shadow-md md:block">
+              <div className="relative hidden overflow-hidden rounded-xl border bg-muted md:block">
                 {posterUrl ? (
                   <Image
                     src={posterUrl}
                     alt={item.title}
                     width={88}
                     height={132}
-                    className="h-[132px] w-[88px] object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-[132px] w-[88px] object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 ) : (
                   <div className="flex h-[132px] w-[88px] items-center justify-center p-3 text-center text-xs text-muted-foreground">
