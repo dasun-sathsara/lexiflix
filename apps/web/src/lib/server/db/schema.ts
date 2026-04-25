@@ -662,6 +662,7 @@ export const packItem = pgTable(
     index("pack_item_pack_state_idx").on(table.packId, table.state),
     index("pack_item_due_idx").on(table.state, table.dueAt),
     index("pack_item_term_idx").on(table.termId),
+    check("pack_item_state_not_persisted_due", sql`${table.state} <> 'due'`),
   ],
 );
 

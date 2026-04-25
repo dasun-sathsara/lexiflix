@@ -1,0 +1,1 @@
+ALTER TABLE "pack_item" ADD CONSTRAINT "pack_item_state_not_persisted_due" CHECK ("pack_item"."state" <> 'due');

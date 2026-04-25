@@ -21,6 +21,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -52,13 +53,27 @@ import type {
   MediaDetailPageData,
   PackGenerationSnapshot,
 } from "@/features/media/types";
-import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
+import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
 type MediaDetailClientProps = {
   pageData: MediaDetailPageData;
 };
+
+const vocabularyTypeLabels: Record<StoredVocabularyKind, string> = {
+  word: "Words",
+  phrasal_verb: "Phrasal verbs",
+  idiom: "Idioms",
+  slang: "Slang",
+};
+
+const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [
+  "word",
+  "phrasal_verb",
+  "idiom",
+  "slang",
+];
 
 function formatRuntime(minutes: number | null) {
   if (!minutes) {
@@ -382,7 +397,30 @@ function PackGenerationPanel({
     setForm(generationDefaults);
   }, [generationDefaults]);
 
+  const vocabularyTypesAreValid = form.selectedVocabularyTypes.length > 0;
+  const toggleVocabularyType = (kind: StoredVocabularyKind, checked: boolean) => {
+    setForm((current) => {
+      if (checked) {
+        return current.selectedVocabularyTypes.includes(kind)
+          ? current
+          : {
+              ...current,
+              selectedVocabularyTypes: [...current.selectedVocabularyTypes, kind],
+            };
+      }
+
+      return {
+        ...current,
+        selectedVocabularyTypes: current.selectedVocabularyTypes.filter((value) => value !== kind),
+      };
+    });
+  };
+
   const submit = (forceRegenerate = false) => {
+    if (!vocabularyTypesAreValid) {
+      return;
+    }
+
     onStartGeneration({ ...form, forceRegenerate });
     setOpen(false);
   };
@@ -537,6 +575,28 @@ function PackGenerationPanel({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5 text-sm sm:col-span-2">
+              <span className="font-medium">Vocabulary types</span>
+              <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
+                {GENERATION_VOCABULARY_TYPES.map((kind) => (
+                  <label
+                    key={kind}
+                    htmlFor={`generation-vocabulary-type-${kind}`}
+                    className="flex items-center gap-2 leading-none"
+                  >
+                    <Checkbox
+                      id={`generation-vocabulary-type-${kind}`}
+                      checked={form.selectedVocabularyTypes.includes(kind)}
+                      onCheckedChange={(checked) => toggleVocabularyType(kind, checked === true)}
+                    />
+                    {vocabularyTypeLabels[kind]}
+                  </label>
+                ))}
+              </div>
+              {!vocabularyTypesAreValid ? (
+                <p className="text-xs text-destructive">Select at least one vocabulary type.</p>
+              ) : null}
+            </div>
           </div>
           <div className="space-y-1.5 text-sm">
             <span className="font-medium">Custom instructions</span>
@@ -552,11 +612,20 @@ function PackGenerationPanel({
           </div>
           <DialogFooter>
             {generation?.status === "completed" ? (
-              <Button variant="outline" onClick={() => submit(true)}>
+              <Button
+                variant="outline"
+                onClick={() => submit(true)}
+                disabled={!vocabularyTypesAreValid}
+              >
                 Regenerate
               </Button>
             ) : null}
-            <Button onClick={() => submit(false)}>Start</Button>
+            <Button
+              onClick={() => submit(false)}
+              disabled={isGenerating || !vocabularyTypesAreValid}
+            >
+              Start
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

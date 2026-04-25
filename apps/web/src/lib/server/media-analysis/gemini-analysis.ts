@@ -161,6 +161,23 @@ function normalizeGeminiItems(rawItems: unknown[]) {
   return { items, warnings };
 }
 
+function extractGeminiItems(parsedJson: unknown) {
+  if (Array.isArray(parsedJson)) {
+    return parsedJson;
+  }
+
+  if (
+    parsedJson &&
+    typeof parsedJson === "object" &&
+    "items" in parsedJson &&
+    Array.isArray((parsedJson as { items: unknown }).items)
+  ) {
+    return (parsedJson as { items: unknown[] }).items;
+  }
+
+  return [];
+}
+
 function normalizeGeminiItem(rawItem: unknown) {
   if (!rawItem || typeof rawItem !== "object") {
     return null;
@@ -360,7 +377,7 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
     throw new GeminiAnalysisError("Gemini returned non-JSON analysis output.", error);
   }
 
-  const itemsArray = Array.isArray(parsedJson) ? parsedJson : [];
+  const itemsArray = extractGeminiItems(parsedJson);
   const normalized = normalizeGeminiItems(itemsArray);
 
   logger.info("[media-analysis:llm] Gemini response parsed", {

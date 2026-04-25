@@ -43,6 +43,17 @@ function preferenceScore(
   return frequencyRank - item.occurrenceCount * 5;
 }
 
+function knownTermPenalty(
+  termState: "known" | "learning" | "ignored" | "unseen" | null,
+  handling: GenerationRequestSnapshot["knownTermHandling"],
+) {
+  if (handling !== "downrank_known") {
+    return 0;
+  }
+
+  return termState === "known" || termState === "ignored" ? 1_000_000 : 0;
+}
+
 export async function selectGenerationItems(input: {
   userId: string;
   contentId: string;
@@ -93,7 +104,7 @@ export async function selectGenerationItems(input: {
       }
       return row.termState !== "known" && row.termState !== "ignored";
     })
-    .map<SelectedGenerationItem>((row) => ({
+    .map((row) => ({
       analysisItemId: row.analysisItemId,
       termId: row.termId,
       kind: row.kind,
@@ -108,16 +119,20 @@ export async function selectGenerationItems(input: {
         row.termState === "known" || row.termState === "ignored"
           ? `included despite ${row.termState} term handling`
           : "selected from reusable subtitle analysis",
+      termState: row.termState,
     }))
     .sort((left, right) => {
       const scoreDelta =
+        knownTermPenalty(left.termState, input.requestSnapshot.knownTermHandling) -
+          knownTermPenalty(right.termState, input.requestSnapshot.knownTermHandling) ||
         preferenceScore(left, input.requestSnapshot.frequencyPreference) -
-        preferenceScore(right, input.requestSnapshot.frequencyPreference);
+          preferenceScore(right, input.requestSnapshot.frequencyPreference);
       if (scoreDelta !== 0) {
         return scoreDelta;
       }
       return left.displayText.localeCompare(right.displayText);
-    });
+    })
+    .map<SelectedGenerationItem>(({ termState: _termState, ...item }) => item);
 
   return candidates.slice(0, input.requestSnapshot.packSize);
 }
