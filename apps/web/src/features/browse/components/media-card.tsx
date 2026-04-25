@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -55,7 +55,7 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
           </div>
         </div>
 
-        <CardContent className="px-1.5 pb-1">
+        <CardContent className="flex min-h-[112px] flex-col px-1.5 pb-1">
           <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground transition-colors duration-200 group-hover:text-primary">
             {title}
           </h3>
@@ -70,6 +70,10 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
                 {genre}
               </Badge>
             ))}
+          </div>
+          <div className="mt-auto flex items-center justify-between pt-3 text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+            <span>Open title</span>
+            <ArrowRight className="size-3.5" />
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { Film, Play, Sparkles, Star, Tv } from "lucide-react";
+import { ArrowRight, Film, Play, Sparkles, Star, Tv } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -84,9 +84,7 @@ function FeaturedSpotlight({
       )}
       <div className="absolute inset-0 bg-black/20" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent lg:bg-gradient-to-r lg:from-black/95 lg:via-black/75 lg:to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.15),transparent_40%)]" />
-
-      <div className="relative grid gap-6 p-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:p-8">
+      <div className="relative grid min-h-[360px] gap-6 p-5 sm:p-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:p-8">
         {/* Poster — desktop only */}
         <div className="relative hidden overflow-hidden rounded-xl shadow-sm ring-1 ring-white/20 lg:block">
           {posterUrl ? (
@@ -130,8 +128,8 @@ function FeaturedSpotlight({
 
           {/* Title + overview */}
           <div className="flex flex-col gap-2">
-            <h2 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
-            <p className="max-w-2xl text-xs leading-relaxed text-white/80 sm:text-sm">
+            <h2 className="max-w-3xl text-2xl font-bold tracking-tight sm:text-4xl">{title}</h2>
+            <p className="line-clamp-4 max-w-2xl text-xs leading-relaxed text-white/80 sm:text-sm">
               {overview ?? "A curated pick chosen to give learners a strong starting point."}
             </p>
           </div>
@@ -179,7 +177,7 @@ function MoviePosterGrid({
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}?type=movie`}
-              className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-colors duration-200 ease-out hover:border-amber-300/50 hover:bg-card/60"
+              className="group flex h-full flex-col gap-2.5 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-1.5 shadow-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-muted/30"
             >
               {/* Poster */}
               <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted">
@@ -199,13 +197,15 @@ function MoviePosterGrid({
               </div>
 
               {/* Info */}
-              <div className="flex flex-col gap-2">
+              <div className="flex min-h-[148px] flex-col px-1.5 pb-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold tracking-tight group-hover:text-amber-700 dark:group-hover:text-amber-200">
+                    <p className="truncate text-sm font-semibold leading-tight tracking-tight group-hover:text-primary">
                       {item.title}
                     </p>
-                    {year && <p className="text-xs text-muted-foreground">{year}</p>}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {[year, "Movie"].filter(Boolean).join(" • ")}
+                    </p>
                   </div>
                   {rating && (
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-md border bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground">
@@ -215,12 +215,12 @@ function MoviePosterGrid({
                   )}
                 </div>
 
-                <p className="line-clamp-3 text-xs leading-5 text-muted-foreground">
+                <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
                   {item.overview ?? "No overview saved for this title yet."}
                 </p>
 
                 {item.genres.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {item.genres.slice(0, 2).map((genre) => (
                       <Badge key={genre.id} variant="secondary">
                         {genre.name}
@@ -228,6 +228,10 @@ function MoviePosterGrid({
                     ))}
                   </div>
                 )}
+                <div className="mt-auto flex items-center justify-between pt-3 text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+                  <span>Open title</span>
+                  <ArrowRight className="size-3.5" />
+                </div>
               </div>
             </Link>
           );
@@ -261,7 +265,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
             <Link
               key={item.id}
               href={`/media/${item.tmdbId}?type=tv`}
-              className="group grid gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm transition-colors duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 dark:hover:border-indigo-500/30 md:grid-cols-[88px_minmax(0,1fr)_auto]"
+              className="group grid gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-muted/30 md:grid-cols-[88px_minmax(0,1fr)_auto] md:gap-4 md:p-4"
             >
               {/* Poster */}
               <div className="relative hidden overflow-hidden rounded-xl border bg-muted md:block">
@@ -284,7 +288,7 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
               <div className="flex min-w-0 flex-col gap-2.5">
                 {/* Title row */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-semibold tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+                  <p className="text-base font-semibold tracking-tight group-hover:text-primary">
                     {item.title}
                   </p>
                   {item.displaySubtitle && (
@@ -317,21 +321,18 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
                       {genre.name}
                     </Badge>
                   ))}
-                  <span className="text-xs text-muted-foreground">
-                    Choose a season after opening.
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Season-level analysis
                   </span>
                 </div>
               </div>
 
               {/* CTA */}
               <div className="flex items-center md:justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 group-hover:border-indigo-300/60 group-hover:text-indigo-600 dark:group-hover:text-indigo-300"
-                >
+                <span className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border bg-card px-3 text-sm font-medium tracking-tight shadow-xs transition-colors group-hover:text-primary">
                   Open show
-                </Button>
+                  <ArrowRight className="size-3.5" />
+                </span>
               </div>
             </Link>
           );

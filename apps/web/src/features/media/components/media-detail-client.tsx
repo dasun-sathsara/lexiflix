@@ -7,9 +7,12 @@ import {
   BookOpen,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Film,
   Loader2,
+  Play,
+  SlidersHorizontal,
   Sparkles,
   Star,
   Tv,
@@ -24,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -249,6 +254,8 @@ function AnalysisSidebar({
   generationDefaults,
   isGenerating,
   onStartGeneration,
+  generationDialogOpen,
+  onOpenGenerationChange,
 }: {
   media: MediaDetailPageData["media"];
   learnerLevel: MediaDetailPageData["learnerLevel"];
@@ -260,6 +267,8 @@ function AnalysisSidebar({
   generationDefaults: GenerationDialogDefaults;
   isGenerating: boolean;
   onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
+  generationDialogOpen: boolean;
+  onOpenGenerationChange: (open: boolean) => void;
 }) {
   const isProcessing = snapshot.status === "queued" || snapshot.status === "running";
   const isCompleted = snapshot.status === "completed";
@@ -374,8 +383,110 @@ function AnalysisSidebar({
           generationDefaults={generationDefaults}
           isGenerating={isGenerating}
           onStartGeneration={onStartGeneration}
+          open={generationDialogOpen}
+          onOpenChange={onOpenGenerationChange}
         />
       ) : null}
+    </div>
+  );
+}
+
+function MediaNextAction({
+  media,
+  analysis,
+  generation,
+  isStarting,
+  isGenerationPending,
+  onStartAnalysis,
+  onOpenGeneration,
+}: {
+  media: MediaDetailPageData["media"];
+  analysis: MediaAnalysisSnapshot;
+  generation: PackGenerationSnapshot | null;
+  isStarting: boolean;
+  isGenerationPending: boolean;
+  onStartAnalysis: () => void;
+  onOpenGeneration: () => void;
+}) {
+  const needsSeason = media.mediaType === "tv" && !media.selectedSeasonNumber;
+  const isAnalysisProcessing = analysis.status === "queued" || analysis.status === "running";
+  const isGenerationProcessing =
+    generation?.status === "queued" || generation?.status === "running";
+
+  if (generation?.packHref) {
+    return (
+      <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold">Pack ready</p>
+          <p className="text-xs text-muted-foreground">
+            Resume the generated study pack for this title.
+          </p>
+        </div>
+        <Button asChild className="w-full gap-2 sm:w-auto">
+          <Link href={generation.packHref}>
+            <BookOpen className="size-4" />
+            Open Pack
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (analysis.status === "completed") {
+    return (
+      <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold">Analysis complete</p>
+          <p className="text-xs text-muted-foreground">
+            Generate a learner-specific pack from the extracted terms.
+          </p>
+        </div>
+        <Button
+          className="w-full gap-2 sm:w-auto"
+          onClick={onOpenGeneration}
+          disabled={isGenerationPending || isGenerationProcessing}
+        >
+          {isGenerationPending || isGenerationProcessing ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          Generate Pack
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-semibold">
+          {needsSeason
+            ? "Choose a season"
+            : isAnalysisProcessing
+              ? "Analysis running"
+              : "Analyze subtitles"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {needsSeason
+            ? "TV titles run season by season before pack generation."
+            : isAnalysisProcessing
+              ? (analysis.progressMessage ?? "Polling durable analysis state.")
+              : "Start subtitle analysis before generating a study pack."}
+        </p>
+      </div>
+      <Button
+        className="w-full gap-2 sm:w-auto"
+        onClick={onStartAnalysis}
+        disabled={needsSeason || isAnalysisProcessing || isStarting}
+      >
+        {isStarting || isAnalysisProcessing ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Play className="size-4" />
+        )}
+        {needsSeason ? "Season Required" : isAnalysisProcessing ? "Running" : "Start Analysis"}
+      </Button>
     </div>
   );
 }
@@ -385,15 +496,28 @@ function PackGenerationPanel({
   generationDefaults,
   isGenerating,
   onStartGeneration,
+  open,
+  onOpenChange,
 }: {
   generation: PackGenerationSnapshot | null;
   generationDefaults: GenerationDialogDefaults;
   isGenerating: boolean;
   onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const [form, setForm] = React.useState(generationDefaults);
   const isProcessing = generation?.status === "queued" || generation?.status === "running";
+  const dialogOpen = open ?? internalOpen;
+
+  const setDialogOpen = React.useCallback(
+    (nextOpen: boolean) => {
+      setInternalOpen(nextOpen);
+      onOpenChange?.(nextOpen);
+    },
+    [onOpenChange],
+  );
 
   React.useEffect(() => {
     setForm(generationDefaults);
@@ -424,7 +548,7 @@ function PackGenerationPanel({
     }
 
     onStartGeneration({ ...form, forceRegenerate });
-    setOpen(false);
+    setDialogOpen(false);
   };
 
   return (
@@ -478,7 +602,7 @@ function PackGenerationPanel({
         <Button
           className="w-full gap-2"
           variant={generation?.status === "completed" ? "outline" : "default"}
-          onClick={() => setOpen(true)}
+          onClick={() => setDialogOpen(true)}
           disabled={isGenerating || isProcessing}
         >
           {isGenerating ? (
@@ -490,7 +614,7 @@ function PackGenerationPanel({
         </Button>
       </CardContent>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Generate Pack</DialogTitle>
@@ -500,7 +624,7 @@ function PackGenerationPanel({
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 text-sm">
-              <span className="font-medium">CEFR window</span>
+              <Label>CEFR window</Label>
               <Select
                 value={form.cefrWindowMode}
                 onValueChange={(value) =>
@@ -510,7 +634,7 @@ function PackGenerationPanel({
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -521,7 +645,7 @@ function PackGenerationPanel({
               </Select>
             </div>
             <div className="space-y-1.5 text-sm">
-              <span className="font-medium">Known terms</span>
+              <Label>Known terms</Label>
               <Select
                 value={form.knownTermHandling}
                 onValueChange={(value) =>
@@ -531,7 +655,7 @@ function PackGenerationPanel({
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -542,8 +666,10 @@ function PackGenerationPanel({
               </Select>
             </div>
             <div className="space-y-1.5 text-sm">
-              <span className="font-medium">Pack size</span>
+              <Label htmlFor="generation-pack-size">Pack size</Label>
               <Input
+                id="generation-pack-size"
+                className="h-9"
                 type="number"
                 min={1}
                 max={100}
@@ -557,7 +683,7 @@ function PackGenerationPanel({
               />
             </div>
             <div className="space-y-1.5 text-sm">
-              <span className="font-medium">Examples</span>
+              <Label>Examples</Label>
               <Select
                 value={String(form.exampleSentenceCount)}
                 onValueChange={(value) =>
@@ -567,7 +693,7 @@ function PackGenerationPanel({
                   }))
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -578,7 +704,7 @@ function PackGenerationPanel({
               </Select>
             </div>
             <div className="space-y-1.5 text-sm sm:col-span-2">
-              <span className="font-medium">Vocabulary types</span>
+              <Label>Vocabulary types</Label>
               <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
                 {GENERATION_VOCABULARY_TYPES.map((kind) => (
                   <label
@@ -600,18 +726,33 @@ function PackGenerationPanel({
               ) : null}
             </div>
           </div>
-          <div className="space-y-1.5 text-sm">
-            <span className="font-medium">Custom instructions</span>
-            <Textarea
-              value={form.customInstructions ?? ""}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  customInstructions: event.target.value || null,
-                }))
-              }
-            />
-          </div>
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-full justify-between px-2 text-xs">
+                <span className="inline-flex items-center gap-2">
+                  <SlidersHorizontal className="size-3.5" />
+                  Advanced options
+                </span>
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="space-y-1.5 text-sm">
+                <Label htmlFor="generation-custom-instructions">Custom instructions</Label>
+                <Textarea
+                  id="generation-custom-instructions"
+                  className="min-h-20"
+                  value={form.customInstructions ?? ""}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      customInstructions: event.target.value || null,
+                    }))
+                  }
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
           <DialogFooter>
             {generation?.status === "completed" ? (
               <Button
@@ -642,6 +783,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const [analysis, setAnalysis] = React.useState(pageData.analysis);
   const [generation, setGeneration] = React.useState(pageData.generation);
   const [actionMessage, setActionMessage] = React.useState<string | null>(null);
+  const [generationDialogOpen, setGenerationDialogOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const [isGenerationPending, startGenerationTransition] = React.useTransition();
 
@@ -918,6 +1060,16 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                 </div>
               ) : null}
             </div>
+
+            <MediaNextAction
+              media={media}
+              analysis={analysis}
+              generation={generation}
+              isStarting={isPending}
+              isGenerationPending={isGenerationPending}
+              onStartAnalysis={handleStartAnalysis}
+              onOpenGeneration={() => setGenerationDialogOpen(true)}
+            />
           </div>
         </div>
 
@@ -1007,6 +1159,8 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
             generationDefaults={pageData.generationDefaults}
             isGenerating={isGenerationPending}
             onStartGeneration={handleStartGeneration}
+            onOpenGenerationChange={setGenerationDialogOpen}
+            generationDialogOpen={generationDialogOpen}
           />
         </div>
       </div>
