@@ -169,6 +169,16 @@ Why it exists:
 - keeps learner configuration out of the core `user` row
 - supports prefilled generation choices without coupling preferences to a specific pack
 
+### `notification`
+
+Durable learner-facing notification records.
+
+Why it exists:
+
+- records pack-generation outcomes and due-review reminders in product state
+- lets the app dedupe reminder records instead of recreating them on every read
+- keeps read and dismissed status separate from study-card scheduling state
+
 ## Architectural Reading Order
 
 When evaluating the model, read it in this order:

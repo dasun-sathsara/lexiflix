@@ -34,6 +34,10 @@ Next.js is already the natural center of the codebase. The existing repository s
 
 This is especially important for a demo project. When a bug shows up, the fastest path to understanding it is a small number of boundaries. The app should own the concepts that the user sees: jobs, packs, study items, and reviews. A clean architecture here is one where the user-facing domain remains legible, not one where responsibility is split across multiple services for the sake of theoretical purity.
 
+Within the web app, app-internal writes should use typed Server Actions by default. Route handlers are reserved for real HTTP protocol boundaries: auth/provider callbacks, webhooks, binary streaming, upload boundaries that cannot be represented cleanly as Server Actions, and similar cases where the request/response contract itself is the product boundary. Any other route handler needs explicit justification because it creates a second mutation style inside the same app.
+
+Feature boundaries should keep route files thin. Routes parse navigation inputs, enforce session or admin access, call feature read models or actions, and render components. Non-trivial product behavior belongs under `src/features/<feature>` with server actions, server queries, feature components, and local pure helpers grouped by domain. This keeps durable product rules out of ad hoc route files without turning the docs into a coding-style manual.
+
 ## Why Trigger.dev Is the Workflow Engine
 
 Trigger.dev solves the exact class of problem LexiFlix has: user-triggered background workflows that may take time, touch external services, and need retries without blocking the browser. The critical point is not that Trigger.dev is universally the best workflow platform. The critical point is that it is the best fit for this project’s current priorities. Those priorities are developer experience, implementation speed, and keeping orchestration in the same language and ecosystem as the web app.
@@ -141,6 +145,8 @@ To solve that, all Gemini calls should go through one internal adapter layer. Th
 This is more useful than a gateway-level caching story because it solves the actual local development problem. The team does not need another network service to manage AI requests. It needs the ability to work on the app repeatedly without burning budget or waiting on model APIs every time.
 
 For persistence, the application treats pipeline-derived JSONB payloads as a single active contract, not as a versioned compatibility matrix. If the NLP or LLM output shape changes in a breaking way, the expected maintenance path is to purge and rebuild the affected derived data. That is the correct trade for a demo app with rebuildable pipeline state; carrying multiple generations of compatibility parsing would create more system than product.
+
+Temporary implementation plans are scaffolding, not competing product truth. Once a plan's durable decisions are represented in this architecture document, the SRS, the business rules, the decision log, or the relevant table rationale, the plan should be retired or rewritten to contain only remaining work. Stale "current state" sections are more harmful than absent planning notes because they teach future implementation passes the wrong baseline.
 
 ## Local Development and Production Differences
 

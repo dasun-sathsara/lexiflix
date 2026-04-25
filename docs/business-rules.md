@@ -171,6 +171,9 @@
 - pack ready events
 - review due reminders
 - streak risk nudges
+- Due-review in-app notifications are derived from effective due pack cards and should dedupe by app day so repeated dashboard or topbar loads do not create notification spam.
+- Reading or dismissing a due-review notification must not change card due state.
+- `emailRemindersEnabled` is an email-delivery preference in V1; in-app due-review notification records are product state and do not depend on that flag.
 
 - Curated TV entries are show-level in V1.
 - When a learner opens a curated TV show, season selection happens later in the detail flow rather than in the curated shelf itself.

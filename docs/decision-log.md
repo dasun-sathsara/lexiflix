@@ -191,3 +191,15 @@
 - Decision: `/dashboard` reads persisted learner state and no longer uses mock pack or review data.
 - Reasoning: the dashboard becomes misleading as soon as reviews are durable if it keeps displaying invented progress.
 - Consequence: dashboard stats derive from `review_event`, `user_term_state`, `user_streak`, and effective pack due state; the old mock "Time Spent" stat is replaced with "Reviews This Week."
+
+### Learner preferences and due notifications
+
+- Decision: learner preferences include durable study defaults and generation defaults, while due-review in-app notifications are created from effective due pack-card state.
+- Reasoning: generation choices should be prefilled from stable learner defaults, and due reminders need to be visible product state rather than transient UI badges.
+- Consequence: settings writes use the app's typed Server Action path, generation reads saved defaults when request fields are omitted, due-review notification rows dedupe by app day, and reading or dismissing a notification does not mutate card scheduling.
+
+### Web consistency standard
+
+- Decision: app-internal writes use typed Server Actions by default, route handlers are limited to documented HTTP/protocol boundaries, and non-trivial product behavior stays inside feature boundaries rather than route files.
+- Reasoning: the web app is the product center, so mixing route-local mutation logic, duplicated auth/session access, and ad hoc read models makes the codebase harder to reason about than the demo project justifies.
+- Consequence: `apps/web/AGENTS.md` owns the execution rules for agents, while canonical docs capture the architectural standard; temporary implementation plans are retired after their durable decisions are absorbed into canonical docs.
