@@ -6,14 +6,14 @@ import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { listDeckGenerationJobsAction } from "../server/actions";
+import { listGenerationJobsAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
 
 function formatLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
-export function DeckGenerationJobsClient({
+export function GenerationJobsClient({
   initialJobs,
 }: {
   initialJobs: PackGenerationProgressView[];
@@ -26,7 +26,7 @@ export function DeckGenerationJobsClient({
     if (!hasActiveJobs) return;
     const timer = window.setInterval(() => {
       startTransition(async () => {
-        const result = await listDeckGenerationJobsAction();
+        const result = await listGenerationJobsAction();
         if (result.success) setJobs(result.jobs);
       });
     }, 4000);
@@ -39,7 +39,7 @@ export function DeckGenerationJobsClient({
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Generation Jobs</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Jobs</h2>
           <p className="text-sm text-muted-foreground">Active and recent pack-generation state.</p>
         </div>
         {isPending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}

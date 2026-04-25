@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CirclePlay,
   Clapperboard,
   Film,
   Home,
@@ -62,6 +63,11 @@ const platformItems: NavItem[] = [
     title: "My Decks",
     url: "/decks",
     icon: Sparkles,
+  },
+  {
+    title: "Generation",
+    url: "/generation",
+    icon: CirclePlay,
   },
 ];
 

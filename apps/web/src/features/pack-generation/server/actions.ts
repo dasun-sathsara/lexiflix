@@ -28,7 +28,7 @@ export async function getPackGenerationProgressAction(
   return { success: true, generation };
 }
 
-export async function listDeckGenerationJobsAction() {
+export async function listGenerationJobsAction() {
   const session = await requireSession();
   return {
     success: true as const,
