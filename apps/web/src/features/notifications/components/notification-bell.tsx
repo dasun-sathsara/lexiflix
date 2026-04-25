@@ -46,7 +46,7 @@ export function NotificationBell() {
   const refresh = useCallback(() => {
     startTransition(async () => {
       const result = await listNotificationsAction();
-      setNotifications(result.notifications);
+      if (result.ok) setNotifications(result.data.notifications);
     });
   }, []);
 

@@ -2,7 +2,10 @@
 
 import { z } from "zod";
 import { requireSession } from "@/lib/auth-guards";
-import type { PackGenerationProgressActionResult } from "../types";
+import type {
+  ListPackGenerationJobsActionResult,
+  PackGenerationProgressActionResult,
+} from "../types";
 import { getPackGenerationProgressView, listPackGenerationProgressForDecks } from "./queries";
 
 const jobInputSchema = z.object({
@@ -22,16 +25,18 @@ export async function getPackGenerationProgressAction(
   });
 
   if (!generation) {
-    return { success: false, message: "Generation job was not found." };
+    return { ok: false, error: "Generation job was not found." };
   }
 
-  return { success: true, generation };
+  return { ok: true, data: { generation } };
 }
 
-export async function listGenerationJobsAction() {
+export async function listGenerationJobsAction(): Promise<ListPackGenerationJobsActionResult> {
   const session = await requireSession();
   return {
-    success: true as const,
-    jobs: await listPackGenerationProgressForDecks({ userId: session.user.id }),
+    ok: true,
+    data: {
+      jobs: await listPackGenerationProgressForDecks({ userId: session.user.id }),
+    },
   };
 }

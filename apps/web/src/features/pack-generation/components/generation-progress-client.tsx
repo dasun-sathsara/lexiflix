@@ -47,7 +47,7 @@ export function GenerationProgressClient({
           jobId: generation.jobId,
           includeEvents: true,
         });
-        if (result.success) setGeneration(result.generation);
+        if (result.ok) setGeneration(result.data.generation);
       });
     }, 3500);
     return () => window.clearInterval(timer);

@@ -1,4 +1,5 @@
 import type { CefrLevel } from "@/features/assessment/lib/types";
+import type { ActionResult } from "@/lib/action-result";
 import type {
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
@@ -22,27 +23,13 @@ export type SettingsPreferences = {
   streakAlertsEnabled: boolean;
 };
 
-export type UpdateSettingsPreferencesActionResult =
-  | {
-      success: true;
-      preferences: SettingsPreferences;
-    }
-  | {
-      success: false;
-      message: string;
-    };
+export type UpdateSettingsPreferencesActionResult = ActionResult<{
+  preferences: SettingsPreferences;
+}>;
 
-export type UpdateProfileActionResult =
-  | {
-      ok: true;
-      data: {
-        user: {
-          name: string;
-          image: string | null;
-        };
-      };
-    }
-  | {
-      ok: false;
-      error: string;
-    };
+export type UpdateProfileActionResult = ActionResult<{
+  user: {
+    name: string;
+    image: string | null;
+  };
+}>;

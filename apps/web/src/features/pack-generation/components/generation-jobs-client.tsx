@@ -27,7 +27,7 @@ export function GenerationJobsClient({
     const timer = window.setInterval(() => {
       startTransition(async () => {
         const result = await listGenerationJobsAction();
-        if (result.success) setJobs(result.jobs);
+        if (result.ok) setJobs(result.data.jobs);
       });
     }, 4000);
     return () => window.clearInterval(timer);

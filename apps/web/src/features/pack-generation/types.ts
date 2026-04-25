@@ -1,3 +1,4 @@
+import type { ActionResult } from "@/lib/action-result";
 import type { ContentGenerationStage } from "@/lib/server/content-generation/contracts";
 import type {
   GenerationCefrWindowMode,
@@ -56,12 +57,10 @@ export type PackGenerationProgressView = {
   events: PackGenerationProgressEvent[];
 };
 
-export type PackGenerationProgressActionResult =
-  | {
-      success: true;
-      generation: PackGenerationProgressView;
-    }
-  | {
-      success: false;
-      message: string;
-    };
+export type PackGenerationProgressActionResult = ActionResult<{
+  generation: PackGenerationProgressView;
+}>;
+
+export type ListPackGenerationJobsActionResult = ActionResult<{
+  jobs: PackGenerationProgressView[];
+}>;

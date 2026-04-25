@@ -383,13 +383,13 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
           streakAlertsEnabled,
         });
 
-        if (!result.success) {
-          setPreferencesStatus({ type: "error", message: result.message });
-          toast.error(result.message);
+        if (!result.ok) {
+          setPreferencesStatus({ type: "error", message: result.error });
+          toast.error(result.error);
           return;
         }
 
-        const nextPreferences = result.preferences;
+        const nextPreferences = result.data.preferences;
         setInitialPreferences(nextPreferences);
         setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
         setDailyWordsGoal(String(nextPreferences.dailyWordsGoal));
@@ -439,12 +439,12 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         newPassword,
       });
 
-      if (!result.success) {
+      if (!result.ok) {
         setPasswordStatus({
           type: "error",
-          message: result.message,
+          message: result.error,
         });
-        toast.error(result.message);
+        toast.error(result.error);
         return;
       }
 
@@ -463,9 +463,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     startDeletingAccount(async () => {
       const result = await deleteAccountAction();
 
-      if (!result.success) {
-        setDeleteStatus({ type: "error", message: result.message });
-        toast.error(result.message);
+      if (!result.ok) {
+        setDeleteStatus({ type: "error", message: result.error });
+        toast.error(result.error);
         return;
       }
 

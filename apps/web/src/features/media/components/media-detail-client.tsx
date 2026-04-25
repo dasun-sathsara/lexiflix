@@ -608,10 +608,10 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
         return;
       }
 
-      if (result.success) {
-        setAnalysis(result.analysis);
+      if (result.ok) {
+        setAnalysis(result.data.analysis);
       } else {
-        setActionMessage(result.message);
+        setActionMessage(result.error);
       }
     };
 
@@ -638,10 +638,10 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
       if (cancelled) {
         return;
       }
-      if (result.success) {
-        setGeneration(result.generation);
+      if (result.ok) {
+        setGeneration(result.data.generation);
       } else {
-        setActionMessage(result.message);
+        setActionMessage(result.error);
       }
     };
 
@@ -665,15 +665,12 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
         seasonNumber: media.selectedSeasonNumber,
       });
 
-      if (result.success) {
-        setAnalysis(result.analysis);
+      if (result.ok) {
+        setAnalysis(result.data.analysis);
         return;
       }
 
-      setActionMessage(result.message);
-      if (result.analysis) {
-        setAnalysis(result.analysis);
-      }
+      setActionMessage(result.error);
     });
   };
 
@@ -697,14 +694,11 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
         seasonNumber: media.selectedSeasonNumber,
         request,
       });
-      if (result.success) {
-        setGeneration(result.generation);
+      if (result.ok) {
+        setGeneration(result.data.generation);
         return;
       }
-      setActionMessage(result.message);
-      if (result.generation) {
-        setGeneration(result.generation);
-      }
+      setActionMessage(result.error);
     });
   };
 

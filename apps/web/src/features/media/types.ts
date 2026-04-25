@@ -1,4 +1,5 @@
 import type { PackGenerationProgressView } from "@/features/pack-generation/types";
+import type { ActionResult } from "@/lib/action-result";
 import type {
   ContentAnalysisSummary,
   GenerationCefrWindowMode,
@@ -86,26 +87,13 @@ export type StartAnalysisInput = {
   seasonNumber?: number | null;
 };
 
-export type StartAnalysisActionResult =
-  | {
-      success: true;
-      analysis: MediaAnalysisSnapshot;
-    }
-  | {
-      success: false;
-      message: string;
-      analysis?: MediaAnalysisSnapshot;
-    };
+export type StartAnalysisActionResult = ActionResult<{
+  analysis: MediaAnalysisSnapshot;
+}>;
 
-export type AnalysisStatusActionResult =
-  | {
-      success: true;
-      analysis: MediaAnalysisSnapshot;
-    }
-  | {
-      success: false;
-      message: string;
-    };
+export type AnalysisStatusActionResult = ActionResult<{
+  analysis: MediaAnalysisSnapshot;
+}>;
 
 export type PackGenerationSnapshot = PackGenerationProgressView;
 
@@ -116,23 +104,10 @@ export type StartPackGenerationInput = {
   request: Partial<GenerationDialogDefaults> & { forceRegenerate?: boolean };
 };
 
-export type StartPackGenerationActionResult =
-  | {
-      success: true;
-      generation: PackGenerationSnapshot;
-    }
-  | {
-      success: false;
-      message: string;
-      generation?: PackGenerationSnapshot;
-    };
+export type StartPackGenerationActionResult = ActionResult<{
+  generation: PackGenerationSnapshot;
+}>;
 
-export type PackGenerationStatusActionResult =
-  | {
-      success: true;
-      generation: PackGenerationSnapshot;
-    }
-  | {
-      success: false;
-      message: string;
-    };
+export type PackGenerationStatusActionResult = ActionResult<{
+  generation: PackGenerationSnapshot;
+}>;

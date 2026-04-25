@@ -18,21 +18,13 @@ import type {
   UpdateProfileActionResult,
   UpdateSettingsPreferencesActionResult,
 } from "@/features/settings/types";
+import type { ActionResult } from "@/lib/action-result";
 import { auth } from "@/lib/auth";
 import { requireSession } from "@/lib/auth-guards";
 import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
 import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/storage/r2";
-
-type ActionResponse =
-  | {
-      success: true;
-    }
-  | {
-      success: false;
-      message: string;
-    };
 
 type UpdateUserBody = Parameters<typeof auth.api.updateUser>[0]["body"];
 
@@ -183,8 +175,8 @@ export async function updateSettingsPreferencesAction(
 
   if (!parsed.success) {
     return {
-      success: false,
-      message: parsed.error.issues[0]?.message ?? "Invalid preferences.",
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid preferences.",
     };
   }
 
@@ -261,15 +253,17 @@ export async function updateSettingsPreferencesAction(
   revalidatePath("/decks");
 
   return {
-    success: true,
-    preferences: await getSettingsPreferences(session.user.id),
+    ok: true,
+    data: {
+      preferences: await getSettingsPreferences(session.user.id),
+    },
   };
 }
 
 export async function changePasswordAction(input: {
   currentPassword: string;
   newPassword: string;
-}): Promise<ActionResponse> {
+}): Promise<ActionResult> {
   try {
     await auth.api.changePassword({
       body: {
@@ -280,43 +274,43 @@ export async function changePasswordAction(input: {
       headers: await headers(),
     });
 
-    return { success: true };
+    return { ok: true, data: undefined };
   } catch (error) {
     if (error instanceof APIError) {
       return {
-        success: false,
-        message: error.message ?? "Unable to update password.",
+        ok: false,
+        error: error.message ?? "Unable to update password.",
       };
     }
 
     console.error("Unexpected error updating password", { error });
     return {
-      success: false,
-      message: "Unexpected error updating password.",
+      ok: false,
+      error: "Unexpected error updating password.",
     };
   }
 }
 
-export async function deleteAccountAction(): Promise<ActionResponse> {
+export async function deleteAccountAction(): Promise<ActionResult> {
   try {
     await auth.api.deleteUser({
       body: {},
       headers: await headers(),
     });
 
-    return { success: true };
+    return { ok: true, data: undefined };
   } catch (error) {
     if (error instanceof APIError) {
       return {
-        success: false,
-        message: error.message ?? "Unable to delete account.",
+        ok: false,
+        error: error.message ?? "Unable to delete account.",
       };
     }
 
     console.error("Unexpected error deleting account", { error });
     return {
-      success: false,
-      message: "Unexpected error deleting account.",
+      ok: false,
+      error: "Unexpected error deleting account.",
     };
   }
 }

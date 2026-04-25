@@ -4,7 +4,6 @@ import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 import {
   getAnalysisSnapshotByRunId,
-  getAnalysisSnapshotForContentTarget,
   getAnalysisSnapshotForRunAndContent,
   getPackGenerationSnapshotByJobId,
 } from "@/features/media/server/analysis";
@@ -131,13 +130,8 @@ export async function startAnalysisAction(
 
   if (target.status !== "resolved") {
     return {
-      success: false,
-      message: "Choose a season before starting TV subtitle analysis.",
-      analysis: await getAnalysisSnapshotForContentTarget({
-        tmdbId: parsed.tmdbId,
-        mediaType: parsed.mediaType,
-        seasonNumber: parsed.mediaType === "tv" ? (parsed.seasonNumber ?? null) : null,
-      }),
+      ok: false,
+      error: "Choose a season before starting TV subtitle analysis.",
     };
   }
 
@@ -157,8 +151,8 @@ export async function startAnalysisAction(
     }
 
     return {
-      success: true,
-      analysis: snapshot,
+      ok: true,
+      data: { analysis: snapshot },
     };
   }
 
@@ -190,8 +184,8 @@ export async function startAnalysisAction(
   }
 
   return {
-    success: true,
-    analysis: snapshot,
+    ok: true,
+    data: { analysis: snapshot },
   };
 }
 
@@ -213,14 +207,14 @@ export async function getAnalysisStatusAction(input: {
 
   if (!snapshot) {
     return {
-      success: false,
-      message: "Analysis run not found for this media target.",
+      ok: false,
+      error: "Analysis run not found for this media target.",
     };
   }
 
   return {
-    success: true,
-    analysis: snapshot,
+    ok: true,
+    data: { analysis: snapshot },
   };
 }
 
@@ -238,15 +232,15 @@ export async function startPackGenerationAction(
   });
 
   if (target.status !== "resolved") {
-    return { success: false, message: "Choose a season before generating a pack." };
+    return { ok: false, error: "Choose a season before generating a pack." };
   }
 
   const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
   const analysisRun = await getContentAnalysisRunByFingerprint(target.content.id, fingerprint);
   if (!analysisRun || analysisRun.status !== "completed") {
     return {
-      success: false,
-      message: "Reusable subtitle analysis must complete before pack generation.",
+      ok: false,
+      error: "Reusable subtitle analysis must complete before pack generation.",
     };
   }
 
@@ -296,7 +290,7 @@ export async function startPackGenerationAction(
     throw new Error(`Pack generation job ${job.id} disappeared after creation.`);
   }
 
-  return { success: true, generation };
+  return { ok: true, data: { generation } };
 }
 
 export async function getPackGenerationStatusAction(input: {
@@ -310,8 +304,8 @@ export async function getPackGenerationStatusAction(input: {
   });
 
   if (!generation) {
-    return { success: false, message: "Pack generation job was not found." };
+    return { ok: false, error: "Pack generation job was not found." };
   }
 
-  return { success: true, generation };
+  return { ok: true, data: { generation } };
 }
