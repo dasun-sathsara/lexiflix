@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CuratedAdminCatalogFilter } from "@/features/curation/lib/admin-query";
 import { cn } from "@/lib/utils";
 
@@ -65,16 +65,13 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
     <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
       <CardHeader className="gap-1.5 border-b py-3.5">
         <CardTitle className="text-base font-semibold">Catalog filters</CardTitle>
-        <CardDescription>
-          Narrow the catalog by media type and publish state without crowding the results list.
-        </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-wrap gap-4 py-3">
+      <CardContent className="flex flex-wrap gap-3 py-3">
         <div className="flex flex-col gap-1.5">
           <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Type
           </span>
-          <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
             {typeOptions.map((opt) => {
               const isActive = filter.mediaType === opt.value;
               return (
@@ -83,7 +80,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_type", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
                     isActive
                       ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
@@ -110,7 +107,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
           <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Status
           </span>
-          <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+          <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
             {statusOptions.map((opt) => {
               const isActive = filter.status === opt.value;
               return (
@@ -119,7 +116,7 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
                   type="button"
                   onClick={() => updateFilter("cat_status", opt.value)}
                   className={cn(
-                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
                     isActive
                       ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",

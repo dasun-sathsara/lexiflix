@@ -99,6 +99,14 @@ const vocabularyTypeLabels: Record<StoredVocabularyKind, string> = {
 };
 const STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = ["word", "phrasal_verb", "idiom", "slang"];
 const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
+const settingsCardClass =
+  "gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm";
+const settingsCardHeaderClass = "gap-1.5 border-b py-3.5";
+const settingsCardContentClass = "py-3.5";
+const settingsCardFooterClass =
+  "border-t py-3.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+const settingsFieldClass = "flex flex-col gap-1.5";
+const settingsLabelClass = "text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground";
 
 function normalizeCustomInstructions(value: string) {
   const trimmed = value.trim();
@@ -517,25 +525,23 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         description="Manage how you show up in shared sessions and keep your LexiFlix account safeguarded."
       />
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-4">
         <TabsList className="w-full justify-start sm:w-fit">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="flex flex-col gap-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-4">
               <form onSubmit={handleProfileSubmit} className="contents">
-                <Card id="profile">
-                  <CardHeader>
+                <Card id="profile" className={settingsCardClass}>
+                  <CardHeader className={settingsCardHeaderClass}>
                     <CardTitle>Profile</CardTitle>
-                    <CardDescription>
-                      Refresh your avatar and display name so collaborators recognize you instantly.
-                    </CardDescription>
+                    <CardDescription>Avatar and display name.</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
+                  <CardContent className={`${settingsCardContentClass} space-y-4`}>
+                    <div className="flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border border-dashed border-border/70 bg-muted/30 p-3 sm:flex-row sm:items-center sm:gap-4">
                       <Avatar className="size-16 sm:size-20">
                         {avatarPreview ? (
                           <AvatarImage
@@ -551,8 +557,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </Avatar>
                       <div className="flex flex-1 flex-col gap-3">
                         <p className="text-sm text-muted-foreground">
-                          Upload a square image (JPG, PNG, or WebP). Keep it under 5 MB for the
-                          snappiest sync.
+                          JPG, PNG, or WebP. Maximum 5 MB.
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
                           <Input
@@ -606,9 +611,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                     <Separator />
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2 space-y-2">
-                        <Label htmlFor="display-name">Display name</Label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className={`sm:col-span-2 ${settingsFieldClass}`}>
+                        <Label htmlFor="display-name" className={settingsLabelClass}>
+                          Display name
+                        </Label>
                         <Input
                           id="display-name"
                           value={displayName}
@@ -618,14 +625,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                           }}
                           placeholder="Your public username"
                         />
-                        <p className="text-xs text-muted-foreground">
-                          This appears on study leaderboards, shared packs, and invitations you
-                          send.
-                        </p>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <CardFooter className={settingsCardFooterClass}>
                     <div className="flex items-center gap-2 text-sm">
                       {profileStatus ? (
                         <>
@@ -647,9 +650,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       ) : (
                         <>
                           <ShieldCheck className="size-4 text-indigo-500" />
-                          <span className="text-muted-foreground">
-                            Changes save instantly across the dashboard once you hit save.
-                          </span>
+                          <span className="text-muted-foreground">No unsaved profile changes.</span>
                         </>
                       )}
                     </div>
@@ -668,17 +669,16 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
               </form>
 
               <form onSubmit={handlePasswordSubmit} className="contents">
-                <Card id="security">
-                  <CardHeader>
+                <Card id="security" className={settingsCardClass}>
+                  <CardHeader className={settingsCardHeaderClass}>
                     <CardTitle>Password</CardTitle>
-                    <CardDescription>
-                      Rotate your credentials regularly to keep your learning streaks and billing
-                      details secure.
-                    </CardDescription>
+                    <CardDescription>Account credential update.</CardDescription>
                   </CardHeader>
-                  <CardContent className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current password</Label>
+                  <CardContent className={`${settingsCardContentClass} grid gap-3 sm:grid-cols-2`}>
+                    <div className={settingsFieldClass}>
+                      <Label htmlFor="current-password" className={settingsLabelClass}>
+                        Current password
+                      </Label>
                       <Input
                         id="current-password"
                         type="password"
@@ -691,8 +691,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         placeholder="••••••••"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New password</Label>
+                    <div className={settingsFieldClass}>
+                      <Label htmlFor="new-password" className={settingsLabelClass}>
+                        New password
+                      </Label>
                       <Input
                         id="new-password"
                         type="password"
@@ -705,8 +707,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         placeholder="At least 8 characters"
                       />
                     </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="confirm-password">Confirm new password</Label>
+                    <div className={`sm:col-span-2 ${settingsFieldClass}`}>
+                      <Label htmlFor="confirm-password" className={settingsLabelClass}>
+                        Confirm new password
+                      </Label>
                       <Input
                         id="confirm-password"
                         type="password"
@@ -720,7 +724,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       />
                     </div>
                   </CardContent>
-                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <CardFooter className={settingsCardFooterClass}>
                     <div className="flex items-center gap-2 text-sm">
                       {passwordStatus ? (
                         <>
@@ -742,9 +746,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       ) : (
                         <>
                           <ShieldCheck className="size-4 text-indigo-500" />
-                          <span className="text-muted-foreground">
-                            Use a unique phrase. We will never share it with anyone.
-                          </span>
+                          <span className="text-muted-foreground">Use at least 8 characters.</span>
                         </>
                       )}
                     </div>
@@ -763,19 +765,21 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
               </form>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <Card id="danger" className="border-destructive/40 bg-destructive/5">
-                <CardHeader>
+            <div className="flex flex-col gap-4">
+              <Card
+                id="danger"
+                className={`${settingsCardClass} border-destructive/40 bg-destructive/5`}
+              >
+                <CardHeader className={settingsCardHeaderClass}>
                   <CardTitle>Delete account</CardTitle>
-                  <CardDescription>Remove your LexiFlix data permanently.</CardDescription>
+                  <CardDescription>Permanent account removal.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>
-                    Deleting your account wipes packs, progress, and billing records right away.
-                    Export anything you need before you continue.
-                  </p>
+                <CardContent
+                  className={`${settingsCardContentClass} space-y-2 text-sm text-muted-foreground`}
+                >
+                  <p>Deletes packs, progress, and billing records immediately.</p>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardFooter className={settingsCardFooterClass}>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     {deleteStatus ? (
                       <>
@@ -847,18 +851,18 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
         <TabsContent value="preferences" className="mt-0">
           <form onSubmit={handlePreferencesSubmit}>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <Card id="preferences">
-                <CardHeader>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <Card id="preferences" className={settingsCardClass}>
+                <CardHeader className={settingsCardHeaderClass}>
                   <CardTitle>Learning preferences</CardTitle>
-                  <CardDescription>
-                    Tune your CEFR level and daily pace for a personalized study flow.
-                  </CardDescription>
+                  <CardDescription>CEFR level, pace, and generation defaults.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-cefr-level">Current CEFR level</Label>
+                <CardContent className={`${settingsCardContentClass} space-y-4`}>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className={settingsFieldClass}>
+                      <Label htmlFor="current-cefr-level" className={settingsLabelClass}>
+                        Current CEFR level
+                      </Label>
                       <Select
                         value={manualOverrideSelection}
                         onValueChange={(value) => {
@@ -897,8 +901,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="target-language">Target language</Label>
+                    <div className={settingsFieldClass}>
+                      <Label htmlFor="target-language" className={settingsLabelClass}>
+                        Target language
+                      </Label>
                       <Input
                         id="target-language"
                         value={initialPreferences.targetLanguage}
@@ -911,8 +917,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="daily-words-goal">Daily words goal</Label>
+                  <div className={settingsFieldClass}>
+                    <Label htmlFor="daily-words-goal" className={settingsLabelClass}>
+                      Daily words goal
+                    </Label>
                     <Input
                       id="daily-words-goal"
                       type="number"
@@ -937,7 +945,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                   <Separator />
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
                       <h3 className="text-sm font-medium">Generation defaults</h3>
                       <p className="text-sm text-muted-foreground">
@@ -945,9 +953,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </p>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="generation-pack-size">Pack size</Label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className={settingsFieldClass}>
+                        <Label htmlFor="generation-pack-size" className={settingsLabelClass}>
+                          Pack size
+                        </Label>
                         <Input
                           id="generation-pack-size"
                           type="number"
@@ -966,8 +976,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         ) : null}
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="generation-example-count">Example sentences</Label>
+                      <div className={settingsFieldClass}>
+                        <Label htmlFor="generation-example-count" className={settingsLabelClass}>
+                          Example sentences
+                        </Label>
                         <Select
                           value={generationExampleSentenceCount}
                           onValueChange={(value) => {
@@ -986,8 +998,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="generation-cefr-window">CEFR window</Label>
+                      <div className={settingsFieldClass}>
+                        <Label htmlFor="generation-cefr-window" className={settingsLabelClass}>
+                          CEFR window
+                        </Label>
                         <Select
                           value={generationCefrWindowMode}
                           onValueChange={(value) => {
@@ -1008,8 +1022,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="generation-known-terms">Known terms</Label>
+                      <div className={settingsFieldClass}>
+                        <Label htmlFor="generation-known-terms" className={settingsLabelClass}>
+                          Known terms
+                        </Label>
                         <Select
                           value={generationKnownTermHandling}
                           onValueChange={(value) => {
@@ -1030,8 +1046,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="frequency-preference">Frequency preference</Label>
+                      <div className={settingsFieldClass}>
+                        <Label htmlFor="frequency-preference" className={settingsLabelClass}>
+                          Frequency preference
+                        </Label>
                         <Select
                           value={frequencyPreference}
                           onValueChange={(value) => {
@@ -1052,9 +1070,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Vocabulary types</Label>
-                        <div className="grid gap-2 rounded-lg border p-3">
+                      <div className={settingsFieldClass}>
+                        <Label className={settingsLabelClass}>Vocabulary types</Label>
+                        <div className="grid gap-2 rounded-[calc(var(--radius)+2px)] border bg-muted/20 p-3">
                           {STUDY_VOCABULARY_TYPES.map((kind) => (
                             <label
                               key={kind}
@@ -1080,8 +1098,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="generation-custom-instructions">
+                    <div className={settingsFieldClass}>
+                      <Label
+                        htmlFor="generation-custom-instructions"
+                        className={settingsLabelClass}
+                      >
                         Default custom instructions
                       </Label>
                       <Textarea
@@ -1109,7 +1130,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
                   <Separator />
 
-                  <AppPanel className="flex flex-col gap-3 border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <AppPanel className="flex flex-col gap-3 border-dashed p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Retake CEFR assessment</p>
                       <p className="text-sm text-muted-foreground">
@@ -1126,17 +1147,17 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                 </CardContent>
               </Card>
 
-              <Card id="preferences-notifications">
-                <CardHeader>
+              <Card id="preferences-notifications" className={settingsCardClass}>
+                <CardHeader className={settingsCardHeaderClass}>
                   <CardTitle>Notifications</CardTitle>
-                  <CardDescription>Control reminders and streak alerts.</CardDescription>
+                  <CardDescription>Reminder and streak toggles.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <AppPanel className="flex items-start justify-between gap-4 p-4">
+                <CardContent className={`${settingsCardContentClass} space-y-3`}>
+                  <AppPanel className="flex items-start justify-between gap-4 p-3">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Email reminders</p>
                       <p className="text-sm text-muted-foreground">
-                        Receive a reminder email when your study queue is waiting.
+                        Reminder email for waiting queues.
                       </p>
                     </div>
                     <Switch
@@ -1149,11 +1170,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                     />
                   </AppPanel>
 
-                  <AppPanel className="flex items-start justify-between gap-4 p-4">
+                  <AppPanel className="flex items-start justify-between gap-4 p-3">
                     <div className="space-y-1">
                       <p className="text-sm font-medium">Streak alerts</p>
                       <p className="text-sm text-muted-foreground">
-                        Get notified when your current streak is at risk.
+                        Alert before the current streak lapses.
                       </p>
                     </div>
                     <Switch
@@ -1166,7 +1187,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                     />
                   </AppPanel>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardFooter className={settingsCardFooterClass}>
                   <div className="flex w-full items-center gap-2 text-sm">
                     {preferencesStatus ? (
                       <>

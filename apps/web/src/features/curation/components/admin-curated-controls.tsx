@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -136,30 +136,27 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
     <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
       <CardHeader className="gap-1.5 border-b py-3.5">
         <CardTitle className="text-base font-semibold">Discovery controls</CardTitle>
-        <CardDescription>
-          Search a specific title or browse TMDB with curated filters before adding entries.
-        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 py-3.5">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3">
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Mode
             </span>
-            <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
               {(["search", "browse"] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
                   className={cn(
-                    "inline-flex min-h-8 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
                     mode === m
                       ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
-                  {m === "search" ? "Search by Title" : "Browse & Discover"}
+                  {m === "search" ? "Search" : "Browse"}
                 </button>
               ))}
             </div>
@@ -169,14 +166,14 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Type
             </span>
-            <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border bg-muted/50 p-0.75 shadow-sm">
+            <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
               {(["movie", "tv"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => handleMediaTypeChange(t)}
                   className={cn(
-                    "inline-flex min-h-8 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
+                    "inline-flex min-h-8 items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
                     mediaType === t
                       ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
@@ -270,7 +267,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
 
         <div className="flex flex-wrap items-center gap-2 pt-2">
           <Button size="sm" onClick={handleApply}>
-            Apply Filters
+            Apply
           </Button>
           <Button size="sm" variant="ghost" onClick={handleReset}>
             Reset

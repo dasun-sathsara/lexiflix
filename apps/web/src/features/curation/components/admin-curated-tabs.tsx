@@ -164,7 +164,7 @@ export function AdminCuratedWorkspace({
         <Link
           href={discoverHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
             isDiscover
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -177,7 +177,7 @@ export function AdminCuratedWorkspace({
         <Link
           href={catalogHref}
           className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
             isCatalog
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
@@ -302,10 +302,6 @@ export function AdminCuratedWorkspace({
             <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
               <CardHeader className="gap-1.5 border-b py-3.5">
                 <CardTitle className="text-base font-semibold">Catalog entries</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review ordering, publish status, and TMDB snapshots without compressing the row
-                  metadata.
-                </p>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 py-3.5">
                 {catalogEntries.map((entry) => (
