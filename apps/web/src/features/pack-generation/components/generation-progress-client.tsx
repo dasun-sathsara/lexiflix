@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import {
+  formatGenerationLabel,
+  getGenerationStatusCopy,
+  getGenerationStatusMessage,
+  isGenerationActive,
+} from "../lib/status";
 import { getPackGenerationProgressAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
-
-function formatLabel(value: string) {
-  return value.replaceAll("_", " ");
-}
 
 function formatDate(value: string | null) {
   return value
@@ -36,7 +38,8 @@ export function GenerationProgressClient({
 }) {
   const [generation, setGeneration] = useState(initialGeneration);
   const [isPending, startTransition] = useTransition();
-  const isActive = generation.status === "queued" || generation.status === "running";
+  const status = getGenerationStatusCopy(generation.status);
+  const isActive = isGenerationActive(generation.status);
   const StatusIcon = statusIcon(generation.status);
 
   useEffect(() => {
@@ -60,8 +63,17 @@ export function GenerationProgressClient({
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{formatLabel(generation.status)}</Badge>
-                <Badge variant="outline">{formatLabel(generation.stage)}</Badge>
+                <Badge
+                  variant={isActive || status.tone === "success" ? "default" : "secondary"}
+                  className={cn(
+                    status.tone === "danger" && "bg-rose-600 text-white hover:bg-rose-600/90",
+                    status.tone === "success" &&
+                      "bg-emerald-600 text-white hover:bg-emerald-600/90",
+                  )}
+                >
+                  {status.label}
+                </Badge>
+                <Badge variant="outline">{formatGenerationLabel(generation.stage)}</Badge>
                 {isPending ? (
                   <Loader2 className="size-4 animate-spin text-muted-foreground" />
                 ) : null}
@@ -83,7 +95,10 @@ export function GenerationProgressClient({
               ) : null}
               {generation.packHref ? (
                 <Button asChild>
-                  <Link href={generation.packHref}>Open pack</Link>
+                  <Link href={generation.packHref}>
+                    <CheckCircle2 className="size-4" />
+                    Open Pack
+                  </Link>
                 </Button>
               ) : null}
             </div>
@@ -102,9 +117,7 @@ export function GenerationProgressClient({
           >
             <StatusIcon className={cn("mt-0.5 size-5", isActive && "animate-spin")} />
             <div className="space-y-1">
-              <p className="font-medium">
-                {generation.progressMessage ?? `Generation is ${formatLabel(generation.status)}.`}
-              </p>
+              <p className="font-medium">{getGenerationStatusMessage(generation)}</p>
               {generation.errorMessage ? (
                 <p className="text-sm">{generation.errorMessage}</p>
               ) : null}
@@ -158,12 +171,14 @@ export function GenerationProgressClient({
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-muted-foreground">Window</span>
-              <span className="font-medium">{formatLabel(generation.request.cefrWindowMode)}</span>
+              <span className="font-medium">
+                {formatGenerationLabel(generation.request.cefrWindowMode)}
+              </span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-muted-foreground">Known terms</span>
               <span className="font-medium">
-                {formatLabel(generation.request.knownTermHandling)}
+                {formatGenerationLabel(generation.request.knownTermHandling)}
               </span>
             </div>
             <div className="space-y-2">
@@ -171,7 +186,7 @@ export function GenerationProgressClient({
               <div className="flex flex-wrap gap-1.5">
                 {generation.request.selectedVocabularyTypes.map((kind) => (
                   <Badge key={kind} variant="secondary">
-                    {formatLabel(kind)}
+                    {formatGenerationLabel(kind)}
                   </Badge>
                 ))}
               </div>
@@ -198,7 +213,7 @@ export function GenerationProgressClient({
                       {formatDate(event.createdAt)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{formatLabel(event.stage)}</p>
+                      <p className="text-sm font-medium">{formatGenerationLabel(event.stage)}</p>
                       <p className="text-sm text-muted-foreground">
                         {event.message ?? "No message."}
                       </p>

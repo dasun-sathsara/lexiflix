@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Calendar,
+  CheckCircle2,
   ChevronRight,
   Clock,
   Film,
@@ -82,10 +83,11 @@ function CardCountPill({
 
 function DeckRow({ deck }: { deck: DeckSummary }) {
   const progressPct = clampToInt((deck.counts.mastered / Math.max(1, deck.counts.total)) * 100);
-  const hasCardsToStudy = deck.counts.new + deck.counts.learning + deck.counts.due > 0;
+  const cardsToStudy = deck.counts.new + deck.counts.learning + deck.counts.due;
+  const hasCardsToStudy = cardsToStudy > 0;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-4 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-indigo-300/50 hover:bg-card/60 dark:hover:border-indigo-500/30">
+    <div className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-muted/30 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
       {/* Poster */}
       <div className="relative h-[88px] w-[60px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
         {deck.posterUrl ? (
@@ -114,13 +116,23 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
       {/* Content */}
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {/* Row 1: Title + subtitle + streak */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h3 className="truncate text-base font-semibold tracking-tight">{deck.title}</h3>
           {deck.subtitle ? (
             <span className="hidden shrink-0 rounded-md border bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground sm:inline-block">
               {deck.subtitle}
             </span>
           ) : null}
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium",
+              hasCardsToStudy
+                ? "border-primary/20 bg-primary/10 text-primary"
+                : "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300",
+            )}
+          >
+            {hasCardsToStudy ? `${cardsToStudy} ready` : "Ready"}
+          </span>
         </div>
 
         {/* Row 2: Card count pills + last studied */}
@@ -153,28 +165,30 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="text-muted-foreground hover:text-foreground"
-          asChild
-        >
-          <Link href={`/pack/${deck.id}`} aria-label="Manage deck">
+      <div className="flex shrink-0 items-center gap-2 self-stretch sm:self-auto">
+        <Button size="sm" variant="outline" className="flex-1 gap-1.5 sm:flex-none" asChild>
+          <Link href={`/pack/${deck.id}`}>
             <Layers className="size-4" />
+            <span className="sm:hidden lg:inline">Open Pack</span>
           </Link>
         </Button>
 
         {hasCardsToStudy ? (
-          <Button size="sm" className="gap-1.5" asChild>
+          <Button size="sm" className="flex-1 gap-1.5 sm:flex-none" asChild>
             <Link href={`/study/${deck.id}`}>
               <Play className="size-3.5 fill-current" />
-              <span className="hidden sm:inline">Study</span>
+              Study Pack
             </Link>
           </Button>
         ) : (
-          <Button size="sm" variant="secondary" disabled className="opacity-50">
-            Done
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled
+            className="flex-1 gap-1.5 opacity-80 sm:flex-none"
+          >
+            <CheckCircle2 className="size-3.5" />
+            Complete
           </Button>
         )}
       </div>

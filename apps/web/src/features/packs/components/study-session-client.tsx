@@ -110,8 +110,8 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
   if (!hasCards) {
     return (
-      <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
-        <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center gap-4 px-6 text-center">
+      <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
+        <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-center justify-center gap-4 px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))] text-center">
           <h1 className="text-2xl font-semibold tracking-tight">No cards queued</h1>
           <p className="text-sm text-muted-foreground">
             This pack has no active cards ready for the default study queue.
@@ -131,8 +131,8 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
   if (isComplete) {
     return (
-      <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
-        <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center gap-5 px-6 text-center">
+      <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
+        <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-center justify-center gap-5 px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))] text-center">
           <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
             Session complete
           </Badge>
@@ -162,9 +162,9 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   }
 
   return (
-    <SoftGradientBackground className="fixed inset-0 z-0 h-full w-full overflow-hidden">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col px-4 pb-28 pt-6 sm:px-6">
-        <div className="mb-4 rounded-xl border bg-background/60 p-4 shadow-sm backdrop-blur-md">
+    <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
+      <div className="mx-auto flex h-dvh w-full max-w-4xl flex-col px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-6">
+        <div className="mb-3 rounded-xl border bg-background/60 p-3 shadow-sm backdrop-blur-md sm:mb-4 sm:p-4">
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="ghost"
@@ -201,18 +201,18 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <Card className="w-full overflow-hidden border-2 shadow-lg">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+          <Card className="max-h-full w-full overflow-hidden border-2 shadow-lg">
             <CardContent className="p-0">
               <button
                 type="button"
-                className="group relative w-full text-left"
+                className="group relative max-h-full w-full overflow-y-auto text-left"
                 onClick={() => setIsFlipped((value) => !value)}
                 aria-pressed={isFlipped}
               >
                 <div
                   className={
-                    "flex min-h-[520px] flex-col items-center justify-center gap-4 p-8 transition-all duration-300 " +
+                    "flex min-h-[min(420px,calc(100dvh-13rem))] flex-col items-center justify-center gap-4 p-5 transition-all duration-300 sm:min-h-[520px] sm:p-8 " +
                     (isFlipped
                       ? "pointer-events-none absolute inset-0 scale-[0.98] opacity-0"
                       : "relative opacity-100")
@@ -236,7 +236,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
                 <div
                   className={
-                    "flex min-h-[520px] flex-col gap-6 p-8 transition-all duration-300 " +
+                    "flex min-h-[min(420px,calc(100dvh-13rem))] flex-col gap-5 p-5 transition-all duration-300 sm:min-h-[520px] sm:gap-6 sm:p-8 " +
                     (isFlipped
                       ? "relative opacity-100"
                       : "pointer-events-none absolute inset-0 opacity-0")
@@ -244,7 +244,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
                     <div className="min-w-0">
-                      <div className="text-2xl font-bold tracking-tight text-primary">
+                      <div className="text-xl font-bold tracking-tight text-primary sm:text-2xl">
                         {activeCard.displayText}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-2 text-sm text-muted-foreground">
@@ -303,7 +303,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                       <div className="text-xs font-semibold uppercase text-muted-foreground">
                         Generated image
                       </div>
-                      <div className="relative h-56 w-full overflow-hidden rounded-xl border bg-muted">
+                      <div className="relative h-40 w-full overflow-hidden rounded-xl border bg-muted sm:h-56">
                         <Image
                           src={activeCard.imageUrl}
                           alt={`Generated image for ${activeCard.displayText}`}
@@ -327,7 +327,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
           (isFlipped ? "opacity-100" : "pointer-events-none opacity-0")
         }
       >
-        <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-2 px-4 py-4 sm:grid-cols-4 sm:gap-3 sm:px-6">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-2 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:grid-cols-4 sm:gap-3 sm:px-6">
           {[
             ["again", "Again", "Retry soon", "bg-rose-600 hover:bg-rose-600/90"],
             ["hard", "Hard", "Still shaky", "bg-amber-600 hover:bg-amber-600/90"],
@@ -337,7 +337,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             <Button
               key={rating}
               type="button"
-              className={`h-12 text-white ${className}`}
+              className={`h-11 text-white sm:h-12 ${className}`}
               disabled={Boolean(pendingRating)}
               onClick={() => rateCard(rating as PackReviewRating)}
             >
