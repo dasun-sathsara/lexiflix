@@ -19,6 +19,7 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
 import { getDeckSummariesForUser } from "@/features/packs/server/queries";
 import type { DeckSummary } from "@/features/packs/types";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
@@ -212,7 +213,10 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
 
 export default async function DecksPage() {
   const session = await requireSession();
-  const decks = await getDeckSummariesForUser({ userId: session.user.id });
+  const [decks] = await Promise.all([
+    getDeckSummariesForUser({ userId: session.user.id }),
+    reconcileDueReviewNotificationForUser({ userId: session.user.id }),
+  ]);
   const hasDecks = decks.length > 0;
   const stats = decks.reduce(
     (totals, deck) => {

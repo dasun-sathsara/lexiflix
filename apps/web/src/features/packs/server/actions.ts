@@ -526,6 +526,15 @@ export async function ratePackItemAction(input: {
   });
   const knownAfterReview =
     next.state === "mastered" && (input.rating === "good" || input.rating === "easy");
+  const [existingTermState] = await db
+    .select({ state: userTermState.state })
+    .from(userTermState)
+    .where(and(eq(userTermState.userId, session.user.id), eq(userTermState.termId, item.termId)))
+    .limit(1);
+  const shouldDemoteKnownTerm = existingTermState?.state === "known" && input.rating === "again";
+  const shouldPreserveKnownTerm =
+    existingTermState?.state === "known" && input.rating !== "again" && !knownAfterReview;
+  const nextTermState = knownAfterReview ? "known" : shouldPreserveKnownTerm ? "known" : "learning";
 
   const [existingStreak] = await db
     .select()
@@ -570,7 +579,7 @@ export async function ratePackItemAction(input: {
       .values({
         userId: session.user.id,
         termId: item.termId,
-        state: knownAfterReview ? "known" : "learning",
+        state: nextTermState,
         source: "review",
         totalReviews: 1,
         totalLapses: input.rating === "again" ? 1 : 0,
@@ -578,12 +587,12 @@ export async function ratePackItemAction(input: {
         firstSeenAt: reviewedAt,
         lastSeenAt: reviewedAt,
         lastReviewedAt: reviewedAt,
-        knownAt: knownAfterReview ? reviewedAt : null,
+        knownAt: nextTermState === "known" ? reviewedAt : null,
       })
       .onConflictDoUpdate({
         target: [userTermState.userId, userTermState.termId],
         set: {
-          state: knownAfterReview ? "known" : "learning",
+          state: nextTermState,
           source: "review",
           totalReviews: sql`${userTermState.totalReviews} + 1`,
           totalLapses:
@@ -594,12 +603,45 @@ export async function ratePackItemAction(input: {
           firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
           lastSeenAt: reviewedAt,
           lastReviewedAt: reviewedAt,
-          knownAt: knownAfterReview
-            ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
-            : userTermState.knownAt,
+          knownAt:
+            nextTermState === "known"
+              ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
+              : shouldDemoteKnownTerm
+                ? null
+                : userTermState.knownAt,
+          ignoredAt: null,
           updatedAt: reviewedAt,
         },
       });
+    const matchingRows = await tx
+      .select({ id: packItem.id })
+      .from(packItem)
+      .innerJoin(pack, eq(pack.id, packItem.packId))
+      .where(
+        and(
+          eq(pack.userId, session.user.id),
+          eq(packItem.termId, item.termId),
+          ne(packItem.state, "removed"),
+          isNull(packItem.removedAt),
+        ),
+      );
+    const matchingIds = matchingRows.map((row) => row.id);
+    if (knownAfterReview && matchingIds.length > 0) {
+      await tx
+        .update(packItem)
+        .set({ state: "mastered", masteredAt: reviewedAt, updatedAt: reviewedAt })
+        .where(inArray(packItem.id, matchingIds));
+    } else if (shouldDemoteKnownTerm && matchingIds.length > 0) {
+      await tx
+        .update(packItem)
+        .set({
+          state: "learning",
+          dueAt: next.dueAt,
+          masteredAt: null,
+          updatedAt: reviewedAt,
+        })
+        .where(inArray(packItem.id, matchingIds));
+    }
     await tx
       .insert(userStreak)
       .values({

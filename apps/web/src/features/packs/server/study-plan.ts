@@ -4,7 +4,7 @@ import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { PackCardView, PackStudyPlan, StudyMode, UserStudyPlan } from "@/features/packs/types";
 import { settingsPreferenceDefaults } from "@/features/settings/server/preferences";
 import { db } from "@/lib/server/db";
-import { pack, packItem, userPreferences } from "@/lib/server/db/schema";
+import { pack, packItem, userPreferences, userTermState } from "@/lib/server/db/schema";
 import { addUtcDays, getAppDateKey, getAppDayStartUtc } from "./study-time";
 
 function toIso(value: Date | null | undefined) {
@@ -82,9 +82,14 @@ export async function getStudyPlanForUser({
       packId: pack.id,
       updatedAt: pack.updatedAt,
       item: packItem,
+      termState: userTermState.state,
     })
     .from(pack)
     .leftJoin(packItem, eq(packItem.packId, pack.id))
+    .leftJoin(
+      userTermState,
+      and(eq(userTermState.userId, userId), eq(userTermState.termId, packItem.termId)),
+    )
     .where(and(eq(pack.userId, userId), eq(pack.status, "active")))
     .orderBy(desc(pack.updatedAt), asc(packItem.sortOrder));
 
@@ -102,6 +107,18 @@ export async function getStudyPlanForUser({
     const item = row.item;
 
     if (!item) {
+      plans.set(row.packId, plan);
+      continue;
+    }
+
+    if (row.termState === "ignored") {
+      plan.hiddenCount += 1;
+      plans.set(row.packId, plan);
+      continue;
+    }
+
+    if (row.termState === "known" && item.state !== "mastered") {
+      plan.masteredCount += 1;
       plans.set(row.packId, plan);
       continue;
     }
@@ -214,5 +231,5 @@ export function buildStudyQueue({
 
   return requestedCard && !queue.some((card) => card.id === requestedCard.id)
     ? [requestedCard, ...queue]
-    : queue;
+    : queue.filter((card) => card.termState !== "known" && card.termState !== "ignored");
 }

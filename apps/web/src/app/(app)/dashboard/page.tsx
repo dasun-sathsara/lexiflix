@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { getDashboardView } from "@/features/dashboard/server/queries";
+import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 
@@ -32,6 +33,7 @@ export default async function DashboardPage() {
   const [showAssessmentBanner, dashboard] = await Promise.all([
     shouldShowAssessmentBanner(session.user.id),
     getDashboardView({ userId: session.user.id }),
+    reconcileDueReviewNotificationForUser({ userId: session.user.id }),
   ]);
   const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Learner";
   const hasPacks = dashboard.recentPacks.length > 0;

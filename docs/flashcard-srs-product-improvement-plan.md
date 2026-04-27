@@ -360,6 +360,16 @@ Deliver:
 
 This stage removes contradictions across packs and closes the study loop.
 
+Completion log:
+
+- Implemented in `feat(web): align cross-pack SRS state`.
+- Shared study plans and normal queues now account for global `known` and `ignored` term states.
+- Review mastery propagates to matching active cards for the same learner and term.
+- `again` demotes a globally known term back to learning and reopens matching active cards; non-again ratings preserve known state unless mastery is reached.
+- Due-review notifications now reconcile from the shared study plan, and dashboard/decks loads trigger reconciliation.
+- Ignored terms remain excluded from generation regardless of known-term handling.
+- Verified with `task web:typecheck` and `task web:lint`.
+
 ### Stage 5: Validation And Canonical Doc Consolidation
 
 Deliver:

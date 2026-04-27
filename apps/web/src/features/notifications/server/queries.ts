@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, isNull, lte, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { getAppDateKey } from "@/features/packs/server/study-time";
 import { db } from "@/lib/server/db";
-import { notification, pack, packItem } from "@/lib/server/db/schema";
+import { notification } from "@/lib/server/db/schema";
 import type { NotificationView } from "../types";
 
 function mapNotification(row: typeof notification.$inferSelect): NotificationView {
@@ -42,27 +43,9 @@ export async function reconcileDueReviewNotificationForUser({ userId }: { userId
   const now = new Date();
   const appDay = getAppDateKey(now);
 
-  const dueRows = await db
-    .select({
-      packId: pack.id,
-      itemId: packItem.id,
-    })
-    .from(packItem)
-    .innerJoin(pack, eq(pack.id, packItem.packId))
-    .where(
-      and(
-        eq(pack.userId, userId),
-        eq(pack.status, "active"),
-        ne(packItem.state, "new"),
-        ne(packItem.state, "mastered"),
-        ne(packItem.state, "removed"),
-        isNull(packItem.removedAt),
-        lte(packItem.dueAt, now),
-      ),
-    )
-    .orderBy(asc(packItem.dueAt), asc(packItem.sortOrder));
+  const studyPlan = await getStudyPlanForUser({ userId, now });
 
-  if (dueRows.length === 0) {
+  if (studyPlan.dueNow === 0) {
     return;
   }
 
@@ -92,7 +75,7 @@ export async function reconcileDueReviewNotificationForUser({ userId }: { userId
     return;
   }
 
-  const firstPackId = dueRows[0]?.packId ?? null;
+  const firstPackId = studyPlan.packs.find((packPlan) => packPlan.dueCount > 0)?.packId ?? null;
   await db.insert(notification).values({
     id: crypto.randomUUID(),
     userId,
@@ -101,14 +84,14 @@ export async function reconcileDueReviewNotificationForUser({ userId }: { userId
     status: "sent",
     title: "Reviews due",
     body:
-      dueRows.length === 1
+      studyPlan.dueNow === 1
         ? "1 card is ready for review."
-        : `${dueRows.length} cards are ready for review.`,
-    href: firstPackId ? `/study/${firstPackId}` : "/decks",
+        : `${studyPlan.dueNow} cards are ready for review.`,
+    href: firstPackId ? `/study/${firstPackId}?mode=due` : "/decks",
     payload: {
       kind: "reviews_due",
       appDay,
-      dueCount: dueRows.length,
+      dueCount: studyPlan.dueNow,
       firstPackId,
     },
     sentAt: now,

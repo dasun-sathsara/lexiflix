@@ -22,6 +22,7 @@ import {
   pack,
   packItem,
   packItemContent,
+  userTermState,
   vocabularyTerm,
 } from "@/lib/server/db/schema";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
@@ -121,7 +122,7 @@ async function getOwnedPackRow(packId: string, userId: string) {
   return rows[0] ?? null;
 }
 
-async function getPackCards(packId: string): Promise<PackCardView[]> {
+async function getPackCards(packId: string, userId: string): Promise<PackCardView[]> {
   const now = new Date();
   const rows = await db
     .select({
@@ -131,6 +132,7 @@ async function getPackCards(packId: string): Promise<PackCardView[]> {
       analysis: contentAnalysisItem,
       audioArtifactId: audioArtifact.id,
       imageArtifactId: imageArtifact.id,
+      termState: userTermState.state,
     })
     .from(packItem)
     .innerJoin(packItemContent, eq(packItemContent.packItemId, packItem.id))
@@ -138,38 +140,44 @@ async function getPackCards(packId: string): Promise<PackCardView[]> {
     .innerJoin(contentAnalysisItem, eq(contentAnalysisItem.id, packItem.contentAnalysisItemId))
     .leftJoin(audioArtifact, eq(audioArtifact.id, packItemContent.audioArtifactId))
     .leftJoin(imageArtifact, eq(imageArtifact.id, packItemContent.imageArtifactId))
+    .leftJoin(
+      userTermState,
+      and(eq(userTermState.userId, userId), eq(userTermState.termId, packItem.termId)),
+    )
     .where(eq(packItem.packId, packId))
     .orderBy(asc(packItem.sortOrder));
 
-  return rows.map(({ item, itemContent, term, analysis, audioArtifactId, imageArtifactId }) =>
-    toEffectiveCardView(
-      {
-        id: item.id,
-        termId: item.termId,
-        displayText: term.displayText,
-        kind: term.kind,
-        partOfSpeech: term.partOfSpeech,
-        cefrLevel: analysis.cefrLevel ?? term.baseCefrLevel,
-        meaning: itemContent.meaning,
-        exampleSentences: itemContent.exampleSentences ?? [],
-        occurrenceCount: analysis.occurrenceCount,
-        frequencyRank: analysis.frequencyRank,
-        includedReason: item.includedReason,
-        state: item.state as PackCardView["state"],
-        dueAt: toIso(item.dueAt),
-        lastReviewedAt: toIso(item.lastReviewedAt),
-        lastRating: item.lastRating,
-        repetitionCount: item.repetitionCount,
-        lapseCount: item.lapseCount,
-        intervalDays: item.intervalDays,
-        easeFactor: item.easeFactor,
-        masteredAt: toIso(item.masteredAt),
-        ratingPreviews: { again: "", hard: "", good: "", easy: "" },
-        audioUrl: artifactUrl(audioArtifactId),
-        imageUrl: artifactUrl(imageArtifactId),
-      },
-      now,
-    ),
+  return rows.map(
+    ({ item, itemContent, term, analysis, audioArtifactId, imageArtifactId, termState }) =>
+      toEffectiveCardView(
+        {
+          id: item.id,
+          termId: item.termId,
+          termState,
+          displayText: term.displayText,
+          kind: term.kind,
+          partOfSpeech: term.partOfSpeech,
+          cefrLevel: analysis.cefrLevel ?? term.baseCefrLevel,
+          meaning: itemContent.meaning,
+          exampleSentences: itemContent.exampleSentences ?? [],
+          occurrenceCount: analysis.occurrenceCount,
+          frequencyRank: analysis.frequencyRank,
+          includedReason: item.includedReason,
+          state: item.state as PackCardView["state"],
+          dueAt: toIso(item.dueAt),
+          lastReviewedAt: toIso(item.lastReviewedAt),
+          lastRating: item.lastRating,
+          repetitionCount: item.repetitionCount,
+          lapseCount: item.lapseCount,
+          intervalDays: item.intervalDays,
+          easeFactor: item.easeFactor,
+          masteredAt: toIso(item.masteredAt),
+          ratingPreviews: { again: "", hard: "", good: "", easy: "" },
+          audioUrl: artifactUrl(audioArtifactId),
+          imageUrl: artifactUrl(imageArtifactId),
+        },
+        now,
+      ),
   );
 }
 
@@ -185,7 +193,7 @@ export async function getPackStagingView({
     return null;
   }
 
-  const cards = await getPackCards(packId);
+  const cards = await getPackCards(packId, userId);
   const studyPlan = await getPackStudyPlan({ packId, userId });
   const counts = deriveCounts(cards);
   counts.futureLearning = studyPlan.futureLearningCount;
@@ -224,7 +232,7 @@ export async function getStudySessionView({
     return null;
   }
 
-  const cards = await getPackCards(packId);
+  const cards = await getPackCards(packId, userId);
   const studyPlan = await getPackStudyPlan({ packId, userId });
   const resolvedMode = initialCardId ? "preview" : mode;
   const queue = buildStudyQueue({
