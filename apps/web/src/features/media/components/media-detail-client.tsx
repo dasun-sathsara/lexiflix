@@ -82,6 +82,8 @@ const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [
   "slang",
 ];
 
+const CEFR_LEVEL_ORDER: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
 function formatRuntime(minutes: number | null) {
   if (!minutes) {
     return null;
@@ -110,13 +112,12 @@ function getCefrColor(level: string | null | undefined) {
 
 function buildCefrDistributionEntries(snapshot: MediaAnalysisSnapshot) {
   const distribution = snapshot.summary?.cefrDistribution ?? {};
-  const levels: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
   const total = Object.values(distribution).reduce(
     (sum, value) => sum + (typeof value === "number" ? value : 0),
     0,
   );
 
-  return levels.map((level) => {
+  return CEFR_LEVEL_ORDER.map((level) => {
     const count = distribution[level] ?? 0;
     return {
       level,
@@ -124,6 +125,82 @@ function buildCefrDistributionEntries(snapshot: MediaAnalysisSnapshot) {
       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
     };
   });
+}
+
+function getFallbackContentLevel(snapshot: MediaAnalysisSnapshot) {
+  const distribution = snapshot.summary?.cefrDistribution;
+
+  // We cannot determine a fallback level if the distribution data is entirely missing
+  if (!distribution) {
+    return null;
+  }
+
+  // Calculate the fallback level by finding the CEFR tier with the highest term count.
+  // This serves as a heuristic when the backend fails to provide a pre-calculated average.
+  const strongestEntry = CEFR_LEVEL_ORDER.map((level) => ({
+    level,
+    count: distribution[level] ?? 0,
+  })).sort((a, b) => b.count - a.count)[0];
+
+  const hasValidStrongestEntry = strongestEntry && strongestEntry.count > 0;
+  return hasValidStrongestEntry ? strongestEntry.level : null;
+}
+
+function getChallengeSignal(snapshot: MediaAnalysisSnapshot, learnerLevel: StoredCefrLevel | null) {
+  // We cannot calculate a challenge delta if the analysis is incomplete
+  if (snapshot.status !== "completed") {
+    return null;
+  }
+
+  const contentLevel = snapshot.summary?.averageCefrLevel ?? getFallbackContentLevel(snapshot);
+
+  if (!learnerLevel) {
+    return {
+      label: "Analysis complete, learner level unavailable",
+      detail: contentLevel
+        ? `Average extracted level: ${contentLevel}`
+        : "Set a CEFR level to compare fit.",
+      toneClass: "border-muted-foreground/20 bg-muted/50 text-muted-foreground",
+    };
+  }
+
+  if (!contentLevel) {
+    return {
+      label: "Analysis complete, content level unavailable",
+      detail: `Your current CEFR level: ${learnerLevel}`,
+      toneClass: "border-muted-foreground/20 bg-muted/50 text-muted-foreground",
+    };
+  }
+
+  const challengeDelta =
+    CEFR_LEVEL_ORDER.indexOf(contentLevel) - CEFR_LEVEL_ORDER.indexOf(learnerLevel);
+
+  const isGoodFit = challengeDelta <= 0;
+  if (isGoodFit) {
+    return {
+      label: "Good fit",
+      detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+      toneClass:
+        "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300",
+    };
+  }
+
+  const isSlightlyChallenging = challengeDelta === 1;
+  if (isSlightlyChallenging) {
+    return {
+      label: "Slightly challenging",
+      detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+      toneClass:
+        "border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/20 dark:text-amber-300",
+    };
+  }
+
+  return {
+    label: "Stretch title",
+    detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+    toneClass:
+      "border-rose-200/60 bg-rose-500/10 text-rose-700 dark:border-rose-500/20 dark:text-rose-300",
+  };
 }
 
 function AnalysisSummaryGrid({ snapshot }: { snapshot: MediaAnalysisSnapshot }) {
@@ -274,6 +351,7 @@ function AnalysisSidebar({
   const isCompleted = snapshot.status === "completed";
   const isFailed = snapshot.status === "failed";
   const needsSeason = snapshot.status === "season_selection_required";
+  const challengeSignal = getChallengeSignal(snapshot, learnerLevel);
 
   return (
     <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
@@ -306,6 +384,13 @@ function AnalysisSidebar({
               <Badge className={cn("ml-2 border", getCefrColor(learnerLevel))}>
                 {learnerLevel}
               </Badge>
+            </div>
+          ) : null}
+
+          {challengeSignal ? (
+            <div className={cn("rounded-xl border p-3 text-sm", challengeSignal.toneClass)}>
+              <div className="font-medium">{challengeSignal.label}</div>
+              <div className="mt-1 text-xs opacity-80">{challengeSignal.detail}</div>
             </div>
           ) : null}
 
@@ -408,12 +493,15 @@ function MediaNextAction({
   onStartAnalysis: () => void;
   onOpenGeneration: () => void;
 }) {
-  const needsSeason = media.mediaType === "tv" && !media.selectedSeasonNumber;
+  const needsSeasonSelection = media.mediaType === "tv" && !media.selectedSeasonNumber;
   const isAnalysisProcessing = analysis.status === "queued" || analysis.status === "running";
   const isGenerationProcessing =
     generation?.status === "queued" || generation?.status === "running";
 
-  if (generation?.packHref) {
+  const isPackReady = Boolean(generation?.packHref);
+  const isAnalysisCompleted = analysis.status === "completed";
+
+  if (isPackReady && generation?.packHref) {
     return (
       <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -432,7 +520,7 @@ function MediaNextAction({
     );
   }
 
-  if (analysis.status === "completed") {
+  if (isAnalysisCompleted) {
     return (
       <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -461,14 +549,14 @@ function MediaNextAction({
     <div className="flex flex-col gap-2 rounded-xl border bg-card/85 p-3 text-left shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-semibold">
-          {needsSeason
+          {needsSeasonSelection
             ? "Choose a season"
             : isAnalysisProcessing
               ? "Analysis running"
               : "Analyze subtitles"}
         </p>
         <p className="text-xs text-muted-foreground">
-          {needsSeason
+          {needsSeasonSelection
             ? "TV titles run season by season before pack generation."
             : isAnalysisProcessing
               ? (analysis.progressMessage ?? "Polling durable analysis state.")
@@ -478,14 +566,18 @@ function MediaNextAction({
       <Button
         className="w-full gap-2 sm:w-auto"
         onClick={onStartAnalysis}
-        disabled={needsSeason || isAnalysisProcessing || isStarting}
+        disabled={needsSeasonSelection || isAnalysisProcessing || isStarting}
       >
         {isStarting || isAnalysisProcessing ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
           <Play className="size-4" />
         )}
-        {needsSeason ? "Season Required" : isAnalysisProcessing ? "Running" : "Start Analysis"}
+        {needsSeasonSelection
+          ? "Season Required"
+          : isAnalysisProcessing
+            ? "Running"
+            : "Start Analysis"}
       </Button>
     </div>
   );
@@ -794,11 +886,13 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   }, [pageData.analysis, pageData.generation]);
 
   React.useEffect(() => {
-    if (!analysis.runId) {
+    const hasValidRunId = Boolean(analysis.runId);
+    if (!hasValidRunId) {
       return;
     }
 
-    if (analysis.status !== "queued" && analysis.status !== "running") {
+    const isAnalysisActive = analysis.status === "queued" || analysis.status === "running";
+    if (!isAnalysisActive) {
       return;
     }
 
@@ -841,12 +935,15 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   }, [analysis.runId, analysis.status, media.mediaType, media.selectedSeasonNumber, media.tmdbId]);
 
   React.useEffect(() => {
-    if (!generation?.jobId || (generation.status !== "queued" && generation.status !== "running")) {
+    const jobId = generation?.jobId;
+    const isGenerationActive = generation?.status === "queued" || generation?.status === "running";
+
+    if (!jobId || !isGenerationActive) {
       return;
     }
 
     let cancelled = false;
-    const jobId = generation.jobId;
+
     const poll = async () => {
       const result = await getPackGenerationStatusAction({ jobId });
       if (cancelled) {

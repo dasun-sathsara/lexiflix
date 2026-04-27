@@ -146,7 +146,11 @@ Minimal operational role for demo support only.
 12. Pack reset shall not delete immutable review history or rewrite cross-pack learner term state.
 13. The study surface shall support opening a specific active card with `?card=<packItemId>`.
 14. The default study queue shall exclude mastered and removed cards.
-15. The default study queue shall order effective due cards before new cards, and new cards before learning cards.
+15. The normal study queue shall include due reviews before new cards and shall not include future learning cards before `dueAt <= now`.
+16. New-card study shall be capped by the learner's remaining `newCardsPerDay` allowance.
+17. The study surface shall support due, new, preview, and cram modes.
+18. The staging surface shall support restoring a removed card and resetting one card without deleting review history.
+19. The staging surface shall support term-level mark known, mark learning, ignore globally, and unignore actions.
 
 ### 8. Review And Ongoing Learner State
 
@@ -164,6 +168,9 @@ Minimal operational role for demo support only.
 12. In V1, `pack_item.state` shall remain a lifecycle state rather than a persisted clock-driven due state.
 13. In V1, `user_term_state.state = 'known'` shall be set only when the mastery threshold is met.
 14. In V1, streak day boundaries shall use one shared server-side app-day helper.
+15. A globally known term shall be demoted to learning by an `again` rating or explicit mark-learning action.
+16. Marking or mastering a term as known shall propagate mastery to matching active cards for that learner.
+17. Ignored terms shall be excluded from default study queues and future generation by default.
 
 ### 9. Dashboard
 
@@ -176,11 +183,14 @@ Minimal operational role for demo support only.
 7. The dashboard shall route the primary study CTA to the first due study pack when due cards exist.
 8. The dashboard shall route the primary CTA to `/decks` when packs exist but no cards are due.
 9. The dashboard shall route the primary CTA to `/browse` when the learner has no packs.
+10. The dashboard shall show due reviews, new cards available today, new cards completed today, and the next learning step.
 
 ### 10. Notifications And Preferences
 
 1. The system shall store learner preferences relevant to study and generation defaults.
 2. The system shall support notification records for events such as pack completion or due reviews.
+3. Due-review notifications shall reconcile from the shared study plan and dedupe by app day.
+4. Reading or dismissing a notification shall not mark reviews complete.
 
 ## Core Data Requirements
 

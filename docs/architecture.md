@@ -114,7 +114,7 @@ Generated packs become real learner-facing product state after the workflow comp
 
 The staging and study read models are intentionally explicit. Pack cards join the generated pack item, generated learner content, canonical vocabulary term, reusable analysis item, and optional artifact metadata. The UI renders generated meanings and generated examples, not source subtitle excerpts. Audio and images are optional; missing artifacts should remove the corresponding controls rather than breaking the card.
 
-Pack management stays pack-local. Removing a card soft-removes that `pack_item` and recalculates the active count. Reset restores removed cards and clears mutable scheduling fields, but it does not delete `review_event` history and does not rewrite canonical learner knowledge in `user_term_state`.
+Pack management supports both pack-local and term-level controls. Removing a card soft-removes that `pack_item` and recalculates the active count. Restoring a card reverses that local removal. Resetting a card or pack clears mutable scheduling fields without deleting `review_event` history. Term-level controls update `user_term_state`: known propagates mastery to matching active cards, learning reopens matching non-removed cards, ignored removes matching cards from normal queues and excludes future generation, and unignore returns the term to learning unless mastery is established again.
 
 ## Study Progress
 
@@ -122,7 +122,7 @@ The study loop is durable. A review rating creates immutable review history in `
 
 V1 scheduling uses an Anki-inspired legacy SM-2 baseline. It keeps short learning and relearning steps below one day, grows review intervals by rating and ease, and treats mastery as a LexiFlix product milestone rather than an Anki state. `pack_item.state` remains a lifecycle field (`new`, `learning`, `mastered`, `removed`); effective due status is derived from `dueAt <= now` for active non-new, non-mastered cards. This avoids a background job whose only purpose would be flipping rows from learning to due.
 
-The default study queue orders effective due cards first, then new cards, then learning cards. Mastered cards stay out of the default queue, although a card-specific route can open an active card first for preview or inspection.
+The study queue is mode-based. Due mode includes due reviews and scheduled learning steps whose `dueAt <= now`. New mode introduces new cards only up to the learner's remaining `newCardsPerDay` allowance. Preview mode opens one requested active card without expanding the queue. Cram mode is explicit unscheduled practice. Future learning cards do not appear in normal queues before they are due, and due reviews are never capped by the new-card setting. Mastered and globally ignored terms stay out of default queues, although a card-specific preview route can open a requested active card for inspection.
 
 ## Progress Reporting
 
@@ -134,7 +134,7 @@ The key principle is that durable status belongs in the database, while highly t
 
 ## Dashboard Read Model
 
-The dashboard is a read model over persisted learner state, not a mock planning surface. Streaks come from `user_streak`, known terms come from `user_term_state`, reviews completed this week come from `review_event`, and due counts come from effective pack-card due state. The dashboard can combine these facts into compact operational CTAs, but it should not own a separate progress model or copy counters from the client.
+The dashboard is a read model over persisted learner state, not a mock planning surface. Streaks come from `user_streak`, known terms come from `user_term_state`, reviews completed this week come from `review_event`, and due/new/future-learning counts come from the shared study-plan read model. Dashboard, decks, pack staging, and due notifications share the same plan semantics so reminder state cannot drift from the study queue.
 
 ## AI Integration and Cost Control
 

@@ -203,3 +203,29 @@
 - Decision: app-internal writes use typed Server Actions by default, route handlers are limited to documented HTTP/protocol boundaries, and non-trivial product behavior stays inside feature boundaries rather than route files.
 - Reasoning: the web app is the product center, so mixing route-local mutation logic, duplicated auth/session access, and ad hoc read models makes the codebase harder to reason about than the demo project justifies.
 - Consequence: `apps/web/AGENTS.md` owns the execution rules for agents, while canonical docs capture the architectural standard; temporary implementation plans are retired after their durable decisions are absorbed into canonical docs.
+
+## 2026-04-27
+
+### Daily new-card workload
+
+- Decision: rename the learner workload setting from `dailyWordsGoal` to `newCardsPerDay`.
+- Reasoning: the setting controls newly introduced cards only; due reviews are scheduled debt and must not be capped by a learner pace preference.
+- Consequence: due reviews stay visible until cleared, new-card queues are capped by remaining daily allowance, and daily completion is distinct from streak credit.
+
+### Explicit study modes
+
+- Decision: normal study uses explicit due, new, preview, and cram modes.
+- Reasoning: blending due reviews, new learning, preview, and unscheduled practice makes the scheduler feel untrustworthy.
+- Consequence: future learning cards are held until due, dashboard defaults to due first, new cards are offered after due reviews clear, and cram remains opt-in.
+
+### Learner term controls
+
+- Decision: learners can mark terms known, mark them learning, ignore them globally, and unignore them.
+- Reasoning: generated material needs learner correction paths; pack-local removal alone cannot express canonical knowledge or globally bad candidates.
+- Consequence: term actions update `user_term_state` and matching active cards for the learner instead of relying on read-model hiding.
+
+### Cross-pack SRS coherence
+
+- Decision: global known and ignored states affect all pack and generation surfaces for the same learner.
+- Reasoning: mastering or ignoring a canonical term in one title should not contradict another title's study queue.
+- Consequence: known-term mastery propagates to matching active cards, ignored terms are excluded from default queues and generation, and `again` demotes known terms back to learning.

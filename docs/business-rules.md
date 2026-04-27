@@ -131,17 +131,21 @@
 
 - Generated pack surfaces render real learner-owned pack data.
 - `/pack/[id]`, `/decks`, and `/study/[id]` must verify pack ownership before exposing pack data.
-- Pack read models exclude removed cards when `pack_item.state = 'removed'` or `removedAt IS NOT NULL`.
-- Card removal is soft and reversible through pack reset.
+- Pack read models distinguish active cards from hidden/removed cards when `pack_item.state = 'removed'` or `removedAt IS NOT NULL`.
+- Card removal is soft and reversible through either card restore or pack reset.
 - `pack.itemCount` represents the current active non-removed card count after removals or restores.
 - Pack reset is pack-local: it restores cards and clears mutable scheduling fields, but it does not delete `review_event` history and does not rewrite `user_term_state`.
+- A single-card reset clears mutable scheduling fields for that pack item only and does not delete review history.
 
 - `pack_item.state` is a lifecycle state, not a persisted clock-driven due flag.
 - The effective due state is derived from `dueAt <= now` for active non-new, non-mastered cards.
 - The system should not rely on a background job to flip rows into a persisted `due` state.
 - Mastered cards stay out of the default study queue unless explicitly opened through a card-specific route.
-- The default study queue orders effective due cards first, then new cards, then learning cards.
-- `/study/[id]?card=<packItemId>` may open a specific active card first, including a mastered card, but that does not reintroduce mastered cards into the normal queue.
+- The normal study modes are explicit: due review, learn new, preview, and cram.
+- Due review queues include effective due cards only; future learning cards wait until `dueAt <= now`.
+- New-card queues include only new cards and are capped by the learner's `newCardsPerDay` remaining allowance.
+- Cram is an explicit unscheduled practice mode and is not the default path.
+- `/study/[id]?card=<packItemId>` may open a specific active card for preview, including a mastered card, but that does not reintroduce mastered cards into the normal queue.
 
 - Review history is immutable and stored separately from the mutable current card state.
 - Dashboard metrics, streak calculations, and future analytics should come from review history rather than from lossy status snapshots alone.
@@ -150,7 +154,13 @@
 - A successful review rating creates exactly one `review_event` row.
 - The same successful rating updates pack-local SRS fields on `pack_item`, cross-pack learner knowledge in `user_term_state`, and the learner's streak snapshot in `user_streak`.
 - Study ratings must never set `user_term_state.state = 'ignored'`.
+- A learner may explicitly mark a term known, mark it learning, ignore it globally, or unignore it.
+- Marking a term known sets `user_term_state.state = 'known'` and propagates mastery to matching active cards for that learner.
+- Marking a term learning clears explicit known state and reopens matching non-removed cards.
+- Ignoring a term globally sets `user_term_state.state = 'ignored'`, excludes the term from default queues and future generation, and removes matching active cards from normal queues.
+- Unignoring a term returns it to learning unless mastery is established again.
 - `user_term_state.state = 'known'` is set only when the pack item reaches the mastery threshold.
+- A globally known term is demoted back to learning by an `again` rating or an explicit mark-learning action; `hard` and `good` ratings do not demote known terms by themselves.
 - V1 scheduling uses an Anki-inspired legacy SM-2 baseline, not FSRS.
 - V1 learning and relearning steps stay under one day.
 - V1 mastery is a LexiFlix product milestone, not an Anki state.
@@ -158,7 +168,7 @@
 - Streak calculations use the shared server-side app-day helper in V1 so the day-boundary rule can be replaced later with learner time zones.
 - Dashboard review counts are derived from persisted review and pack state.
 - The dashboard "Reviews This Week" metric comes from `review_event`, not from a client counter or mock data.
-- Dashboard next-action CTAs route to the first due study pack when due cards exist, `/decks` when packs exist but no cards are due, and `/browse` when the learner has no packs.
+- Dashboard next-action CTAs route to the first due study pack when due cards exist, offer new-card study after due reviews are clear, and route to `/browse` when the learner has no packs.
 
 - Mastered vocabulary should carry across titles for the same user.
 - This means user knowledge state is tracked at the canonical term level, not only at the pack-item level.
