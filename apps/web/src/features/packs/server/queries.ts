@@ -25,7 +25,7 @@ import {
   vocabularyTerm,
 } from "@/lib/server/db/schema";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
-import { getEffectivePackCardState } from "./srs";
+import { getEffectivePackCardState, getRatingIntervalPreviews } from "./srs";
 import { buildStudyQueue, getPackStudyPlan, getStudyPlanForUser } from "./study-plan";
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
@@ -85,6 +85,8 @@ function deriveCounts(cards: Pick<PackCardView, "state">[]): PackCardCounts {
 }
 
 function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
+  const previousState =
+    card.state === "mastered" ? "mastered" : card.state === "new" ? "new" : "learning";
   return {
     ...card,
     state: getEffectivePackCardState({
@@ -92,6 +94,15 @@ function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
       dueAt: card.dueAt ? new Date(card.dueAt) : null,
       now,
     }) as Exclude<PackCardState, "removed">,
+    ratingPreviews: getRatingIntervalPreviews({
+      reviewedAt: now,
+      previousState,
+      previousRating: card.lastRating,
+      repetitionCount: card.repetitionCount,
+      lapseCount: card.lapseCount,
+      intervalDays: card.intervalDays,
+      easeFactor: card.easeFactor,
+    }),
   };
 }
 
@@ -149,7 +160,9 @@ async function getActivePackCards(packId: string): Promise<PackCardView[]> {
         repetitionCount: item.repetitionCount,
         lapseCount: item.lapseCount,
         intervalDays: item.intervalDays,
+        easeFactor: item.easeFactor,
         masteredAt: toIso(item.masteredAt),
+        ratingPreviews: { again: "", hard: "", good: "", easy: "" },
         audioUrl: artifactUrl(audioArtifactId),
         imageUrl: artifactUrl(imageArtifactId),
       },

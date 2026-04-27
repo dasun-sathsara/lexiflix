@@ -74,7 +74,9 @@ export type PackCardView = {
   repetitionCount: number;
   lapseCount: number;
   intervalDays: number | null;
+  easeFactor: number;
   masteredAt: string | null;
+  ratingPreviews: Record<PackReviewRating, string>;
   audioUrl: string | null;
   imageUrl: string | null;
 };

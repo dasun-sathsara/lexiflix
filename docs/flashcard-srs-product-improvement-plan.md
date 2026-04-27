@@ -314,6 +314,15 @@ Deliver:
 
 This stage makes the learner loop feel deliberate without adding session persistence.
 
+Completion log:
+
+- Implemented in `feat(web): improve study session UX`.
+- Study route accepts typed `mode` search params and uses `preview` for direct card links.
+- Study UI shows the mode label, interval previews on rating buttons, keyboard shortcuts, and a richer completion screen.
+- Due completion offers explicit continuation into new cards when allowance remains.
+- Exported `SRS_CONFIG` and added a pure interval-preview helper without changing persistence or adding saved-review undo.
+- Verified with `task web:typecheck` and `task web:lint`.
+
 ### Stage 3: Learner Control Actions
 
 Deliver:

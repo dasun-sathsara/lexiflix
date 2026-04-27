@@ -3,7 +3,7 @@ import type { PackCardState, PackReviewRating } from "@/features/packs/types";
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
-const SRS = {
+export const SRS_CONFIG = {
   firstLearningStepMs: MINUTE_MS,
   secondLearningStepMs: 10 * MINUTE_MS,
   graduatingIntervalDays: 1,
@@ -41,7 +41,7 @@ export type NextReviewState = {
 };
 
 export function getInitialEaseFactor() {
-  return SRS.startingEaseFactor;
+  return SRS_CONFIG.startingEaseFactor;
 }
 
 function addMs(date: Date, ms: number) {
@@ -53,11 +53,11 @@ function addDays(date: Date, days: number) {
 }
 
 function clampEase(value: number) {
-  return Math.max(SRS.minimumEaseFactor, Number(value.toFixed(2)));
+  return Math.max(SRS_CONFIG.minimumEaseFactor, Number(value.toFixed(2)));
 }
 
 function clampInterval(days: number) {
-  return Math.min(SRS.maximumIntervalDays, Math.max(1, Math.round(days)));
+  return Math.min(SRS_CONFIG.maximumIntervalDays, Math.max(1, Math.round(days)));
 }
 
 function isReviewCard(input: ComputeNextReviewStateInput) {
@@ -75,14 +75,14 @@ function maybeMastered({
 }) {
   return (
     (rating === "good" || rating === "easy") &&
-    (repetitionCount >= SRS.masteryRepetitionThreshold ||
-      (intervalDays ?? 0) >= SRS.masteryIntervalThresholdDays)
+    (repetitionCount >= SRS_CONFIG.masteryRepetitionThreshold ||
+      (intervalDays ?? 0) >= SRS_CONFIG.masteryIntervalThresholdDays)
   );
 }
 
 export function computeNextReviewState(input: ComputeNextReviewStateInput): NextReviewState {
   const reviewedAt = input.reviewedAt;
-  const easeFactor = input.easeFactor ?? SRS.startingEaseFactor;
+  const easeFactor = input.easeFactor ?? SRS_CONFIG.startingEaseFactor;
   const reviewCard = isReviewCard(input);
 
   if (input.rating === "again") {
@@ -90,7 +90,7 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
 
     return {
       state: "learning",
-      dueAt: addMs(reviewedAt, SRS.firstLearningStepMs),
+      dueAt: addMs(reviewedAt, SRS_CONFIG.firstLearningStepMs),
       repetitionCount: reviewCard ? 0 : input.repetitionCount,
       lapseCount: input.lapseCount + 1,
       intervalDays: null,
@@ -105,8 +105,8 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
     const hardDueAt = addMs(
       reviewedAt,
       isSecondLearningStep
-        ? SRS.secondLearningStepMs
-        : Math.round((SRS.firstLearningStepMs + SRS.secondLearningStepMs) / 2),
+        ? SRS_CONFIG.secondLearningStepMs
+        : Math.round((SRS_CONFIG.firstLearningStepMs + SRS_CONFIG.secondLearningStepMs) / 2),
     );
 
     const learningResult = {
@@ -117,14 +117,14 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
       },
       good: {
         dueAt: !isSecondLearningStep
-          ? addMs(reviewedAt, SRS.secondLearningStepMs)
-          : addDays(reviewedAt, SRS.graduatingIntervalDays),
-        intervalDays: isSecondLearningStep ? SRS.graduatingIntervalDays : null,
+          ? addMs(reviewedAt, SRS_CONFIG.secondLearningStepMs)
+          : addDays(reviewedAt, SRS_CONFIG.graduatingIntervalDays),
+        intervalDays: isSecondLearningStep ? SRS_CONFIG.graduatingIntervalDays : null,
         easeFactor,
       },
       easy: {
-        dueAt: addDays(reviewedAt, SRS.easyIntervalDays),
-        intervalDays: SRS.easyIntervalDays,
+        dueAt: addDays(reviewedAt, SRS_CONFIG.easyIntervalDays),
+        intervalDays: SRS_CONFIG.easyIntervalDays,
         easeFactor,
       },
     }[input.rating];
@@ -152,7 +152,7 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
     hard: {
       intervalDays: Math.max(
         previousInterval + 1,
-        clampInterval(previousInterval * SRS.hardIntervalMultiplier),
+        clampInterval(previousInterval * SRS_CONFIG.hardIntervalMultiplier),
       ),
       easeFactor: clampEase(easeFactor - 0.15),
     },
@@ -163,7 +163,7 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
     easy: {
       intervalDays: Math.max(
         previousInterval + 1,
-        clampInterval(previousInterval * easeFactor * SRS.easyBonus),
+        clampInterval(previousInterval * easeFactor * SRS_CONFIG.easyBonus),
       ),
       easeFactor: clampEase(easeFactor + 0.15),
     },
@@ -183,6 +183,17 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
     intervalDays: reviewResult.intervalDays,
     easeFactor: reviewResult.easeFactor,
     masteredAt: mastered ? reviewedAt : null,
+  };
+}
+
+export function getRatingIntervalPreviews(
+  input: Omit<ComputeNextReviewStateInput, "rating">,
+): Record<PackReviewRating, string> {
+  return {
+    again: getNextReviewLabel(computeNextReviewState({ ...input, rating: "again" }).dueAt) ?? "",
+    hard: getNextReviewLabel(computeNextReviewState({ ...input, rating: "hard" }).dueAt) ?? "",
+    good: getNextReviewLabel(computeNextReviewState({ ...input, rating: "good" }).dueAt) ?? "",
+    easy: getNextReviewLabel(computeNextReviewState({ ...input, rating: "easy" }).dueAt) ?? "",
   };
 }
 

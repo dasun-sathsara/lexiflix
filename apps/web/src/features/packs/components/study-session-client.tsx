@@ -43,6 +43,13 @@ function formatDueLabel(value: string | null) {
   return `Next card is due in ${Math.ceil(hours / 24)}d.`;
 }
 
+const modeLabels: Record<StudySessionView["mode"], string> = {
+  due: "Due review",
+  new: "Learn new",
+  preview: "Preview",
+  cram: "Cram",
+};
+
 export function StudySessionClient({ session }: { session: StudySessionView }) {
   const initialIndex = Math.max(
     0,
@@ -53,6 +60,8 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   const [isFlipped, setIsFlipped] = React.useState(false);
   const [pendingRating, setPendingRating] = React.useState<PackReviewRating | null>(null);
   const [reviewedCount, setReviewedCount] = React.useState(0);
+  const [newLearnedCount, setNewLearnedCount] = React.useState(0);
+  const [lapseCount, setLapseCount] = React.useState(0);
   const [nextDueAt, setNextDueAt] = React.useState<string | null>(null);
   const cardStartedAtRef = React.useRef(Date.now());
   const { setOpen } = useSidebar();
@@ -67,6 +76,38 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   const progressPct = clampToInt(
     (Math.min(sessionIndex, session.cards.length) / Math.max(1, session.cards.length)) * 100,
   );
+
+  React.useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey || pendingRating) {
+        return;
+      }
+
+      if ((event.key === " " || event.key === "Enter") && card && !isFlipped) {
+        event.preventDefault();
+        setIsFlipped(true);
+      }
+
+      if (!isFlipped) {
+        return;
+      }
+
+      const ratingByKey: Record<string, PackReviewRating> = {
+        "1": "again",
+        "2": "hard",
+        "3": "good",
+        "4": "easy",
+      };
+      const rating = ratingByKey[event.key];
+      if (rating) {
+        event.preventDefault();
+        void rateCard(rating);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   function advanceToNext() {
     setIsFlipped(false);
@@ -87,6 +128,12 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
     setPendingRating(rating);
     setReviewedCount((count) => count + 1);
+    if (card.state === "new") {
+      setNewLearnedCount((count) => count + 1);
+    }
+    if (rating === "again") {
+      setLapseCount((count) => count + 1);
+    }
     advanceToNext();
 
     const result = await ratePackItemAction({
@@ -100,6 +147,12 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
       setCardIndex(previousCardIndex);
       setSessionIndex(previousSessionIndex);
       setReviewedCount(previousReviewedCount);
+      if (card.state === "new") {
+        setNewLearnedCount((count) => Math.max(0, count - 1));
+      }
+      if (rating === "again") {
+        setLapseCount((count) => Math.max(0, count - 1));
+      }
       toast.error(result.error);
     } else {
       setNextDueAt(result.nextDueAt ?? (result.nextState === "mastered" ? null : result.dueAt));
@@ -138,12 +191,19 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
           </Badge>
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Reviews saved</h1>
-            <p className="text-sm text-muted-foreground">
-              {reviewedCount} {reviewedCount === 1 ? "card" : "cards"} reviewed.{" "}
-              {formatDueLabel(nextDueAt)}
-            </p>
+            <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-4">
+              <span>{reviewedCount} reviewed</span>
+              <span>{newLearnedCount} new</span>
+              <span>{lapseCount} lapses</span>
+              <span>{formatDueLabel(nextDueAt)}</span>
+            </div>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
+            {session.mode === "due" && session.newCardsRemainingToday > 0 ? (
+              <Button asChild>
+                <Link href={`/study/${session.packId}?mode=new`}>Continue with new cards</Link>
+              </Button>
+            ) : null}
             <Button asChild>
               <Link href={`/pack/${session.packId}`}>Back to pack</Link>
             </Button>
@@ -181,7 +241,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             <div className="min-w-0 flex-1 text-center">
               <div className="truncate text-base font-semibold">{session.mediaTitle}</div>
               <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                {session.packName}
+                {modeLabels[session.mode]} · {session.packName}
               </div>
             </div>
 
@@ -343,7 +403,9 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             >
               <div className="flex w-full flex-col items-center leading-tight">
                 <span className="font-semibold">
-                  {pendingRating === rating ? "Saving..." : copy}
+                  {pendingRating === rating
+                    ? "Saving..."
+                    : `${copy} ${activeCard.ratingPreviews[rating as PackReviewRating]}`}
                 </span>
                 <span className="text-[11px] opacity-90">{hint}</span>
               </div>
