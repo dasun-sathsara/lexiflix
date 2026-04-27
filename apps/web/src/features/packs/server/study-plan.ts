@@ -192,7 +192,7 @@ export function buildStudyQueue({
   newCardLimit: number;
   requestedCardId?: string | null;
 }) {
-  const activeCards = cards.filter((card) => card.state !== "mastered");
+  const activeCards = cards.filter((card) => card.state !== "mastered" && card.state !== "removed");
   const requestedCard = requestedCardId
     ? activeCards.find((card) => card.id === requestedCardId)
     : null;

@@ -337,6 +337,16 @@ Deliver:
 
 This stage gives learners control over generated content quality.
 
+Completion log:
+
+- Implemented in `feat(web): add learner card controls`.
+- Added Server Actions for restore removed card, reset one card, mark known, mark learning, ignore globally, and unignore.
+- Pack staging now exposes compact per-card controls for preview, reset/restore, known/learning, ignore/unignore, and remove.
+- Pack-local restore/reset preserve immutable review history.
+- `mark known` updates `user_term_state` and propagates mastery to matching active cards.
+- `ignore term globally` updates `user_term_state`, removes matching active cards from normal queues, and generation now excludes ignored terms regardless of known-term handling.
+- Verified with `task web:typecheck` and `task web:lint`.
+
 ### Stage 4: Cross-Pack Coherence And Notifications
 
 Deliver:

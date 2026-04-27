@@ -68,6 +68,10 @@ function artifactUrl(id: string | null | undefined) {
 function deriveCounts(cards: Pick<PackCardView, "state">[]): PackCardCounts {
   return cards.reduce<PackCardCounts>(
     (counts, card) => {
+      if (card.state === "removed") {
+        counts.hidden += 1;
+        return counts;
+      }
       counts[card.state] += 1;
       counts.total += 1;
       return counts;
@@ -93,7 +97,7 @@ function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
       state: card.state,
       dueAt: card.dueAt ? new Date(card.dueAt) : null,
       now,
-    }) as Exclude<PackCardState, "removed">,
+    }) as PackCardState,
     ratingPreviews: getRatingIntervalPreviews({
       reviewedAt: now,
       previousState,
@@ -117,7 +121,7 @@ async function getOwnedPackRow(packId: string, userId: string) {
   return rows[0] ?? null;
 }
 
-async function getActivePackCards(packId: string): Promise<PackCardView[]> {
+async function getPackCards(packId: string): Promise<PackCardView[]> {
   const now = new Date();
   const rows = await db
     .select({
@@ -134,9 +138,7 @@ async function getActivePackCards(packId: string): Promise<PackCardView[]> {
     .innerJoin(contentAnalysisItem, eq(contentAnalysisItem.id, packItem.contentAnalysisItemId))
     .leftJoin(audioArtifact, eq(audioArtifact.id, packItemContent.audioArtifactId))
     .leftJoin(imageArtifact, eq(imageArtifact.id, packItemContent.imageArtifactId))
-    .where(
-      and(eq(packItem.packId, packId), ne(packItem.state, "removed"), isNull(packItem.removedAt)),
-    )
+    .where(eq(packItem.packId, packId))
     .orderBy(asc(packItem.sortOrder));
 
   return rows.map(({ item, itemContent, term, analysis, audioArtifactId, imageArtifactId }) =>
@@ -183,7 +185,7 @@ export async function getPackStagingView({
     return null;
   }
 
-  const cards = await getActivePackCards(packId);
+  const cards = await getPackCards(packId);
   const studyPlan = await getPackStudyPlan({ packId, userId });
   const counts = deriveCounts(cards);
   counts.futureLearning = studyPlan.futureLearningCount;
@@ -222,7 +224,7 @@ export async function getStudySessionView({
     return null;
   }
 
-  const cards = await getActivePackCards(packId);
+  const cards = await getPackCards(packId);
   const studyPlan = await getPackStudyPlan({ packId, userId });
   const resolvedMode = initialCardId ? "preview" : mode;
   const queue = buildStudyQueue({
@@ -317,7 +319,7 @@ export async function getDeckSummariesForUser({
           dueAt: card.dueAt,
           now,
           removedAt: card.removedAt,
-        }) as PackCardView["state"],
+        }) as PackCardState,
       })),
     );
     counts.new = studyPlan.newAvailableToday;

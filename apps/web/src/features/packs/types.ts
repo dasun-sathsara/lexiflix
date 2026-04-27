@@ -67,7 +67,7 @@ export type PackCardView = {
   occurrenceCount: number;
   frequencyRank: number | null;
   includedReason: string | null;
-  state: Exclude<PackCardState, "removed">;
+  state: PackCardState;
   dueAt: string | null;
   lastReviewedAt: string | null;
   lastRating: PackReviewRating | null;
@@ -121,6 +121,10 @@ export type StudySessionView = {
 };
 
 export type PackActionResult = { ok: true; activeCount: number } | { ok: false; error: string };
+
+export type PackItemActionResult =
+  | { ok: true; activeCount: number; itemId: string }
+  | { ok: false; error: string };
 
 export type PackRatingActionResult =
   | {

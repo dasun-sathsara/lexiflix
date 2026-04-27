@@ -51,7 +51,7 @@ function knownTermPenalty(
     return 0;
   }
 
-  return termState === "known" || termState === "ignored" ? 1_000_000 : 0;
+  return termState === "known" ? 1_000_000 : 0;
 }
 
 export async function selectGenerationItems(input: {
@@ -98,11 +98,12 @@ export async function selectGenerationItems(input: {
   );
   const candidates = rows
     .filter((row) => !row.cefrLevel || levels.has(row.cefrLevel))
+    .filter((row) => row.termState !== "ignored")
     .filter((row) => {
       if (input.requestSnapshot.knownTermHandling !== "exclude_known") {
         return true;
       }
-      return row.termState !== "known" && row.termState !== "ignored";
+      return row.termState !== "known";
     })
     .map((row) => ({
       analysisItemId: row.analysisItemId,
@@ -116,7 +117,7 @@ export async function selectGenerationItems(input: {
       representativeContext: row.representativeContext,
       contexts: row.contexts ?? [],
       includedReason:
-        row.termState === "known" || row.termState === "ignored"
+        row.termState === "known"
           ? `included despite ${row.termState} term handling`
           : "selected from reusable subtitle analysis",
       termState: row.termState,
