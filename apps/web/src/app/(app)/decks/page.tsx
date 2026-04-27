@@ -83,8 +83,10 @@ function CardCountPill({
 
 function DeckRow({ deck }: { deck: DeckSummary }) {
   const progressPct = clampToInt((deck.counts.mastered / Math.max(1, deck.counts.total)) * 100);
-  const cardsToStudy = deck.counts.new + deck.counts.learning + deck.counts.due;
+  const cardsToStudy = deck.studyPlan.dueCount + deck.studyPlan.newAvailableToday;
   const hasCardsToStudy = cardsToStudy > 0;
+  const studyHref =
+    deck.studyPlan.dueCount > 0 ? `/study/${deck.id}?mode=due` : `/study/${deck.id}?mode=new`;
 
   return (
     <div className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-muted/30 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
@@ -131,16 +133,24 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
                 : "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300",
             )}
           >
-            {hasCardsToStudy ? `${cardsToStudy} ready` : "Ready"}
+            {hasCardsToStudy ? `${cardsToStudy} ready` : "Complete for now"}
           </span>
         </div>
 
         {/* Row 2: Card count pills + last studied */}
         <div className="flex items-center gap-2">
           <div className="flex flex-1 flex-wrap items-center gap-1.5">
-            <CardCountPill count={deck.counts.new} label="new" variant="new" />
-            <CardCountPill count={deck.counts.learning} label="learning" variant="learning" />
-            <CardCountPill count={deck.counts.due} label="due" variant="due" />
+            <CardCountPill
+              count={deck.studyPlan.newAvailableToday}
+              label="new today"
+              variant="new"
+            />
+            <CardCountPill
+              count={deck.studyPlan.futureLearningCount}
+              label="scheduled"
+              variant="learning"
+            />
+            <CardCountPill count={deck.studyPlan.dueCount} label="due" variant="due" />
           </div>
           {deck.lastStudiedAt ? (
             <span className="shrink-0 text-xs text-muted-foreground">
@@ -175,9 +185,9 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
 
         {hasCardsToStudy ? (
           <Button size="sm" className="flex-1 gap-1.5 sm:flex-none" asChild>
-            <Link href={`/study/${deck.id}`}>
+            <Link href={studyHref}>
               <Play className="size-3.5 fill-current" />
-              Study Pack
+              {deck.studyPlan.dueCount > 0 ? "Review Due" : "Learn New"}
             </Link>
           </Button>
         ) : (
@@ -206,19 +216,19 @@ export default async function DecksPage() {
   const hasDecks = decks.length > 0;
   const stats = decks.reduce(
     (totals, deck) => {
-      totals.totalDue += deck.counts.due;
-      totals.totalNew += deck.counts.new;
-      totals.totalLearning += deck.counts.learning;
+      totals.totalDue += deck.studyPlan.dueCount;
+      totals.totalNew += deck.studyPlan.newAvailableToday;
+      totals.totalLearning += deck.studyPlan.futureLearningCount;
       totals.totalEstimatedMinutes +=
         deck.estimatedStudyMinutes ?? Math.max(1, Math.ceil(deck.counts.total * 1.5));
       return totals;
     },
     { totalDue: 0, totalNew: 0, totalLearning: 0, totalEstimatedMinutes: 0 },
   );
-  const totalCards = stats.totalDue + stats.totalNew + stats.totalLearning;
-  const firstStudyDeck = decks.find(
-    (deck) => deck.counts.new + deck.counts.learning + deck.counts.due > 0,
-  );
+  const totalCards = stats.totalDue + stats.totalNew;
+  const firstStudyDeck =
+    decks.find((deck) => deck.studyPlan.dueCount > 0) ??
+    decks.find((deck) => deck.studyPlan.newAvailableToday > 0);
 
   return (
     <>
@@ -238,7 +248,11 @@ export default async function DecksPage() {
                 </Button>
                 {totalCards > 0 && (
                   <Button size="lg" className="gap-1.5" asChild>
-                    <Link href={`/study/${firstStudyDeck?.id ?? decks[0]?.id}`}>
+                    <Link
+                      href={`/study/${firstStudyDeck?.id ?? decks[0]?.id}?mode=${
+                        firstStudyDeck?.studyPlan.dueCount ? "due" : "new"
+                      }`}
+                    >
                       <Play className="size-3.5 fill-current" />
                       Start Session
                       <ChevronRight className="size-3.5 opacity-60" />
@@ -250,8 +264,13 @@ export default async function DecksPage() {
             stats={
               <>
                 <AppStat icon={Calendar} label="Due Today" value={stats.totalDue} tone="danger" />
-                <AppStat icon={Sparkles} label="New" value={stats.totalNew} tone="accent" />
-                <AppStat icon={BookOpen} label="Learning" value={stats.totalLearning} tone="warm" />
+                <AppStat icon={Sparkles} label="New Today" value={stats.totalNew} tone="accent" />
+                <AppStat
+                  icon={BookOpen}
+                  label="Scheduled"
+                  value={stats.totalLearning}
+                  tone="warm"
+                />
                 <AppStat
                   icon={Clock}
                   label="Est. Today"

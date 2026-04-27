@@ -241,7 +241,7 @@ export const userPreferences = pgTable("user_preferences", {
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
   studyLanguageCode: text("study_language_code").default("en").notNull(),
-  dailyWordsGoal: integer("daily_words_goal").default(20).notNull(),
+  newCardsPerDay: integer("new_cards_per_day").default(20).notNull(),
   frequencyPreference: frequencyPreferenceEnum("frequency_preference")
     .default("balanced")
     .notNull(),

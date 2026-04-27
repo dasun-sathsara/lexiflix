@@ -11,7 +11,7 @@ export type SettingsPreferences = {
   assessedLevel: CefrLevel | null;
   manualOverrideLevel: CefrLevel | null;
   targetLanguage: string;
-  dailyWordsGoal: number;
+  newCardsPerDay: number;
   frequencyPreference: StoredFrequencyPreference;
   studyVocabularyTypes: StoredVocabularyKind[];
   generationPackSizeDefault: number;

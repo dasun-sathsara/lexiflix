@@ -1,4 +1,13 @@
-import { BookOpen, ChevronRight, Clock3, Flame, GraduationCap, Layers, Play } from "lucide-react";
+import {
+  BookOpen,
+  ChevronRight,
+  Clock3,
+  Flame,
+  GraduationCap,
+  Layers,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -27,8 +36,13 @@ export default async function DashboardPage() {
   const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Learner";
   const hasPacks = dashboard.recentPacks.length > 0;
   const todayLoadPct = clampToInt(
-    (dashboard.reviewPlan.dueNow /
-      Math.max(1, dashboard.reviewPlan.dueNow + dashboard.reviewPlan.dueLaterToday)) *
+    ((dashboard.reviewPlan.dueNow + dashboard.stats.newCardsCompletedToday) /
+      Math.max(
+        1,
+        dashboard.reviewPlan.dueNow +
+          dashboard.reviewPlan.dueLaterToday +
+          dashboard.stats.newCardsPerDay,
+      )) *
       100,
   );
 
@@ -83,7 +97,7 @@ export default async function DashboardPage() {
           </Card>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <AppStat
             variant="card"
             label="Current Streak"
@@ -107,6 +121,14 @@ export default async function DashboardPage() {
             icon={Play}
             hint={`${dashboard.stats.estimatedDueMinutes}m estimated`}
             tone="danger"
+          />
+          <AppStat
+            variant="card"
+            label="New Today"
+            value={`${dashboard.stats.newCardsCompletedToday}/${dashboard.stats.newCardsPerDay}`}
+            icon={Sparkles}
+            hint={`${dashboard.stats.newCardsAvailableToday} available`}
+            tone="accent"
           />
           <AppStat
             variant="card"
@@ -168,11 +190,20 @@ export default async function DashboardPage() {
                                 <Badge variant="secondary">{pack.kind}</Badge>
                                 <span className="text-xs text-muted-foreground">
                                   {pack.dueCount > 0 ? `${pack.dueCount} due` : "No due reviews"}
+                                  {pack.dueCount === 0 && pack.newAvailableToday > 0
+                                    ? `, ${pack.newAvailableToday} new today`
+                                    : ""}
                                 </span>
                               </div>
                             </div>
                             <Button size="sm" variant="outline" className="shrink-0" asChild>
-                              <span>{pack.dueCount > 0 ? "Study" : "Open"}</span>
+                              <span>
+                                {pack.dueCount > 0
+                                  ? "Review"
+                                  : pack.newAvailableToday > 0
+                                    ? "Learn new"
+                                    : "Open"}
+                              </span>
                             </Button>
                           </div>
                           <div className="space-y-1.5">
@@ -214,8 +245,18 @@ export default async function DashboardPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   { label: "Due now", value: dashboard.reviewPlan.dueNow },
-                  { label: "Later today", value: dashboard.reviewPlan.dueLaterToday },
-                  { label: "Tomorrow", value: dashboard.reviewPlan.dueTomorrow },
+                  {
+                    label: "Later today",
+                    value: dashboard.reviewPlan.dueLaterToday,
+                  },
+                  {
+                    label: "Tomorrow",
+                    value: dashboard.reviewPlan.dueTomorrow,
+                  },
+                  {
+                    label: "New available",
+                    value: dashboard.stats.newCardsAvailableToday,
+                  },
                 ].map((item) => (
                   <AppPanel key={item.label} className="p-3">
                     <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -227,7 +268,16 @@ export default async function DashboardPage() {
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Due now share</span>
-                  <span>~{dashboard.stats.estimatedDueMinutes} min</span>
+                  <span>
+                    {dashboard.reviewPlan.nextLearningDueAt
+                      ? `Next step ${new Date(
+                          dashboard.reviewPlan.nextLearningDueAt,
+                        ).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}`
+                      : `~${dashboard.stats.estimatedDueMinutes} min`}
+                  </span>
                 </div>
                 <Progress value={todayLoadPct} className="h-2" />
               </div>
@@ -264,7 +314,7 @@ export default async function DashboardPage() {
                     title="No due reviews"
                     description={
                       hasPacks
-                        ? "Open decks to review new or learning cards."
+                        ? "Open decks to learn new cards or wait for the next scheduled step."
                         : "Generate a pack to start building a review queue."
                     }
                     className="border-dashed shadow-none"

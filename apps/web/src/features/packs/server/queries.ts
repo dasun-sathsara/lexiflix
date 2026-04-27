@@ -11,6 +11,7 @@ import type {
   PackContentKind,
   PackMediaSummary,
   PackStagingView,
+  StudyMode,
   StudySessionView,
 } from "@/features/packs/types";
 import { db } from "@/lib/server/db";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/server/db/schema";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { getEffectivePackCardState } from "./srs";
+import { buildStudyQueue, getPackStudyPlan, getStudyPlanForUser } from "./study-plan";
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
 const imageArtifact = alias(artifactObject, "image_artifact");
@@ -70,7 +72,15 @@ function deriveCounts(cards: Pick<PackCardView, "state">[]): PackCardCounts {
       counts.total += 1;
       return counts;
     },
-    { new: 0, learning: 0, due: 0, mastered: 0, total: 0 },
+    {
+      new: 0,
+      learning: 0,
+      due: 0,
+      mastered: 0,
+      futureLearning: 0,
+      hidden: 0,
+      total: 0,
+    },
   );
 }
 
@@ -83,10 +93,6 @@ function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
       now,
     }) as Exclude<PackCardState, "removed">,
   };
-}
-
-function studyQueueRank(state: PackCardView["state"]) {
-  return { due: 0, new: 1, learning: 2, mastered: 3 }[state];
 }
 
 async function getOwnedPackRow(packId: string, userId: string) {
@@ -165,6 +171,10 @@ export async function getPackStagingView({
   }
 
   const cards = await getActivePackCards(packId);
+  const studyPlan = await getPackStudyPlan({ packId, userId });
+  const counts = deriveCounts(cards);
+  counts.futureLearning = studyPlan.futureLearningCount;
+  counts.hidden = studyPlan.hiddenCount;
 
   return {
     id: owned.pack.id,
@@ -177,7 +187,8 @@ export async function getPackStagingView({
     selectedVocabularyTypes: owned.pack.selectedVocabularyTypes,
     estimatedStudyMinutes: owned.pack.estimatedStudyMinutes,
     sourceJobId: owned.pack.sourceJobId,
-    counts: deriveCounts(cards),
+    counts,
+    studyPlan,
     cards,
   };
 }
@@ -186,10 +197,12 @@ export async function getStudySessionView({
   packId,
   userId,
   initialCardId,
+  mode = "due",
 }: {
   packId: string;
   userId: string;
   initialCardId?: string;
+  mode?: StudyMode;
 }): Promise<StudySessionView | null> {
   const owned = await getOwnedPackRow(packId, userId);
   if (!owned) {
@@ -197,16 +210,14 @@ export async function getStudySessionView({
   }
 
   const cards = await getActivePackCards(packId);
-  const defaultQueue = cards
-    .filter((card) => card.state !== "mastered")
-    .toSorted((a, b) => studyQueueRank(a.state) - studyQueueRank(b.state));
-  const requestedCard =
-    initialCardId && cards.some((card) => card.id === initialCardId)
-      ? cards.find((card) => card.id === initialCardId)
-      : null;
-  const queue = requestedCard
-    ? [requestedCard, ...defaultQueue.filter((card) => card.id !== requestedCard.id)]
-    : defaultQueue;
+  const studyPlan = await getPackStudyPlan({ packId, userId });
+  const resolvedMode = initialCardId ? "preview" : mode;
+  const queue = buildStudyQueue({
+    cards,
+    mode: resolvedMode,
+    newCardLimit: studyPlan.newAvailableToday,
+    requestedCardId: initialCardId,
+  });
   const resolvedInitialCardId =
     initialCardId && queue.some((card) => card.id === initialCardId)
       ? initialCardId
@@ -216,6 +227,12 @@ export async function getStudySessionView({
     packId: owned.pack.id,
     packName: owned.pack.name,
     mediaTitle: owned.content.title,
+    mode: resolvedMode,
+    newCardsRemainingToday: studyPlan.newAvailableToday,
+    nextNewHref:
+      resolvedMode === "due" && studyPlan.dueCount === 0 && studyPlan.newAvailableToday > 0
+        ? `/study/${owned.pack.id}?mode=new`
+        : null,
     initialCardId: resolvedInitialCardId,
     cards: queue,
   };
@@ -226,6 +243,10 @@ export async function getDeckSummariesForUser({
 }: {
   userId: string;
 }): Promise<DeckSummary[]> {
+  const userStudyPlan = await getStudyPlanForUser({ userId });
+  const planByPackId = new Map(
+    userStudyPlan.packs.map((studyPlan) => [studyPlan.packId, studyPlan]),
+  );
   const rows = await db
     .select({
       pack,
@@ -265,6 +286,17 @@ export async function getDeckSummariesForUser({
   return Array.from(grouped.values()).map(({ pack: packRow, content: contentRow, cards }) => {
     const media = buildMediaSummary(contentRow);
     const now = new Date();
+    const studyPlan = planByPackId.get(packRow.id) ?? {
+      packId: packRow.id,
+      dueCount: 0,
+      newAvailableToday: 0,
+      newTotal: 0,
+      futureLearningCount: 0,
+      masteredCount: 0,
+      hiddenCount: 0,
+      nextLearningDueAt: null,
+      recommendedMode: null,
+    };
     const counts = deriveCounts(
       cards.map((card) => ({
         state: getEffectivePackCardState({
@@ -275,6 +307,9 @@ export async function getDeckSummariesForUser({
         }) as PackCardView["state"],
       })),
     );
+    counts.new = studyPlan.newAvailableToday;
+    counts.futureLearning = studyPlan.futureLearningCount;
+    counts.hidden = studyPlan.hiddenCount;
     const lastStudiedAt = cards
       .map((card) => card.lastReviewedAt)
       .filter((value): value is Date => Boolean(value))
@@ -287,6 +322,7 @@ export async function getDeckSummariesForUser({
       mediaType: media.kind === "movie" ? "movie" : "tv",
       posterUrl: media.posterUrl,
       counts,
+      studyPlan,
       estimatedStudyMinutes: packRow.estimatedStudyMinutes,
       lastStudiedAt: toIso(lastStudiedAt),
     };

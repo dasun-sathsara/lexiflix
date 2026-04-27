@@ -127,7 +127,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
   );
   const filtered = activeTab === "all" ? cards : cards.filter((item) => item.state === activeTab);
   const progressPct = Math.round((stats.mastered / Math.max(1, stats.total)) * 100);
-  const cardsToStudy = stats.new + stats.learning + stats.due;
+  const cardsToStudy = pack.studyPlan.dueCount + pack.studyPlan.newAvailableToday;
   const selectedCount = selectedIds.size;
 
   function removeCards(itemIds: string[]) {
@@ -228,7 +228,12 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   {pack.media.title}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  {[pack.media.releaseYear, pack.media.subtitle, `${stats.total} active cards`]
+                  {[
+                    pack.media.releaseYear,
+                    pack.media.subtitle,
+                    `${stats.total} active cards`,
+                    `${pack.studyPlan.futureLearningCount} scheduled`,
+                  ]
                     .filter(Boolean)
                     .join(" • ")}
                 </p>
@@ -252,22 +257,32 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   </span>
                 </div>
               ) : null}
-              <Button
-                size="default"
-                className="gap-2 shadow-sm"
-                asChild
-                disabled={cardsToStudy === 0}
-              >
-                <Link href={`/study/${pack.id}`}>
-                  <Play className="size-4" />
-                  Start Learning
-                  {cardsToStudy > 0 ? (
+              {pack.studyPlan.dueCount > 0 ? (
+                <Button size="default" className="gap-2 shadow-sm" asChild>
+                  <Link href={`/study/${pack.id}?mode=due`}>
+                    <Play className="size-4" />
+                    Review Due
                     <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
-                      {cardsToStudy}
+                      {pack.studyPlan.dueCount}
                     </Badge>
-                  ) : null}
-                </Link>
-              </Button>
+                  </Link>
+                </Button>
+              ) : pack.studyPlan.newAvailableToday > 0 ? (
+                <Button size="default" className="gap-2 shadow-sm" asChild>
+                  <Link href={`/study/${pack.id}?mode=new`}>
+                    <Play className="size-4" />
+                    Learn New
+                    <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
+                      {pack.studyPlan.newAvailableToday}
+                    </Badge>
+                  </Link>
+                </Button>
+              ) : (
+                <Button size="default" className="gap-2 shadow-sm" disabled>
+                  <Play className="size-4" />
+                  Complete For Now
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -315,8 +330,9 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Remove selected cards?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This removes {selectedCount} card{selectedCount === 1 ? "" : "s"} from
-                            this pack only. Resetting the pack can restore them.
+                            This removes {selectedCount} card
+                            {selectedCount === 1 ? "" : "s"} from this pack only. Resetting the pack
+                            can restore them.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -470,7 +486,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                                   asChild
                                 >
                                   <Link
-                                    href={`/study/${pack.id}?card=${item.id}`}
+                                    href={`/study/${pack.id}?mode=preview&card=${item.id}`}
                                     aria-label={`Preview ${item.displayText}`}
                                   >
                                     <Eye className="size-4" />
@@ -531,23 +547,32 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
             <CardHeader>
               <CardTitle className="text-base">Ready to Learn?</CardTitle>
               <CardDescription>
-                {cardsToStudy > 0
-                  ? `You have ${cardsToStudy} cards waiting for review.`
-                  : "There are no active cards to study."}
+                {pack.studyPlan.dueCount > 0
+                  ? `You have ${pack.studyPlan.dueCount} due cards.`
+                  : pack.studyPlan.newAvailableToday > 0
+                    ? `${pack.studyPlan.newAvailableToday} new cards are available today.`
+                    : "There are no scheduled cards ready right now."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {cardsToStudy > 0 ? (
+              {pack.studyPlan.dueCount > 0 ? (
                 <Button className="w-full gap-2" size="lg" asChild>
-                  <Link href={`/study/${pack.id}`}>
+                  <Link href={`/study/${pack.id}?mode=due`}>
                     <Play className="size-4" />
-                    Start Learning
+                    Review Due
+                  </Link>
+                </Button>
+              ) : pack.studyPlan.newAvailableToday > 0 ? (
+                <Button className="w-full gap-2" size="lg" asChild>
+                  <Link href={`/study/${pack.id}?mode=new`}>
+                    <Sparkles className="size-4" />
+                    Learn New
                   </Link>
                 </Button>
               ) : (
                 <Button className="w-full gap-2" size="lg" disabled>
                   <Play className="size-4" />
-                  Start Learning
+                  Complete For Now
                 </Button>
               )}
 
@@ -583,6 +608,22 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total cards</span>
                 <span className="font-normal">{stats.total}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Due now</span>
+                <span className="font-normal">{pack.studyPlan.dueCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">New today</span>
+                <span className="font-normal">{pack.studyPlan.newAvailableToday}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Future learning</span>
+                <span className="font-normal">{pack.studyPlan.futureLearningCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Hidden/removed</span>
+                <span className="font-normal">{pack.studyPlan.hiddenCount}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Est. study time</span>

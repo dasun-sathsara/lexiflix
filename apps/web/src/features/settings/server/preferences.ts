@@ -17,7 +17,7 @@ import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
 
 const DEFAULT_STUDY_LANGUAGE_CODE = "en";
 const DEFAULT_TARGET_LANGUAGE = "English";
-const DEFAULT_DAILY_WORDS_GOAL = 20;
+const DEFAULT_NEW_CARDS_PER_DAY = 20;
 const DEFAULT_FREQUENCY_PREFERENCE: StoredFrequencyPreference = "balanced";
 const DEFAULT_STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = [...vocabularyKinds];
 const DEFAULT_GENERATION_PACK_SIZE = 20;
@@ -132,7 +132,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
     db
       .select({
         studyLanguageCode: userPreferences.studyLanguageCode,
-        dailyWordsGoal: userPreferences.dailyWordsGoal,
+        newCardsPerDay: userPreferences.newCardsPerDay,
         frequencyPreference: userPreferences.frequencyPreference,
         studyVocabularyTypes: userPreferences.studyVocabularyTypes,
         generationPackSizeDefault: userPreferences.generationPackSizeDefault,
@@ -155,7 +155,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
     targetLanguage: studyLanguageLabel(
       preferences?.studyLanguageCode ?? DEFAULT_STUDY_LANGUAGE_CODE,
     ),
-    dailyWordsGoal: preferences?.dailyWordsGoal ?? DEFAULT_DAILY_WORDS_GOAL,
+    newCardsPerDay: preferences?.newCardsPerDay ?? DEFAULT_NEW_CARDS_PER_DAY,
     frequencyPreference: isFrequencyPreference(preferences?.frequencyPreference)
       ? preferences.frequencyPreference
       : DEFAULT_FREQUENCY_PREFERENCE,
@@ -181,7 +181,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
 export const settingsPreferenceDefaults = {
   studyLanguageCode: DEFAULT_STUDY_LANGUAGE_CODE,
   targetLanguage: DEFAULT_TARGET_LANGUAGE,
-  dailyWordsGoal: DEFAULT_DAILY_WORDS_GOAL,
+  newCardsPerDay: DEFAULT_NEW_CARDS_PER_DAY,
   frequencyPreference: DEFAULT_FREQUENCY_PREFERENCE,
   studyVocabularyTypes: DEFAULT_STUDY_VOCABULARY_TYPES,
   generationPackSizeDefault: DEFAULT_GENERATION_PACK_SIZE,

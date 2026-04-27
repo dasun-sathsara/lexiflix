@@ -9,7 +9,36 @@ export type PackCardCounts = {
   learning: number;
   due: number;
   mastered: number;
+  futureLearning: number;
+  hidden: number;
   total: number;
+};
+
+export type StudyMode = "due" | "new" | "preview" | "cram";
+
+export type PackStudyPlan = {
+  packId: string;
+  dueCount: number;
+  newAvailableToday: number;
+  newTotal: number;
+  futureLearningCount: number;
+  masteredCount: number;
+  hiddenCount: number;
+  nextLearningDueAt: string | null;
+  recommendedMode: Exclude<StudyMode, "preview" | "cram"> | null;
+};
+
+export type UserStudyPlan = {
+  newCardsPerDay: number;
+  newCardsCompletedToday: number;
+  newCardsRemainingToday: number;
+  dueNow: number;
+  dueLaterToday: number;
+  dueTomorrow: number;
+  newAvailableToday: number;
+  nextLearningDueAt: string | null;
+  isCompleteForToday: boolean;
+  packs: PackStudyPlan[];
 };
 
 export type PackMediaSummary = {
@@ -62,6 +91,7 @@ export type PackStagingView = {
   estimatedStudyMinutes: number | null;
   sourceJobId: string | null;
   counts: PackCardCounts;
+  studyPlan: PackStudyPlan;
   cards: PackCardView[];
 };
 
@@ -72,6 +102,7 @@ export type DeckSummary = {
   mediaType: "movie" | "tv";
   posterUrl: string | null;
   counts: PackCardCounts;
+  studyPlan: PackStudyPlan;
   estimatedStudyMinutes: number | null;
   lastStudiedAt: string | null;
 };
@@ -80,6 +111,9 @@ export type StudySessionView = {
   packId: string;
   packName: string;
   mediaTitle: string;
+  mode: StudyMode;
+  newCardsRemainingToday: number;
+  nextNewHref: string | null;
   initialCardId: string | null;
   cards: PackCardView[];
 };

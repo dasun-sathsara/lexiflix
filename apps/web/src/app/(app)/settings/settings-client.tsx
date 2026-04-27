@@ -143,7 +143,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const [manualOverrideSelection, setManualOverrideSelection] = useState<ManualOverrideSelection>(
     preferences.manualOverrideLevel ?? "assessed",
   );
-  const [dailyWordsGoal, setDailyWordsGoal] = useState(String(preferences.dailyWordsGoal));
+  const [newCardsPerDay, setNewCardsPerDay] = useState(String(preferences.newCardsPerDay));
   const [frequencyPreference, setFrequencyPreference] = useState(preferences.frequencyPreference);
   const [studyVocabularyTypes, setStudyVocabularyTypes] = useState<StoredVocabularyKind[]>(
     preferences.studyVocabularyTypes,
@@ -213,11 +213,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     !confirmPassword.trim() ||
     newPassword.length < 8;
 
-  const parsedDailyWordsGoal = Number.parseInt(dailyWordsGoal, 10);
-  const dailyWordsGoalIsValid =
-    Number.isInteger(parsedDailyWordsGoal) &&
-    parsedDailyWordsGoal >= 1 &&
-    parsedDailyWordsGoal <= 500;
+  const parsedNewCardsPerDay = Number.parseInt(newCardsPerDay, 10);
+  const newCardsPerDayIsValid =
+    Number.isInteger(parsedNewCardsPerDay) &&
+    parsedNewCardsPerDay >= 1 &&
+    parsedNewCardsPerDay <= 100;
   const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
   const generationPackSizeIsValid =
     Number.isInteger(parsedGenerationPackSize) &&
@@ -238,7 +238,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
   const preferencesChanged =
     manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
-    parsedDailyWordsGoal !== initialPreferences.dailyWordsGoal ||
+    parsedNewCardsPerDay !== initialPreferences.newCardsPerDay ||
     frequencyPreference !== initialPreferences.frequencyPreference ||
     [...studyVocabularyTypes].sort().join("|") !==
       [...initialPreferences.studyVocabularyTypes].sort().join("|") ||
@@ -251,7 +251,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
   const preferencesSubmitDisabled =
     isSavingPreferences ||
-    !dailyWordsGoalIsValid ||
+    !newCardsPerDayIsValid ||
     !generationPackSizeIsValid ||
     !generationExampleSentenceCountIsValid ||
     !customInstructionsIsValid ||
@@ -362,7 +362,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         router.refresh();
       } catch (error) {
         console.error("Failed to update profile", error);
-        setProfileStatus({ type: "error", message: "Failed to update profile." });
+        setProfileStatus({
+          type: "error",
+          message: "Failed to update profile.",
+        });
         toast.error("Failed to update profile");
       }
     });
@@ -379,7 +382,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
       try {
         const result = await updateSettingsPreferencesAction({
           manualOverrideLevel,
-          dailyWordsGoal: parsedDailyWordsGoal,
+          newCardsPerDay: parsedNewCardsPerDay,
           frequencyPreference,
           studyVocabularyTypes,
           generationPackSizeDefault: parsedGenerationPackSize,
@@ -400,7 +403,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         const nextPreferences = result.data.preferences;
         setInitialPreferences(nextPreferences);
         setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
-        setDailyWordsGoal(String(nextPreferences.dailyWordsGoal));
+        setNewCardsPerDay(String(nextPreferences.newCardsPerDay));
         setFrequencyPreference(nextPreferences.frequencyPreference);
         setStudyVocabularyTypes(nextPreferences.studyVocabularyTypes);
         setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
@@ -420,7 +423,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         router.refresh();
       } catch (error) {
         console.error("Failed to update preferences", error);
-        setPreferencesStatus({ type: "error", message: "Failed to update preferences." });
+        setPreferencesStatus({
+          type: "error",
+          message: "Failed to update preferences.",
+        });
         toast.error("Failed to update preferences");
       }
     });
@@ -510,7 +516,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     }
 
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   };
 
   return (
@@ -918,27 +926,28 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
                   </div>
 
                   <div className={settingsFieldClass}>
-                    <Label htmlFor="daily-words-goal" className={settingsLabelClass}>
-                      Daily words goal
+                    <Label htmlFor="new-cards-per-day" className={settingsLabelClass}>
+                      New cards per day
                     </Label>
                     <Input
-                      id="daily-words-goal"
+                      id="new-cards-per-day"
                       type="number"
                       min={1}
-                      max={500}
-                      value={dailyWordsGoal}
+                      max={100}
+                      value={newCardsPerDay}
                       onChange={(event) => {
-                        setDailyWordsGoal(event.target.value);
+                        setNewCardsPerDay(event.target.value);
                         setPreferencesStatus(null);
                       }}
                       placeholder="20"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Recommended range: 10-40 words per day.
+                      Controls how many new cards can be introduced each app day. Due reviews are
+                      not capped.
                     </p>
-                    {!dailyWordsGoalIsValid ? (
+                    {!newCardsPerDayIsValid ? (
                       <p className="text-xs text-destructive">
-                        Enter a whole number between 1 and 500.
+                        Enter a whole number between 1 and 100.
                       </p>
                     ) : null}
                   </div>

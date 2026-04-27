@@ -2,12 +2,8 @@ import "server-only";
 
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
 import { getEffectivePackCardState } from "@/features/packs/server/srs";
-import {
-  addUtcDays,
-  getAppDateKey,
-  getAppDayStartUtc,
-  getAppWeekStart,
-} from "@/features/packs/server/study-time";
+import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
+import { getAppWeekStart } from "@/features/packs/server/study-time";
 import type { PackCardState } from "@/features/packs/types";
 import { db } from "@/lib/server/db";
 import {
@@ -28,6 +24,7 @@ export type DashboardPackSummary = {
   masteredCount: number;
   totalCount: number;
   dueCount: number;
+  newAvailableToday: number;
   lastStudiedAt: string | null;
 };
 
@@ -45,12 +42,17 @@ export type DashboardView = {
     reviewsDue: number;
     reviewsCompletedThisWeek: number;
     estimatedDueMinutes: number;
+    newCardsPerDay: number;
+    newCardsCompletedToday: number;
+    newCardsAvailableToday: number;
   };
   recentPacks: DashboardPackSummary[];
   reviewPlan: {
     dueNow: number;
     dueLaterToday: number;
     dueTomorrow: number;
+    nextLearningDueAt: string | null;
+    isCompleteForToday: boolean;
     focusPacks: DashboardFocusPack[];
   };
   nextStudyHref: string;
@@ -64,11 +66,9 @@ function toIso(value: Date | null | undefined) {
 export async function getDashboardView({ userId }: { userId: string }): Promise<DashboardView> {
   const now = new Date();
   const weekStart = getAppWeekStart(now);
-  const todayKey = getAppDateKey(now);
-  const tomorrow = getAppDayStartUtc(addUtcDays(todayKey, 1));
-  const dayAfterTomorrow = getAppDayStartUtc(addUtcDays(todayKey, 2));
 
-  const [streakRows, knownRows, reviewRows, packRows] = await Promise.all([
+  const [studyPlan, streakRows, knownRows, reviewRows, packRows] = await Promise.all([
+    getStudyPlanForUser({ userId, now }),
     db.select().from(userStreak).where(eq(userStreak.userId, userId)).limit(1),
     db
       .select({ termId: userTermState.termId })
@@ -97,6 +97,7 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
       .where(eq(pack.userId, userId))
       .orderBy(desc(pack.updatedAt)),
   ]);
+  const planByPackId = new Map(studyPlan.packs.map((packPlan) => [packPlan.packId, packPlan]));
 
   const grouped = new Map<
     string,
@@ -119,13 +120,11 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
     grouped.set(row.pack.id, current);
   }
 
-  let dueNow = 0;
-  let dueLaterToday = 0;
-  let dueTomorrow = 0;
   const packs = Array.from(grouped.values()).map(
     ({ pack: packRow, content: contentRow, items }) => {
       let masteredCount = 0;
       let dueCount = 0;
+      let newAvailableToday = 0;
       let totalCount = 0;
       let lastStudiedAt: Date | null = null;
 
@@ -144,19 +143,15 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
 
         if (effectiveState === "due") {
           dueCount += 1;
-          dueNow += 1;
-        } else if (item.dueAt && item.state !== "new" && item.state !== "mastered") {
-          if (item.dueAt < tomorrow) {
-            dueLaterToday += 1;
-          } else if (item.dueAt < dayAfterTomorrow) {
-            dueTomorrow += 1;
-          }
         }
 
         if (item.lastReviewedAt && (!lastStudiedAt || item.lastReviewedAt > lastStudiedAt)) {
           lastStudiedAt = item.lastReviewedAt;
         }
       }
+      const packPlan = planByPackId.get(packRow.id);
+      dueCount = packPlan?.dueCount ?? dueCount;
+      newAvailableToday = packPlan?.newAvailableToday ?? 0;
 
       return {
         id: packRow.id,
@@ -166,6 +161,7 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
         masteredCount,
         totalCount,
         dueCount,
+        newAvailableToday,
         lastStudiedAt: toIso(lastStudiedAt),
         updatedAt: packRow.updatedAt,
       };
@@ -197,18 +193,35 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
     stats: {
       currentStreakDays: streakRows[0]?.currentStreakDays ?? 0,
       totalTermsKnown: knownRows.length,
-      reviewsDue: dueNow,
+      reviewsDue: studyPlan.dueNow,
       reviewsCompletedThisWeek: reviewRows.length,
-      estimatedDueMinutes: Math.max(0, Math.ceil(dueNow * 1.5)),
+      estimatedDueMinutes: Math.max(0, Math.ceil(studyPlan.dueNow * 1.5)),
+      newCardsPerDay: studyPlan.newCardsPerDay,
+      newCardsCompletedToday: studyPlan.newCardsCompletedToday,
+      newCardsAvailableToday: studyPlan.newAvailableToday,
     },
     recentPacks,
     reviewPlan: {
-      dueNow,
-      dueLaterToday,
-      dueTomorrow,
+      dueNow: studyPlan.dueNow,
+      dueLaterToday: studyPlan.dueLaterToday,
+      dueTomorrow: studyPlan.dueTomorrow,
+      nextLearningDueAt: studyPlan.nextLearningDueAt,
+      isCompleteForToday: studyPlan.isCompleteForToday,
       focusPacks,
     },
-    nextStudyHref: firstDuePack ? `/study/${firstDuePack.id}` : hasPacks ? "/decks" : "/browse",
-    nextStudyLabel: firstDuePack ? "Start due reviews" : hasPacks ? "View decks" : "Browse content",
+    nextStudyHref: firstDuePack
+      ? `/study/${firstDuePack.id}?mode=due`
+      : studyPlan.newAvailableToday > 0
+        ? "/decks"
+        : hasPacks
+          ? "/decks"
+          : "/browse",
+    nextStudyLabel: firstDuePack
+      ? "Start due reviews"
+      : studyPlan.newAvailableToday > 0
+        ? "Learn new"
+        : hasPacks
+          ? "View decks"
+          : "Browse content",
   };
 }

@@ -39,7 +39,7 @@ const profileSchema = z.object({
 
 const updateSettingsPreferencesSchema = z.object({
   manualOverrideLevel: z.enum(CEFR_LEVELS).nullable(),
-  dailyWordsGoal: z.number().int().min(1).max(500),
+  newCardsPerDay: z.number().int().min(1).max(100),
   frequencyPreference: z.enum(FREQUENCY_PREFERENCES),
   studyVocabularyTypes: z.array(z.enum(STUDY_VOCABULARY_TYPES)).min(1),
   generationPackSizeDefault: z.number().int().min(1).max(100),
@@ -182,7 +182,7 @@ export async function updateSettingsPreferencesAction(
 
   const {
     manualOverrideLevel,
-    dailyWordsGoal,
+    newCardsPerDay,
     frequencyPreference,
     studyVocabularyTypes,
     generationPackSizeDefault,
@@ -200,7 +200,7 @@ export async function updateSettingsPreferencesAction(
     .values({
       userId: session.user.id,
       studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
-      dailyWordsGoal,
+      newCardsPerDay,
       frequencyPreference,
       studyVocabularyTypes,
       generationPackSizeDefault,
@@ -216,7 +216,7 @@ export async function updateSettingsPreferencesAction(
       target: userPreferences.userId,
       set: {
         studyLanguageCode: settingsPreferenceDefaults.studyLanguageCode,
-        dailyWordsGoal,
+        newCardsPerDay,
         frequencyPreference,
         studyVocabularyTypes,
         generationPackSizeDefault,
