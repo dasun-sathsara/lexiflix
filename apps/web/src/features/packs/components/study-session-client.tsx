@@ -375,7 +375,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             <Button
               key={rating}
               type="button"
-              className={`h-11 text-white sm:h-12 ${className}`}
+              className={`h-11 rounded-full border-0 text-white sm:h-12 focus-visible:ring-white/60 ${className}`}
               disabled={Boolean(pendingRating)}
               onClick={() => rateCard(rating as PackReviewRating)}
             >

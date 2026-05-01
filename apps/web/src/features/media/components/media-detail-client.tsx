@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { formatRuntime, getCefrColor } from "./_utils";
 import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
-import { MediaNextAction } from "./media-next-action";
 
 /**
  * Props for the MediaDetailClient component.
@@ -246,7 +245,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
             )}
           </div>
 
-          <div className="flex-1 space-y-4 text-center sm:pt-20 sm:text-left">
+          <div className="flex-1 text-center sm:pt-20 sm:text-left">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <Badge
@@ -333,16 +332,6 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                 </div>
               ) : null}
             </div>
-
-            <MediaNextAction
-              media={media}
-              analysis={analysis}
-              generation={generation}
-              isStarting={isPending}
-              isGenerationPending={isGenerationPending}
-              onStartAnalysis={handleStartAnalysis}
-              onOpenGeneration={() => setGenerationDialogOpen(true)}
-            />
           </div>
         </div>
 

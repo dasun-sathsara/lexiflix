@@ -294,10 +294,9 @@
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 28%, transparent);
   }
 
-  /* Focus outlines — defer to component-level focus-visible:ring-*.
-   * The global outline is only a fallback for elements without explicit
-   * focus styling (e.g. raw <a> or <summary>). */
-  :focus-visible {
+  /* Focus rings are defined per-component using focus-visible:ring-* utilities.
+    * This rule provides a minimal fallback only for elements without explicit focus styling. */
+  :focus-visible:not(button, [role="button"], a, input, select, textarea) {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
