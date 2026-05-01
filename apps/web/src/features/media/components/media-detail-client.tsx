@@ -33,6 +33,9 @@ import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
 import { MediaNextAction } from "./media-next-action";
 
+/**
+ * Props for the MediaDetailClient component.
+ */
 export type MediaDetailClientProps = {
   pageData: MediaDetailPageData;
 };

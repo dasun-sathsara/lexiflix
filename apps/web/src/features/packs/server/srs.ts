@@ -3,6 +3,9 @@ import type { PackCardState, PackReviewRating } from "@/features/packs/types";
 const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
+/**
+ * Represents the configuration parameters for the Spaced Repetition System.
+ */
 export const SRS_CONFIG = {
   firstLearningStepMs: MINUTE_MS,
   secondLearningStepMs: 10 * MINUTE_MS,
@@ -17,8 +20,14 @@ export const SRS_CONFIG = {
   masteryIntervalThresholdDays: 21,
 } as const;
 
+/**
+ * Allowed states for a card in the active SRS lifecycle.
+ */
 export type SrsLifecycleState = Exclude<PackCardState, "due" | "removed">;
 
+/**
+ * Input parameters required to compute the next review state of a card.
+ */
 export type ComputeNextReviewStateInput = {
   rating: PackReviewRating;
   reviewedAt: Date;
@@ -30,6 +39,9 @@ export type ComputeNextReviewStateInput = {
   easeFactor: number | null;
 };
 
+/**
+ * The resulting state and scheduling information after an SRS review.
+ */
 export type NextReviewState = {
   state: SrsLifecycleState;
   dueAt: Date;
@@ -56,10 +68,12 @@ function addDays(date: Date, days: number) {
 }
 
 function clampEase(value: number) {
+  // Clamp ease factor to prevent the SRS interval from dropping below the minimum threshold.
   return Math.max(SRS_CONFIG.minimumEaseFactor, Number(value.toFixed(2)));
 }
 
 function clampInterval(days: number) {
+  // Ensure the interval stays within bounds, protecting against infinite or zero days.
   return Math.min(SRS_CONFIG.maximumIntervalDays, Math.max(1, Math.round(days)));
 }
 
@@ -76,6 +90,8 @@ function maybeMastered({
   repetitionCount: number;
   intervalDays: number | null;
 }) {
+  // A card is considered mastered if the user rates it positively and it has
+  // met either the repetition count threshold or the interval duration threshold.
   return (
     (rating === "good" || rating === "easy") &&
     (repetitionCount >= SRS_CONFIG.masteryRepetitionThreshold ||

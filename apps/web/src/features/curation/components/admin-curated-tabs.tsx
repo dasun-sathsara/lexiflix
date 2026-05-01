@@ -21,6 +21,9 @@ import { AdminCatalogRow } from "./admin-catalog-row";
 import { AdminDiscoverControls } from "./admin-curated-controls";
 import { AdminDiscoverRow } from "./admin-discover-row";
 
+/**
+ * Props for the AdminCuratedWorkspace component.
+ */
 interface AdminCuratedWorkspaceProps {
   queryState: CuratedAdminQueryState;
   catalogFilter: CuratedAdminCatalogFilter;

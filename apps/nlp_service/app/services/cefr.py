@@ -231,6 +231,7 @@ class EFLLexLexicon:
             docs = aggregate.docs_by_level[index]
             freq_share = freq / total_freq if total_freq else 0.0
             docs_share = docs / total_docs if total_docs else 0.0
+            # Weigh frequency and document spread to determine the representative level score.
             scores.append((freq_share * 0.72) + (docs_share * 0.28))
 
         chosen_index = max(range(5), key=lambda index: (scores[index], -index))
@@ -259,6 +260,7 @@ class EFLLexLexicon:
 
         doc_support = aggregate.docs_by_level[chosen_index]
         support_factor = min(1.0, (doc_support + aggregate.total_docs) / 18.0)
+        # Calculate a weighted confidence score based on level distribution, margin of victory, and absolute document support.
         confidence = (
             0.42 + (chosen_score * 0.28) + (margin * 0.18) + (support_factor * 0.12)
         )
@@ -416,8 +418,10 @@ class CEFRLookup:
             )
             confidence = efllex_signal.confidence
             if raw_num is not None:
+                # Boost confidence slightly when cefrpy provides a corroborating signal.
                 confidence = min(0.98, confidence + 0.04)
             if raw_num is not None and raw_num != final_num:
+                # Penalize confidence if cefrpy and EFLLex disagree.
                 confidence = max(0.45, confidence - 0.05)
 
             return CalibratedCEFRResult(
