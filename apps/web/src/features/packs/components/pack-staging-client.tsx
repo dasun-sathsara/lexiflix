@@ -1,22 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  BookOpen,
-  Check,
-  Clock,
-  Eye,
-  Film,
-  Layers,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-  Tv,
-  Volume2,
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { Check, Layers, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
@@ -32,13 +16,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ignoreTermGloballyAction,
   markTermKnownAction,
@@ -50,65 +31,15 @@ import {
   unignoreTermAction,
 } from "@/features/packs/server/actions";
 import type { PackCardView, PackStagingView } from "@/features/packs/types";
-import { cn } from "@/lib/utils";
+
+import { PackStagingCardItem } from "./pack-staging-card-item";
+import { PackStagingHero } from "./pack-staging-hero";
+import { PackStagingSidebar } from "./pack-staging-sidebar";
 
 type TabValue = "all" | PackCardView["state"];
 
-function cefrBadgeClass(level: string | null) {
-  if (!level) {
-    return "bg-muted text-muted-foreground border-border";
-  }
-  if (level.startsWith("A")) {
-    return "bg-emerald-500/10 text-emerald-700 border-emerald-200/60 dark:text-emerald-200 dark:border-emerald-500/20";
-  }
-  if (level.startsWith("B")) {
-    return "bg-amber-500/10 text-amber-800 border-amber-200/60 dark:text-amber-200 dark:border-amber-500/20";
-  }
-  return "bg-rose-500/10 text-rose-700 border-rose-200/60 dark:text-rose-200 dark:border-rose-500/20";
-}
-
-function statusBadgeClass(status: PackCardView["state"]) {
-  switch (status) {
-    case "new":
-      return "bg-indigo-500/10 text-indigo-700 border-indigo-200/60 dark:text-indigo-300 dark:border-indigo-500/20";
-    case "learning":
-      return "bg-amber-500/10 text-amber-700 border-amber-200/60 dark:text-amber-300 dark:border-amber-500/20";
-    case "due":
-      return "bg-rose-500/10 text-rose-700 border-rose-200/60 dark:text-rose-300 dark:border-rose-500/20";
-    case "mastered":
-      return "bg-emerald-500/10 text-emerald-700 border-emerald-200/60 dark:text-emerald-300 dark:border-emerald-500/20";
-    case "removed":
-      return "bg-muted text-muted-foreground border-border";
-  }
-}
-
-function statusIcon(status: PackCardView["state"]) {
-  switch (status) {
-    case "new":
-      return <Sparkles className="size-3" />;
-    case "learning":
-      return <RotateCcw className="size-3" />;
-    case "due":
-      return <Clock className="size-3" />;
-    case "mastered":
-      return <Check className="size-3" />;
-    case "removed":
-      return <Trash2 className="size-3" />;
-  }
-}
-
 function label(value: string) {
   return value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
-}
-
-function truncate(text: string | null, max = 180) {
-  if (!text) {
-    return "No generated meaning was saved for this card.";
-  }
-  if (text.length <= max) {
-    return text;
-  }
-  return `${text.slice(0, max - 1).trimEnd()}...`;
 }
 
 function toTabValue(value: string): TabValue {
@@ -150,7 +81,6 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
   );
   const filtered = activeTab === "all" ? cards : cards.filter((item) => item.state === activeTab);
   const progressPct = Math.round((stats.mastered / Math.max(1, stats.total)) * 100);
-  const cardsToStudy = pack.studyPlan.dueCount + pack.studyPlan.newAvailableToday;
   const selectedCount = selectedIds.size;
 
   function removeCards(itemIds: string[]) {
@@ -212,115 +142,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-6">
-      <Card className="relative overflow-hidden border-indigo-200/60 dark:border-indigo-500/20">
-        {pack.media.backdropUrl ? (
-          <div className="absolute inset-0">
-            <Image
-              src={pack.media.backdropUrl}
-              alt={`${pack.media.title} backdrop`}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/85 to-background" />
-          </div>
-        ) : null}
-        <CardContent className="relative p-6 sm:p-8">
-          <div className="mb-5 -mt-1">
-            <Button variant="ghost" size="sm" asChild className="gap-2 hover:bg-background/60">
-              <Link href="/decks">
-                <ArrowLeft className="size-4" />
-                Back to Decks
-              </Link>
-            </Button>
-          </div>
-
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="secondary"
-                  className="border border-indigo-200/60 bg-white/60 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
-                >
-                  {pack.media.kind === "movie" ? (
-                    <Film className="mr-1 size-3.5" />
-                  ) : (
-                    <Tv className="mr-1 size-3.5" />
-                  )}
-                  Study Pack
-                </Badge>
-                {pack.learnerCefrLevelAtGeneration ? (
-                  <Badge className={`border ${cefrBadgeClass(pack.learnerCefrLevelAtGeneration)}`}>
-                    {pack.learnerCefrLevelAtGeneration}
-                  </Badge>
-                ) : null}
-              </div>
-
-              <div className="space-y-1">
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                  {pack.media.title}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {[
-                    pack.media.releaseYear,
-                    pack.media.subtitle,
-                    `${stats.total} active cards`,
-                    `${pack.studyPlan.futureLearningCount} scheduled`,
-                  ]
-                    .filter(Boolean)
-                    .join(" • ")}
-                </p>
-              </div>
-
-              <div className="max-w-md space-y-1">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Overall progress</span>
-                  <span className="font-normal text-foreground">{progressPct}% mastered</span>
-                </div>
-                <Progress value={progressPct} className="h-2" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {cardsToStudy > 0 ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="size-4" />
-                  <span>
-                    ~{pack.estimatedStudyMinutes ?? Math.max(1, Math.ceil(stats.total * 1.5))} min
-                  </span>
-                </div>
-              ) : null}
-              {pack.studyPlan.dueCount > 0 ? (
-                <Button size="default" className="gap-2 shadow-sm" asChild>
-                  <Link href={`/study/${pack.id}?mode=due`}>
-                    <Play className="size-4" />
-                    Review Due
-                    <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
-                      {pack.studyPlan.dueCount}
-                    </Badge>
-                  </Link>
-                </Button>
-              ) : pack.studyPlan.newAvailableToday > 0 ? (
-                <Button size="default" className="gap-2 shadow-sm" asChild>
-                  <Link href={`/study/${pack.id}?mode=new`}>
-                    <Play className="size-4" />
-                    Learn New
-                    <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
-                      {pack.studyPlan.newAvailableToday}
-                    </Badge>
-                  </Link>
-                </Button>
-              ) : (
-                <Button size="default" className="gap-2 shadow-sm" disabled>
-                  <Play className="size-4" />
-                  Complete For Now
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <PackStagingHero pack={pack} stats={stats} progressPct={progressPct} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
@@ -458,370 +280,41 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 </CardContent>
               </Card>
             ) : (
-              filtered.map((item) => {
-                const isSelected = selectedIds.has(item.id);
-                const firstExample = item.exampleSentences[0] ?? null;
-
-                return (
-                  <Card
-                    key={item.id}
-                    className={cn(
-                      "overflow-hidden transition-all",
-                      isSelected && "ring-2 ring-primary ring-offset-2",
-                    )}
-                  >
-                    <CardContent className="p-4 sm:p-5">
-                      <div className="flex gap-4">
-                        {isSelectionMode ? (
-                          <div className="flex items-start pt-1">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSelect(item.id)}
-                            />
-                          </div>
-                        ) : null}
-
-                        <div className="min-w-0 flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-lg font-semibold tracking-tight">
-                              {item.displayText}
-                            </span>
-                            <Badge variant="secondary">{label(item.kind)}</Badge>
-                            {item.partOfSpeech ? (
-                              <Badge variant="outline">{item.partOfSpeech}</Badge>
-                            ) : null}
-                            <Badge className={`border ${cefrBadgeClass(item.cefrLevel)}`}>
-                              {item.cefrLevel ?? "CEFR n/a"}
-                            </Badge>
-                            <Badge className={`gap-1 border ${statusBadgeClass(item.state)}`}>
-                              {statusIcon(item.state)}
-                              {label(item.state)}
-                            </Badge>
-                            {item.audioUrl ? (
-                              <Badge variant="outline" className="gap-1">
-                                <Volume2 className="size-3" />
-                                Audio
-                              </Badge>
-                            ) : null}
-                          </div>
-
-                          <div className="space-y-1">
-                            <p className="text-sm text-muted-foreground">
-                              {truncate(item.meaning)}
-                            </p>
-                            {firstExample ? (
-                              <p className="text-sm italic text-foreground/80">
-                                Generated example: &quot;{firstExample}&quot;
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        {!isSelectionMode ? (
-                          <div className="flex shrink-0 items-start gap-1">
-                            {item.state !== "removed" ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-muted-foreground hover:text-foreground"
-                                    asChild
-                                  >
-                                    <Link
-                                      href={`/study/${pack.id}?mode=preview&card=${item.id}`}
-                                      aria-label={`Preview ${item.displayText}`}
-                                    >
-                                      <Eye className="size-4" />
-                                      <span className="sr-only">Preview {item.displayText}</span>
-                                    </Link>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Preview card</TooltipContent>
-                              </Tooltip>
-                            ) : null}
-                            {item.state === "removed" ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-foreground"
-                                disabled={pendingAction}
-                                onClick={() =>
-                                  runItemAction(() =>
-                                    restorePackItemAction({ packId: pack.id, itemId: item.id }),
-                                  )
-                                }
-                                aria-label={`Restore ${item.displayText}`}
-                                title="Restore card"
-                              >
-                                <RotateCcw className="size-4" />
-                                <span className="sr-only">Restore {item.displayText}</span>
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-foreground"
-                                disabled={pendingAction}
-                                onClick={() =>
-                                  runItemAction(() =>
-                                    resetPackItemAction({ packId: pack.id, itemId: item.id }),
-                                  )
-                                }
-                                aria-label={`Reset ${item.displayText}`}
-                                title="Reset card"
-                              >
-                                <RotateCcw className="size-4" />
-                                <span className="sr-only">Reset {item.displayText}</span>
-                              </Button>
-                            )}
-                            {item.state !== "removed" ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8 text-muted-foreground hover:text-emerald-600"
-                                  disabled={pendingAction}
-                                  onClick={() =>
-                                    runItemAction(() =>
-                                      markTermKnownAction({
-                                        packId: pack.id,
-                                        itemId: item.id,
-                                      }),
-                                    )
-                                  }
-                                  aria-label={`Mark ${item.displayText} known`}
-                                  title="Mark term known"
-                                >
-                                  <Check className="size-4" />
-                                  <span className="sr-only">Mark {item.displayText} known</span>
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8 text-muted-foreground hover:text-amber-600"
-                                  disabled={pendingAction}
-                                  onClick={() =>
-                                    runItemAction(() =>
-                                      markTermLearningAction({
-                                        packId: pack.id,
-                                        itemId: item.id,
-                                      }),
-                                    )
-                                  }
-                                  aria-label={`Mark ${item.displayText} learning`}
-                                  title="Mark term learning"
-                                >
-                                  <BookOpen className="size-4" />
-                                  <span className="sr-only">Mark {item.displayText} learning</span>
-                                </Button>
-                              </>
-                            ) : null}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-muted-foreground hover:text-destructive"
-                              disabled={pendingAction}
-                              onClick={() =>
-                                runItemAction(() =>
-                                  item.state === "removed"
-                                    ? unignoreTermAction({ packId: pack.id, itemId: item.id })
-                                    : ignoreTermGloballyAction({
-                                        packId: pack.id,
-                                        itemId: item.id,
-                                      }),
-                                )
-                              }
-                              aria-label={
-                                item.state === "removed"
-                                  ? `Unignore ${item.displayText}`
-                                  : `Ignore ${item.displayText}`
-                              }
-                              title={item.state === "removed" ? "Unignore term" : "Ignore term"}
-                            >
-                              <Trash2 className="size-4" />
-                              <span className="sr-only">
-                                {item.state === "removed" ? "Unignore" : "Ignore"}{" "}
-                                {item.displayText}
-                              </span>
-                            </Button>
-                            {item.state !== "removed" ? (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-muted-foreground hover:text-destructive"
-                                    disabled={pendingAction}
-                                    aria-label={`Remove ${item.displayText}`}
-                                    title="Remove card"
-                                  >
-                                    <Trash2 className="size-4" />
-                                    <span className="sr-only">Remove {item.displayText}</span>
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Remove &quot;{item.displayText}&quot;?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This removes the card from this pack only. It does not mark
-                                      the term known or ignored.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => removeCards([item.id])}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Remove
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
+              filtered.map((item) => (
+                <PackStagingCardItem
+                  key={item.id}
+                  item={item}
+                  packId={pack.id}
+                  isSelected={selectedIds.has(item.id)}
+                  isSelectionMode={isSelectionMode}
+                  pendingAction={pendingAction}
+                  onToggleSelect={toggleSelect}
+                  onRemoveCard={(id) => removeCards([id])}
+                  onRunItemAction={runItemAction}
+                  onRestore={() => restorePackItemAction({ packId: pack.id, itemId: item.id })}
+                  onReset={() => resetPackItemAction({ packId: pack.id, itemId: item.id })}
+                  onMarkKnown={() => markTermKnownAction({ packId: pack.id, itemId: item.id })}
+                  onMarkLearning={() =>
+                    markTermLearningAction({ packId: pack.id, itemId: item.id })
+                  }
+                  onIgnore={() =>
+                    item.state === "removed"
+                      ? unignoreTermAction({ packId: pack.id, itemId: item.id })
+                      : ignoreTermGloballyAction({ packId: pack.id, itemId: item.id })
+                  }
+                />
+              ))
             )}
           </div>
         </div>
 
-        <aside className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Ready to Learn?</CardTitle>
-              <CardDescription>
-                {pack.studyPlan.dueCount > 0
-                  ? `You have ${pack.studyPlan.dueCount} due cards.`
-                  : pack.studyPlan.newAvailableToday > 0
-                    ? `${pack.studyPlan.newAvailableToday} new cards are available today.`
-                    : "There are no scheduled cards ready right now."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {pack.studyPlan.dueCount > 0 ? (
-                <Button className="w-full gap-2" size="lg" asChild>
-                  <Link href={`/study/${pack.id}?mode=due`}>
-                    <Play className="size-4" />
-                    Review Due
-                  </Link>
-                </Button>
-              ) : pack.studyPlan.newAvailableToday > 0 ? (
-                <Button className="w-full gap-2" size="lg" asChild>
-                  <Link href={`/study/${pack.id}?mode=new`}>
-                    <Sparkles className="size-4" />
-                    Learn New
-                  </Link>
-                </Button>
-              ) : (
-                <Button className="w-full gap-2" size="lg" disabled>
-                  <Play className="size-4" />
-                  Complete For Now
-                </Button>
-              )}
-
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
-                  <Link href="/decks">
-                    <Layers className="size-3.5" />
-                    Decks
-                  </Link>
-                </Button>
-                {pack.media.mediaInfoHref ? (
-                  <Button variant="outline" className="flex-1 gap-1.5" size="sm" asChild>
-                    <Link href={pack.media.mediaInfoHref}>
-                      <BookOpen className="size-3.5" />
-                      Media Info
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button variant="outline" className="flex-1 gap-1.5" size="sm" disabled>
-                    <BookOpen className="size-3.5" />
-                    Media Info
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Pack Statistics</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total cards</span>
-                <span className="font-normal">{stats.total}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Due now</span>
-                <span className="font-normal">{pack.studyPlan.dueCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">New today</span>
-                <span className="font-normal">{pack.studyPlan.newAvailableToday}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Future learning</span>
-                <span className="font-normal">{pack.studyPlan.futureLearningCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Hidden/removed</span>
-                <span className="font-normal">{pack.studyPlan.hiddenCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Est. study time</span>
-                <span className="font-normal">
-                  ~{pack.estimatedStudyMinutes ?? Math.max(1, Math.ceil(stats.total * 1.5))} min
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Mastery rate</span>
-                <span className="font-medium">{progressPct}%</span>
-              </div>
-              <Progress value={progressPct} className="h-2" />
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 w-full gap-1.5 border-amber-200/60 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
-                    disabled={pendingAction}
-                  >
-                    <RotateCcw className="size-3.5" />
-                    Reset Pack Progress
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Reset this pack?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This restores removed cards and resets all cards to new. Review history is not
-                      deleted.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={resetPack}
-                      className="bg-amber-600 text-white hover:bg-amber-600/90"
-                    >
-                      Reset
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardContent>
-          </Card>
-        </aside>
+        <PackStagingSidebar
+          pack={pack}
+          stats={stats}
+          progressPct={progressPct}
+          pendingAction={pendingAction}
+          onResetPack={resetPack}
+        />
       </div>
     </div>
   );

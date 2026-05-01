@@ -1,12 +1,9 @@
-import { Eye, Film, Layers, LayoutGrid, Search, Tv } from "lucide-react";
+import { Eye, Film, Layers, LayoutGrid, Tv } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
-import { AppEmptyState, AppPanel, AppStat } from "@/components/common/app-surface";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppPanel, AppStat } from "@/components/common/app-surface";
 import type {
   AnnotatedTMDBResult,
   CuratedAdminCatalogFilter,
@@ -16,10 +13,8 @@ import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 import type { Genre } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
-import { AdminCatalogFilters } from "./admin-catalog-filters";
-import { AdminCatalogRow } from "./admin-catalog-row";
-import { AdminDiscoverControls } from "./admin-curated-controls";
-import { AdminDiscoverRow } from "./admin-discover-row";
+import { AdminCatalogView } from "./admin-catalog-view";
+import { AdminDiscoverView } from "./admin-discover-view";
 
 /**
  * Props for the AdminCuratedWorkspace component.
@@ -34,64 +29,6 @@ interface AdminCuratedWorkspaceProps {
   discoverMeta: { page: number; totalPages: number; totalResults: number };
   genres: Genre[];
   genreMap: Record<number, string>;
-}
-
-function buildPageUrl(
-  baseParams: Record<string, string | number | null | undefined>,
-  page: number,
-): string {
-  const entries = Object.entries({ ...baseParams, page: String(page) }).filter(
-    ([, v]) => v != null && v !== "",
-  ) as [string, string][];
-  return `?${new URLSearchParams(entries).toString()}`;
-}
-
-function ControlsSkeleton() {
-  return (
-    <div className="h-[184px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
-  );
-}
-
-function FiltersSkeleton() {
-  return (
-    <div className="h-[132px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
-  );
-}
-
-function PaginationRow({
-  currentPage,
-  totalPages,
-  baseParams,
-}: {
-  currentPage: number;
-  totalPages: number;
-  baseParams: Record<string, string | number | null | undefined>;
-}) {
-  if (totalPages <= 1) return null;
-
-  return (
-    <div className="flex items-center justify-between pt-2">
-      <div>
-        {currentPage > 1 && (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={buildPageUrl(baseParams, currentPage - 1)}>← Previous</Link>
-          </Button>
-        )}
-      </div>
-
-      <span className="text-sm text-muted-foreground">
-        Page {currentPage} / {totalPages}
-      </span>
-
-      <div>
-        {currentPage < totalPages && (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={buildPageUrl(baseParams, currentPage + 1)}>Next →</Link>
-          </Button>
-        )}
-      </div>
-    </div>
-  );
 }
 
 /**
@@ -210,136 +147,24 @@ export function AdminCuratedWorkspace({
       </AppPanel>
 
       {isDiscover && (
-        <div className="flex flex-col gap-4 pt-2">
-          <Suspense fallback={<ControlsSkeleton />}>
-            <AdminDiscoverControls queryState={queryState} genres={genres} />
-          </Suspense>
-
-          {queryState.mode === "browse" &&
-            (discoverResults.length > 0 ? (
-              <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
-                <CardHeader className="gap-1.5 border-b py-3.5">
-                  <CardTitle className="text-base font-semibold">Discovery results</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {discoverMeta.totalResults.toLocaleString()}
-                    </span>{" "}
-                    results · page {discoverMeta.page} of {discoverMeta.totalPages}
-                  </p>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3 py-3.5">
-                  {discoverResults.map((result) => (
-                    <AdminDiscoverRow
-                      key={result.id}
-                      result={result}
-                      mediaType={queryState.mediaType}
-                      genreMap={genreMap}
-                      isCurated={result.isCurated}
-                    />
-                  ))}
-
-                  <PaginationRow
-                    currentPage={discoverMeta.page}
-                    totalPages={discoverMeta.totalPages}
-                    baseParams={discoverBaseParams}
-                  />
-                </CardContent>
-              </Card>
-            ) : (
-              <AppEmptyState
-                icon={LayoutGrid}
-                title="No results found"
-                description="Try adjusting your filters, selecting a different genre, or changing the decade."
-              />
-            ))}
-
-          {queryState.mode === "search" &&
-            (queryState.query ? (
-              discoverResults.length > 0 ? (
-                <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
-                  <CardHeader className="gap-1.5 border-b py-3.5">
-                    <CardTitle className="text-base font-semibold">Search results</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {discoverMeta.totalResults.toLocaleString()}
-                      </span>{" "}
-                      results for &ldquo;{queryState.query}&rdquo;
-                    </p>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-3 py-3.5">
-                    {discoverResults.map((result) => (
-                      <AdminDiscoverRow
-                        key={result.id}
-                        result={result}
-                        mediaType={queryState.mediaType}
-                        genreMap={genreMap}
-                        isCurated={result.isCurated}
-                      />
-                    ))}
-
-                    <PaginationRow
-                      currentPage={discoverMeta.page}
-                      totalPages={discoverMeta.totalPages}
-                      baseParams={discoverBaseParams}
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <AppEmptyState
-                  icon={Search}
-                  title={`No results for "${queryState.query}"`}
-                  description="Try different keywords or switch to Browse mode to discover by genre and decade."
-                />
-              )
-            ) : (
-              <AppEmptyState
-                icon={Search}
-                title="Search for a title"
-                description="Type a title above to search TMDB, or switch to Browse mode to discover by filters."
-              />
-            ))}
-        </div>
+        <AdminDiscoverView
+          queryState={queryState}
+          genres={genres}
+          genreMap={genreMap}
+          discoverResults={discoverResults}
+          discoverMeta={discoverMeta}
+          discoverBaseParams={discoverBaseParams}
+        />
       )}
 
       {isCatalog && (
-        <div className="flex flex-col gap-4 pt-2">
-          <Suspense fallback={<FiltersSkeleton />}>
-            <AdminCatalogFilters filter={catalogFilter} counts={catalogCounts} />
-          </Suspense>
-
-          {catalogEntries.length > 0 ? (
-            <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
-              <CardHeader className="gap-1.5 border-b py-3.5">
-                <CardTitle className="text-base font-semibold">Catalog entries</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 py-3.5">
-                {catalogEntries.map((entry) => (
-                  <AdminCatalogRow key={entry.id} entry={entry} />
-                ))}
-              </CardContent>
-            </Card>
-          ) : allEntriesCount === 0 ? (
-            <AppEmptyState
-              icon={Layers}
-              title="No titles in the catalog yet"
-              description="Switch to Discover & Add to find titles on TMDB and add them to the catalog."
-              action={
-                <Button asChild variant="outline" className="rounded-xl px-4">
-                  <Link href={discoverHref}>
-                    <LayoutGrid data-icon="inline-start" />
-                    Go to Discover & Add
-                  </Link>
-                </Button>
-              }
-            />
-          ) : (
-            <AppEmptyState
-              icon={Layers}
-              title="No entries match this filter"
-              description="Try adjusting the media type or status filter above to see more entries."
-            />
-          )}
-        </div>
+        <AdminCatalogView
+          catalogFilter={catalogFilter}
+          catalogCounts={catalogCounts}
+          catalogEntries={catalogEntries}
+          allEntriesCount={allEntriesCount}
+          discoverHref={discoverHref}
+        />
       )}
     </AppPageShell>
   );
