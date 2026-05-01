@@ -68,11 +68,11 @@ const serverSchema = z
     ANALYSIS_LLM_MODEL: z
       .string()
       .min(1, "ANALYSIS_LLM_MODEL must not be empty")
-      .default("gemini-2.5-flash"),
+      .default("gemini-3.1-flash-lite-preview"),
     CONTENT_GENERATION_TEXT_MODEL: z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
-      .default("gemini-2.5-flash"),
+      .default("gemini-3.1-flash-lite-preview"),
     CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("mock"),
     CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
     AWS_POLLY_REGION: z.string().min(1).default("us-east-1"),

@@ -24,7 +24,7 @@ except ImportError:
 
 # Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_NAME = "gemini-2.0-flash-lite"
+MODEL_NAME = "gemini-3.1-flash-lite-preview"
 CHUNK_DURATION_MINUTES = 30
 MAX_WORKERS = 2  # Number of parallel API calls
 MAX_RETRIES = 3  # Number of retry attempts
