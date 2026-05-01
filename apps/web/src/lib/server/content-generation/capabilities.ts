@@ -8,6 +8,12 @@ export function resolveEffectiveGenerationCapabilities(): EffectiveGenerationCap
   const imageMode = env.CONTENT_GENERATION_IMAGE_ENABLED
     ? env.CONTENT_GENERATION_IMAGE_MODE
     : "disabled";
+  const audioVoice =
+    env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
+      ? env.AWS_POLLY_ENGINE === "neural"
+        ? env.AWS_POLLY_NEURAL_VOICE_ID
+        : env.AWS_POLLY_STANDARD_VOICE_ID
+      : env.CONTENT_GENERATION_AUDIO_VOICE;
 
   return {
     textProvider: "gemini",
@@ -16,7 +22,8 @@ export function resolveEffectiveGenerationCapabilities(): EffectiveGenerationCap
     audioGenerationEnabled: env.CONTENT_GENERATION_AUDIO_MODE !== "disabled",
     audioMode: env.CONTENT_GENERATION_AUDIO_MODE,
     audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
-    audioVoice: env.CONTENT_GENERATION_AUDIO_VOICE,
+    audioVoice,
+    audioEngine: env.AWS_POLLY_ENGINE,
     imageGenerationEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED && imageMode !== "disabled",
     imageSelectionMode: "eligible_items",
     imageMode,

@@ -7,6 +7,7 @@ import type {
   GeneratedTextItem,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
+import { generateSpeechWithPolly } from "@/lib/server/content-generation/providers/speech/aws-polly";
 
 export async function generateSpeechArtifacts(input: {
   selectedItems: SelectedGenerationItem[];
@@ -33,7 +34,11 @@ export async function generateSpeechArtifacts(input: {
     };
   }
 
-  if (input.capabilities.audioMode !== "mock") {
+  if (input.capabilities.audioProvider === "aws-polly") {
+    return generateSpeechWithPolly(input);
+  }
+
+  if (input.capabilities.audioProvider !== "mock" && input.capabilities.audioMode !== "mock") {
     logger.warn("[content-generation:audio] provider not implemented", {
       mode: input.capabilities.audioMode,
       provider: input.capabilities.audioProvider,
