@@ -67,13 +67,6 @@ async function transitionPackGenerationJob(input: {
   errorMessage?: string;
   payload?: Record<string, unknown>;
 }) {
-  logger.info(`[content-generation] ${input.stage}`, {
-    jobId: input.jobId,
-    status: input.status,
-    message: input.message,
-    ...input.payload,
-  });
-
   await recordPackGenerationJobTransition(input);
 }
 
@@ -85,29 +78,8 @@ export async function runPackGenerationWorkflow(jobId: string) {
     throw new Error(`Pack generation job ${jobId} was not found.`);
   }
 
-  logger.info("[content-generation] resolved job", {
-    jobId,
-    userId: job.userId,
-    contentId: job.contentId,
-    analysisRunId: job.analysisRunId,
-    status: job.status,
-    stage: job.stage,
-    packSize: job.requestSnapshot.packSize,
-    frequencyPreference: job.requestSnapshot.frequencyPreference,
-    selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
-  });
-
   const audioConfig = getAudioConfig();
   const warnings: string[] = [];
-
-  logger.info("[content-generation] resolved capabilities", {
-    jobId,
-    textModel: env.CONTENT_GENERATION_TEXT_MODEL,
-    audioEnabled: audioConfig.audioProvider !== "disabled",
-    audioProvider: audioConfig.audioProvider,
-    imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
-    imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
-  });
 
   try {
     await transitionPackGenerationJob({
@@ -138,14 +110,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
     logger.info("[content-generation] selected terms", {
       jobId,
       selectedItemCount: selectedItems.length,
-      selectedKinds: [...new Set(selectedItems.map((item) => item.kind))],
-      firstItems: selectedItems.slice(0, 5).map((item) => ({
-        analysisItemId: item.analysisItemId,
-        termId: item.termId,
-        displayText: item.displayText,
-        kind: item.kind,
-        cefrLevel: item.cefrLevel,
-      })),
     });
 
     await transitionPackGenerationJob({
@@ -202,13 +166,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
 
     for (const artifact of speechResult.artifacts) {
       try {
-        logger.info("[content-generation] persisting audio artifact", {
-          jobId,
-          itemKey: artifact.itemKey,
-          mimeType: artifact.mimeType,
-          byteLength: artifact.bytes.byteLength,
-        });
-
         const row = await persistGeneratedArtifact({
           userId: job.userId,
           contentId: job.contentId,
@@ -231,13 +188,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
 
     for (const artifact of imageResult.artifacts) {
       try {
-        logger.info("[content-generation] persisting image artifact", {
-          jobId,
-          itemKey: artifact.itemKey,
-          mimeType: artifact.mimeType,
-          byteLength: artifact.bytes.byteLength,
-        });
-
         const row = await persistGeneratedArtifact({
           userId: job.userId,
           contentId: job.contentId,
@@ -319,18 +269,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
           if (!generated) {
             throw new Error(`Missing generated text for ${item.displayText}.`);
           }
-
-          logger.info("[content-generation] saving pack item", {
-            jobId,
-            packId,
-            packItemId,
-            sortOrder: index + 1,
-            analysisItemId: item.analysisItemId,
-            termId: item.termId,
-            displayText: item.displayText,
-            hasAudio: audioArtifacts.has(item.analysisItemId),
-            hasImage: imageArtifacts.has(item.analysisItemId),
-          });
 
           await tx.insert(packItem).values({
             id: packItemId,
