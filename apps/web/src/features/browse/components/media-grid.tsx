@@ -7,7 +7,7 @@ interface MediaGridProps {
 }
 
 export function MediaGrid({ results, genreMap }: MediaGridProps) {
-  if (!results || !results.length) {
+  if (!results?.length) {
     return (
       <div className="flex min-h-72 items-center justify-center rounded-[calc(var(--radius)+2px)] border border-dashed bg-card/70 px-6 text-center text-sm text-muted-foreground">
         No results found.

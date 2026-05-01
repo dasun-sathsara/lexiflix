@@ -40,6 +40,9 @@ export type NextReviewState = {
   masteredAt: Date | null;
 };
 
+/**
+ * Returns the default starting ease factor for newly learned cards.
+ */
 export function getInitialEaseFactor() {
   return SRS_CONFIG.startingEaseFactor;
 }
@@ -80,6 +83,10 @@ function maybeMastered({
   );
 }
 
+/**
+ * Computes the next scheduled review date, state, and interval based on the user's
+ * rating and the card's previous SRS state. Implements the core spaced-repetition logic.
+ */
 export function computeNextReviewState(input: ComputeNextReviewStateInput): NextReviewState {
   const reviewedAt = input.reviewedAt;
   const easeFactor = input.easeFactor ?? SRS_CONFIG.startingEaseFactor;
@@ -186,6 +193,10 @@ export function computeNextReviewState(input: ComputeNextReviewStateInput): Next
   };
 }
 
+/**
+ * Generates human-readable interval previews for all possible rating buttons
+ * to display in the study UI before the user makes a choice.
+ */
 export function getRatingIntervalPreviews(
   input: Omit<ComputeNextReviewStateInput, "rating">,
 ): Record<PackReviewRating, string> {
@@ -197,6 +208,10 @@ export function getRatingIntervalPreviews(
   };
 }
 
+/**
+ * Determines the current effective state of a card (e.g., 'due', 'learning', 'mastered')
+ * by evaluating its scheduled due date against the current time.
+ */
 export function getEffectivePackCardState({
   state,
   dueAt,
@@ -219,6 +234,9 @@ export function getEffectivePackCardState({
   return dueAt && dueAt.getTime() <= now.getTime() ? "due" : "learning";
 }
 
+/**
+ * Formats a given due date into a concise, relative time string for the study UI.
+ */
 export function getNextReviewLabel(dueAt: Date | string | null, now = new Date()) {
   if (!dueAt) {
     return null;

@@ -143,6 +143,7 @@ class EFLLexLexicon:
         self._load()
 
     def lookup(self, lemma: str, pos_ptb: str | None = None) -> EFLLexSignal | None:
+        """Look up an aggregated EFLLex signal for a lemma, optionally scoped to a POS tag."""
         aggregate: EFLLexAggregate | None
         if pos_ptb:
             aggregate = self._by_pos.get((lemma, pos_ptb))
@@ -288,6 +289,7 @@ class CEFRLookup:
         self._cache_candidate_lemma: dict[str, CalibratedCEFRResult] = {}
 
     def get_pos_level(self, word: str, pos_ptb: str) -> tuple[int | None, str | None]:
+        """Fetch the CEFR level for a specific word/POS combination from cefrpy."""
         key = (word, pos_ptb)
         if key in self._cache_pos:
             n, s = self._cache_pos[key]
@@ -302,6 +304,7 @@ class CEFRLookup:
         return num, label
 
     def get_average_level(self, word: str) -> tuple[int | None, str | None]:
+        """Fetch the average CEFR level for a word across all its POS usages from cefrpy."""
         if word in self._cache_avg:
             n, s = self._cache_avg[word]
             return n, s

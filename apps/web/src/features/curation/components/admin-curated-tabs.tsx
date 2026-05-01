@@ -91,6 +91,12 @@ function PaginationRow({
   );
 }
 
+/**
+ * Orchestrates the admin curation workspace, allowing administrators to toggle
+ * between discovering new media to add to the catalog and managing existing
+ * curated entries. Handles layout, routing params, and conditional rendering
+ * for both views.
+ */
 export function AdminCuratedWorkspace({
   queryState,
   catalogFilter,

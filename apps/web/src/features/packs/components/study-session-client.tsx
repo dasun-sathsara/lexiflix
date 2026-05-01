@@ -19,6 +19,9 @@ function clampToInt(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+/**
+ * Formats the due date of a card into a human-readable relative time string.
+ */
 function formatDueLabel(value: string | null) {
   if (!value) {
     return "No reviewed cards are scheduled yet.";
@@ -50,6 +53,10 @@ const modeLabels: Record<StudySessionView["mode"], string> = {
   cram: "Cram",
 };
 
+/**
+ * Client-side orchestrator for a study session. Handles the active study queue,
+ * user rating interactions (keyboard and mouse), and completion state.
+ */
 export function StudySessionClient({ session }: { session: StudySessionView }) {
   const initialIndex = Math.max(
     0,
