@@ -1,14 +1,7 @@
 import { z } from "zod";
-import type {
-  GenerationCefrWindowMode,
-  GenerationKnownTermHandling,
-  StoredCefrLevel,
-  StoredFrequencyPreference,
-  StoredVocabularyKind,
-} from "@/lib/server/db/json-contracts";
+import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
 export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v1";
-export const CONTENT_GENERATION_TEXT_PROMPT_VERSION = "content-generation-text-v1";
 export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 
 export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
@@ -50,19 +43,6 @@ export type ContentGenerationStage =
   | "completed"
   | "failed";
 
-export type EffectiveGenerationCapabilities = {
-  textProvider: "gemini";
-  textModel: string;
-  audioGenerationEnabled: boolean;
-  audioProvider: string;
-  audioVoice: string;
-  audioEngine: "standard" | "neural";
-  imageGenerationEnabled: boolean;
-  imageSelectionMode: "eligible_items";
-  imageProvider: string;
-  imageConcurrency: number;
-};
-
 export type SelectedGenerationItem = {
   analysisItemId: string;
   termId: string;
@@ -96,15 +76,4 @@ export type GeneratedBinaryArtifact = {
   mimeType: string;
   extension: string;
   metadata: Record<string, unknown>;
-};
-
-export type GenerationDialogDefaults = {
-  learnerCefrLevel: StoredCefrLevel | null;
-  frequencyPreference: StoredFrequencyPreference;
-  selectedVocabularyTypes: StoredVocabularyKind[];
-  cefrWindowMode: GenerationCefrWindowMode;
-  packSize: number;
-  knownTermHandling: GenerationKnownTermHandling;
-  exampleSentenceCount: 1 | 2 | 3;
-  customInstructions: string | null;
 };

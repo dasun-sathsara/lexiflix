@@ -6,7 +6,7 @@ This is the acceptance gate for the current product-hardening slice. Typecheck a
 
 ## Current Capability Boundaries
 
-- Pronunciation audio is provider-ready but not provider-complete. `CONTENT_GENERATION_AUDIO_PROVIDER=mock` may create non-playable mock payloads, and non-Polly providers can warn until a real TTS provider is chosen.
+- Pronunciation audio depends on the configured provider. Use `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly` when the demo requires playable generated audio.
 - Image generation is schema-ready but not provider-ready. `CONTENT_GENERATION_IMAGE_ENABLED=true` only means the workflow may attempt the image path; it is not proof that a real ImageGen provider exists.
 - `pack_item.state = 'due'` must not be persisted. Due status is effective state derived from `dueAt <= now` for active non-new, non-mastered cards.
 

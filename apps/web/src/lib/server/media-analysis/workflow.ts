@@ -19,22 +19,14 @@ import {
   vocabularyTerm,
 } from "@/lib/server/db/schema";
 import {
-  type ContentAnalysisFailureCode,
   type ContentAnalysisStage,
   cefrNumericFromLevel,
-  MEDIA_ANALYSIS_NLP_PIPELINE_VERSION,
+  MEDIA_ANALYSIS_PIPELINE_VERSION,
 } from "@/lib/server/media-analysis/contracts";
-import {
-  analyzeChunkWithGemini,
-  GeminiAnalysisError,
-} from "@/lib/server/media-analysis/gemini-analysis";
-import {
-  analyzeWithNlpService,
-  NlpServiceClientError,
-} from "@/lib/server/media-analysis/nlp-service";
+import { analyzeChunkWithGemini } from "@/lib/server/media-analysis/gemini-analysis";
+import { analyzeWithNlpService } from "@/lib/server/media-analysis/nlp-service";
 import {
   downloadSubtitleFile,
-  OpenSubtitlesClientError,
   type OpenSubtitlesSubtitleResult,
   searchOpenSubtitles,
 } from "@/lib/server/media-analysis/opensubtitles";
@@ -107,17 +99,6 @@ const MAX_SUBTITLE_SEARCH_PAGES = 3;
 const MAX_CONTEXTS_PER_ITEM = 5;
 const MAX_CHUNK_DURATION_SECONDS = 1_800;
 const MAX_CHUNK_CHARACTERS = 30_000;
-
-class MediaAnalysisWorkflowError extends Error {
-  constructor(
-    readonly code: ContentAnalysisFailureCode,
-    message: string,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "MediaAnalysisWorkflowError";
-  }
-}
 
 function decodeHtmlEntities(value: string) {
   return value
@@ -231,10 +212,7 @@ async function getRunContext(runId: string): Promise<WorkflowRunContext> {
     .limit(1);
 
   if (!row) {
-    throw new MediaAnalysisWorkflowError(
-      "INVALID_RUN",
-      `Content analysis run ${runId} was not found.`,
-    );
+    throw new Error(`Content analysis run ${runId} was not found.`);
   }
 
   return row;
@@ -243,10 +221,7 @@ async function getRunContext(runId: string): Promise<WorkflowRunContext> {
 async function searchMovieSubtitle(context: WorkflowRunContext) {
   const tmdbId = context.content.tmdbMovieId;
   if (!tmdbId) {
-    throw new MediaAnalysisWorkflowError(
-      "INVALID_RUN",
-      `Movie content ${context.content.id} is missing tmdbMovieId.`,
-    );
+    throw new Error(`Movie content ${context.content.id} is missing tmdbMovieId.`);
   }
 
   const resultSets = await Promise.all([
@@ -273,8 +248,7 @@ async function searchSeasonSubtitles(context: WorkflowRunContext) {
   const seasonNumber = context.content.tmdbSeasonNumber;
 
   if (!tmdbShowId || !seasonNumber) {
-    throw new MediaAnalysisWorkflowError(
-      "INVALID_RUN",
+    throw new Error(
       `Season content ${context.content.id} is missing tmdbShowId or tmdbSeasonNumber.`,
     );
   }
@@ -354,8 +328,7 @@ async function buildSubtitleCorpus(context: WorkflowRunContext): Promise<Subtitl
   if (context.content.kind === "movie") {
     const candidate = await searchMovieSubtitle(context);
     if (!candidate) {
-      throw new MediaAnalysisWorkflowError(
-        "NO_SUBTITLES",
+      throw new Error(
         `No compatible English subtitles were found for movie ${context.content.title}.`,
       );
     }
@@ -367,8 +340,7 @@ async function buildSubtitleCorpus(context: WorkflowRunContext): Promise<Subtitl
     );
 
     if (lines.length === 0) {
-      throw new MediaAnalysisWorkflowError(
-        "NO_SUBTITLES",
+      throw new Error(
         `Downloaded subtitles for movie ${context.content.title} contained no usable dialogue lines.`,
       );
     }
@@ -386,10 +358,7 @@ async function buildSubtitleCorpus(context: WorkflowRunContext): Promise<Subtitl
 
   const candidates = await searchSeasonSubtitles(context);
   if (candidates.length === 0) {
-    throw new MediaAnalysisWorkflowError(
-      "NO_SUBTITLES",
-      `No compatible English subtitles were found for ${context.content.title}.`,
-    );
+    throw new Error(`No compatible English subtitles were found for ${context.content.title}.`);
   }
 
   const lines: WorkflowSubtitleLine[] = [];
@@ -418,8 +387,7 @@ async function buildSubtitleCorpus(context: WorkflowRunContext): Promise<Subtitl
   }
 
   if (lines.length === 0) {
-    throw new MediaAnalysisWorkflowError(
-      "NO_SUBTITLES",
+    throw new Error(
       `Downloaded season subtitles for ${context.content.title} contained no usable dialogue lines.`,
     );
   }
@@ -737,10 +705,7 @@ async function resolveVocabularyTerm(item: WorkflowAnalysisItem) {
     .limit(1);
 
   if (!collided) {
-    throw new MediaAnalysisWorkflowError(
-      "PERSISTENCE_FAILED",
-      `Failed to resolve vocabulary term ${item.kind}:${item.normalizedText}.`,
-    );
+    throw new Error(`Failed to resolve vocabulary term ${item.kind}:${item.normalizedText}.`);
   }
 
   return collided;
@@ -798,10 +763,7 @@ async function persistAnalysisOutput(input: {
     .returning();
 
   if (!updated) {
-    throw new MediaAnalysisWorkflowError(
-      "PERSISTENCE_FAILED",
-      `Content analysis run ${input.context.run.id} disappeared during save.`,
-    );
+    throw new Error(`Content analysis run ${input.context.run.id} disappeared during save.`);
   }
 
   await db.insert(contentAnalysisRunEvent).values({
@@ -814,38 +776,6 @@ async function persistAnalysisOutput(input: {
       warningCount: input.warnings.length,
     },
   });
-}
-
-function classifyWorkflowError(error: unknown) {
-  if (error instanceof MediaAnalysisWorkflowError) {
-    return error;
-  }
-
-  if (error instanceof OpenSubtitlesClientError) {
-    return new MediaAnalysisWorkflowError(
-      "SUBTITLE_FETCH_FAILED",
-      error.message,
-      error.details ?? error.status,
-    );
-  }
-
-  if (error instanceof NlpServiceClientError) {
-    return new MediaAnalysisWorkflowError(
-      "NLP_SERVICE_FAILED",
-      error.message,
-      error.details ?? error.status,
-    );
-  }
-
-  if (error instanceof GeminiAnalysisError) {
-    return new MediaAnalysisWorkflowError("ANALYSIS_LLM_FAILED", error.message, error.details);
-  }
-
-  return new MediaAnalysisWorkflowError(
-    "PERSISTENCE_FAILED",
-    error instanceof Error ? error.message : "Media analysis workflow failed unexpectedly.",
-    error,
-  );
 }
 
 async function transitionRun(input: {
@@ -961,7 +891,7 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       job_id: runId,
       content: plainTextCorpus,
       content_type: "plain_text",
-      pipeline_version: MEDIA_ANALYSIS_NLP_PIPELINE_VERSION,
+      pipeline_version: MEDIA_ANALYSIS_PIPELINE_VERSION,
       options: {
         include_propn: false,
         dedup_lines: true,
@@ -1071,14 +1001,12 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       itemCount: merged.items.length,
     };
   } catch (error) {
-    const failure = classifyWorkflowError(error);
+    const message = error instanceof Error ? error.message : "Media analysis workflow failed.";
 
     logger.error("[media-analysis] workflow failed", {
       runId,
       contentId: context?.content.id,
-      code: failure.code,
-      message: failure.message,
-      details: failure.details,
+      message,
     });
 
     if (context) {
@@ -1086,18 +1014,15 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         runId: context.run.id,
         status: "failed",
         stage: "failed",
-        message: failure.message,
-        progressMessage: failure.message,
-        errorCode: failure.code,
-        errorMessage: failure.message,
+        message,
+        progressMessage: message,
+        errorCode: "WORKFLOW_FAILED",
+        errorMessage: message,
         completedAt: new Date(),
-        payload:
-          failure.details && typeof failure.details === "object"
-            ? (failure.details as Record<string, unknown>)
-            : { details: failure.details },
+        payload: { error },
       });
     }
 
-    throw failure;
+    throw error;
   }
 }

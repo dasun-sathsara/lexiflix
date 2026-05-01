@@ -9,9 +9,7 @@ import {
   analysisLlmItemSchema,
   analysisLlmResponseSchema,
   cefrNumericFromLevel,
-  MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
-  MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
-  toRepresentativeContexts,
+  MEDIA_ANALYSIS_PIPELINE_VERSION,
 } from "@/lib/server/media-analysis/contracts";
 
 const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -70,16 +68,6 @@ type AnalyzeWithGeminiResult = {
   >;
   warnings: string[];
 };
-
-export class GeminiAnalysisError extends Error {
-  constructor(
-    message: string,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "GeminiAnalysisError";
-  }
-}
 
 function buildPrompt({ chunkText, chunkIndex, totalChunks }: AnalyzeWithGeminiInput) {
   return `
@@ -176,7 +164,7 @@ function normalizeGeminiItem(rawItem: unknown) {
     displayText,
     cefrLevel,
     representativeContext,
-    contexts: toRepresentativeContexts(representativeContext),
+    contexts: representativeContext ? [{ text: representativeContext }] : [],
     rationale,
   });
 
@@ -217,8 +205,7 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
     chunkIndex: input.chunkIndex + 1,
     totalChunks: input.totalChunks,
     model: env.ANALYSIS_LLM_MODEL,
-    promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
-    schemaVersion: MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
+    pipelineVersion: MEDIA_ANALYSIS_PIPELINE_VERSION,
     chunkCharacters: input.chunkText.length,
     promptCharacters: prompt.length,
   });
@@ -246,8 +233,8 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
   let parsedJson: unknown;
   try {
     parsedJson = JSON.parse(response.text);
-  } catch (error) {
-    throw new GeminiAnalysisError("Gemini returned non-JSON analysis output.", error);
+  } catch {
+    throw new Error("Gemini returned non-JSON output.");
   }
 
   const itemsArray = extractGeminiItems(parsedJson);

@@ -39,21 +39,36 @@ The current defaults assume:
 - Doppler config: `dev`
 - Vercel preview branch: `dev`
 
-For the media-analysis foundation in `apps/web`, Doppler also needs to provide:
+For `apps/web`, Doppler needs to provide the required server-side envs:
 
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
 - `OPENSUBTITLES_API_KEY`
 - `OPENSUBTITLES_USERNAME`
 - `OPENSUBTITLES_PASSWORD`
 - `GEMINI_API_KEY`
 - `TRIGGER_SECRET_KEY`
 - `NLP_SERVICE_BASE_URL`
+- `RESEND_API_KEY`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
+- `R2_ENDPOINT`
+- `R2_PUBLIC_BASE_URL`
+- `TMDB_API_KEY`
 
-Optional tuning variables now supported by the web app are:
+AWS Polly credentials are required only when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`:
+
+- `AWS_POLLY_ACCESS_KEY_ID`
+- `AWS_POLLY_SECRET_ACCESS_KEY`
+
+Optional tuning variables supported by the web app are:
 
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`
-- `ANALYSIS_LLM_MODEL`
 
 If you need different values, override them at command time.
 

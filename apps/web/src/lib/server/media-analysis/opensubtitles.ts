@@ -1,24 +1,7 @@
 import "server-only";
 
 import { env } from "@/lib/env";
-
-const openSubtitlesFileSchema = {
-  parse(input: unknown) {
-    if (!input || typeof input !== "object") {
-      throw new Error("Invalid OpenSubtitles file payload.");
-    }
-
-    const file = input as Record<string, unknown>;
-    if (typeof file.file_id !== "number") {
-      throw new Error("OpenSubtitles file payload is missing file_id.");
-    }
-
-    return {
-      fileId: file.file_id,
-      fileName: typeof file.file_name === "string" ? file.file_name : null,
-    };
-  },
-};
+import { createTimeoutSignal, readJsonSafely } from "@/lib/server/request-utils";
 
 export type OpenSubtitlesSearchCriteria = {
   type?: "movie" | "episode";
@@ -60,26 +43,6 @@ type OpenSubtitlesDownloadResponse = {
   file_name?: string;
 };
 
-type OpenSubtitlesErrorCode =
-  | "AUTH_FAILED"
-  | "SEARCH_FAILED"
-  | "DOWNLOAD_FAILED"
-  | "RATE_LIMITED"
-  | "INVALID_RESPONSE"
-  | "UNAVAILABLE";
-
-export class OpenSubtitlesClientError extends Error {
-  constructor(
-    message: string,
-    readonly code: OpenSubtitlesErrorCode,
-    readonly status?: number,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "OpenSubtitlesClientError";
-  }
-}
-
 let cachedToken: string | null = null;
 let pendingAuthPromise: Promise<string> | null = null;
 let lastAuthAttemptAt = 0;
@@ -108,30 +71,6 @@ function summarizeOpenSubtitlesPayload(payload: unknown) {
   return summary;
 }
 
-async function readJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return text;
-  }
-}
-
-function createTimeoutSignal(timeoutMs: number) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  return {
-    signal: controller.signal,
-    clear: () => clearTimeout(timeout),
-  };
-}
-
 async function openSubtitlesFetch(
   path: string,
   init: RequestInit = {},
@@ -157,19 +96,11 @@ async function openSubtitlesFetch(
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new OpenSubtitlesClientError(
-        "OpenSubtitles request timed out.",
-        "UNAVAILABLE",
-        undefined,
-        { path },
-      );
+      throw new Error("OpenSubtitles request timed out.");
     }
 
-    throw new OpenSubtitlesClientError(
-      "OpenSubtitles request could not be completed.",
-      "UNAVAILABLE",
-      undefined,
-      error instanceof Error ? error.message : error,
+    throw new Error(
+      error instanceof Error ? error.message : "OpenSubtitles request could not be completed.",
     );
   } finally {
     clear();
@@ -236,12 +167,7 @@ async function performOpenSubtitlesLogin() {
 
     console.error("[media-analysis] OpenSubtitles authentication failed", diagnostic);
 
-    throw new OpenSubtitlesClientError(
-      "Failed to authenticate with OpenSubtitles.",
-      response.status === 429 ? "RATE_LIMITED" : "AUTH_FAILED",
-      response.status,
-      diagnostic,
-    );
+    throw new Error("Failed to authenticate with OpenSubtitles.");
   }
 
   cachedToken = payload.token;
@@ -320,12 +246,7 @@ export async function searchOpenSubtitles(criteria: OpenSubtitlesSearchCriteria)
   }
 
   if (!response.ok || !payload || typeof payload !== "object") {
-    throw new OpenSubtitlesClientError(
-      "Failed to search OpenSubtitles subtitles.",
-      response.status === 429 ? "RATE_LIMITED" : "SEARCH_FAILED",
-      response.status,
-      payload,
-    );
+    throw new Error("Failed to search OpenSubtitles subtitles.");
   }
 
   const results: OpenSubtitlesSubtitleResult[] = [];
@@ -335,7 +256,17 @@ export async function searchOpenSubtitles(criteria: OpenSubtitlesSearchCriteria)
     const files = Array.isArray(attributes.files) ? attributes.files : [];
 
     for (const rawFile of files) {
-      const file = openSubtitlesFileSchema.parse(rawFile);
+      if (!rawFile || typeof rawFile !== "object") {
+        throw new Error("Invalid OpenSubtitles file payload.");
+      }
+      const rawFileRecord = rawFile as Record<string, unknown>;
+      if (typeof rawFileRecord.file_id !== "number") {
+        throw new Error("OpenSubtitles file payload is missing file_id.");
+      }
+      const file = {
+        fileId: rawFileRecord.file_id,
+        fileName: typeof rawFileRecord.file_name === "string" ? rawFileRecord.file_name : null,
+      };
 
       results.push({
         subtitleId: item.id !== undefined ? String(item.id) : null,
@@ -370,12 +301,7 @@ export async function getOpenSubtitlesDownloadLink(fileId: number) {
   const payload = (await readJsonSafely(response)) as OpenSubtitlesDownloadResponse | string | null;
 
   if (!response.ok || !payload || typeof payload !== "object" || typeof payload.link !== "string") {
-    throw new OpenSubtitlesClientError(
-      "Failed to request an OpenSubtitles download link.",
-      response.status === 429 ? "RATE_LIMITED" : "DOWNLOAD_FAILED",
-      response.status,
-      payload,
-    );
+    throw new Error("Failed to request an OpenSubtitles download link.");
   }
 
   return {
@@ -397,11 +323,7 @@ export async function downloadSubtitleFile(fileId: number): Promise<DownloadedSu
     });
 
     if (!response.ok) {
-      throw new OpenSubtitlesClientError(
-        "Failed to fetch subtitle text from OpenSubtitles.",
-        response.status === 429 ? "RATE_LIMITED" : "DOWNLOAD_FAILED",
-        response.status,
-      );
+      throw new Error("Failed to fetch subtitle text from OpenSubtitles.");
     }
 
     return {
@@ -411,24 +333,14 @@ export async function downloadSubtitleFile(fileId: number): Promise<DownloadedSu
       subtitleText: await response.text(),
     };
   } catch (error) {
-    if (error instanceof OpenSubtitlesClientError) {
-      throw error;
-    }
-
     if (error instanceof Error && error.name === "AbortError") {
-      throw new OpenSubtitlesClientError(
-        "OpenSubtitles subtitle download timed out.",
-        "UNAVAILABLE",
-        undefined,
-        { fileId },
-      );
+      throw new Error("OpenSubtitles subtitle download timed out.");
     }
 
-    throw new OpenSubtitlesClientError(
-      "OpenSubtitles subtitle download could not be completed.",
-      "UNAVAILABLE",
-      undefined,
-      error instanceof Error ? error.message : error,
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "OpenSubtitles subtitle download could not be completed.",
     );
   } finally {
     clear();

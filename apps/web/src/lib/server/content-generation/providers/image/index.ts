@@ -2,22 +2,22 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import type {
-  EffectiveGenerationCapabilities,
   GeneratedBinaryArtifact,
   GeneratedTextItem,
 } from "@/lib/server/content-generation/contracts";
 
 export async function generateImageArtifacts(input: {
   textItems: GeneratedTextItem[];
-  capabilities: EffectiveGenerationCapabilities;
+  imageEnabled: boolean;
+  imageProvider: string;
 }): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
   logger.info("[content-generation:image] started", {
-    enabled: input.capabilities.imageGenerationEnabled,
-    provider: input.capabilities.imageProvider,
+    enabled: input.imageEnabled,
+    provider: input.imageProvider,
     textItemCount: input.textItems.length,
   });
 
-  if (!input.capabilities.imageGenerationEnabled) {
+  if (!input.imageEnabled) {
     logger.info("[content-generation:image] skipped disabled image generation", {
       textItemCount: input.textItems.length,
     });
@@ -33,15 +33,15 @@ export async function generateImageArtifacts(input: {
     ineligibleCount: input.textItems.length - eligible.length,
   });
 
-  if (input.capabilities.imageProvider !== "mock") {
+  if (input.imageProvider !== "mock") {
     logger.warn("[content-generation:image] provider not implemented", {
-      provider: input.capabilities.imageProvider,
+      provider: input.imageProvider,
       eligibleCount: eligible.length,
     });
 
     return {
       artifacts: [],
-      warnings: [`Image provider '${input.capabilities.imageProvider}' is not implemented yet.`],
+      warnings: [`Image provider '${input.imageProvider}' is not implemented yet.`],
     };
   }
 
@@ -51,7 +51,7 @@ export async function generateImageArtifacts(input: {
     mimeType: "image/webp",
     extension: "webp",
     metadata: {
-      provider: input.capabilities.imageProvider,
+      provider: input.imageProvider,
       imageBrief: item.imageBrief,
       imageEligibility: item.imageEligibility,
     },

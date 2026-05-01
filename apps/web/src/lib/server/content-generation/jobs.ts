@@ -1,12 +1,8 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import type { GenerationRequestSnapshot } from "@/lib/server/content-generation/contracts";
-import {
-  CONTENT_GENERATION_PIPELINE_VERSION,
-  CONTENT_GENERATION_TEXT_PROMPT_VERSION,
-} from "@/lib/server/content-generation/contracts";
+import { CONTENT_GENERATION_PIPELINE_VERSION } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
@@ -16,23 +12,12 @@ export function computePackGenerationIdempotencyKey(input: {
   contentId: string;
   analysisRunId: string;
   requestSnapshot: GenerationRequestSnapshot;
-  capabilityFingerprint: string;
 }) {
-  const force = input.requestSnapshot.forceRegenerate ? crypto.randomUUID() : "reuse";
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        userId: input.userId,
-        contentId: input.contentId,
-        analysisRunId: input.analysisRunId,
-        requestSnapshot: input.requestSnapshot,
-        pipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
-        promptVersion: CONTENT_GENERATION_TEXT_PROMPT_VERSION,
-        capabilityFingerprint: input.capabilityFingerprint,
-        force,
-      }),
-    )
-    .digest("hex");
+  if (input.requestSnapshot.forceRegenerate) {
+    return `${input.userId}:${input.contentId}:${crypto.randomUUID()}`;
+  }
+
+  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}`;
 }
 
 export async function createOrReusePackGenerationJob(input: {

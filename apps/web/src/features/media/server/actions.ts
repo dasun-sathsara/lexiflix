@@ -18,10 +18,6 @@ import type {
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
-import {
-  fingerprintCapabilities,
-  resolveEffectiveGenerationCapabilities,
-} from "@/lib/server/content-generation/capabilities";
 import { generationRequestSchema } from "@/lib/server/content-generation/contracts";
 import {
   computePackGenerationIdempotencyKey,
@@ -29,7 +25,7 @@ import {
   recordPackGenerationJobTransition,
 } from "@/lib/server/content-generation/jobs";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
-import { computeMediaAnalysisPipelineFingerprint } from "@/lib/server/media-analysis/pipeline-fingerprint";
+import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import {
   createOrReuseContentAnalysisRun,
   getContentAnalysisRunByFingerprint,
@@ -69,6 +65,8 @@ const startGenerationInputSchema = startAnalysisInputSchema.and(
 const generationStatusInputSchema = z.object({
   jobId: z.string().min(1),
 });
+
+const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 
 async function triggerAnalysisRun(runId: string) {
   try {
@@ -135,8 +133,10 @@ export async function startAnalysisAction(
     };
   }
 
-  const { fingerprint, descriptor } = computeMediaAnalysisPipelineFingerprint();
-  const existing = await getContentAnalysisRunByFingerprint(target.content.id, fingerprint);
+  const existing = await getContentAnalysisRunByFingerprint(
+    target.content.id,
+    MEDIA_ANALYSIS_FINGERPRINT,
+  );
 
   if (
     existing?.status === "completed" ||
@@ -166,8 +166,8 @@ export async function startAnalysisAction(
   } else {
     const created = await createOrReuseContentAnalysisRun({
       contentId: target.content.id,
-      pipelineFingerprint: fingerprint,
-      pipelineDescriptor: descriptor,
+      pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
+      pipelineDescriptor: { version: MEDIA_ANALYSIS_PIPELINE_VERSION },
       queuedMessage: "Subtitle analysis queued.",
     });
     runId = created.run.id;
@@ -235,8 +235,10 @@ export async function startPackGenerationAction(
     return { ok: false, error: "Choose a season before generating a pack." };
   }
 
-  const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
-  const analysisRun = await getContentAnalysisRunByFingerprint(target.content.id, fingerprint);
+  const analysisRun = await getContentAnalysisRunByFingerprint(
+    target.content.id,
+    MEDIA_ANALYSIS_FINGERPRINT,
+  );
   if (!analysisRun || analysisRun.status !== "completed") {
     return {
       ok: false,
@@ -260,13 +262,11 @@ export async function startPackGenerationAction(
     forceRegenerate: parsed.request.forceRegenerate ?? false,
   });
 
-  const capabilities = resolveEffectiveGenerationCapabilities();
   const idempotencyKey = computePackGenerationIdempotencyKey({
     userId: session.user.id,
     contentId: target.content.id,
     analysisRunId: analysisRun.id,
     requestSnapshot,
-    capabilityFingerprint: fingerprintCapabilities(capabilities),
   });
 
   const { job, wasCreated } = await createOrReusePackGenerationJob({

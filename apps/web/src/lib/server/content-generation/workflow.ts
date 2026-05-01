@@ -6,14 +6,10 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
+import { env } from "@/lib/env";
 import { persistGeneratedArtifact } from "@/lib/server/content-generation/artifacts";
 import {
-  fingerprintCapabilities,
-  resolveEffectiveGenerationCapabilities,
-} from "@/lib/server/content-generation/capabilities";
-import {
   CONTENT_GENERATION_PIPELINE_VERSION,
-  CONTENT_GENERATION_TEXT_PROMPT_VERSION,
   type GeneratedTextItem,
 } from "@/lib/server/content-generation/contracts";
 import {
@@ -38,6 +34,21 @@ import { deleteObjectByKey } from "@/lib/storage/r2";
 
 function textByAnalysisItem(items: GeneratedTextItem[]) {
   return new Map(items.map((item) => [item.analysisItemId, item]));
+}
+
+function getAudioConfig() {
+  const audioVoice =
+    env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
+      ? env.AWS_POLLY_ENGINE === "neural"
+        ? env.AWS_POLLY_NEURAL_VOICE_ID
+        : env.AWS_POLLY_STANDARD_VOICE_ID
+      : env.CONTENT_GENERATION_AUDIO_VOICE;
+
+  return {
+    audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
+    audioVoice,
+    audioEngine: env.AWS_POLLY_ENGINE,
+  };
 }
 
 async function transitionPackGenerationJob(input: {
@@ -86,18 +97,16 @@ export async function runPackGenerationWorkflow(jobId: string) {
     selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
   });
 
-  const capabilities = resolveEffectiveGenerationCapabilities();
-  const capabilityFingerprint = fingerprintCapabilities(capabilities);
+  const audioConfig = getAudioConfig();
   const warnings: string[] = [];
 
   logger.info("[content-generation] resolved capabilities", {
     jobId,
-    capabilityFingerprint,
-    textModel: capabilities.textModel,
-    audioEnabled: capabilities.audioGenerationEnabled,
-    audioProvider: capabilities.audioProvider,
-    imageEnabled: capabilities.imageGenerationEnabled,
-    imageProvider: capabilities.imageProvider,
+    textModel: env.CONTENT_GENERATION_TEXT_MODEL,
+    audioEnabled: audioConfig.audioProvider !== "disabled",
+    audioProvider: audioConfig.audioProvider,
+    imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
+    imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
   });
 
   try {
@@ -106,7 +115,13 @@ export async function runPackGenerationWorkflow(jobId: string) {
       status: "running",
       stage: "selecting_terms",
       message: "Selecting vocabulary for this learner.",
-      payload: { capabilities, capabilityFingerprint },
+      payload: {
+        textModel: env.CONTENT_GENERATION_TEXT_MODEL,
+        audioEnabled: audioConfig.audioProvider !== "disabled",
+        audioProvider: audioConfig.audioProvider,
+        imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
+        imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+      },
     });
 
     const selectedItems = await selectGenerationItems({
@@ -144,7 +159,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
     const textItems = await generateTextContent({
       items: selectedItems,
       requestSnapshot: job.requestSnapshot,
-      capabilities,
+      model: env.CONTENT_GENERATION_TEXT_MODEL,
     });
     const textMap = textByAnalysisItem(textItems);
 
@@ -163,8 +178,12 @@ export async function runPackGenerationWorkflow(jobId: string) {
     });
 
     const [speechResult, imageResult] = await Promise.all([
-      generateSpeechArtifacts({ selectedItems, textItems, capabilities }),
-      generateImageArtifacts({ textItems, capabilities }),
+      generateSpeechArtifacts({ selectedItems, textItems, audioConfig }),
+      generateImageArtifacts({
+        textItems,
+        imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
+        imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+      }),
     ]);
     warnings.push(...speechResult.warnings, ...imageResult.warnings);
 
@@ -289,7 +308,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
           frequencyPreferenceAtGeneration: job.requestSnapshot.frequencyPreference,
           selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
           contentGenerationPipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
-          contentGenerationPromptVersion: CONTENT_GENERATION_TEXT_PROMPT_VERSION,
+          contentGenerationPromptVersion: CONTENT_GENERATION_PIPELINE_VERSION,
           itemCount: selectedItems.length,
           estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
         });

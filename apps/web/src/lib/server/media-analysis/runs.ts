@@ -7,9 +7,12 @@ import {
   type ContentAnalysisTransitionInput,
   contentAnalysisTransitionSchema,
 } from "@/lib/server/media-analysis/contracts";
-import type { MediaAnalysisPipelineDescriptor } from "@/lib/server/media-analysis/pipeline-fingerprint";
 
 type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;
+
+type MediaAnalysisPipelineDescriptor = {
+  version: string;
+};
 
 type CreateOrReuseContentAnalysisRunInput = {
   contentId: string;
@@ -74,9 +77,9 @@ export async function createOrReuseContentAnalysisRun(
       stage: "queued",
       progressMessage: queuedMessage,
       pipelineFingerprint: input.pipelineFingerprint,
-      nlpPipelineVersion: input.pipelineDescriptor.nlpPipelineVersion,
-      analysisLlmPipelineVersion: input.pipelineDescriptor.analysisLlmPipelineVersion,
-      analysisLlmPromptVersion: input.pipelineDescriptor.analysisLlmPromptVersion,
+      nlpPipelineVersion: input.pipelineDescriptor.version,
+      analysisLlmPipelineVersion: input.pipelineDescriptor.version,
+      analysisLlmPromptVersion: input.pipelineDescriptor.version,
     })
     .onConflictDoNothing()
     .returning();

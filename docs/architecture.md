@@ -14,7 +14,7 @@ That choice is deliberate. The earlier direction of Python plus Celery plus Redi
 
 ## Chosen Stack
 
-The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, prompt versioning, and provider-specific response handling. The Python service is deployed as a container to an already rented VPS through a straightforward deployment pipeline.
+The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, strict response parsing, and provider-specific response handling. The Python service is deployed as a container to an already rented VPS through a straightforward deployment pipeline.
 
 This stack is intentionally asymmetric. The web app is fully managed because it should be easy to ship and preview. The workflow engine is managed because workflow orchestration is a solved problem we do not need to re-implement. The Python service is self-hosted because we already have the VPS, the workload is compute-heavy enough to justify controlling the runtime, and the service surface is small enough that operating one container is still simple. The architecture does not attempt to make every component equally abstract or equally portable. That would add ceremony without adding value.
 
@@ -50,9 +50,9 @@ Equally important is what we are not doing. We are not using Celery for queues, 
 
 LexiFlix has three distinct pipelines, and keeping them separate is a requirement rather than a naming preference.
 
-The first is the NLP pipeline. It is reusable across users for a given content item and analysis pipeline version. Its job is tokenization, lemmatization, POS tagging, token filtering, CEFR-oriented scoring, and corpus-level summary metrics.
+The first is the NLP pipeline. It is reusable across users for a compatible content-analysis run. Its job is tokenization, lemmatization, POS tagging, token filtering, CEFR-oriented scoring, and corpus-level summary metrics.
 
-The second is the analysis LLM pipeline. It is also reusable across users for a given content item and analysis pipeline version. Its job is batched phrase-level extraction and classification, especially phrasal verbs, idioms, slang, and related CEFR judgments that are not cleanly covered by the NLP pass alone.
+The second is the analysis LLM pipeline. It is also reusable across users for a compatible content-analysis run. Its job is batched phrase-level extraction and classification, especially phrasal verbs, idioms, slang, and related CEFR judgments that are not cleanly covered by the NLP pass alone.
 
 The third is the Content Generation Pipeline. It is user-triggered and user-specific. It starts only after the learner chooses generation preferences from the media page. In V1 those preferences are expected to come from a generation dialog that controls vocabulary kinds, CEFR selection mode, pack size up to a server-side hard cap, known-term handling, example count, and optional custom instructions. Its job is to turn stored reusable analysis into pack-ready learning material such as meanings, example sentences, pronunciation audio, and optional images.
 
@@ -96,7 +96,7 @@ TMDB-backed `content` rows are also intentionally lazy rather than exhaustive. S
 
 ## The Content Analysis Workflow
 
-The reusable analysis workflow begins when a user opens a media page for a selected title and no compatible cached analysis exists. The Next.js app checks for a completed analysis run keyed by content and analysis pipeline fingerprint. If none exists, the app creates a durable content-analysis row in Postgres, triggers a Trigger.dev workflow, and returns enough state for the frontend to poll.
+The reusable analysis workflow begins when a user opens a media page for a selected title and no compatible cached analysis exists. The Next.js app checks for a completed analysis run keyed by content and the active media-analysis pipeline contract. If none exists, the app creates a durable content-analysis row in Postgres, triggers a Trigger.dev workflow, and returns enough state for the frontend to poll.
 
 The workflow then proceeds through a small number of meaningful stages. It fetches subtitles, calls the Python NLP service, runs the analysis LLM pass for phrase extraction and classification, merges the results into summary metrics plus reusable content-analysis items, and finally marks the analysis run as completed or failed.
 
@@ -138,11 +138,11 @@ The dashboard is a read model over persisted learner state, not a mock planning 
 
 ## AI Integration and Cost Control
 
-Gemini is the only LLM provider in the architecture. That is not because provider abstraction is impossible. It is because a demo project does not benefit from carrying an artificial multi-provider layer unless it solves a real problem. Right now, the real problem is not model routing. The real problem is keeping local development cheap and deterministic.
+Gemini is the only LLM provider in the architecture. That is not because provider abstraction is impossible. It is because a demo project does not benefit from carrying an artificial multi-provider layer unless it solves a real problem. Right now, the real problem is reliable Gemini integration, not model routing.
 
-To solve that, all Gemini calls should go through one internal adapter layer. That adapter is responsible for request construction, prompt versioning, strict response parsing, and provider-specific error handling. The application should keep Gemini integration centralized instead of scattering direct model calls across route handlers or feature code.
+To solve that, all Gemini calls should go through one internal adapter layer. That adapter is responsible for request construction, strict response parsing, and provider-specific error handling. The application should keep Gemini integration centralized instead of scattering direct model calls across route handlers or feature code.
 
-This is more useful than a gateway-level caching story because it solves the actual local development problem. The team does not need another network service to manage AI requests. It needs the ability to work on the app repeatedly without burning budget or waiting on model APIs every time.
+Gemini calls are live provider calls. Cost control should come from narrow workflows, explicit user-triggered generation, batching where it is already part of the product flow, and avoiding unnecessary reruns of reusable content analysis.
 
 For persistence, the application treats pipeline-derived JSONB payloads as a single active contract, not as a versioned compatibility matrix. If the NLP or LLM output shape changes in a breaking way, the expected maintenance path is to purge and rebuild the affected derived data. That is the correct trade for a demo app with rebuildable pipeline state; carrying multiple generations of compatibility parsing would create more system than product.
 
@@ -170,6 +170,6 @@ This architecture is not minimal in the abstract, but it is minimal relative to 
 
 It avoids a Celery-and-Redis worker stack that would be operationally expensive for a demo. It avoids turning Python into the entire platform. It avoids pretending the frontend should care about the workflow engine directly. It avoids inventing a sophisticated progress architecture just to animate a loading state. It avoids provider abstraction that does not solve today’s problem.
 
-Instead, it makes a more disciplined trade. The product lives in Next.js. Workflows live in Trigger.dev. NLP lives in Python. Durable truth lives in Postgres. Artifacts live in R2. Local development remains cheap through deterministic configuration. Deployment remains understandable because the public app is managed and the private compute service is just one container on one server.
+Instead, it makes a more disciplined trade. The product lives in Next.js. Workflows live in Trigger.dev. NLP lives in Python. Durable truth lives in Postgres. Artifacts live in R2. Deployment remains understandable because the public app is managed and the private compute service is just one container on one server.
 
 That is the right architecture for LexiFlix as it exists now.

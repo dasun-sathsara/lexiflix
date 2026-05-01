@@ -54,7 +54,7 @@ Current required server-side envs include:
 - `AWS_POLLY_ACCESS_KEY_ID` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
 - `AWS_POLLY_SECRET_ACCESS_KEY` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
 
-The media-analysis foundation also supports optional server-side tuning vars:
+The web app also supports optional server-side tuning vars:
 
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`

@@ -2,27 +2,34 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import type {
-  EffectiveGenerationCapabilities,
   GeneratedBinaryArtifact,
   GeneratedTextItem,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
 import { generateSpeechWithPolly } from "@/lib/server/content-generation/providers/speech/aws-polly";
 
+type AudioConfig = {
+  audioProvider: string;
+  audioVoice: string;
+  audioEngine: "standard" | "neural";
+};
+
 export async function generateSpeechArtifacts(input: {
   selectedItems: SelectedGenerationItem[];
   textItems: GeneratedTextItem[];
-  capabilities: EffectiveGenerationCapabilities;
+  audioConfig: AudioConfig;
 }): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
+  const audioEnabled = input.audioConfig.audioProvider !== "disabled";
+
   logger.info("[content-generation:audio] started", {
-    enabled: input.capabilities.audioGenerationEnabled,
-    provider: input.capabilities.audioProvider,
-    voice: input.capabilities.audioVoice,
+    enabled: audioEnabled,
+    provider: input.audioConfig.audioProvider,
+    voice: input.audioConfig.audioVoice,
     selectedItemCount: input.selectedItems.length,
     textItemCount: input.textItems.length,
   });
 
-  if (!input.capabilities.audioGenerationEnabled) {
+  if (!audioEnabled) {
     logger.info("[content-generation:audio] skipped disabled audio generation", {
       selectedItemCount: input.selectedItems.length,
     });
@@ -33,18 +40,18 @@ export async function generateSpeechArtifacts(input: {
     };
   }
 
-  if (input.capabilities.audioProvider === "aws-polly") {
+  if (input.audioConfig.audioProvider === "aws-polly") {
     return generateSpeechWithPolly(input);
   }
 
-  if (input.capabilities.audioProvider !== "mock") {
+  if (input.audioConfig.audioProvider !== "mock") {
     logger.warn("[content-generation:audio] provider not implemented", {
-      provider: input.capabilities.audioProvider,
+      provider: input.audioConfig.audioProvider,
     });
 
     return {
       artifacts: [],
-      warnings: [`Audio provider '${input.capabilities.audioProvider}' is not implemented yet.`],
+      warnings: [`Audio provider '${input.audioConfig.audioProvider}' is not implemented yet.`],
     };
   }
 
@@ -54,8 +61,8 @@ export async function generateSpeechArtifacts(input: {
     mimeType: "audio/mpeg",
     extension: "mp3",
     metadata: {
-      provider: input.capabilities.audioProvider,
-      voice: input.capabilities.audioVoice,
+      provider: input.audioConfig.audioProvider,
+      voice: input.audioConfig.audioVoice,
       script: item.displayText,
     },
   }));

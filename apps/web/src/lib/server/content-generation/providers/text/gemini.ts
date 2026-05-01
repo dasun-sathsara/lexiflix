@@ -5,12 +5,10 @@ import { logger } from "@trigger.dev/sdk";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import type {
-  EffectiveGenerationCapabilities,
   GeneratedTextItem,
   GenerationRequestSnapshot,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
-import { CONTENT_GENERATION_TEXT_PROMPT_VERSION } from "@/lib/server/content-generation/contracts";
 
 const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
@@ -67,7 +65,7 @@ function buildPrompt(input: {
 }) {
   return [
     "Generate learner-specific English study content for subtitle vocabulary.",
-    `Prompt version: ${CONTENT_GENERATION_TEXT_PROMPT_VERSION}.`,
+    "Prompt version: content-generation-text-v1.",
     `Learner CEFR: ${input.requestSnapshot.learnerCefrLevel ?? "unknown"}.`,
     `Examples per item: ${input.requestSnapshot.exampleSentenceCount}.`,
     "Meanings must be English-only. Generate new example sentences, not copied subtitle lines.",
@@ -95,10 +93,10 @@ function buildPrompt(input: {
 export async function generateTextContent(input: {
   items: SelectedGenerationItem[];
   requestSnapshot: GenerationRequestSnapshot;
-  capabilities: EffectiveGenerationCapabilities;
+  model: string;
 }): Promise<GeneratedTextItem[]> {
   logger.info("[content-generation:text] started", {
-    model: input.capabilities.textModel,
+    model: input.model,
     itemCount: input.items.length,
     packSize: input.requestSnapshot.packSize,
     exampleSentenceCount: input.requestSnapshot.exampleSentenceCount,
@@ -106,13 +104,13 @@ export async function generateTextContent(input: {
 
   const prompt = buildPrompt(input);
   logger.info("[content-generation:text] sending Gemini request", {
-    model: input.capabilities.textModel,
+    model: input.model,
     itemCount: input.items.length,
     promptCharacters: prompt.length,
   });
 
   const response = await geminiClient.models.generateContent({
-    model: input.capabilities.textModel,
+    model: input.model,
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -122,7 +120,7 @@ export async function generateTextContent(input: {
 
   const parsed = generatedTextBatchSchema.parse(JSON.parse(response.text ?? "{}")).items;
   logger.info("[content-generation:text] Gemini response parsed", {
-    model: input.capabilities.textModel,
+    model: input.model,
     itemCount: parsed.length,
     warningCount: parsed.reduce((count, item) => count + item.warnings.length, 0),
   });

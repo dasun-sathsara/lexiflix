@@ -2,20 +2,9 @@ import "server-only";
 
 import { z } from "zod";
 
-import type { NlpCandidateContext, StoredCefrLevel } from "@/lib/server/db/json-contracts";
-
 export const storedCefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const analysisLlmKinds = ["phrasal_verb", "idiom", "slang"] as const;
 export const contentAnalysisRunStatuses = ["queued", "running", "completed", "failed"] as const;
-export const contentAnalysisFailureCodes = [
-  "INVALID_RUN",
-  "NO_SUBTITLES",
-  "SUBTITLE_FETCH_FAILED",
-  "NLP_SERVICE_FAILED",
-  "ANALYSIS_LLM_FAILED",
-  "WORKFLOW_TRIGGER_FAILED",
-  "PERSISTENCE_FAILED",
-] as const;
 export const contentAnalysisStages = [
   "queued",
   "fetching_subtitles",
@@ -29,14 +18,9 @@ export const contentAnalysisStages = [
 
 export type AnalysisLlmKind = (typeof analysisLlmKinds)[number];
 export type ContentAnalysisRunStatus = (typeof contentAnalysisRunStatuses)[number];
-export type ContentAnalysisFailureCode = (typeof contentAnalysisFailureCodes)[number];
 export type ContentAnalysisStage = (typeof contentAnalysisStages)[number];
 
-export const MEDIA_ANALYSIS_NORMALIZATION_VERSION = "media-analysis-normalization-v1";
-export const MEDIA_ANALYSIS_CHUNKING_VERSION = "media-analysis-chunking-v3";
-export const MEDIA_ANALYSIS_NLP_PIPELINE_VERSION = "nlp-service-v1";
-export const MEDIA_ANALYSIS_LLM_PROMPT_VERSION = "media-analysis-phrases-v1";
-export const MEDIA_ANALYSIS_LLM_SCHEMA_VERSION = "media-analysis-phrases-schema-v1";
+export const MEDIA_ANALYSIS_PIPELINE_VERSION = "media-analysis-v1";
 
 const cefrSchema = z.enum(storedCefrLevels);
 
@@ -46,17 +30,11 @@ export const nlpAnalysisOptionsSchema = z.object({
   batch_size: z.number().int().min(1).max(10_000).default(200),
 });
 
-export const resolveContentTargetInputSchema = z.discriminatedUnion("mediaType", [
-  z.object({
-    mediaType: z.literal("movie"),
-    tmdbId: z.number().int().positive(),
-  }),
-  z.object({
-    mediaType: z.literal("tv"),
-    tmdbId: z.number().int().positive(),
-    seasonNumber: z.number().int().positive().optional(),
-  }),
-]);
+export const resolveContentTargetInputSchema = z.object({
+  mediaType: z.enum(["movie", "tv"]),
+  tmdbId: z.number().int().positive(),
+  seasonNumber: z.number().int().positive().optional(),
+});
 
 export const contentAnalysisTransitionSchema = z.object({
   runId: z.string().min(1),
@@ -138,29 +116,14 @@ export type AnalysisLlmResponse = z.infer<typeof analysisLlmResponseSchema>;
 export type ResolveContentTargetInput = z.infer<typeof resolveContentTargetInputSchema>;
 export type ContentAnalysisTransitionInput = z.infer<typeof contentAnalysisTransitionSchema>;
 
-export function cefrNumericFromLevel(level: StoredCefrLevel | null | undefined) {
-  switch (level) {
-    case "A1":
-      return 1;
-    case "A2":
-      return 2;
-    case "B1":
-      return 3;
-    case "B2":
-      return 4;
-    case "C1":
-      return 5;
-    case "C2":
-      return 6;
-    default:
-      return null;
-  }
-}
+const CEFR_TO_NUMERIC: Record<string, number> = {
+  A1: 1,
+  A2: 2,
+  B1: 3,
+  B2: 4,
+  C1: 5,
+  C2: 6,
+};
 
-export function toRepresentativeContexts(text: string | null | undefined): NlpCandidateContext[] {
-  if (!text) {
-    return [];
-  }
-
-  return [{ text }];
-}
+export const cefrNumericFromLevel = (level: string | null | undefined) =>
+  CEFR_TO_NUMERIC[level ?? ""] ?? null;

@@ -19,7 +19,7 @@ import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
-import { computeMediaAnalysisPipelineFingerprint } from "@/lib/server/media-analysis/pipeline-fingerprint";
+import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
 import type { TMDBMediaType, TMDBMovieDetails, TMDBTvDetails } from "@/lib/tmdb";
 import { getMovieDetails, getTvDetails } from "@/lib/tmdb";
@@ -35,6 +35,7 @@ type ResolvedTvDetail = {
 };
 
 type ResolvedTmdbDetail = ResolvedMovieDetail | ResolvedTvDetail;
+const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 
 function parseTmdbNotFound(error: unknown) {
   return error instanceof Error && error.message.includes("TMDB Error: 404");
@@ -279,14 +280,12 @@ export async function getMediaDetailPageData(input: {
       throw new Error(`Movie ${input.tmdbId} did not resolve to a durable content target.`);
     }
 
-    const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
-
     return {
       media: mapMovieToView(resolved.detail),
       learnerLevel,
       analysis: await getAnalysisSnapshotForResolvedTarget({
         contentId: target.content.id,
-        pipelineFingerprint: fingerprint,
+        pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
       }),
       generation: await getGenerationSnapshotForContent({
         userId: input.userId,
@@ -345,14 +344,12 @@ export async function getMediaDetailPageData(input: {
     };
   }
 
-  const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
-
   return {
     media,
     learnerLevel,
     analysis: await getAnalysisSnapshotForResolvedTarget({
       contentId: target.content.id,
-      pipelineFingerprint: fingerprint,
+      pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
     }),
     generation: await getGenerationSnapshotForContent({
       userId: input.userId,
@@ -391,10 +388,9 @@ export async function getAnalysisSnapshotForContentTarget(input: {
     };
   }
 
-  const { fingerprint } = computeMediaAnalysisPipelineFingerprint();
   return getAnalysisSnapshotForResolvedTarget({
     contentId: target.content.id,
-    pipelineFingerprint: fingerprint,
+    pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
   });
 }
 

@@ -4,16 +4,20 @@ import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/cli
 import { logger } from "@trigger.dev/sdk";
 import { env } from "@/lib/env";
 import type {
-  EffectiveGenerationCapabilities,
   GeneratedBinaryArtifact,
   GeneratedTextItem,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
 
+type PollyConfig = {
+  audioVoice: string;
+  audioEngine: "standard" | "neural";
+};
+
 type SpeechInput = {
   selectedItems: SelectedGenerationItem[];
   textItems: GeneratedTextItem[];
-  capabilities: EffectiveGenerationCapabilities;
+  audioConfig: PollyConfig;
 };
 
 function createPollyClient() {
@@ -55,7 +59,7 @@ async function audioStreamToBytes(stream: unknown) {
 function artifactFromBytes(input: {
   item: SelectedGenerationItem;
   bytes: Uint8Array;
-  capabilities: EffectiveGenerationCapabilities;
+  audioConfig: PollyConfig;
   requestCharacters?: number;
 }): GeneratedBinaryArtifact {
   return {
@@ -65,44 +69,23 @@ function artifactFromBytes(input: {
     extension: "mp3",
     metadata: {
       provider: "aws-polly",
-      voice: input.capabilities.audioVoice,
-      engine: input.capabilities.audioEngine,
+      voice: input.audioConfig.audioVoice,
+      engine: input.audioConfig.audioEngine,
       script: input.item.displayText,
       requestCharacters: input.requestCharacters,
     },
   };
 }
 
-function isNonRecoverablePollyError(error: unknown) {
+function isPollyRetryable(error: unknown): boolean {
   const name = error instanceof Error ? error.name : undefined;
-  return (
-    name === "EngineNotSupportedException" ||
-    name === "TextLengthExceededException" ||
-    name === "InvalidSsmlException" ||
-    name === "LanguageNotSupportedException" ||
-    name === "LexiconNotFoundException" ||
-    name === "MarksNotSupportedForFormatException"
-  );
-}
-
-function isRecoverablePollyError(error: unknown) {
-  const metadata =
-    error && typeof error === "object" && "$metadata" in error
-      ? (error.$metadata as { httpStatusCode?: number })
-      : undefined;
-  const statusCode = metadata?.httpStatusCode;
-  const name = error instanceof Error ? error.name : undefined;
-
-  return (
-    statusCode === 500 ||
-    statusCode === 502 ||
-    statusCode === 503 ||
-    statusCode === 504 ||
-    name === "ServiceFailureException" ||
-    name === "TimeoutError" ||
-    name === "AbortError" ||
-    name === "NetworkingError"
-  );
+  const fatal = new Set([
+    "EngineNotSupportedException",
+    "TextLengthExceededException",
+    "InvalidSsmlException",
+    "LanguageNotSupportedException",
+  ]);
+  return !fatal.has(name ?? "");
 }
 
 function delay(ms: number) {
@@ -112,7 +95,7 @@ function delay(ms: number) {
 async function synthesizeWithRetry(input: {
   client: PollyClient;
   item: SelectedGenerationItem;
-  capabilities: EffectiveGenerationCapabilities;
+  audioConfig: PollyConfig;
 }) {
   let attempt = 0;
 
@@ -121,8 +104,8 @@ async function synthesizeWithRetry(input: {
       const response = await input.client.send(
         new SynthesizeSpeechCommand({
           Text: input.item.displayText,
-          VoiceId: input.capabilities.audioVoice as VoiceId,
-          Engine: input.capabilities.audioEngine,
+          VoiceId: input.audioConfig.audioVoice as VoiceId,
+          Engine: input.audioConfig.audioEngine,
           OutputFormat: "mp3",
           TextType: "text",
         }),
@@ -134,11 +117,7 @@ async function synthesizeWithRetry(input: {
         requestCharacters: response.RequestCharacters,
       };
     } catch (error) {
-      if (isNonRecoverablePollyError(error)) {
-        throw error;
-      }
-
-      if (attempt >= env.AWS_POLLY_MAX_RETRIES || !isRecoverablePollyError(error)) {
+      if (attempt >= env.AWS_POLLY_MAX_RETRIES || !isPollyRetryable(error)) {
         throw error;
       }
 
@@ -176,15 +155,15 @@ export async function generateSpeechWithPolly(
   input: SpeechInput,
 ): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
   logger.info("[content-generation:audio] aws-polly started", {
-    voice: input.capabilities.audioVoice,
-    engine: input.capabilities.audioEngine,
+    voice: input.audioConfig.audioVoice,
+    engine: input.audioConfig.audioEngine,
     selectedItemCount: input.selectedItems.length,
     textItemCount: input.textItems.length,
   });
 
   const client = createPollyClient();
   const results = await mapWithConcurrency(input.selectedItems, env.AWS_POLLY_CONCURRENCY, (item) =>
-    synthesizeWithRetry({ client, item, capabilities: input.capabilities }),
+    synthesizeWithRetry({ client, item, audioConfig: input.audioConfig }),
   );
 
   const artifacts: GeneratedBinaryArtifact[] = [];
@@ -208,7 +187,7 @@ export async function generateSpeechWithPolly(
       artifactFromBytes({
         item,
         bytes: result.value.bytes,
-        capabilities: input.capabilities,
+        audioConfig: input.audioConfig,
         requestCharacters: result.value.requestCharacters,
       }),
     );
