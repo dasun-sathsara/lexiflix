@@ -53,9 +53,7 @@ Optional tuning variables now supported by the web app are:
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`
-- `ANALYSIS_LLM_MODE` (`live`, `record`, `replay`, `mock`)
 - `ANALYSIS_LLM_MODEL`
-- `ANALYSIS_LLM_RECORDING_DIR`
 
 If you need different values, override them at command time.
 

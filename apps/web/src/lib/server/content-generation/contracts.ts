@@ -52,16 +52,13 @@ export type ContentGenerationStage =
 
 export type EffectiveGenerationCapabilities = {
   textProvider: "gemini";
-  textMode: "live" | "record" | "replay" | "mock";
   textModel: string;
   audioGenerationEnabled: boolean;
-  audioMode: "live" | "record" | "replay" | "mock" | "disabled";
   audioProvider: string;
   audioVoice: string;
   audioEngine: "standard" | "neural";
   imageGenerationEnabled: boolean;
   imageSelectionMode: "eligible_items";
-  imageMode: "live" | "replay" | "mock" | "disabled";
   imageProvider: string;
   imageConcurrency: number;
 };

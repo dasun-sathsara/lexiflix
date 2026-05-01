@@ -1,11 +1,7 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { logger } from "@trigger.dev/sdk";
-import { z } from "zod";
 import { env } from "@/lib/env";
 import type {
   EffectiveGenerationCapabilities,
@@ -20,27 +16,9 @@ type SpeechInput = {
   capabilities: EffectiveGenerationCapabilities;
 };
 
-type PollyFixtureItem = {
-  analysisItemId: string;
-  audioBase64: string;
-  requestCharacters?: number;
-};
-
-const pollyFixtureSchema = z.object({
-  voiceId: z.string().min(1),
-  engine: z.enum(["standard", "neural"]),
-  items: z.array(
-    z.object({
-      analysisItemId: z.string().min(1),
-      audioBase64: z.string().min(1),
-      requestCharacters: z.number().int().nonnegative().optional(),
-    }),
-  ),
-});
-
 function createPollyClient() {
   if (!env.AWS_POLLY_ACCESS_KEY_ID || !env.AWS_POLLY_SECRET_ACCESS_KEY) {
-    throw new Error("AWS Polly credentials are required for live or record audio generation.");
+    throw new Error("AWS Polly credentials are required for audio generation.");
   }
 
   return new PollyClient({
@@ -50,77 +28,6 @@ function createPollyClient() {
       secretAccessKey: env.AWS_POLLY_SECRET_ACCESS_KEY,
     },
   });
-}
-
-function audioFingerprint(input: {
-  items: { analysisItemId: string; displayText: string }[];
-  voiceId: string;
-  engine: "standard" | "neural";
-}) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        version: "aws-polly-audio-v1",
-        voiceId: input.voiceId,
-        engine: input.engine,
-        items: input.items.map((item) => ({
-          id: item.analysisItemId,
-          text: item.displayText,
-        })),
-      }),
-    )
-    .digest("hex");
-}
-
-function fixturePath(fingerprint: string) {
-  if (!env.CONTENT_GENERATION_RECORDING_DIR) {
-    throw new Error("CONTENT_GENERATION_RECORDING_DIR is required for audio replay mode.");
-  }
-
-  return path.join(env.CONTENT_GENERATION_RECORDING_DIR, "audio", `${fingerprint}.json`);
-}
-
-async function readFixture(fingerprint: string) {
-  const filePath = fixturePath(fingerprint);
-  return pollyFixtureSchema.parse(JSON.parse(await readFile(filePath, "utf8")));
-}
-
-async function writeFixture(input: {
-  fingerprint: string;
-  voiceId: string;
-  engine: "standard" | "neural";
-  items: PollyFixtureItem[];
-}) {
-  if (!env.CONTENT_GENERATION_RECORDING_DIR) {
-    return;
-  }
-
-  const filePath = path.join(
-    env.CONTENT_GENERATION_RECORDING_DIR,
-    "audio",
-    `${input.fingerprint}.json`,
-  );
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(
-    filePath,
-    JSON.stringify(
-      {
-        voiceId: input.voiceId,
-        engine: input.engine,
-        items: input.items,
-      },
-      null,
-      2,
-    ),
-  );
-}
-
-function bytesFromBase64(value: string) {
-  return new Uint8Array(Buffer.from(value, "base64"));
-}
-
-function base64FromBytes(value: Uint8Array) {
-  return Buffer.from(value).toString("base64");
 }
 
 async function audioStreamToBytes(stream: unknown) {
@@ -164,23 +71,6 @@ function artifactFromBytes(input: {
       requestCharacters: input.requestCharacters,
     },
   };
-}
-
-function buildMockArtifacts(input: SpeechInput) {
-  const artifacts = input.selectedItems.map((item) =>
-    artifactFromBytes({
-      item,
-      bytes: new TextEncoder().encode(`mock aws-polly audio for ${item.displayText}`),
-      capabilities: input.capabilities,
-      requestCharacters: item.displayText.length,
-    }),
-  );
-
-  logger.info("[content-generation:audio] aws-polly mock artifacts generated", {
-    artifactCount: artifacts.length,
-  });
-
-  return { artifacts, warnings: [] };
 }
 
 function isNonRecoverablePollyError(error: unknown) {
@@ -286,51 +176,11 @@ export async function generateSpeechWithPolly(
   input: SpeechInput,
 ): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
   logger.info("[content-generation:audio] aws-polly started", {
-    mode: input.capabilities.audioMode,
     voice: input.capabilities.audioVoice,
     engine: input.capabilities.audioEngine,
     selectedItemCount: input.selectedItems.length,
     textItemCount: input.textItems.length,
   });
-
-  if (input.capabilities.audioMode === "mock") {
-    return buildMockArtifacts(input);
-  }
-
-  const fingerprint = audioFingerprint({
-    items: input.selectedItems.map((item) => ({
-      analysisItemId: item.analysisItemId,
-      displayText: item.displayText,
-    })),
-    voiceId: input.capabilities.audioVoice,
-    engine: input.capabilities.audioEngine,
-  });
-
-  if (input.capabilities.audioMode === "replay") {
-    logger.info("[content-generation:audio] loading aws-polly replay fixture", { fingerprint });
-    const fixture = await readFixture(fingerprint);
-    const selectedById = new Map(input.selectedItems.map((item) => [item.analysisItemId, item]));
-    const artifacts = fixture.items.flatMap((fixtureItem) => {
-      const item = selectedById.get(fixtureItem.analysisItemId);
-      if (!item) {
-        return [];
-      }
-
-      return artifactFromBytes({
-        item,
-        bytes: bytesFromBase64(fixtureItem.audioBase64),
-        capabilities: input.capabilities,
-        requestCharacters: fixtureItem.requestCharacters,
-      });
-    });
-
-    logger.info("[content-generation:audio] aws-polly replay fixture loaded", {
-      fingerprint,
-      artifactCount: artifacts.length,
-    });
-
-    return { artifacts, warnings: [] };
-  }
 
   const client = createPollyClient();
   const results = await mapWithConcurrency(input.selectedItems, env.AWS_POLLY_CONCURRENCY, (item) =>
@@ -338,7 +188,6 @@ export async function generateSpeechWithPolly(
   );
 
   const artifacts: GeneratedBinaryArtifact[] = [];
-  const fixtureItems: PollyFixtureItem[] = [];
   const warnings: string[] = [];
 
   results.forEach((result, index) => {
@@ -363,28 +212,9 @@ export async function generateSpeechWithPolly(
         requestCharacters: result.value.requestCharacters,
       }),
     );
-    fixtureItems.push({
-      analysisItemId: item.analysisItemId,
-      audioBase64: base64FromBytes(result.value.bytes),
-      requestCharacters: result.value.requestCharacters,
-    });
   });
 
-  if (input.capabilities.audioMode === "record") {
-    await writeFixture({
-      fingerprint,
-      voiceId: input.capabilities.audioVoice,
-      engine: input.capabilities.audioEngine,
-      items: fixtureItems,
-    });
-    logger.info("[content-generation:audio] aws-polly response recorded", {
-      fingerprint,
-      itemCount: fixtureItems.length,
-    });
-  }
-
   logger.info("[content-generation:audio] aws-polly completed", {
-    mode: input.capabilities.audioMode,
     artifactCount: artifacts.length,
     warningCount: warnings.length,
   });

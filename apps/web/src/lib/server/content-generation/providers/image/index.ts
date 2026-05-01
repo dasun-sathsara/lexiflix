@@ -13,7 +13,6 @@ export async function generateImageArtifacts(input: {
 }): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
   logger.info("[content-generation:image] started", {
     enabled: input.capabilities.imageGenerationEnabled,
-    mode: input.capabilities.imageMode,
     provider: input.capabilities.imageProvider,
     textItemCount: input.textItems.length,
   });
@@ -34,9 +33,8 @@ export async function generateImageArtifacts(input: {
     ineligibleCount: input.textItems.length - eligible.length,
   });
 
-  if (input.capabilities.imageMode !== "mock") {
+  if (input.capabilities.imageProvider !== "mock") {
     logger.warn("[content-generation:image] provider not implemented", {
-      mode: input.capabilities.imageMode,
       provider: input.capabilities.imageProvider,
       eligibleCount: eligible.length,
     });
@@ -54,7 +52,6 @@ export async function generateImageArtifacts(input: {
     extension: "webp",
     metadata: {
       provider: input.capabilities.imageProvider,
-      mode: input.capabilities.imageMode,
       imageBrief: item.imageBrief,
       imageEligibility: item.imageEligibility,
     },

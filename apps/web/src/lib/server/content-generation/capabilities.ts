@@ -5,9 +5,6 @@ import { env } from "@/lib/env";
 import type { EffectiveGenerationCapabilities } from "@/lib/server/content-generation/contracts";
 
 export function resolveEffectiveGenerationCapabilities(): EffectiveGenerationCapabilities {
-  const imageMode = env.CONTENT_GENERATION_IMAGE_ENABLED
-    ? env.CONTENT_GENERATION_IMAGE_MODE
-    : "disabled";
   const audioVoice =
     env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
       ? env.AWS_POLLY_ENGINE === "neural"
@@ -17,16 +14,13 @@ export function resolveEffectiveGenerationCapabilities(): EffectiveGenerationCap
 
   return {
     textProvider: "gemini",
-    textMode: env.CONTENT_GENERATION_TEXT_MODE,
     textModel: env.CONTENT_GENERATION_TEXT_MODEL,
-    audioGenerationEnabled: env.CONTENT_GENERATION_AUDIO_MODE !== "disabled",
-    audioMode: env.CONTENT_GENERATION_AUDIO_MODE,
+    audioGenerationEnabled: env.CONTENT_GENERATION_AUDIO_PROVIDER !== "disabled",
     audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
     audioVoice,
     audioEngine: env.AWS_POLLY_ENGINE,
-    imageGenerationEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED && imageMode !== "disabled",
+    imageGenerationEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
     imageSelectionMode: "eligible_items",
-    imageMode,
     imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
     imageConcurrency: env.CONTENT_GENERATION_IMAGE_CONCURRENCY,
   };

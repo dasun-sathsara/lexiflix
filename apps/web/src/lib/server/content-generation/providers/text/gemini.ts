@@ -1,8 +1,5 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
 import { logger } from "@trigger.dev/sdk";
 import { z } from "zod";
@@ -95,109 +92,21 @@ function buildPrompt(input: {
     .join("\n\n");
 }
 
-function buildMockItem(
-  item: SelectedGenerationItem,
-  request: GenerationRequestSnapshot,
-): GeneratedTextItem {
-  const exampleBase = item.displayText.toLowerCase();
-  return {
-    analysisItemId: item.analysisItemId,
-    termId: item.termId,
-    meaning: `${item.displayText} means an idea or expression used in this title's dialogue.`,
-    exampleSentences: Array.from({ length: request.exampleSentenceCount }, (_, index) =>
-      index === 0
-        ? `I heard "${exampleBase}" in a conversation and understood the scene better.`
-        : `The phrase "${exampleBase}" can fit naturally in everyday English.`,
-    ),
-    imageBrief: `${item.displayText} shown in a clear contextual learning illustration`,
-    imageEligibility: {
-      eligible:
-        item.kind === "word" &&
-        (item.cefrLevel?.startsWith("A") === true || item.cefrLevel?.startsWith("B") === true),
-      reason: "Concrete beginner and intermediate words are the safest V1 image candidates.",
-    },
-    warnings: [],
-  };
-}
-
-function requestFingerprint(input: {
-  items: SelectedGenerationItem[];
-  requestSnapshot: GenerationRequestSnapshot;
-  capabilities: EffectiveGenerationCapabilities;
-}) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        promptVersion: CONTENT_GENERATION_TEXT_PROMPT_VERSION,
-        model: input.capabilities.textModel,
-        requestSnapshot: input.requestSnapshot,
-        items: input.items.map((item) => ({
-          id: item.analysisItemId,
-          termId: item.termId,
-          text: item.displayText,
-          context: item.representativeContext,
-        })),
-      }),
-    )
-    .digest("hex");
-}
-
-async function readFixture(fingerprint: string) {
-  if (!env.CONTENT_GENERATION_RECORDING_DIR) {
-    throw new Error(
-      "CONTENT_GENERATION_RECORDING_DIR is required for content generation replay mode.",
-    );
-  }
-  const filePath = path.join(env.CONTENT_GENERATION_RECORDING_DIR, "text", `${fingerprint}.json`);
-  return generatedTextBatchSchema.parse(JSON.parse(await readFile(filePath, "utf8"))).items;
-}
-
-async function writeFixture(fingerprint: string, items: GeneratedTextItem[]) {
-  if (!env.CONTENT_GENERATION_RECORDING_DIR) {
-    return;
-  }
-  const filePath = path.join(env.CONTENT_GENERATION_RECORDING_DIR, "text", `${fingerprint}.json`);
-  await writeFile(filePath, JSON.stringify({ items }, null, 2));
-}
-
 export async function generateTextContent(input: {
   items: SelectedGenerationItem[];
   requestSnapshot: GenerationRequestSnapshot;
   capabilities: EffectiveGenerationCapabilities;
 }): Promise<GeneratedTextItem[]> {
   logger.info("[content-generation:text] started", {
-    mode: input.capabilities.textMode,
     model: input.capabilities.textModel,
     itemCount: input.items.length,
     packSize: input.requestSnapshot.packSize,
     exampleSentenceCount: input.requestSnapshot.exampleSentenceCount,
   });
 
-  if (input.capabilities.textMode === "mock") {
-    const items = input.items.map((item) => buildMockItem(item, input.requestSnapshot));
-    logger.info("[content-generation:text] mock content generated", {
-      itemCount: items.length,
-      warningCount: items.reduce((count, item) => count + item.warnings.length, 0),
-    });
-    return items;
-  }
-
-  const fingerprint = requestFingerprint(input);
-  if (input.capabilities.textMode === "replay") {
-    logger.info("[content-generation:text] loading replay fixture", { fingerprint });
-    const items = await readFixture(fingerprint);
-    logger.info("[content-generation:text] replay fixture loaded", {
-      fingerprint,
-      itemCount: items.length,
-    });
-    return items;
-  }
-
   const prompt = buildPrompt(input);
   logger.info("[content-generation:text] sending Gemini request", {
-    mode: input.capabilities.textMode,
     model: input.capabilities.textModel,
-    fingerprint,
     itemCount: input.items.length,
     promptCharacters: prompt.length,
   });
@@ -213,20 +122,10 @@ export async function generateTextContent(input: {
 
   const parsed = generatedTextBatchSchema.parse(JSON.parse(response.text ?? "{}")).items;
   logger.info("[content-generation:text] Gemini response parsed", {
-    mode: input.capabilities.textMode,
     model: input.capabilities.textModel,
-    fingerprint,
     itemCount: parsed.length,
     warningCount: parsed.reduce((count, item) => count + item.warnings.length, 0),
   });
-
-  if (input.capabilities.textMode === "record") {
-    await writeFixture(fingerprint, parsed);
-    logger.info("[content-generation:text] response recorded", {
-      fingerprint,
-      itemCount: parsed.length,
-    });
-  }
 
   return parsed;
 }

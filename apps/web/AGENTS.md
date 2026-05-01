@@ -51,17 +51,14 @@ Current required server-side envs include:
 - `R2_ENDPOINT`
 - `R2_PUBLIC_BASE_URL`
 - `TMDB_API_KEY`
-- `AWS_POLLY_ACCESS_KEY_ID` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly` and audio mode is `live` or `record`)
-- `AWS_POLLY_SECRET_ACCESS_KEY` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly` and audio mode is `live` or `record`)
+- `AWS_POLLY_ACCESS_KEY_ID` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
+- `AWS_POLLY_SECRET_ACCESS_KEY` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
 
 The media-analysis foundation also supports optional server-side tuning vars:
 
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`
-- `ANALYSIS_LLM_MODE`
-- `ANALYSIS_LLM_MODEL`
-- `ANALYSIS_LLM_RECORDING_DIR`
 - `AWS_POLLY_REGION`
 - `AWS_POLLY_ENGINE`
 - `AWS_POLLY_STANDARD_VOICE_ID`

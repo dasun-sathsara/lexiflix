@@ -16,7 +16,6 @@ export async function generateSpeechArtifacts(input: {
 }): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
   logger.info("[content-generation:audio] started", {
     enabled: input.capabilities.audioGenerationEnabled,
-    mode: input.capabilities.audioMode,
     provider: input.capabilities.audioProvider,
     voice: input.capabilities.audioVoice,
     selectedItemCount: input.selectedItems.length,
@@ -38,9 +37,8 @@ export async function generateSpeechArtifacts(input: {
     return generateSpeechWithPolly(input);
   }
 
-  if (input.capabilities.audioProvider !== "mock" && input.capabilities.audioMode !== "mock") {
+  if (input.capabilities.audioProvider !== "mock") {
     logger.warn("[content-generation:audio] provider not implemented", {
-      mode: input.capabilities.audioMode,
       provider: input.capabilities.audioProvider,
     });
 
@@ -59,7 +57,6 @@ export async function generateSpeechArtifacts(input: {
       provider: input.capabilities.audioProvider,
       voice: input.capabilities.audioVoice,
       script: item.displayText,
-      mode: input.capabilities.audioMode,
     },
   }));
 

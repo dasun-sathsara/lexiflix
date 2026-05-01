@@ -6,7 +6,6 @@ import type { NlpCandidateContext, StoredCefrLevel } from "@/lib/server/db/json-
 
 export const storedCefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const analysisLlmKinds = ["phrasal_verb", "idiom", "slang"] as const;
-export const analysisLlmExecutionModes = ["live", "record", "replay", "mock"] as const;
 export const contentAnalysisRunStatuses = ["queued", "running", "completed", "failed"] as const;
 export const contentAnalysisFailureCodes = [
   "INVALID_RUN",
@@ -29,7 +28,6 @@ export const contentAnalysisStages = [
 ] as const;
 
 export type AnalysisLlmKind = (typeof analysisLlmKinds)[number];
-export type AnalysisLlmExecutionMode = (typeof analysisLlmExecutionModes)[number];
 export type ContentAnalysisRunStatus = (typeof contentAnalysisRunStatuses)[number];
 export type ContentAnalysisFailureCode = (typeof contentAnalysisFailureCodes)[number];
 export type ContentAnalysisStage = (typeof contentAnalysisStages)[number];
@@ -133,20 +131,10 @@ export const analysisLlmResponseSchema = z.object({
   items: z.array(analysisLlmItemSchema),
 });
 
-export const analysisLlmRecordingSchema = z.object({
-  requestFingerprint: z.string().min(1),
-  promptVersion: z.string().min(1),
-  schemaVersion: z.string().min(1),
-  model: z.string().min(1),
-  recordedAt: z.string().min(1),
-  response: analysisLlmResponseSchema,
-});
-
 export type NlpAnalysisRequest = z.infer<typeof nlpAnalysisRequestSchema>;
 export type NlpAnalysisResponse = z.infer<typeof nlpAnalysisResponseSchema>;
 export type AnalysisLlmItem = z.infer<typeof analysisLlmItemSchema>;
 export type AnalysisLlmResponse = z.infer<typeof analysisLlmResponseSchema>;
-export type AnalysisLlmRecording = z.infer<typeof analysisLlmRecordingSchema>;
 export type ResolveContentTargetInput = z.infer<typeof resolveContentTargetInputSchema>;
 export type ContentAnalysisTransitionInput = z.infer<typeof contentAnalysisTransitionSchema>;
 

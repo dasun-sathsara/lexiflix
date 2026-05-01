@@ -93,13 +93,10 @@ export async function runPackGenerationWorkflow(jobId: string) {
   logger.info("[content-generation] resolved capabilities", {
     jobId,
     capabilityFingerprint,
-    textMode: capabilities.textMode,
     textModel: capabilities.textModel,
     audioEnabled: capabilities.audioGenerationEnabled,
-    audioMode: capabilities.audioMode,
     audioProvider: capabilities.audioProvider,
     imageEnabled: capabilities.imageGenerationEnabled,
-    imageMode: capabilities.imageMode,
     imageProvider: capabilities.imageProvider,
   });
 

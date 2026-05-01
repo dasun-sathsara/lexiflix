@@ -1,17 +1,12 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
 import { logger } from "@trigger.dev/sdk";
 
 import { env } from "@/lib/env";
 import {
-  type AnalysisLlmExecutionMode,
   type AnalysisLlmItem,
   analysisLlmItemSchema,
-  analysisLlmRecordingSchema,
   analysisLlmResponseSchema,
   cefrNumericFromLevel,
   MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
@@ -65,15 +60,9 @@ type AnalyzeWithGeminiInput = {
   chunkText: string;
   chunkIndex: number;
   totalChunks: number;
-  mode?: AnalysisLlmExecutionMode;
 };
 
 type AnalyzeWithGeminiResult = {
-  executionMode: AnalysisLlmExecutionMode;
-  model: string;
-  promptVersion: string;
-  schemaVersion: string;
-  requestFingerprint: string;
   items: Array<
     AnalysisLlmItem & {
       cefrNumeric: number | null;
@@ -90,25 +79,6 @@ export class GeminiAnalysisError extends Error {
     super(message);
     this.name = "GeminiAnalysisError";
   }
-}
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-
-  if (value && typeof value === "object") {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`)
-      .join(",")}}`;
-  }
-
-  return JSON.stringify(value);
-}
-
-function hashValue(value: unknown) {
-  return createHash("sha256").update(stableStringify(value)).digest("hex");
 }
 
 function buildPrompt({ chunkText, chunkIndex, totalChunks }: AnalyzeWithGeminiInput) {
@@ -240,103 +210,6 @@ function normalizeCefrLevel(value: unknown) {
   return ["A1", "A2", "B1", "B2", "C1", "C2"].includes(normalized) ? normalized : null;
 }
 
-function getExecutionMode(mode?: AnalysisLlmExecutionMode) {
-  return mode ?? env.ANALYSIS_LLM_MODE;
-}
-
-function getRecordingDirectory() {
-  return env.ANALYSIS_LLM_RECORDING_DIR
-    ? resolve(env.ANALYSIS_LLM_RECORDING_DIR)
-    : resolve(process.cwd(), ".cache", "analysis-llm-recordings");
-}
-
-function buildRequestFingerprint(input: AnalyzeWithGeminiInput) {
-  return hashValue({
-    promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
-    schemaVersion: MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
-    model: env.ANALYSIS_LLM_MODEL,
-    input: {
-      chunkIndex: input.chunkIndex,
-      totalChunks: input.totalChunks,
-      chunkText: input.chunkText.trim(),
-    },
-  });
-}
-
-async function readRecordedResponse(requestFingerprint: string) {
-  const filePath = resolve(getRecordingDirectory(), `${requestFingerprint}.json`);
-  const raw = await readFile(filePath, "utf8");
-  const parsed = analysisLlmRecordingSchema.safeParse(JSON.parse(raw));
-
-  if (!parsed.success) {
-    throw new GeminiAnalysisError("Gemini replay fixture is invalid.", parsed.error.flatten());
-  }
-
-  return parsed.data;
-}
-
-async function writeRecordedResponse(
-  requestFingerprint: string,
-  response: ReturnType<typeof analysisLlmResponseSchema.parse>,
-) {
-  const filePath = resolve(getRecordingDirectory(), `${requestFingerprint}.json`);
-  await mkdir(dirname(filePath), { recursive: true });
-  await writeFile(
-    filePath,
-    JSON.stringify(
-      {
-        requestFingerprint,
-        promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
-        schemaVersion: MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
-        model: env.ANALYSIS_LLM_MODEL,
-        recordedAt: new Date().toISOString(),
-        response,
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
-}
-
-function buildMockItems(input: AnalyzeWithGeminiInput) {
-  const sampleItems: AnalysisLlmItem[] = [
-    {
-      kind: "phrasal_verb",
-      text: "figure out",
-      displayText: "figure out",
-      cefrLevel: "B1",
-      representativeContext: input.chunkText.split(/[.!?]/)[0]?.trim() || null,
-      contexts: toRepresentativeContexts(input.chunkText.split(/[.!?]/)[0]?.trim() || null),
-      rationale: "Common dialogue phrasal verb with non-literal meaning.",
-    },
-    {
-      kind: "idiom",
-      text: "spill the beans",
-      displayText: "spill the beans",
-      cefrLevel: "B2",
-      representativeContext: input.chunkText.split(/[.!?]/)[0]?.trim() || null,
-      contexts: toRepresentativeContexts(input.chunkText.split(/[.!?]/)[0]?.trim() || null),
-      rationale: "Recognizable idiom useful in conversational media.",
-    },
-    {
-      kind: "slang",
-      text: "low-key",
-      displayText: "low-key",
-      cefrLevel: "B2",
-      representativeContext: input.chunkText.split(/[.!?]/)[0]?.trim() || null,
-      contexts: toRepresentativeContexts(input.chunkText.split(/[.!?]/)[0]?.trim() || null),
-      rationale: "Informal spoken expression common in modern dialogue.",
-    },
-  ];
-  const count = Math.min(
-    sampleItems.length,
-    (parseInt(hashValue(input.chunkText).slice(0, 2), 16) % 3) + 1,
-  );
-
-  return sampleItems.slice(0, count);
-}
-
 async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
   const prompt = buildPrompt(input);
 
@@ -396,49 +269,14 @@ async function runLiveGeminiAnalysis(input: AnalyzeWithGeminiInput) {
 export async function analyzeChunkWithGemini(
   input: AnalyzeWithGeminiInput,
 ): Promise<AnalyzeWithGeminiResult> {
-  const executionMode = getExecutionMode(input.mode);
-  const requestFingerprint = buildRequestFingerprint(input);
-  const warnings: string[] = [];
-  let response = analysisLlmResponseSchema.parse({ items: [] });
-
   logger.info("[media-analysis:llm] chunk started", {
     chunkIndex: input.chunkIndex + 1,
     totalChunks: input.totalChunks,
-    mode: executionMode,
     model: env.ANALYSIS_LLM_MODEL,
-    requestFingerprint,
     chunkCharacters: input.chunkText.length,
   });
 
-  if (executionMode === "mock") {
-    response = analysisLlmResponseSchema.parse({ items: buildMockItems(input) });
-    logger.info("[media-analysis:llm] mock response generated", {
-      chunkIndex: input.chunkIndex + 1,
-      totalChunks: input.totalChunks,
-      itemCount: response.items.length,
-    });
-  } else if (executionMode === "replay") {
-    const recorded = await readRecordedResponse(requestFingerprint);
-    response = recorded.response;
-    logger.info("[media-analysis:llm] replay response loaded", {
-      chunkIndex: input.chunkIndex + 1,
-      totalChunks: input.totalChunks,
-      itemCount: response.items.length,
-      requestFingerprint,
-    });
-  } else {
-    response = await runLiveGeminiAnalysis(input);
-
-    if (executionMode === "record") {
-      await writeRecordedResponse(requestFingerprint, response);
-      logger.info("[media-analysis:llm] response recorded", {
-        chunkIndex: input.chunkIndex + 1,
-        totalChunks: input.totalChunks,
-        itemCount: response.items.length,
-        requestFingerprint,
-      });
-    }
-  }
+  const response = await runLiveGeminiAnalysis(input);
 
   const normalized = response.items.map((item) => ({
     ...item,
@@ -446,22 +284,15 @@ export async function analyzeChunkWithGemini(
   }));
 
   const result = {
-    executionMode,
-    model: env.ANALYSIS_LLM_MODEL,
-    promptVersion: MEDIA_ANALYSIS_LLM_PROMPT_VERSION,
-    schemaVersion: MEDIA_ANALYSIS_LLM_SCHEMA_VERSION,
-    requestFingerprint,
     items: normalized,
-    warnings,
+    warnings: [],
   };
 
   logger.info("[media-analysis:llm] chunk completed", {
     chunkIndex: input.chunkIndex + 1,
     totalChunks: input.totalChunks,
-    mode: executionMode,
     itemCount: result.items.length,
     warningCount: result.warnings.length,
-    requestFingerprint,
   });
 
   return result;

@@ -65,25 +65,14 @@ const serverSchema = z
     ),
     GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
     TRIGGER_SECRET_KEY: z.string().min(1, "TRIGGER_SECRET_KEY is required"),
-    ANALYSIS_LLM_MODE: z
-      .enum(["live", "record", "replay", "mock"])
-      .default(process.env.NODE_ENV === "production" ? "live" : "mock"),
     ANALYSIS_LLM_MODEL: z
       .string()
       .min(1, "ANALYSIS_LLM_MODEL must not be empty")
       .default("gemini-2.5-flash"),
-    ANALYSIS_LLM_RECORDING_DIR: z.string().min(1).optional(),
-    CONTENT_GENERATION_TEXT_MODE: z
-      .enum(["live", "record", "replay", "mock"])
-      .default(process.env.NODE_ENV === "production" ? "live" : "mock"),
     CONTENT_GENERATION_TEXT_MODEL: z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
       .default("gemini-2.5-flash"),
-    CONTENT_GENERATION_RECORDING_DIR: z.string().min(1).optional(),
-    CONTENT_GENERATION_AUDIO_MODE: z
-      .enum(["live", "record", "replay", "mock", "disabled"])
-      .default("mock"),
     CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("mock"),
     CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
     AWS_POLLY_REGION: z.string().min(1).default("us-east-1"),
@@ -98,9 +87,6 @@ const serverSchema = z
       .enum(["true", "false"])
       .default("false")
       .transform((value) => value === "true"),
-    CONTENT_GENERATION_IMAGE_MODE: z
-      .enum(["live", "replay", "mock", "disabled"])
-      .default("disabled"),
     CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).default("mock"),
     CONTENT_GENERATION_IMAGE_CONCURRENCY: z.coerce.number().int().positive().default(3),
     NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
@@ -112,10 +98,7 @@ const serverSchema = z
     TMDB_API_KEY: z.string().min(1, "TMDB_API_KEY is required"),
   })
   .superRefine((value, context) => {
-    const pollyNeedsAwsCredentials =
-      value.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly" &&
-      (value.CONTENT_GENERATION_AUDIO_MODE === "live" ||
-        value.CONTENT_GENERATION_AUDIO_MODE === "record");
+    const pollyNeedsAwsCredentials = value.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly";
 
     if (!pollyNeedsAwsCredentials) {
       return;
@@ -125,7 +108,7 @@ const serverSchema = z
       context.addIssue({
         code: "custom",
         path: ["AWS_POLLY_ACCESS_KEY_ID"],
-        message: "AWS_POLLY_ACCESS_KEY_ID is required when using aws-polly live or record mode",
+        message: "AWS_POLLY_ACCESS_KEY_ID is required when using aws-polly",
       });
     }
 
@@ -133,7 +116,7 @@ const serverSchema = z
       context.addIssue({
         code: "custom",
         path: ["AWS_POLLY_SECRET_ACCESS_KEY"],
-        message: "AWS_POLLY_SECRET_ACCESS_KEY is required when using aws-polly live or record mode",
+        message: "AWS_POLLY_SECRET_ACCESS_KEY is required when using aws-polly",
       });
     }
   });
