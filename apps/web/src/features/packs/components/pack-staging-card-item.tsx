@@ -113,6 +113,7 @@ export function PackStagingCardItem({
   onIgnore,
 }: PackStagingCardItemProps) {
   const firstExample = item.exampleSentences[0] ?? null;
+  const firstExampleAudioUrl = item.exampleSentenceAudioUrls[0] ?? null;
 
   return (
     <Card
@@ -162,7 +163,26 @@ export function PackStagingCardItem({
             <div className="space-y-2">
               <p className="text-sm text-foreground/86">{truncate(item.meaning)}</p>
               {firstExample ? (
-                <p className="text-sm italic text-foreground/60">&quot;{firstExample}&quot;</p>
+                <div className="flex items-start gap-2">
+                  <p className="min-w-0 text-sm italic text-foreground/60">
+                    &quot;{firstExample}&quot;
+                  </p>
+                  {firstExampleAudioUrl ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        new Audio(firstExampleAudioUrl).play();
+                      }}
+                      aria-label={`Play example audio for ${item.displayText}`}
+                    >
+                      <Volume2 className="size-3" />
+                    </Button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           </div>

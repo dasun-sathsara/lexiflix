@@ -25,6 +25,7 @@ import type {
   CuratedGenreSnapshot,
   CuratedMediaType,
   CuratedSourceProvider,
+  ExampleSentenceAudioArtifactList,
   ExampleSentenceList,
   GenerationRequestSnapshot,
   NlpCandidateContext,
@@ -687,6 +688,9 @@ export const packItemContent = pgTable(
     audioArtifactId: text("audio_artifact_id").references(() => artifactObject.id, {
       onDelete: "set null",
     }),
+    exampleSentenceAudioArtifactIds: jsonb(
+      "example_sentence_audio_artifact_ids",
+    ).$type<ExampleSentenceAudioArtifactList>(),
     imageArtifactId: text("image_artifact_id").references(() => artifactObject.id, {
       onDelete: "set null",
     }),

@@ -7,7 +7,16 @@ import type {
   GeneratedBinaryArtifact,
   GeneratedTextItem,
   SelectedGenerationItem,
+  SpeechArtifactTarget,
 } from "@/lib/server/content-generation/contracts";
+import {
+  buildSpeechRequests,
+  delay,
+  mapWithConcurrency,
+  type SpeechSynthesisRequest,
+  speechArtifactItemKey,
+  speechArtifactMetadata,
+} from "@/lib/server/content-generation/providers/speech/helpers";
 
 type PollyConfig = {
   audioVoice: string;
@@ -57,21 +66,21 @@ async function audioStreamToBytes(stream: unknown) {
 }
 
 function artifactFromBytes(input: {
-  item: SelectedGenerationItem;
+  target: SpeechArtifactTarget;
   bytes: Uint8Array;
   audioConfig: PollyConfig;
   requestCharacters?: number;
 }): GeneratedBinaryArtifact {
   return {
-    itemKey: input.item.analysisItemId,
+    itemKey: speechArtifactItemKey(input.target),
     bytes: input.bytes,
     mimeType: "audio/mpeg",
     extension: "mp3",
     metadata: {
+      ...speechArtifactMetadata(input.target),
       provider: "aws-polly",
       voice: input.audioConfig.audioVoice,
       engine: input.audioConfig.audioEngine,
-      script: input.item.displayText,
       requestCharacters: input.requestCharacters,
     },
   };
@@ -88,13 +97,9 @@ function isPollyRetryable(error: unknown): boolean {
   return !fatal.has(name ?? "");
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function synthesizeWithRetry(input: {
   client: PollyClient;
-  item: SelectedGenerationItem;
+  request: SpeechSynthesisRequest;
   audioConfig: PollyConfig;
 }) {
   let attempt = 0;
@@ -103,7 +108,7 @@ async function synthesizeWithRetry(input: {
     try {
       const response = await input.client.send(
         new SynthesizeSpeechCommand({
-          Text: input.item.displayText,
+          Text: input.request.target.script,
           VoiceId: input.audioConfig.audioVoice as VoiceId,
           Engine: input.audioConfig.audioEngine,
           OutputFormat: "mp3",
@@ -112,7 +117,7 @@ async function synthesizeWithRetry(input: {
       );
 
       return {
-        item: input.item,
+        request: input.request,
         bytes: await audioStreamToBytes(response.AudioStream),
         requestCharacters: response.RequestCharacters,
       };
@@ -127,65 +132,47 @@ async function synthesizeWithRetry(input: {
   }
 }
 
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  mapper: (item: T) => Promise<R>,
-) {
-  const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await Promise.resolve(mapper(items[currentIndex])).then(
-        (value) => ({ status: "fulfilled", value }),
-        (reason) => ({ status: "rejected", reason }),
-      );
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
-
-  return results;
-}
-
 export async function generateSpeechWithPolly(
   input: SpeechInput,
 ): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
+  const requests = buildSpeechRequests(input);
+
   logger.info("[content-generation:audio] aws-polly started", {
     voice: input.audioConfig.audioVoice,
     engine: input.audioConfig.audioEngine,
     selectedItemCount: input.selectedItems.length,
     textItemCount: input.textItems.length,
+    requestCount: requests.length,
   });
 
   const client = createPollyClient();
-  const results = await mapWithConcurrency(input.selectedItems, env.AWS_POLLY_CONCURRENCY, (item) =>
-    synthesizeWithRetry({ client, item, audioConfig: input.audioConfig }),
+  const results = await mapWithConcurrency(requests, env.AWS_POLLY_CONCURRENCY, (request) =>
+    synthesizeWithRetry({ client, request, audioConfig: input.audioConfig }),
   );
 
   const artifacts: GeneratedBinaryArtifact[] = [];
   const warnings: string[] = [];
 
   results.forEach((result, index) => {
-    const item = input.selectedItems[index];
+    const request = requests[index];
     if (result.status === "rejected") {
       const error =
         result.reason instanceof Error ? result.reason : new Error(String(result.reason));
       logger.warn("[content-generation:audio] aws-polly item skipped", {
-        analysisItemId: item.analysisItemId,
+        analysisItemId: request.target.analysisItemId,
+        speechTarget: request.target.kind,
+        exampleIndex:
+          request.target.kind === "example_sentence" ? request.target.exampleIndex : undefined,
         errorName: error.name,
         errorMessage: error.message,
       });
-      warnings.push(`Audio skipped for '${item.displayText}': ${error.message}`);
+      warnings.push(`Audio skipped for '${request.target.script}': ${error.message}`);
       return;
     }
 
     artifacts.push(
       artifactFromBytes({
-        item,
+        target: result.value.request.target,
         bytes: result.value.bytes,
         audioConfig: input.audioConfig,
         requestCharacters: result.value.requestCharacters,

@@ -92,7 +92,7 @@
 - For each generated pack item, the system stores or derives:
 - the generated `meaning`
 - generated example sentences where available
-- the object-storage reference for pronunciation audio
+- the object-storage references for pronunciation and example sentence audio
 - the optional object-storage reference for a contextual image
 - those generated outputs are user-specific and belong to the pack item, not to reusable content analysis
 - generated meanings, examples, and related assets may take the learner's current CEFR level into account
@@ -101,7 +101,7 @@
 - In V1, generated meanings remain English-only.
 - In V1, example sentences are newly generated and should not reuse subtitle excerpts.
 - In V1, the default example count is one per item, with the request allowed to increase that to two or three.
-- In V1, pronunciation audio reads only the vocabulary item itself.
+- In V1, pronunciation audio covers both the vocabulary item and generated example sentences.
 
 - Pack selection is personalized per user.
 - When generating a pack, the system considers the learner's CEFR level, their frequency preference, and the vocabulary types they want to study.

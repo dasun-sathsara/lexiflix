@@ -67,6 +67,7 @@ export type NlpCandidateContext = {
   Keep generated example sentences lightweight until the UI needs richer structure.
 */
 export type ExampleSentenceList = string[];
+export type ExampleSentenceAudioArtifactList = Array<string | null>;
 
 export type GenerationRequestSnapshot = {
   learnerCefrLevel: StoredCefrLevel | null;

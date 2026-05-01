@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v1";
+export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v2";
 export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 
 export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
@@ -79,3 +79,16 @@ export type GeneratedBinaryArtifact = {
   extension: string;
   metadata: Record<string, unknown>;
 };
+
+export type SpeechArtifactTarget =
+  | {
+      kind: "term";
+      analysisItemId: string;
+      script: string;
+    }
+  | {
+      kind: "example_sentence";
+      analysisItemId: string;
+      exampleIndex: number;
+      script: string;
+    };

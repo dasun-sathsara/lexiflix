@@ -20,6 +20,7 @@ import {
 } from "@/lib/server/content-generation/jobs";
 import { generateImageArtifacts } from "@/lib/server/content-generation/providers/image";
 import { generateSpeechArtifacts } from "@/lib/server/content-generation/providers/speech";
+import { getSpeechArtifactTarget } from "@/lib/server/content-generation/providers/speech/helpers";
 import { generateTextContent } from "@/lib/server/content-generation/providers/text/gemini";
 import { selectGenerationItems } from "@/lib/server/content-generation/selection";
 import { db } from "@/lib/server/db";
@@ -85,15 +86,20 @@ async function sendPackStatusEmailIfEnabled({
 function getAudioConfig(voiceGender?: "female" | "male") {
   const normalizedVoiceGender = voiceGender === "male" ? "male" : "female";
   const pollyVoiceByGender = normalizedVoiceGender === "male" ? "Matthew" : "Joanna";
+  const azureMaiVoiceByGender =
+    normalizedVoiceGender === "male" ? env.AZURE_MAI_VOICE_MALE : env.AZURE_MAI_VOICE_FEMALE;
   const audioVoice =
     env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
       ? pollyVoiceByGender
-      : env.CONTENT_GENERATION_AUDIO_VOICE;
+      : env.CONTENT_GENERATION_AUDIO_PROVIDER === "azure-mai"
+        ? azureMaiVoiceByGender
+        : env.CONTENT_GENERATION_AUDIO_VOICE;
 
   return {
     audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
     audioVoice,
     audioEngine: env.AWS_POLLY_ENGINE,
+    audioStyle: env.AZURE_MAI_VOICE_STYLE,
   };
 }
 
@@ -228,6 +234,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
     });
 
     const audioArtifacts = new Map<string, string>();
+    const exampleSentenceAudioArtifacts = new Map<string, Array<string | null>>();
     const imageArtifacts = new Map<string, string>();
     const uploadedObjectKeys: string[] = [];
     const uploadedArtifactIds: string[] = [];
@@ -241,7 +248,19 @@ export async function runPackGenerationWorkflow(jobId: string) {
           kind: "audio",
           artifact,
         });
-        audioArtifacts.set(artifact.itemKey, row.id);
+        const speechTarget = getSpeechArtifactTarget(artifact.metadata);
+        if (
+          speechTarget?.speechTarget === "example_sentence" &&
+          speechTarget.exampleIndex !== null
+        ) {
+          const current = exampleSentenceAudioArtifacts.get(speechTarget.analysisItemId) ?? [];
+          current[speechTarget.exampleIndex] = row.id;
+          exampleSentenceAudioArtifacts.set(speechTarget.analysisItemId, current);
+        } else if (speechTarget?.speechTarget === "term") {
+          audioArtifacts.set(speechTarget.analysisItemId, row.id);
+        } else {
+          audioArtifacts.set(artifact.itemKey, row.id);
+        }
         uploadedObjectKeys.push(row.objectKey);
         uploadedArtifactIds.push(row.id);
       } catch (error) {
@@ -332,6 +351,15 @@ export async function runPackGenerationWorkflow(jobId: string) {
           meaning: generated.meaning,
           exampleSentences: generated.exampleSentences,
           audioArtifactId: audioArtifacts.get(item.analysisItemId) ?? null,
+          exampleSentenceAudioArtifactIds:
+            generated.exampleSentences.length > 0
+              ? Array.from(
+                  { length: generated.exampleSentences.length },
+                  (_, exampleIndex) =>
+                    (exampleSentenceAudioArtifacts.get(item.analysisItemId) ?? [])[exampleIndex] ??
+                    null,
+                )
+              : null,
           imageArtifactId: imageArtifacts.get(item.analysisItemId) ?? null,
           generatedAt: now,
         };

@@ -132,8 +132,8 @@
 
 ### Audio failure policy
 
-- Decision: audio generation is best-effort in V1, and pronunciation audio reads only the vocabulary item itself.
-- Reasoning: missing audio should not destroy an otherwise usable pack, and vocabulary-only audio keeps the first implementation narrower and cheaper.
+- Decision: audio generation is best-effort in V1, and pronunciation audio covers both the vocabulary item and generated example sentences.
+- Reasoning: missing audio should not destroy an otherwise usable pack, and example sentence audio better supports listening practice around the generated context.
 - Consequence: the workflow should persist warning state for missing audio instead of failing the whole job.
 
 ### Image generation exposure

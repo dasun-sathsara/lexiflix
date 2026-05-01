@@ -85,6 +85,13 @@
       "when": 1779507110490,
       "tag": "0011_furry_komodo",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780252800000,
+      "tag": "0012_azure_mai_sentence_audio",
+      "breakpoints": true
     }
   ]
 }

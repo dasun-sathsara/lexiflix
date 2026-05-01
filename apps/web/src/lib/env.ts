@@ -73,8 +73,17 @@ const serverSchema = z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
       .default("gemini-3.1-flash-lite"),
-    CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("aws-polly"),
+    CONTENT_GENERATION_AUDIO_PROVIDER: z
+      .enum(["disabled", "aws-polly", "azure-mai"])
+      .default("azure-mai"),
     CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
+    AZURE_SPEECH_REGION: z.string().min(1).default("eastus2"),
+    AZURE_SPEECH_API_KEY: z.string().min(1).optional(),
+    AZURE_SPEECH_CONCURRENCY: z.coerce.number().int().positive().default(4),
+    AZURE_SPEECH_MAX_RETRIES: z.coerce.number().int().nonnegative().default(2),
+    AZURE_MAI_VOICE_MALE: z.string().min(1).default("en-US-Jasper:MAI-Voice-1"),
+    AZURE_MAI_VOICE_FEMALE: z.string().min(1).default("en-US-June:MAI-Voice-1"),
+    AZURE_MAI_VOICE_STYLE: z.string().min(1).default("learning"),
     AWS_POLLY_REGION: z.string().min(1).default("us-east-1"),
     AWS_POLLY_ACCESS_KEY_ID: z.string().min(1).optional(),
     AWS_POLLY_SECRET_ACCESS_KEY: z.string().min(1).optional(),
@@ -100,12 +109,9 @@ const serverSchema = z
   })
   .superRefine((value, context) => {
     const pollyNeedsAwsCredentials = value.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly";
+    const azureNeedsSpeechCredentials = value.CONTENT_GENERATION_AUDIO_PROVIDER === "azure-mai";
 
-    if (!pollyNeedsAwsCredentials) {
-      return;
-    }
-
-    if (!value.AWS_POLLY_ACCESS_KEY_ID) {
+    if (pollyNeedsAwsCredentials && !value.AWS_POLLY_ACCESS_KEY_ID) {
       context.addIssue({
         code: "custom",
         path: ["AWS_POLLY_ACCESS_KEY_ID"],
@@ -113,11 +119,19 @@ const serverSchema = z
       });
     }
 
-    if (!value.AWS_POLLY_SECRET_ACCESS_KEY) {
+    if (pollyNeedsAwsCredentials && !value.AWS_POLLY_SECRET_ACCESS_KEY) {
       context.addIssue({
         code: "custom",
         path: ["AWS_POLLY_SECRET_ACCESS_KEY"],
         message: "AWS_POLLY_SECRET_ACCESS_KEY is required when using aws-polly",
+      });
+    }
+
+    if (azureNeedsSpeechCredentials && !value.AZURE_SPEECH_API_KEY) {
+      context.addIssue({
+        code: "custom",
+        path: ["AZURE_SPEECH_API_KEY"],
+        message: "AZURE_SPEECH_API_KEY is required when using azure-mai",
       });
     }
   });
