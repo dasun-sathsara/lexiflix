@@ -123,3 +123,4 @@ desktop.ini
 gha-creds-*.json
 WARP.md
 .serena
+.trigger/

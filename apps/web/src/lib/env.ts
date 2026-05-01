@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
 import { z } from "zod";
-
-dotenv.config();
 
 function formatEnvIssues(error: z.ZodError) {
   return error.issues.map((issue) => {
@@ -40,20 +37,89 @@ const clientSchema = z.object({
     .default(process.env.NODE_ENV as "development" | "test" | "production"),
 });
 
-const serverSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
-  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
-  GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
-  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
-  R2_ACCESS_KEY_ID: z.string().min(1, "R2_ACCESS_KEY_ID is required"),
-  R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
-  R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
-  R2_ENDPOINT: z.string().min(1, "R2_ENDPOINT is required"),
-  R2_PUBLIC_BASE_URL: z.url("R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com"),
-  TMDB_API_KEY: z.string().min(1, "TMDB_API_KEY is required"),
-});
+const serverSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+    AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+    GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+    GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+    OPENSUBTITLES_API_KEY: z.string().min(1, "OPENSUBTITLES_API_KEY is required"),
+    OPENSUBTITLES_USERNAME: z.string().min(1, "OPENSUBTITLES_USERNAME is required"),
+    OPENSUBTITLES_PASSWORD: z.string().min(1, "OPENSUBTITLES_PASSWORD is required"),
+    OPENSUBTITLES_API_BASE_URL: z
+      .url("OPENSUBTITLES_API_BASE_URL must be a valid URL")
+      .default("https://api.opensubtitles.com/api/v1"),
+    OPENSUBTITLES_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive("OPENSUBTITLES_REQUEST_TIMEOUT_MS must be a positive integer")
+      .default(20_000),
+    RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+    R2_ACCESS_KEY_ID: z.string().min(1, "R2_ACCESS_KEY_ID is required"),
+    R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
+    R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
+    R2_ENDPOINT: z.string().min(1, "R2_ENDPOINT is required"),
+    R2_PUBLIC_BASE_URL: z.url(
+      "R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com",
+    ),
+    GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+    TRIGGER_SECRET_KEY: z.string().min(1, "TRIGGER_SECRET_KEY is required"),
+    ANALYSIS_LLM_MODEL: z
+      .string()
+      .min(1, "ANALYSIS_LLM_MODEL must not be empty")
+      .default("gemini-3.1-flash-lite-preview"),
+    CONTENT_GENERATION_TEXT_MODEL: z
+      .string()
+      .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
+      .default("gemini-3.1-flash-lite-preview"),
+    CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("mock"),
+    CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
+    AWS_POLLY_REGION: z.string().min(1).default("us-east-1"),
+    AWS_POLLY_ACCESS_KEY_ID: z.string().min(1).optional(),
+    AWS_POLLY_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+    AWS_POLLY_ENGINE: z.enum(["standard", "neural"]).default("standard"),
+    AWS_POLLY_STANDARD_VOICE_ID: z.string().min(1).default("Joanna"),
+    AWS_POLLY_NEURAL_VOICE_ID: z.string().min(1).default("Matthew"),
+    AWS_POLLY_CONCURRENCY: z.coerce.number().int().positive().default(5),
+    AWS_POLLY_MAX_RETRIES: z.coerce.number().int().nonnegative().default(2),
+    CONTENT_GENERATION_IMAGE_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+    CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).default("mock"),
+    CONTENT_GENERATION_IMAGE_CONCURRENCY: z.coerce.number().int().positive().default(3),
+    NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
+    NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive("NLP_SERVICE_REQUEST_TIMEOUT_MS must be a positive integer")
+      .default(60_000),
+    TMDB_API_KEY: z.string().min(1, "TMDB_API_KEY is required"),
+  })
+  .superRefine((value, context) => {
+    const pollyNeedsAwsCredentials = value.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly";
+
+    if (!pollyNeedsAwsCredentials) {
+      return;
+    }
+
+    if (!value.AWS_POLLY_ACCESS_KEY_ID) {
+      context.addIssue({
+        code: "custom",
+        path: ["AWS_POLLY_ACCESS_KEY_ID"],
+        message: "AWS_POLLY_ACCESS_KEY_ID is required when using aws-polly",
+      });
+    }
+
+    if (!value.AWS_POLLY_SECRET_ACCESS_KEY) {
+      context.addIssue({
+        code: "custom",
+        path: ["AWS_POLLY_SECRET_ACCESS_KEY"],
+        message: "AWS_POLLY_SECRET_ACCESS_KEY is required when using aws-polly",
+      });
+    }
+  });
 
 const isServer = typeof window === "undefined";
 

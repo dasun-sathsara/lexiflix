@@ -1,9 +1,10 @@
-import { Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb-shared";
 
 interface MediaCardProps {
   media: TMDBResult;
@@ -16,9 +17,7 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
   const title = media.title || media.name || "Untitled";
   const date = media.release_date || media.first_air_date;
   const year = date ? new Date(date).getFullYear() : "Unknown";
-  const posterUrl = media.poster_path
-    ? `${IMAGE_BASE_URL}${TMDB_IMAGE_SIZES.poster.md}${media.poster_path}`
-    : null;
+  const posterUrl = buildTmdbImageUrl(media.poster_path, TMDB_IMAGE_SIZES.poster.md);
 
   const genres = media.genre_ids
     .slice(0, 2)
@@ -26,15 +25,18 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
     .filter(Boolean);
 
   return (
-    <Link href={`/media/${media.id}`} className="group block h-full">
-      <Card className="h-full overflow-hidden p-1 gap-2 border border-transparent bg-transparent transition-all duration-300 group-hover:scale-[1.03] group-hover:border-indigo-200/40 group-hover:shadow-lg group-hover:shadow-indigo-500/5 dark:group-hover:border-indigo-500/20">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted">
+    <Link
+      href={`/media/${media.id}?type=${isMovie ? "movie" : "tv"}`}
+      className="group block h-full"
+    >
+      <Card className="h-full gap-2.5 overflow-hidden p-1.5 transition-colors duration-200 ease-out group-hover:border-primary/25 group-hover:bg-muted/30">
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-muted">
           {posterUrl ? (
             <Image
               src={posterUrl}
               alt={title}
               fill
-              className="object-cover transition-opacity duration-300 group-hover:opacity-90"
+              className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
             />
           ) : (
@@ -44,34 +46,34 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
           )}
           <div className="absolute right-2 top-2">
             <Badge
-              variant="secondary"
-              className="flex items-center gap-1 bg-black/60 text-white backdrop-blur-sm hover:bg-black/80"
+              variant="outline"
+              className="border-white/15 bg-black/60 text-white backdrop-blur-sm"
             >
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <Star className="size-3 fill-yellow-400 text-yellow-400" />
               {media.vote_average.toFixed(1)}
             </Badge>
           </div>
         </div>
 
-        <CardContent className="p-2">
-          <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground group-hover:text-primary">
+        <CardContent className="flex min-h-[112px] flex-col px-1.5 pb-1">
+          <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground transition-colors duration-200 group-hover:text-primary">
             {title}
           </h3>
-          <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
             <span>
               {year} • {isMovie ? "Movie" : "TV"}
             </span>
           </div>
-          <div className="mt-1.5 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap gap-1">
             {genres.map((genre) => (
-              <Badge
-                key={genre}
-                variant="secondary"
-                className="h-5 px-1.5 text-[10px] border border-indigo-200/60 bg-indigo-500/10 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
-              >
+              <Badge key={genre} variant="secondary">
                 {genre}
               </Badge>
             ))}
+          </div>
+          <div className="mt-auto flex items-center justify-between pt-3 text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+            <span>Open title</span>
+            <ArrowRight className="size-3.5" />
           </div>
         </CardContent>
       </Card>

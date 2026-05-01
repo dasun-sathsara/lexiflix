@@ -1,22 +1,25 @@
+import "server-only";
+
 import { env } from "@/lib/env";
+import type {
+  GenreResponse,
+  TMDBMediaType,
+  TMDBMovieDetails,
+  TMDBResponse,
+  TMDBResult,
+  TMDBTvDetails,
+  TMDBTvSeasonDetails,
+} from "@/lib/tmdb-shared";
 
 const BASE_URL = "https://api.themoviedb.org/3";
-export const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 
-export const TMDB_IMAGE_SIZES = {
-  poster: {
-    sm: "/w342",
-    md: "/w500",
-    lg: "/w780",
-    original: "/original",
-  },
-  backdrop: {
-    sm: "/w300",
-    md: "/w780",
-    lg: "/w1280",
-    original: "/original",
-  },
-};
+export type {
+  TMDBMediaType,
+  TMDBMovieDetails,
+  TMDBResult,
+  TMDBTvDetails,
+  TMDBTvSeasonDetails,
+} from "@/lib/tmdb-shared";
 
 type FetchOptions = {
   tags?: string[];
@@ -51,45 +54,12 @@ async function fetchTMDB<T>(
   return res.json();
 }
 
-// Types
-export interface TMDBResult {
-  id: number;
-  title?: string; // Movie
-  name?: string; // TV
-  poster_path: string | null;
-  backdrop_path: string | null;
-  overview: string;
-  vote_average: number;
-  vote_count: number;
-  release_date?: string; // Movie
-  first_air_date?: string; // TV
-  genre_ids: number[];
-  media_type?: "movie" | "tv" | "person";
-  original_language?: string;
-}
-
-export interface TMDBResponse<T> {
-  page: number;
-  results: T[];
-  total_pages: number;
-  total_results: number;
-}
-
-export interface Genre {
-  id: number;
-  name: string;
-}
-
-export interface GenreResponse {
-  genres: Genre[];
-}
-
 // API Functions
 
 export async function getGenres(type: "movie" | "tv") {
   return fetchTMDB<GenreResponse>(
     `/genre/${type}/list`,
-    {},
+    { language: "en-US" },
     { tags: [`genres-${type}`], revalidate: 86400 },
   ); // Cache for 24 hours
 }
@@ -101,6 +71,8 @@ export async function discoverMedia(
   // Hard filters: English language only, min 1000 votes
   const finalParams = {
     ...params,
+    language: "en-US",
+    include_adult: false,
     with_original_language: "en",
     "vote_count.gte": 1000,
   };
@@ -113,7 +85,7 @@ export async function discoverMedia(
 export async function searchMedia(query: string, type: "movie" | "tv", page: number = 1) {
   const data = await fetchTMDB<TMDBResponse<TMDBResult>>(
     `/search/${type}`,
-    { query, page },
+    { query, page, language: "en-US", include_adult: false },
     { tags: [`search-${type}-${query}`] },
   );
 
@@ -124,4 +96,48 @@ export async function searchMedia(query: string, type: "movie" | "tv", page: num
   // );
 
   return data;
+}
+
+export async function getMovieDetails(movieId: number) {
+  return fetchTMDB<TMDBMovieDetails>(
+    `/movie/${movieId}`,
+    {
+      append_to_response: "external_ids,release_dates",
+      language: "en-US",
+    },
+    {
+      tags: [`movie-details-${movieId}`],
+    },
+  );
+}
+
+export async function getTvDetails(tvId: number) {
+  return fetchTMDB<TMDBTvDetails>(
+    `/tv/${tvId}`,
+    {
+      append_to_response: "external_ids,content_ratings",
+      language: "en-US",
+    },
+    {
+      tags: [`tv-details-${tvId}`],
+    },
+  );
+}
+
+export async function getTvSeasonDetails(tvId: number, seasonNumber: number) {
+  return fetchTMDB<TMDBTvSeasonDetails>(
+    `/tv/${tvId}/season/${seasonNumber}`,
+    { language: "en-US" },
+    {
+      tags: [`tv-season-details-${tvId}-${seasonNumber}`],
+    },
+  );
+}
+
+export async function getMediaDetails(mediaType: TMDBMediaType, tmdbId: number) {
+  if (mediaType === "movie") {
+    return getMovieDetails(tmdbId);
+  }
+
+  return getTvDetails(tmdbId);
 }

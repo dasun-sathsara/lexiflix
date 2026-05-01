@@ -29,6 +29,41 @@
       "when": 1770535660818,
       "tag": "0003_young_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775497418278,
+      "tag": "0004_goofy_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775497419408,
+      "tag": "0005_curated_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777096931475,
+      "tag": "0006_elite_the_hand",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777146733947,
+      "tag": "0007_pack_item_due_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777299972043,
+      "tag": "0008_wonderful_titania",
+      "breakpoints": true
     }
   ]
 }

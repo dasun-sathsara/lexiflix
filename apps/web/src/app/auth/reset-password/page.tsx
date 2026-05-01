@@ -10,7 +10,7 @@ function ResetPasswordContent() {
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-center lg:gap-16 xl:gap-20">
             <section className="order-2 flex flex-col gap-10 text-center lg:order-1 lg:text-left">
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-200/60 bg-purple-50/70 px-4 py-2 text-sm font-medium text-purple-600 shadow-sm backdrop-blur dark:border-purple-500/40 dark:bg-purple-500/15 dark:text-purple-200">
-                <span className="size-2 rounded-full bg-purple-500 shadow-[0_0_0_4px_rgba(168,85,247,0.18)]" />
+                <span className="size-2 rounded-full bg-purple-500 ring-4 ring-purple-500/20" />
                 Reset Your Password
               </div>
               <header className="space-y-5">

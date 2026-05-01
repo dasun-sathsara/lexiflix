@@ -1,70 +1,34 @@
 "use client";
 
-import {
-  Bell,
-  CheckCircle2,
-  GraduationCap,
-  Loader2,
-  ShieldAlert,
-  ShieldCheck,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  type ChangeEvent,
-  type FormEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import type { FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+import { AppPageHeader } from "@/components/common/app-page-header";
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
-import { changePasswordAction, deleteAccountAction } from "@/features/settings/actions";
+import type { CefrLevel } from "@/features/assessment/lib/types";
+import {
+  changePasswordAction,
+  deleteAccountAction,
+  updateProfileAction,
+  updateSettingsPreferencesAction,
+} from "@/features/settings/actions";
+import {
+  getEffectiveCefrLevel,
+  getInitials,
+  type ManualOverrideSelection,
+  normalizeCustomInstructions,
+  type SettingsTab,
+  type StatusState,
+  toSettingsTab,
+} from "@/features/settings/components/_utils";
+import { DeleteAccountCard } from "@/features/settings/components/delete-account-card";
+import { PasswordSettingsCard } from "@/features/settings/components/password-settings-card";
+import { PreferencesSettingsCard } from "@/features/settings/components/preferences-settings-card";
+import { ProfileSettingsCard } from "@/features/settings/components/profile-settings-card";
 import type { SettingsPreferences } from "@/features/settings/types";
-
-type StatusState = {
-  type: "success" | "error";
-  message: string;
-} | null;
 
 type SettingsClientProps = {
   user: {
@@ -75,13 +39,11 @@ type SettingsClientProps = {
   preferences: SettingsPreferences;
 };
 
-type ManualOverrideSelection = CefrLevel | "assessed";
-type SettingsTab = "account" | "preferences";
-
-function toSettingsTab(value: string | null): SettingsTab {
-  return value === "preferences" ? "preferences" : "account";
-}
-
+/**
+ * Top-level settings page client component. Owns all form state, validation,
+ * and submission logic across the account, password, preferences, and
+ * delete-account sections, delegating rendering to focused sub-components.
+ */
 export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,6 +51,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const tabParam = searchParams.get("tab");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // -- Profile state ----------------------------------------------------------
   const [initialProfile, setInitialProfile] = useState(() => ({
     name: user.name,
     avatar: user.image ?? null,
@@ -100,29 +63,58 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [profileStatus, setProfileStatus] = useState<StatusState>(null);
 
+  // -- Password state ---------------------------------------------------------
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordStatus, setPasswordStatus] = useState<StatusState>(null);
 
+  // -- Delete state -----------------------------------------------------------
   const [deleteStatus, setDeleteStatus] = useState<StatusState>(null);
-  const [preferencesStatus, setPreferencesStatus] = useState<StatusState>(null);
 
+  // -- Preferences state ------------------------------------------------------
+  const [preferencesStatus, setPreferencesStatus] = useState<StatusState>(null);
   const [initialPreferences, setInitialPreferences] = useState(preferences);
   const [manualOverrideSelection, setManualOverrideSelection] = useState<ManualOverrideSelection>(
     preferences.manualOverrideLevel ?? "assessed",
   );
-  const [dailyWordsGoal, setDailyWordsGoal] = useState(String(preferences.dailyWordsGoal));
+  const [newCardsPerDay, setNewCardsPerDay] = useState(String(preferences.newCardsPerDay));
+  const [frequencyPreference, setFrequencyPreference] = useState(preferences.frequencyPreference);
+  const [studyVocabularyTypes, setStudyVocabularyTypes] = useState(
+    preferences.studyVocabularyTypes,
+  );
+  const [generationPackSizeDefault, setGenerationPackSizeDefault] = useState(
+    String(preferences.generationPackSizeDefault),
+  );
+  const [generationCefrWindowMode, setGenerationCefrWindowMode] = useState(
+    preferences.generationCefrWindowMode,
+  );
+  const [generationKnownTermHandling, setGenerationKnownTermHandling] = useState(
+    preferences.generationKnownTermHandling,
+  );
+  const [generationExampleSentenceCount, setGenerationExampleSentenceCount] = useState(
+    String(preferences.generationExampleSentenceCount),
+  );
+  const [generationCustomInstructionsDefault, setGenerationCustomInstructionsDefault] = useState(
+    preferences.generationCustomInstructionsDefault ?? "",
+  );
   const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(
     preferences.emailRemindersEnabled,
   );
   const [streakAlertsEnabled, setStreakAlertsEnabled] = useState(preferences.streakAlertsEnabled);
 
+  // -- Transition wrappers ----------------------------------------------------
   const [isSavingProfile, startSavingProfile] = useTransition();
   const [isSavingPreferences, startSavingPreferences] = useTransition();
   const [isUpdatingPassword, startUpdatingPassword] = useTransition();
   const [isDeletingAccount, startDeletingAccount] = useTransition();
+
+  // -- Tab state --------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => toSettingsTab(tabParam));
+
+  // ---------------------------------------------------------------------------
+  // Effects
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     return () => {
@@ -136,16 +128,11 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     setActiveTab(toSettingsTab(tabParam));
   }, [tabParam]);
 
-  const initials = useMemo(
-    () =>
-      displayName
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0]?.toUpperCase() ?? "")
-        .join("")
-        .slice(0, 2) || "LX",
-    [displayName],
-  );
+  // ---------------------------------------------------------------------------
+  // Derived values
+  // ---------------------------------------------------------------------------
+
+  const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   const trimmedDisplayName = displayName.trim();
   const nameIsValid = trimmedDisplayName.length >= 2 && trimmedDisplayName.length <= 80;
@@ -153,7 +140,6 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const avatarChanged =
     removeAvatar || avatarFile !== null || avatarPreview !== initialProfile.avatar;
   const hasProfileChanges = nameChanged || avatarChanged;
-
   const profileSubmitDisabled = isSavingProfile || !nameIsValid || !hasProfileChanges;
 
   const passwordSubmitDisabled =
@@ -163,75 +149,56 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     !confirmPassword.trim() ||
     newPassword.length < 8;
 
-  const parsedDailyWordsGoal = Number.parseInt(dailyWordsGoal, 10);
-  const dailyWordsGoalIsValid =
-    Number.isInteger(parsedDailyWordsGoal) &&
-    parsedDailyWordsGoal >= 1 &&
-    parsedDailyWordsGoal <= 500;
+  const parsedNewCardsPerDay = Number.parseInt(newCardsPerDay, 10);
+  const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
+  const parsedGenerationExampleSentenceCount = Number.parseInt(generationExampleSentenceCount, 10);
+
+  const normalizedCustomInstructions = normalizeCustomInstructions(
+    generationCustomInstructionsDefault,
+  );
+
   const manualOverrideLevel: CefrLevel | null =
     manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
+
   const preferencesChanged =
     manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
-    parsedDailyWordsGoal !== initialPreferences.dailyWordsGoal ||
+    parsedNewCardsPerDay !== initialPreferences.newCardsPerDay ||
+    frequencyPreference !== initialPreferences.frequencyPreference ||
+    [...studyVocabularyTypes].sort().join("|") !==
+      [...initialPreferences.studyVocabularyTypes].sort().join("|") ||
+    parsedGenerationPackSize !== initialPreferences.generationPackSizeDefault ||
+    generationCefrWindowMode !== initialPreferences.generationCefrWindowMode ||
+    generationKnownTermHandling !== initialPreferences.generationKnownTermHandling ||
+    parsedGenerationExampleSentenceCount !== initialPreferences.generationExampleSentenceCount ||
+    normalizedCustomInstructions !== initialPreferences.generationCustomInstructionsDefault ||
     emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
     streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
+
   const preferencesSubmitDisabled =
-    isSavingPreferences || !dailyWordsGoalIsValid || !preferencesChanged;
-  const effectiveCefrLevel = manualOverrideLevel ?? initialPreferences.assessedLevel;
+    isSavingPreferences ||
+    !(
+      Number.isInteger(parsedNewCardsPerDay) &&
+      parsedNewCardsPerDay >= 1 &&
+      parsedNewCardsPerDay <= 100
+    ) ||
+    !(
+      Number.isInteger(parsedGenerationPackSize) &&
+      parsedGenerationPackSize >= 1 &&
+      parsedGenerationPackSize <= 100
+    ) ||
+    !(parsedGenerationExampleSentenceCount >= 1 && parsedGenerationExampleSentenceCount <= 3) ||
+    generationCustomInstructionsDefault.trim().length > 1200 ||
+    studyVocabularyTypes.length === 0 ||
+    !preferencesChanged;
 
-  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+  const effectiveCefrLevel = getEffectiveCefrLevel(
+    manualOverrideLevel,
+    initialPreferences.assessedLevel,
+  );
 
-    if (avatarPreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setAvatarPreview(objectUrl);
-    setAvatarFile(file);
-    setAvatarFileName(file.name);
-    setRemoveAvatar(false);
-    setProfileStatus(null);
-  };
-
-  const clearFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleAvatarReset = () => {
-    if (avatarPreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-
-    setAvatarPreview(initialProfile.avatar);
-    setAvatarFile(null);
-    setAvatarFileName(null);
-    setRemoveAvatar(false);
-    clearFileInput();
-    setProfileStatus(null);
-  };
-
-  const handleAvatarRemove = () => {
-    if (!initialProfile.avatar && !avatarPreview && !avatarFile) {
-      return;
-    }
-
-    if (avatarPreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(avatarPreview);
-    }
-
-    setAvatarPreview(null);
-    setAvatarFile(null);
-    setAvatarFileName(null);
-    setRemoveAvatar(true);
-    clearFileInput();
-    setProfileStatus(null);
-  };
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
 
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -253,21 +220,16 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
     startSavingProfile(async () => {
       try {
-        const response = await fetch("/api/settings/profile", {
-          method: "POST",
-          body: formData,
-        });
-        const payload = await response.json();
+        const result = await updateProfileAction(formData);
 
-        if (!response.ok || !payload.success) {
-          const message = payload.error || "Failed to update profile.";
-          setProfileStatus({ type: "error", message });
-          toast.error(message);
+        if (!result.ok) {
+          setProfileStatus({ type: "error", message: result.error });
+          toast.error(result.error);
           return;
         }
 
-        const nextName: string = payload.user?.name ?? trimmedDisplayName;
-        const nextImage: string | null = payload.user?.image ?? null;
+        const nextName = result.data.user.name;
+        const nextImage = result.data.user.image;
 
         setInitialProfile({
           name: nextName,
@@ -282,12 +244,17 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
           type: "success",
           message: "Profile updated successfully.",
         });
-        clearFileInput();
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         toast.success("Profile updated");
         router.refresh();
       } catch (error) {
         console.error("Failed to update profile", error);
-        setProfileStatus({ type: "error", message: "Failed to update profile." });
+        setProfileStatus({
+          type: "error",
+          message: "Failed to update profile.",
+        });
         toast.error("Failed to update profile");
       }
     });
@@ -296,38 +263,45 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const handlePreferencesSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!dailyWordsGoalIsValid || preferencesSubmitDisabled) {
+    if (preferencesSubmitDisabled) {
       return;
     }
 
     startSavingPreferences(async () => {
       try {
-        const response = await fetch("/api/settings/preferences", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            manualOverrideLevel,
-            dailyWordsGoal: parsedDailyWordsGoal,
-            emailRemindersEnabled,
-            streakAlertsEnabled,
-          }),
+        const result = await updateSettingsPreferencesAction({
+          manualOverrideLevel,
+          newCardsPerDay: parsedNewCardsPerDay,
+          frequencyPreference,
+          studyVocabularyTypes,
+          generationPackSizeDefault: parsedGenerationPackSize,
+          generationCefrWindowMode,
+          generationKnownTermHandling,
+          generationExampleSentenceCount: parsedGenerationExampleSentenceCount as 1 | 2 | 3,
+          generationCustomInstructionsDefault: normalizedCustomInstructions,
+          emailRemindersEnabled,
+          streakAlertsEnabled,
         });
 
-        const payload = await response.json();
-
-        if (!response.ok || !payload.success) {
-          const message = payload.error || "Failed to update preferences.";
-          setPreferencesStatus({ type: "error", message });
-          toast.error(message);
+        if (!result.ok) {
+          setPreferencesStatus({ type: "error", message: result.error });
+          toast.error(result.error);
           return;
         }
 
-        const nextPreferences = payload.preferences as SettingsPreferences;
+        const nextPreferences = result.data.preferences;
         setInitialPreferences(nextPreferences);
         setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
-        setDailyWordsGoal(String(nextPreferences.dailyWordsGoal));
+        setNewCardsPerDay(String(nextPreferences.newCardsPerDay));
+        setFrequencyPreference(nextPreferences.frequencyPreference);
+        setStudyVocabularyTypes(nextPreferences.studyVocabularyTypes);
+        setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
+        setGenerationCefrWindowMode(nextPreferences.generationCefrWindowMode);
+        setGenerationKnownTermHandling(nextPreferences.generationKnownTermHandling);
+        setGenerationExampleSentenceCount(String(nextPreferences.generationExampleSentenceCount));
+        setGenerationCustomInstructionsDefault(
+          nextPreferences.generationCustomInstructionsDefault ?? "",
+        );
         setEmailRemindersEnabled(nextPreferences.emailRemindersEnabled);
         setStreakAlertsEnabled(nextPreferences.streakAlertsEnabled);
         setPreferencesStatus({
@@ -338,7 +312,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         router.refresh();
       } catch (error) {
         console.error("Failed to update preferences", error);
-        setPreferencesStatus({ type: "error", message: "Failed to update preferences." });
+        setPreferencesStatus({
+          type: "error",
+          message: "Failed to update preferences.",
+        });
         toast.error("Failed to update preferences");
       }
     });
@@ -365,12 +342,12 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         newPassword,
       });
 
-      if (!result.success) {
+      if (!result.ok) {
         setPasswordStatus({
           type: "error",
-          message: result.message,
+          message: result.error,
         });
-        toast.error(result.message);
+        toast.error(result.error);
         return;
       }
 
@@ -389,9 +366,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     startDeletingAccount(async () => {
       const result = await deleteAccountAction();
 
-      if (!result.success) {
-        setDeleteStatus({ type: "error", message: result.message });
-        toast.error(result.message);
+      if (!result.ok) {
+        setDeleteStatus({ type: "error", message: result.error });
+        toast.error(result.error);
         return;
       }
 
@@ -416,546 +393,118 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     }
 
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   };
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 p-6">
-      <header className="space-y-3">
-        <span className="text-xs font-semibold uppercase text-indigo-500">Settings</span>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">User settings</h1>
-          <p className="text-sm text-muted-foreground sm:text-base">
-            Manage how you show up in shared sessions and keep your LexiFlix account safeguarded.
-          </p>
-        </div>
-      </header>
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+  return (
+    <AppPageShell>
+      <AppPageHeader
+        eyebrow={
+          <span className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+            Settings
+          </span>
+        }
+        heading="User settings"
+        description="Manage how you show up in shared sessions and keep your LexiFlix account safeguarded."
+      />
+
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-4">
         <TabsList className="w-full justify-start sm:w-fit">
-          <TabsTrigger value="account" className="px-4">
-            Account
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="px-4">
-            Preferences
-          </TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="flex flex-col gap-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="flex flex-col gap-4">
               <form onSubmit={handleProfileSubmit} className="contents">
-                <Card id="profile">
-                  <CardHeader>
-                    <CardTitle>Profile</CardTitle>
-                    <CardDescription>
-                      Refresh your avatar and display name so collaborators recognize you instantly.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col gap-4 rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-5">
-                      <Avatar className="size-16 sm:size-20">
-                        {avatarPreview ? (
-                          <AvatarImage
-                            src={avatarPreview}
-                            alt="Profile preview"
-                            className="size-full object-cover"
-                          />
-                        ) : (
-                          <AvatarFallback className="text-base font-medium">
-                            {initials}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex flex-1 flex-col gap-3">
-                        <p className="text-sm text-muted-foreground">
-                          Upload a square image (JPG, PNG, or WebP). Keep it under 5 MB for the
-                          snappiest sync.
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            className="hidden"
-                            onChange={handleAvatarChange}
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Upload className="size-4" />
-                            Upload new
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleAvatarReset}
-                            disabled={!hasProfileChanges}
-                          >
-                            Reset
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleAvatarRemove}
-                            disabled={
-                              avatarPreview === null &&
-                              avatarFile === null &&
-                              !initialProfile.avatar
-                            }
-                          >
-                            Remove photo
-                          </Button>
-                          {avatarFileName ? (
-                            <span
-                              className="truncate text-xs text-muted-foreground"
-                              title={avatarFileName}
-                            >
-                              {avatarFileName}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2 space-y-2">
-                        <Label htmlFor="display-name">Display name</Label>
-                        <Input
-                          id="display-name"
-                          value={displayName}
-                          onChange={(event) => {
-                            setDisplayName(event.target.value);
-                            setProfileStatus(null);
-                          }}
-                          placeholder="Your public username"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          This appears on study leaderboards, shared packs, and invitations you
-                          send.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      {profileStatus ? (
-                        <>
-                          {profileStatus.type === "success" ? (
-                            <CheckCircle2 className="size-4 text-emerald-500" />
-                          ) : (
-                            <ShieldAlert className="size-4 text-destructive" />
-                          )}
-                          <span
-                            className={
-                              profileStatus.type === "success"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-destructive"
-                            }
-                          >
-                            {profileStatus.message}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="size-4 text-indigo-500" />
-                          <span className="text-muted-foreground">
-                            Changes save instantly across the dashboard once you hit save.
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <Button type="submit" disabled={profileSubmitDisabled}>
-                      {isSavingProfile ? (
-                        <>
-                          <Loader2 className="mr-2 size-4 animate-spin" />
-                          Saving
-                        </>
-                      ) : (
-                        "Save profile"
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <ProfileSettingsCard
+                  displayName={displayName}
+                  setDisplayName={setDisplayName}
+                  avatarPreview={avatarPreview}
+                  setAvatarPreview={setAvatarPreview}
+                  avatarFile={avatarFile}
+                  setAvatarFile={setAvatarFile}
+                  avatarFileName={avatarFileName}
+                  setAvatarFileName={setAvatarFileName}
+                  setRemoveAvatar={setRemoveAvatar}
+                  initialAvatar={initialProfile.avatar}
+                  initials={initials}
+                  hasProfileChanges={hasProfileChanges}
+                  profileStatus={profileStatus}
+                  setProfileStatus={setProfileStatus}
+                  profileSubmitDisabled={profileSubmitDisabled}
+                  isSavingProfile={isSavingProfile}
+                  fileInputRef={fileInputRef}
+                />
               </form>
 
               <form onSubmit={handlePasswordSubmit} className="contents">
-                <Card id="security">
-                  <CardHeader>
-                    <CardTitle>Password</CardTitle>
-                    <CardDescription>
-                      Rotate your credentials regularly to keep your learning streaks and billing
-                      details secure.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        autoComplete="current-password"
-                        value={currentPassword}
-                        onChange={(event) => {
-                          setCurrentPassword(event.target.value);
-                          setPasswordStatus(null);
-                        }}
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        autoComplete="new-password"
-                        value={newPassword}
-                        onChange={(event) => {
-                          setNewPassword(event.target.value);
-                          setPasswordStatus(null);
-                        }}
-                        placeholder="At least 8 characters"
-                      />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label htmlFor="confirm-password">Confirm new password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        autoComplete="new-password"
-                        value={confirmPassword}
-                        onChange={(event) => {
-                          setConfirmPassword(event.target.value);
-                          setPasswordStatus(null);
-                        }}
-                        placeholder="Repeat your new password"
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      {passwordStatus ? (
-                        <>
-                          {passwordStatus.type === "success" ? (
-                            <CheckCircle2 className="size-4 text-emerald-500" />
-                          ) : (
-                            <ShieldAlert className="size-4 text-destructive" />
-                          )}
-                          <span
-                            className={
-                              passwordStatus.type === "success"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-destructive"
-                            }
-                          >
-                            {passwordStatus.message}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="size-4 text-indigo-500" />
-                          <span className="text-muted-foreground">
-                            Use a unique phrase. We will never share it with anyone.
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <Button type="submit" disabled={passwordSubmitDisabled}>
-                      {isUpdatingPassword ? (
-                        <>
-                          <Loader2 className="mr-2 size-4 animate-spin" />
-                          Updating
-                        </>
-                      ) : (
-                        "Update password"
-                      )}
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <PasswordSettingsCard
+                  currentPassword={currentPassword}
+                  setCurrentPassword={setCurrentPassword}
+                  newPassword={newPassword}
+                  setNewPassword={setNewPassword}
+                  confirmPassword={confirmPassword}
+                  setConfirmPassword={setConfirmPassword}
+                  passwordStatus={passwordStatus}
+                  setPasswordStatus={setPasswordStatus}
+                  passwordSubmitDisabled={passwordSubmitDisabled}
+                  isUpdatingPassword={isUpdatingPassword}
+                />
               </form>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <Card id="danger" className="border-destructive/40 bg-destructive/5">
-                <CardHeader className="space-y-1.5">
-                  <CardTitle>Delete account</CardTitle>
-                  <CardDescription>Remove your LexiFlix data permanently.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  <p>
-                    Deleting your account wipes packs, progress, and billing records right away.
-                    Export anything you need before you continue.
-                  </p>
-                </CardContent>
-                <CardFooter className="flex flex-row gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {deleteStatus ? (
-                      <>
-                        {deleteStatus.type === "success" ? (
-                          <CheckCircle2 className="size-4 text-emerald-500" />
-                        ) : (
-                          <ShieldAlert className="size-4 text-destructive" />
-                        )}
-                        <span
-                          className={
-                            deleteStatus.type === "success"
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-destructive"
-                          }
-                        >
-                          {deleteStatus.message}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldAlert className="size-4 text-destructive" />
-                        <span>Only proceed if you are sure.</span>
-                      </>
-                    )}
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="px-3"
-                        disabled={isDeletingAccount}
-                      >
-                        {isDeletingAccount ? (
-                          <Loader2 className="mr-2 size-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="size-4" />
-                        )}
-                        {isDeletingAccount ? "Deleting" : "Delete account"}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action is permanent. All packs, analytics, and billing records
-                          disappear immediately.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeletingAccount}>
-                          Never mind
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/30"
-                          onClick={handleDeleteAccount}
-                          disabled={isDeletingAccount}
-                        >
-                          Delete anyway
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardFooter>
-              </Card>
+            <div className="flex flex-col gap-4">
+              <DeleteAccountCard
+                deleteStatus={deleteStatus}
+                isDeletingAccount={isDeletingAccount}
+                handleDeleteAccount={handleDeleteAccount}
+              />
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="preferences" className="mt-0">
-          <form onSubmit={handlePreferencesSubmit}>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <Card id="preferences">
-                <CardHeader>
-                  <CardTitle>Learning preferences</CardTitle>
-                  <CardDescription>
-                    Tune your CEFR level and daily pace for a personalized study flow.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-cefr-level">Current CEFR level</Label>
-                      <Select
-                        value={manualOverrideSelection}
-                        onValueChange={(value) => {
-                          if (value === "assessed" || CEFR_LEVELS.includes(value as CefrLevel)) {
-                            setManualOverrideSelection(value as ManualOverrideSelection);
-                          }
-                          setPreferencesStatus(null);
-                        }}
-                      >
-                        <SelectTrigger id="current-cefr-level" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="assessed">
-                            Use assessment result
-                            {initialPreferences.assessedLevel
-                              ? ` (${initialPreferences.assessedLevel})`
-                              : ""}
-                          </SelectItem>
-                          {CEFR_LEVELS.map((level) => (
-                            <SelectItem key={level} value={level}>
-                              {level}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        Effective level:{" "}
-                        {effectiveCefrLevel ? (
-                          <Badge variant="secondary" className="ml-1">
-                            {effectiveCefrLevel}
-                          </Badge>
-                        ) : (
-                          "Not assessed yet"
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="target-language">Target language</Label>
-                      <Input
-                        id="target-language"
-                        value={initialPreferences.targetLanguage}
-                        readOnly
-                        disabled
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Multi-language support is coming soon.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="daily-words-goal">Daily words goal</Label>
-                    <Input
-                      id="daily-words-goal"
-                      type="number"
-                      min={1}
-                      max={500}
-                      value={dailyWordsGoal}
-                      onChange={(event) => {
-                        setDailyWordsGoal(event.target.value);
-                        setPreferencesStatus(null);
-                      }}
-                      placeholder="20"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Recommended range: 10-40 words per day.
-                    </p>
-                    {!dailyWordsGoalIsValid ? (
-                      <p className="text-xs text-destructive">
-                        Enter a whole number between 1 and 500.
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Retake CEFR assessment</p>
-                      <p className="text-sm text-muted-foreground">
-                        Run a new adaptive test if you want a fresh estimated level.
-                      </p>
-                    </div>
-                    <Button type="button" variant="outline" asChild>
-                      <Link href="/onboarding/assessment">
-                        <GraduationCap className="size-4" />
-                        Retake assessment
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card id="preferences-notifications">
-                <CardHeader>
-                  <CardTitle>Notifications</CardTitle>
-                  <CardDescription>Control reminders and streak alerts.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="space-y-1">
-                      <p className="font-medium">Email reminders</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receive a reminder email when your study queue is waiting.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={emailRemindersEnabled}
-                      onCheckedChange={(checked) => {
-                        setEmailRemindersEnabled(checked);
-                        setPreferencesStatus(null);
-                      }}
-                      aria-label="Toggle email reminders"
-                    />
-                  </div>
-
-                  <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-                    <div className="space-y-1">
-                      <p className="font-medium">Streak alerts</p>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified when your current streak is at risk.
-                      </p>
-                    </div>
-                    <Switch
-                      checked={streakAlertsEnabled}
-                      onCheckedChange={(checked) => {
-                        setStreakAlertsEnabled(checked);
-                        setPreferencesStatus(null);
-                      }}
-                      aria-label="Toggle streak alerts"
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-3">
-                  <div className="flex w-full items-center gap-2 text-sm">
-                    {preferencesStatus ? (
-                      <>
-                        {preferencesStatus.type === "success" ? (
-                          <CheckCircle2 className="size-4 text-emerald-500" />
-                        ) : (
-                          <ShieldAlert className="size-4 text-destructive" />
-                        )}
-                        <span
-                          className={
-                            preferencesStatus.type === "success"
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-destructive"
-                          }
-                        >
-                          {preferencesStatus.message}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Bell className="size-4 text-indigo-500" />
-                        <span className="text-muted-foreground">
-                          Personalization updates apply immediately after saving.
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <Button type="submit" disabled={preferencesSubmitDisabled} className="w-full">
-                    {isSavingPreferences ? (
-                      <>
-                        <Loader2 className="mr-2 size-4 animate-spin" />
-                        Saving
-                      </>
-                    ) : (
-                      "Save preferences"
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          </form>
+          <PreferencesSettingsCard
+            initialPreferences={initialPreferences}
+            manualOverrideSelection={manualOverrideSelection}
+            setManualOverrideSelection={setManualOverrideSelection}
+            newCardsPerDay={newCardsPerDay}
+            setNewCardsPerDay={setNewCardsPerDay}
+            frequencyPreference={frequencyPreference}
+            setFrequencyPreference={setFrequencyPreference}
+            studyVocabularyTypes={studyVocabularyTypes}
+            setStudyVocabularyTypes={setStudyVocabularyTypes}
+            generationPackSizeDefault={generationPackSizeDefault}
+            setGenerationPackSizeDefault={setGenerationPackSizeDefault}
+            generationCefrWindowMode={generationCefrWindowMode}
+            setGenerationCefrWindowMode={setGenerationCefrWindowMode}
+            generationKnownTermHandling={generationKnownTermHandling}
+            setGenerationKnownTermHandling={setGenerationKnownTermHandling}
+            generationExampleSentenceCount={generationExampleSentenceCount}
+            setGenerationExampleSentenceCount={setGenerationExampleSentenceCount}
+            generationCustomInstructionsDefault={generationCustomInstructionsDefault}
+            setGenerationCustomInstructionsDefault={setGenerationCustomInstructionsDefault}
+            emailRemindersEnabled={emailRemindersEnabled}
+            setEmailRemindersEnabled={setEmailRemindersEnabled}
+            streakAlertsEnabled={streakAlertsEnabled}
+            setStreakAlertsEnabled={setStreakAlertsEnabled}
+            effectiveCefrLevel={effectiveCefrLevel}
+            preferencesStatus={preferencesStatus}
+            setPreferencesStatus={setPreferencesStatus}
+            preferencesSubmitDisabled={preferencesSubmitDisabled}
+            isSavingPreferences={isSavingPreferences}
+            handlePreferencesSubmit={handlePreferencesSubmit}
+          />
         </TabsContent>
       </Tabs>
-    </div>
+    </AppPageShell>
   );
 }

@@ -6,7 +6,40 @@ import { env } from "./env";
 import { db } from "./server/db";
 import { deleteObjectByUrl } from "./storage/r2";
 
+const baseURL = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const ADMIN_EMAILS = new Set(["dasunx.pm@gmail.com"]);
+
+const trustedOrigins = (() => {
+  const origins = new Set<string>(["http://localhost:3000", baseURL]);
+
+  try {
+    const url = new URL(baseURL);
+
+    if (!url.hostname.startsWith("www.")) {
+      origins.add(`${url.protocol}//www.${url.host}`);
+    }
+  } catch {
+    // Ignore malformed URLs here; env validation already handles the public URL shape.
+  }
+
+  return [...origins];
+})();
+
+export function isAdminEmail(email: string | null | undefined) {
+  if (!email) {
+    return false;
+  }
+
+  return ADMIN_EMAILS.has(email.trim().toLowerCase());
+}
+
+export function getRoleForEmail(email: string | null | undefined) {
+  return isAdminEmail(email) ? "admin" : "learner";
+}
+
 export const auth = betterAuth({
+  baseURL,
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "pg",
   }),

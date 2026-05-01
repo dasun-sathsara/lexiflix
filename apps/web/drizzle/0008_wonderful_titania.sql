@@ -1,0 +1,1 @@
+ALTER TABLE "user_preferences" RENAME COLUMN "daily_words_goal" TO "new_cards_per_day";

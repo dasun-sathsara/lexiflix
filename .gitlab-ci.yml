@@ -1,0 +1,44 @@
+stages:
+  - build
+
+variables:
+  DOCKER_BUILDKIT: "1"
+  DOCKER_TLS_CERTDIR: "/certs"
+  NLP_IMAGE: "$CI_REGISTRY_IMAGE/lexiflix-nlp-service"
+  NLP_CACHE_IMAGE: "$CI_REGISTRY_IMAGE/lexiflix-nlp-service:buildcache"
+
+nlp_service_image:
+  stage: build
+  image: docker:27.5.1
+  services:
+    - name: docker:27.5.1-dind
+      command: ["--mtu=1460"]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"'
+      changes:
+        - apps/nlp_service/**/*
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  before_script:
+    - docker info
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
+    - docker context create lexiflix-dind
+    - docker buildx create lexiflix-dind --use --name lexiflix-builder
+  script:
+    - |
+      set -eu
+
+      TAG_ARGS="--tag ${NLP_IMAGE}:${CI_COMMIT_REF_SLUG} --tag ${NLP_IMAGE}:sha-${CI_COMMIT_SHORT_SHA}"
+      if [ "${CI_COMMIT_BRANCH:-}" = "main" ]; then
+        TAG_ARGS="${TAG_ARGS} --tag ${NLP_IMAGE}:latest"
+      fi
+
+      docker buildx build \
+        --platform linux/amd64 \
+        --file apps/nlp_service/Dockerfile \
+        --build-arg SPACY_MODEL=en_core_web_trf \
+        --build-arg UV_HTTP_TIMEOUT=120 \
+        --cache-from type=registry,ref="${NLP_CACHE_IMAGE}" \
+        --cache-to type=registry,ref="${NLP_CACHE_IMAGE}",mode=max \
+        ${TAG_ARGS} \
+        --push \
+        apps/nlp_service
