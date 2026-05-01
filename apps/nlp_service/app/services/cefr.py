@@ -154,6 +154,7 @@ class EFLLexLexicon:
         return self._signal_from_aggregate(aggregate)
 
     def _load(self) -> None:
+        """Read the bundled EFLLex TSV and populate lemma/POS lookup tables."""
         path = self._resolve_dataset_path()
         if path is None:
             logger.warning(
@@ -192,6 +193,7 @@ class EFLLexLexicon:
 
     @staticmethod
     def _resolve_dataset_path():
+        """Locate the EFLLex data file within the installed package."""
         package_dir = files("app.data")
         for candidate in ("EFLLex.tsv", "efl_lex.tsv"):
             path = package_dir.joinpath(candidate)
@@ -201,6 +203,7 @@ class EFLLexLexicon:
 
     @staticmethod
     def _extract_values(row: dict[str, str]) -> list[float]:
+        """Pull frequency and document-count floats from a single TSV row."""
         values: list[float] = []
         for _, freq_column, docs_column in _EFLLEX_LEVEL_COLUMNS:
             values.append(_safe_float(row.get(freq_column)))
@@ -210,6 +213,7 @@ class EFLLexLexicon:
 
     @staticmethod
     def _aggregate_from_bucket(bucket: list[float]) -> EFLLexAggregate:
+        """Pack the flat 10-element bucket into an ``EFLLexAggregate``."""
         freq_by_level = (bucket[0], bucket[1], bucket[2], bucket[3], bucket[4])
         docs_by_level = (bucket[5], bucket[6], bucket[7], bucket[8], bucket[9])
         return EFLLexAggregate(
@@ -219,6 +223,11 @@ class EFLLexLexicon:
 
     @staticmethod
     def _signal_from_aggregate(aggregate: EFLLexAggregate) -> EFLLexSignal | None:
+        """Derive a calibrated CEFR signal from EFLLex frequency/document data.
+
+        Uses a weighted scoring formula and applies ambiguity/downgrade rules
+        to produce a conservative, confidence-bounded level assignment.
+        """
         if aggregate.total_freq <= 0 and aggregate.total_docs <= 0:
             return None
 
@@ -375,6 +384,7 @@ class CEFRLookup:
         *,
         secondary_pos_ptb: str | None = None,
     ) -> tuple[int | None, str | None]:
+        """Query cefrpy for the lemma's CEFR level, trying POS-specific then average lookups."""
         if pos_ptb:
             num, label = self.get_pos_level(lemma, pos_ptb)
             if num is not None:
@@ -409,6 +419,7 @@ class CEFRLookup:
         efllex_signal: EFLLexSignal | None,
         efllex_used_lemma_fallback: bool,
     ) -> CalibratedCEFRResult:
+        """Merge cefrpy and EFLLex signals into a final calibrated CEFR result."""
         if efllex_signal is not None:
             final_num, final_label, note = CEFRLookup._combine_with_efllex(
                 raw_num=raw_num,
@@ -480,6 +491,11 @@ class CEFRLookup:
         efllex_signal: EFLLexSignal,
         efllex_used_lemma_fallback: bool,
     ) -> tuple[int, str, str]:
+        """Resolve the final CEFR level when both cefrpy and EFLLex signals are present.
+
+        Applies promotion/downgrade logic based on signal strength, POS specificity,
+        and whether EFLLex lemma-only fallback was used.
+        """
         efllex_num = efllex_signal.level_num
         note = efllex_signal.note
         if efllex_used_lemma_fallback:
@@ -537,6 +553,7 @@ class CEFRLookup:
 
 
 def _safe_float(value: str | None) -> float:
+    """Parse a TSV cell to float, returning 0.0 on any failure."""
     try:
         return float(value or 0.0)
     except (TypeError, ValueError):

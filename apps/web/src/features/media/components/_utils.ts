@@ -1,8 +1,10 @@
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
+/** Canonical CEFR level ordering used for chart axes and comparisons. */
 export const CEFR_LEVEL_ORDER: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
+/** Human-readable labels for each vocabulary kind presented in pack generation. */
 export const VOCABULARY_TYPE_LABELS: Record<StoredVocabularyKind, string> = {
   word: "Words",
   phrasal_verb: "Phrasal verbs",
@@ -10,6 +12,7 @@ export const VOCABULARY_TYPE_LABELS: Record<StoredVocabularyKind, string> = {
   slang: "Slang",
 };
 
+/** Vocabulary kinds that are eligible for inclusion in a generated study pack. */
 export const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [
   "word",
   "phrasal_verb",

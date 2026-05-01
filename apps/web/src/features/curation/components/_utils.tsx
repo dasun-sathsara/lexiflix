@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
+/** Build a paginated query string from a base parameter map and a page number. */
 export function buildPageUrl(
   baseParams: Record<string, string | number | null | undefined>,
   page: number,
@@ -12,18 +13,21 @@ export function buildPageUrl(
   return `?${new URLSearchParams(entries).toString()}`;
 }
 
+/** Skeleton placeholder for the admin discovery controls card. */
 export function ControlsSkeleton() {
   return (
     <div className="h-[184px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
   );
 }
 
+/** Skeleton placeholder for the admin browse filters card. */
 export function FiltersSkeleton() {
   return (
     <div className="h-[132px] animate-pulse rounded-[calc(var(--radius)+2px)] border bg-card/50" />
   );
 }
 
+/** Previous / next pagination row for admin catalog and discovery views. */
 export function PaginationRow({
   currentPage,
   totalPages,

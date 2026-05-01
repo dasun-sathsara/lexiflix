@@ -100,6 +100,9 @@ def token_looks_like_name_reference(token: Token) -> bool:
 
 
 def _verb_lemma(token: Token) -> str | None:
+    """Resolve a spaCy token to its base verb lemma via lemminflect, when spaCy's built-in
+    lemmatizer produces an inflection rather than the root form.
+    """
     from lemminflect import getLemma  # type: ignore[import-untyped]
 
     lemmas = getLemma(token.text, upos="VERB")

@@ -883,6 +883,7 @@ async function transitionRun(input: {
   });
 }
 
+/** Orchestrate the full media analysis pipeline: subtitle fetch → NLP processing → Gemini enrichment → persistence. */
 export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowResult> {
   const startedAt = new Date();
   let context: WorkflowRunContext | null = null;
