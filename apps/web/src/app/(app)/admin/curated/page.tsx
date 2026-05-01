@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AdminCuratedWorkspace } from "@/features/curation/components/admin-curated-tabs";
+import { AdminCuratedWorkspace } from "@/features/curation/components/admin-curated-workspace";
 import {
   type AnnotatedTMDBResult,
   buildCuratedAdminDiscoverParams,

@@ -181,6 +181,10 @@ async function getPackCards(packId: string, userId: string): Promise<PackCardVie
   );
 }
 
+/**
+ * Builds the staging view data for a specific pack, including its items, media context,
+ * and user-specific state like global ignored terms.
+ */
 export async function getPackStagingView({
   packId,
   userId,
@@ -216,6 +220,10 @@ export async function getPackStagingView({
   };
 }
 
+/**
+ * Constructs the view model for a study session, determining the active queue of cards
+ * (e.g., due for review, learning new) based on the user's selected study mode.
+ */
 export async function getStudySessionView({
   packId,
   userId,
@@ -261,6 +269,10 @@ export async function getStudySessionView({
   };
 }
 
+/**
+ * Fetches and aggregates all pack summaries for a user to display in their deck library.
+ * Computes study statistics, due counts, and overall progress per pack.
+ */
 export async function getDeckSummariesForUser({
   userId,
 }: {
@@ -352,6 +364,10 @@ export async function getDeckSummariesForUser({
   });
 }
 
+/**
+ * Retrieves a generated pack artifact from storage, ensuring the requesting user
+ * actually owns the pack associated with the artifact.
+ */
 export async function getOwnedArtifactObject({
   artifactId,
   userId,

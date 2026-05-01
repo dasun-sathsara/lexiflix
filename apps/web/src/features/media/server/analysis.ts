@@ -167,6 +167,9 @@ async function getGenerationSnapshotForContent(input: {
   return getLatestPackGenerationProgressForContent(input);
 }
 
+/**
+ * Fetches the snapshot state of a pack generation job by its durable job ID.
+ */
 export async function getPackGenerationSnapshotByJobId(input: {
   userId: string;
   jobId: string;
@@ -174,6 +177,10 @@ export async function getPackGenerationSnapshotByJobId(input: {
   return getPackGenerationProgressView(input);
 }
 
+/**
+ * Retrieves the state and results of a media analysis run by its run ID.
+ * Transforms the durable trigger.dev job state into a consistent snapshot view.
+ */
 export async function getAnalysisSnapshotByRunId(
   runId: string,
 ): Promise<MediaAnalysisSnapshot | null> {
@@ -237,6 +244,10 @@ async function getAnalysisSnapshotForResolvedTarget(input: {
   return snapshot;
 }
 
+/**
+ * Orchestrates fetching all data required for the media detail page.
+ * Retrieves TMDB data, looks for active analysis runs, and computes default pack generation settings.
+ */
 export async function getMediaDetailPageData(input: {
   tmdbId: number;
   userId: string;
@@ -351,6 +362,10 @@ export async function getMediaDetailPageData(input: {
   };
 }
 
+/**
+ * Attempts to find the latest completed or active analysis snapshot for a given content target
+ * (e.g., a specific TMDB movie ID or TV season).
+ */
 export async function getAnalysisSnapshotForContentTarget(input: {
   tmdbId: number;
   mediaType: TMDBMediaType;
@@ -383,6 +398,10 @@ export async function getAnalysisSnapshotForContentTarget(input: {
   });
 }
 
+/**
+ * Resolves an analysis snapshot using a specific run ID if provided, otherwise falling back
+ * to the latest known snapshot for the given content target.
+ */
 export async function getAnalysisSnapshotForRunAndContent(input: {
   runId: string;
   tmdbId: number;

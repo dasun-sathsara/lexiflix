@@ -92,6 +92,10 @@ function computeNextStreak({
   };
 }
 
+/**
+ * Permanently removes one or more items from a user's pack.
+ * Validates ownership and updates the pack's item count.
+ */
 export async function removePackItemsAction(input: {
   packId: string;
   itemIds: string[];
@@ -139,6 +143,10 @@ export async function removePackItemsAction(input: {
   return { ok: true, activeCount };
 }
 
+/**
+ * Resets the study progress for an entire pack.
+ * Clears SRS state, due dates, and repetition counts for all active items in the pack.
+ */
 export async function resetPackProgressAction(input: {
   packId: string;
 }): Promise<PackActionResult> {
@@ -180,6 +188,10 @@ export async function resetPackProgressAction(input: {
   return { ok: true, activeCount };
 }
 
+/**
+ * Restores a previously removed item back to active status in a pack.
+ * The item enters the "new" learning state upon restoration.
+ */
 export async function restorePackItemAction(input: {
   packId: string;
   itemId: string;
@@ -215,6 +227,10 @@ export async function restorePackItemAction(input: {
   return { ok: true, activeCount, itemId: item.id };
 }
 
+/**
+ * Resets the study progress for a single specific item in a pack.
+ * The item will be returned to the "new" state and its SRS history will be cleared.
+ */
 export async function resetPackItemAction(input: {
   packId: string;
   itemId: string;
@@ -389,6 +405,10 @@ async function runTermAction(input: {
   return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
 }
 
+/**
+ * Marks a specific term as known globally for the user.
+ * Known terms will be prioritized differently during future pack generation.
+ */
 export async function markTermKnownAction(input: {
   packId: string;
   itemId: string;
@@ -396,6 +416,9 @@ export async function markTermKnownAction(input: {
   return runTermAction({ ...input, nextState: "known" });
 }
 
+/**
+ * Marks a specific term as currently learning globally for the user.
+ */
 export async function markTermLearningAction(input: {
   packId: string;
   itemId: string;
@@ -403,6 +426,10 @@ export async function markTermLearningAction(input: {
   return runTermAction({ ...input, nextState: "learning" });
 }
 
+/**
+ * Marks a specific term as ignored globally for the user.
+ * Ignored terms will be completely excluded from future pack generation.
+ */
 export async function ignoreTermGloballyAction(input: {
   packId: string;
   itemId: string;
@@ -410,6 +437,9 @@ export async function ignoreTermGloballyAction(input: {
   return runTermAction({ ...input, nextState: "ignored" });
 }
 
+/**
+ * Removes a term from the user's global ignore list.
+ */
 export async function unignoreTermAction(input: {
   packId: string;
   itemId: string;
@@ -480,6 +510,10 @@ export async function unignoreTermAction(input: {
   return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
 }
 
+/**
+ * Records a user's rating for a pack item and computes its next SRS state.
+ * Updates the user's daily study streak, appends a review event log, and schedules the next review.
+ */
 export async function ratePackItemAction(input: {
   packId: string;
   itemId: string;

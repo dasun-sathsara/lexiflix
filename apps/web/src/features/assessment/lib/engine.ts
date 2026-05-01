@@ -256,11 +256,19 @@ function selectNextItem(state: AssessmentState) {
   return chooseWithExposureControl(scored);
 }
 
+/**
+ * Creates the initial prior probability distribution (posterior) for the assessment.
+ * Typically assumes a uniform prior across the capability scale.
+ */
 export function createPriorPosterior() {
   const unnormalized = THETA_GRID.map((theta) => normalPdf(theta, PRIOR_MEAN, PRIOR_SD));
   return normalize(unnormalized);
 }
 
+/**
+ * Summarizes a posterior distribution array into a discrete estimate,
+ * error margin, and standard deviation for reporting or progression logic.
+ */
 export function summarizePosterior(posterior: number[]): PosteriorSummary {
   const normalized = normalize(posterior);
 
@@ -288,15 +296,25 @@ export function summarizePosterior(posterior: number[]): PosteriorSummary {
   };
 }
 
+/**
+ * Retrieves a full assessment item from the item bank by its ID.
+ */
 export function getItemById(itemId: string) {
   return ITEM_BY_ID.get(itemId) ?? null;
 }
 
+/**
+ * Safely transforms a full assessment item into a public-facing representation
+ * suitable for sending to the client (omits correct answers/parameters).
+ */
 export function toPublicItem(item: AssessmentItem): PublicAssessmentItem {
   const { correctIndex: _correctIndex, ...publicItem } = item;
   return publicItem;
 }
 
+/**
+ * Initializes a new adaptive assessment session state.
+ */
 export function initializeAssessmentState() {
   const firstItem = selectInitialItem();
   const state: AssessmentState = {
@@ -315,6 +333,10 @@ export function initializeAssessmentState() {
   };
 }
 
+/**
+ * Safely parses and validates an incoming raw payload into a structured AssessmentState.
+ * Recalculates probabilities based on history if needed.
+ */
 export function parseAssessmentState(raw: unknown): AssessmentState {
   if (!raw || typeof raw !== "object") {
     throw new Error("Invalid assessment state.");
@@ -404,6 +426,10 @@ function updatePosterior(
   return normalize(next);
 }
 
+/**
+ * Processes a user's answer, updates the internal posterior probabilities,
+ * and determines the next item to present or concludes the assessment.
+ */
 export function applyAnswerToState(input: {
   state: AssessmentState;
   item: AssessmentItem;
