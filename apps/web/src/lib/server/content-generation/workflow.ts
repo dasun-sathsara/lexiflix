@@ -96,7 +96,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
       },
     });
 
-    const selectedItems = await selectGenerationItems({
+    let selectedItems = await selectGenerationItems({
       userId: job.userId,
       contentId: job.contentId,
       analysisRunId: job.analysisRunId ?? "",
@@ -126,10 +126,21 @@ export async function runPackGenerationWorkflow(jobId: string) {
       model: env.CONTENT_GENERATION_TEXT_MODEL,
     });
     const textMap = textByAnalysisItem(textItems);
+    const missingTextItems = selectedItems.filter((item) => !textMap.has(item.analysisItemId));
+    if (missingTextItems.length > 0) {
+      for (const item of missingTextItems) {
+        warnings.push(
+          `Skipped '${item.displayText}': text generation did not return content for this item.`,
+        );
+      }
+      selectedItems = selectedItems.filter((item) => textMap.has(item.analysisItemId));
+    }
 
     logger.info("[content-generation] text content generated", {
       jobId,
       generatedTextItemCount: textItems.length,
+      selectionItemCount: selectedItems.length,
+      missingTextItemCount: missingTextItems.length,
       warningCount: textItems.reduce((count, item) => count + item.warnings.length, 0),
       imageEligibleCount: textItems.filter((item) => item.imageEligibility.eligible).length,
     });

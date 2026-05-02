@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { AppNotice } from "@/components/common/app-surface";
@@ -14,7 +14,7 @@ import {
   getGenerationStatusMessage,
   isGenerationActive,
 } from "../lib/status";
-import { getPackGenerationProgressAction } from "../server/actions";
+import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
 
 function formatDate(value: string | null) {
@@ -32,6 +32,7 @@ export function GenerationProgressClient({
 }) {
   const [generation, setGeneration] = useState(initialGeneration);
   const [isPending, startTransition] = useTransition();
+  const [retryError, setRetryError] = useState<string | null>(null);
   const status = getGenerationStatusCopy(generation.status);
   const isActive = isGenerationActive(generation.status);
 
@@ -48,6 +49,18 @@ export function GenerationProgressClient({
     }, 3500);
     return () => window.clearInterval(timer);
   }, [generation.jobId, isActive]);
+
+  function handleRetry() {
+    setRetryError(null);
+    startTransition(async () => {
+      const result = await retryPackGenerationAction({ jobId: generation.jobId });
+      if (result.ok) {
+        setGeneration(result.data.generation);
+      } else {
+        setRetryError(result.error);
+      }
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -86,6 +99,12 @@ export function GenerationProgressClient({
                   </Link>
                 </Button>
               ) : null}
+              {generation.status === "failed" ? (
+                <Button onClick={handleRetry} disabled={isPending}>
+                  <RefreshCw className="size-4" />
+                  Retry
+                </Button>
+              ) : null}
               {generation.packHref ? (
                 <Button asChild>
                   <Link href={generation.packHref}>
@@ -110,6 +129,12 @@ export function GenerationProgressClient({
           >
             {generation.errorMessage ? generation.errorMessage : null}
           </AppNotice>
+
+          {retryError ? (
+            <AppNotice tone="error" title="Retry failed">
+              {retryError}
+            </AppNotice>
+          ) : null}
 
           {generation.warnings.length > 0 ? (
             <AppNotice tone="warning" title="Warnings">

@@ -84,6 +84,46 @@ export async function getLatestPackGenerationJobForContent(input: {
   });
 }
 
+export async function resetFailedPackGenerationJobForRetry(
+  jobId: string,
+  retryMessage: string = "Pack generation retry queued.",
+) {
+  const existing = await getPackGenerationJobById(jobId);
+  if (!existing) {
+    throw new Error(`Pack generation job ${jobId} was not found.`);
+  }
+
+  if (existing.status !== "failed") {
+    return { job: existing, wasReset: false };
+  }
+
+  const [updated] = await db
+    .update(packGenerationJob)
+    .set({
+      status: "queued",
+      stage: "queued",
+      progressMessage: retryMessage,
+      errorCode: null,
+      errorMessage: null,
+      startedAt: null,
+      completedAt: null,
+    })
+    .where(eq(packGenerationJob.id, jobId))
+    .returning();
+
+  await db.insert(packGenerationJobEvent).values({
+    id: crypto.randomUUID(),
+    jobId,
+    stage: "queued",
+    message: retryMessage,
+    payload: {
+      retry: true,
+    },
+  });
+
+  return { job: updated, wasReset: true };
+}
+
 export async function recordPackGenerationJobTransition(input: {
   jobId: string;
   status: "queued" | "running" | "completed" | "failed";
