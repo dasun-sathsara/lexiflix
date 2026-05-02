@@ -104,7 +104,7 @@ In normal day-to-day work, prefer the root `task` commands so the Doppler-backed
 
 The Python NLP service lives in `apps/nlp_service`. Its role is narrow: accept subtitle-related input, run Python-native NLP analysis, and return structured vocabulary candidates to the workflow layer. It is not intended to become a second application backend or a separate orchestration platform.
 
-The service uses Python 3.13 and is a FastAPI application. It is containerized and deployed to Google Cloud Run.
+The service uses Python 3.13 and is a FastAPI application. It is containerized and deployed to Azure Container Apps (ACA).
 
 ## Deployment Direction
 
@@ -112,7 +112,7 @@ The current deployment direction is:
 
 - `apps/web` on Vercel
 - workflow orchestration through Trigger.dev Cloud
-- `apps/nlp_service` deployed as a container to Google Cloud Run
+- `apps/nlp_service` deployed as a container to Azure Container Apps (ACA)
 - Neon for Postgres
 - Cloudflare R2 for artifact storage
 

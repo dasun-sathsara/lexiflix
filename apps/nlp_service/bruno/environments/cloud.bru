@@ -1,8 +1,8 @@
-# Cloud Run environment
-# After the first successful deploy, replace the host below with your actual Cloud Run URL
-# (found in the GitHub Actions logs or via `gcloud run services describe lexiflix-nlp --region=us-central1`)
+# Azure Container Apps environment
+# After the first successful deploy, replace the host below with your actual Container App FQDN
+# (found in the GitHub Actions logs or via `az containerapp show --name lexiflix-nlp --resource-group lexiflix-rg --query properties.configuration.ingress.fqdn -o tsv`)
 
 vars {
-  host: https://lexiflix-nlp-CHANGE_ME-uc.a.run.app
+  host: https://lexiflix-nlp.CHANGE_ME.azurecontainerapps.io
   apiKey: CHANGE_ME
 }
