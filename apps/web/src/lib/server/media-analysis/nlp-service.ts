@@ -18,6 +18,7 @@ export async function analyzeWithNlpService(input: NlpAnalysisRequest) {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Authorization: `Bearer ${env.NLP_SERVICE_API_KEY}`,
       },
       body: JSON.stringify(payload),
       signal,

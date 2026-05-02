@@ -90,6 +90,7 @@ const serverSchema = z
     CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).default("mock"),
     CONTENT_GENERATION_IMAGE_CONCURRENCY: z.coerce.number().int().positive().default(3),
     NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
+    NLP_SERVICE_API_KEY: z.string().min(1, "NLP_SERVICE_API_KEY is required"),
     NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce
       .number()
       .int()

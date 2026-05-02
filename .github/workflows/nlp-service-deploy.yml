@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
 
 env:
-  GCP_REGION: us-central1
-  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev
+  GCP_REGION: asia-southeast1
+  ARTIFACT_REGISTRY: asia-southeast1-docker.pkg.dev
   AR_REPOSITORY: lexiflix-nlp
   IMAGE_NAME: lexiflix-nlp-service
   SERVICE_NAME: lexiflix-nlp
@@ -71,11 +71,13 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.GCP_REGION }}
-          image: ${{ env.ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          image: ${{ env.ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{
+            env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           env_vars: |
+            NLP_API_KEY=${{ secrets.NLP_SERVICE_API_KEY }}
             NLP_SPACY_PREFER_TRANSFORMER=true
             NLP_LOG_LEVEL=info
-          cpu: 2
+          cpu: 4
           memory: 4Gi
-          timeout: 300s
+          timeout: 600s
           flags: '--allow-unauthenticated --port=8000'

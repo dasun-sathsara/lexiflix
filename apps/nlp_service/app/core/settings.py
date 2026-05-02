@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
+    # --- Auth ---
+    api_key: str | None = None
+
     # --- Server ---
     host: str = "0.0.0.0"
     port: int = 8000

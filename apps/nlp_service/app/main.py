@@ -6,10 +6,11 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
 from app.api.analysis import router as analysis_router
 from app.api.health import router as health_router
+from app.core.auth import require_api_key
 from app.core.logging import setup_logging
 from app.core.settings import settings
 from app.services.spacy_models import model_manager
@@ -53,7 +54,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_router)
-    app.include_router(analysis_router)
+    app.include_router(analysis_router, dependencies=[Depends(require_api_key)])
 
     return app
 
