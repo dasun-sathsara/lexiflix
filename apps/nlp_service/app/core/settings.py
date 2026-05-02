@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # --- spaCy ---
-    spacy_batch_size: int = 200
+    spacy_batch_size: int = 125
 
     # --- Pipeline defaults ---
     default_include_propn: bool = False
