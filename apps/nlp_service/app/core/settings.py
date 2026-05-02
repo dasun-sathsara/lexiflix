@@ -26,8 +26,6 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # --- spaCy ---
-    spacy_prefer_gpu: bool = True
-    spacy_prefer_transformer: bool = True
     spacy_batch_size: int = 200
 
     # --- Pipeline defaults ---

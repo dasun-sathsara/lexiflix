@@ -51,7 +51,6 @@ jobs:
             ${{ env.ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
             ${{ env.ARTIFACT_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
-            SPACY_MODEL=en_core_web_trf
             UV_HTTP_TIMEOUT=120
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -75,7 +74,6 @@ jobs:
             env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           env_vars: |
             NLP_API_KEY=${{ secrets.NLP_SERVICE_API_KEY }}
-            NLP_SPACY_PREFER_TRANSFORMER=true
             NLP_LOG_LEVEL=info
           cpu: 4
           memory: 4Gi

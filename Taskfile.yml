@@ -36,9 +36,8 @@ tasks:
     dir: "{{.NLP_DIR}}"
     vars:
       IMAGE_NAME: '{{default "lexiflix-nlp-service" .IMAGE_NAME}}'
-      SPACY_MODEL: '{{default "en_core_web_sm" .SPACY_MODEL}}'
     cmds:
-      - docker build --build-arg SPACY_MODEL="{{.SPACY_MODEL}}" -t "{{.IMAGE_NAME}}" .
+      - docker build --build-arg UV_HTTP_TIMEOUT=120 -t "{{.IMAGE_NAME}}" .
 
   nlp:docker:run:
     desc: Run the NLP service container locally

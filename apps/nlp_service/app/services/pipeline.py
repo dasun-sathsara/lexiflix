@@ -92,13 +92,6 @@ class AnalysisPipeline:
             pipeline_version=request.pipeline_version,
         )
 
-        # Add model-fallback warning if relevant
-        if not model_manager.is_transformer:
-            warnings.append(
-                f"Transformer model not available — using '{model_manager.model_name}'. "
-                "Results may be less accurate."
-            )
-
         return AnalyzeResponse(
             metadata=metadata,
             candidates=candidates,
@@ -119,18 +112,14 @@ class AnalysisPipeline:
     def _run_spacy(self, lines: list[str], batch_size: int) -> Iterable[Doc]:
         """Run the spaCy pipeline over chunked subtitle lines."""
         nlp = model_manager.nlp
-        is_trf = model_manager.is_transformer
-        # Transformers don't support multiprocessing well
-        n_process = 1 if is_trf else -1
         chunks = list(chunk_lines(lines))
         logger.info(
-            "Running spaCy (chunks=%d, batch_size=%d, n_process=%s) …",
+            "Running spaCy (chunks=%d, batch_size=%d) …",
             len(chunks),
             batch_size,
-            n_process,
         )
         try:
-            return nlp.pipe(chunks, batch_size=batch_size, n_process=n_process)
+            return nlp.pipe(chunks, batch_size=batch_size, n_process=1)
         except Exception as exc:
             raise PipelineError(
                 "spaCy pipeline processing failed.",
