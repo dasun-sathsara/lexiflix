@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="px-6 pb-12 pt-10 text-sm text-muted-foreground">
@@ -11,18 +13,18 @@ export function Footer() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-          <a href="/#features" className="hover:text-foreground">
+          <Link href="/#features" className="hover:text-foreground">
             Features
-          </a>
-          <a href="/about" className="hover:text-foreground">
+          </Link>
+          <Link href="/about" className="hover:text-foreground">
             About
-          </a>
-          <a href="/about#contact" className="hover:text-foreground">
+          </Link>
+          <Link href="/about#contact" className="hover:text-foreground">
             Contact
-          </a>
-          <a href="/#faq" className="hover:text-foreground">
+          </Link>
+          <Link href="/#faq" className="hover:text-foreground">
             FAQ
-          </a>
+          </Link>
           <a href="mailto:dasun@lexiflix.app" className="hover:text-foreground">
             dasun@lexiflix.app
           </a>

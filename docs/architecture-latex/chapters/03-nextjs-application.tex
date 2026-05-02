@@ -1,0 +1,409 @@
+\chapter{The Next.js Application: Actions, Routes, and Orchestration}
+\label{ch:nextjs}
+
+The web app in \texttt{apps/web} is the product. This chapter covers the Next.js
+concepts the codebase leans on, the conventions that keep it legible, and---most
+important for a review---\emph{why this app has API routes at all} and how it drives
+background work without the browser ever touching the workflow engine.
+
+\section{A Quick Model of the App Router}
+
+LexiFlix uses the Next.js \emph{App Router}. Two ideas carry most of the weight:
+
+\begin{itemize}
+	\item \textbf{React Server Components by default.} Files under \texttt{src/app} render on
+	      the server unless marked \texttt{"use client"}. Page components can read data
+	      directly (call a query function, hit the database) without a client-side fetch.
+	\item \textbf{Server Actions.} A function marked \texttt{"use server"} is callable
+	      from client components but executes on the server. This is the app's default way
+	      to perform writes---no hand-written endpoint, no client fetch wiring.
+\end{itemize}
+
+Routing uses \emph{route groups} (a folder in parentheses that organises routes without
+adding a URL segment) and \emph{dynamic segments} (\texttt{[id]}). The authenticated part
+of the product lives in the \texttt{(app)} group, whose layout enforces the session once
+for everything beneath it:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{src/app/(app)/layout.tsx} --- the group layout gates every nested route.}]
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await requireSession();
+  const studyPlan = await getStudyPlanForUser({ userId: session.user.id });
+  // ... renders sidebar (with due count), verification banner, admin debug panel ...
+  return (
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <AppSidebar user={user} dueCount={studyPlan.dueNow} />
+      <AppInset>{children}</AppInset>
+    </SidebarProvider>
+  );
+}
+\end{lstlisting}
+
+The dynamic product routes follow directly from the domain: \texttt{(app)/media/[id]}
+(a title's analysis page), \texttt{(app)/pack/[id]} (pack staging), \texttt{(app)/study/[id]}
+(the review session), and \texttt{(app)/generation/[jobId]} (generation progress). Per the
+web app's own guidance, these route files stay thin---they parse params, require a
+session, call a feature read model, and render a feature component.
+
+\section{Asynchronous Client-Side Transitions and In-Place DOM Patching}
+\label{sec:client-side-transitions}
+LexiFlix is designed as a Single Page Application (SPA) for transitions but is entirely driven by React Server Components (RSC) for data fetching. This hybrid model bridges the gap between server-side data sourcing and client-side fluid navigation without introducing the typical overhead of client-side state synchronization libraries or full browser refreshes.
+\subsection{The RSC Wire Protocol and Streaming Hydration}
+When a user navigates between pages (e.g., clicking pagination links from Page~1 to Page~2 on the media browse screen), Next.js intercepts the native navigation. Instead of requesting a full HTML page, the client-side router makes an asynchronous fetch request with custom headers (such as \texttt{RSC: 1}). The server responds by streaming the \emph{RSC Payload}.
+Unlike JSON or HTML, the RSC Payload is a specialized line-delimited streaming plain-text format. Each line in the stream represents a node, a chunk of static markup, or a client component reference. For example:
+\begin{itemize}
+	\item Lines starting with \texttt{I} represent dynamic Client Component modules that need to be dynamically loaded from the server's build manifest.
+	\item Lines starting with JSON structures represent React element nodes, describing their HTML tag names, attributes (props), and hierarchy.
+	\item Suspense boundaries and lazy-loaded modules are represented as placeholders, letting the client stream and render components progressively as the chunks arrive.
+\end{itemize}
+Because this format is structured and streamed, the client can begin rendering and hydrating UI components incrementally before the entire request has completed, minimizing Time to Interactive (TTI).
+\subsection{Reconciliation and Layout State Preservation}
+Rather than recreating the entire page from scratch, React's client-side reconciliation engine (Fiber) compares the incoming virtual DOM structure described by the RSC Payload against the active client-side Fiber tree. 
+React performs a structural diff of the tree:
+\begin{itemize}
+	\item \textbf{Layout Invariance}: If a parent component (like the sidebar layout or shell) is identical in both the current and the new routes, React keeps that node active. The component is not unmounted, and its local state (e.g., whether the sidebar is collapsed, or text currently typed into a search box) is preserved.
+	\item \textbf{Targeted DOM Patching}: Only the DOM nodes that correspond to the changing sub-tree (such as the paginated card grid or the active pagination page indicators) are updated.
+\end{itemize}
+This prevents the visual ``flash'' of traditional page transitions and guarantees that client-side state is never lost across routes.
+\subsection{Prefetching and the Client Router Cache}
+To make navigation near-instantaneous, Next.js implements an in-memory \emph{Client Router Cache}. When a Next.js \texttt{<Link>} component enters the browser's viewport, the router automatically prefetches the target route's RSC Payload. When the user eventually clicks the link, the payload is read directly from the memory cache rather than making a network roundtrip, enabling instantaneous page flips.
+\subsection{Single-Flight Mutate-and-Read Cycles}
+A prime application of this hybrid model is the flashcard study session screen (\texttt{src/app/(app)/study/[id]/page.tsx}). To guarantee zero-latency transitions between cards, the queue of items is fetched up front as a batch in the server component. The client component manages the active card index locally.
+When a card is rated, a Server Action (\texttt{ratePackItemAction}) performs the database mutation on the server. Next.js handles this via a single HTTP \texttt{POST} request. 
+What makes this process highly efficient is its \emph{single-flight} nature:
+\begin{enumerate}
+	\item The client dispatches the Server Action parameters.
+	\item The server executes the action database mutations.
+	\item If the action code calls \texttt{revalidatePath} or \texttt{revalidateTag}, the server immediately executes the affected Server Components on the server in the context of the same request.
+	\item The server compiles the updated RSC Payload and returns it back to the client in the \textbf{same response} as the action result.
+	\item The client parses the response, resolves the action promise, and immediately patches the DOM in-place.
+\end{enumerate}
+To prevent this automatic server revalidation from resetting the client's active study state (like the active card queue or current index), the client component pins the initial card queue inside a React Ref:
+\begin{lstlisting}[language=TypeScript, caption={Pinning queue snapshots to isolate active client-side sessions.}]
+const sessionKey = `${session.packId}:${session.mode}`;
+const snapshotRef = React.useRef({ key: sessionKey, cards: session.cards });
+const cards = snapshotRef.current.cards;
+\end{lstlisting}
+This pattern creates an isolated client session sandbox, executing database mutations asynchronously while keeping the active UI completely stable.
+\section{Server Actions and the \texttt{ActionResult} Envelope}
+
+App-internal writes use typed Server Actions, and they all return one shape. The shared
+envelope lives in \texttt{src/lib/action-result.ts}:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{src/lib/action-result.ts} --- the universal result type.}]
+export type ActionResult<T = undefined> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+\end{lstlisting}
+
+Every action follows the same spine: \emph{authorize, validate, act, revalidate}. A
+short complete example from the notifications feature shows the whole pattern:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{features/notifications/server/actions.ts} --- authorize, validate, act.}]
+"use server";
+
+const notificationIdSchema = z.object({ id: z.string().min(1) });
+
+export async function dismissNotificationAction(
+  input: z.input<typeof notificationIdSchema>,
+): Promise<NotificationMutationResult> {
+  const session = await requireSession();                       // 1. authorize
+  const parsed = notificationIdSchema.safeParse(input);          // 2. validate (Zod)
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid notification." };
+  }
+  await dismissNotification({ userId: session.user.id, id: parsed.data.id }); // 3. act
+  return { ok: true, data: undefined };
+}
+\end{lstlisting}
+
+The conventions are explicit and enforced by code review: use \texttt{ok} (not
+\texttt{success}), \texttt{error} (not \texttt{message}), put payloads under \texttt{data},
+parse untrusted input with Zod \emph{at the boundary}, enforce session ownership before
+writes, and revalidate only the affected routes. Reads are the mirror image: server
+components call ownership-aware functions in \texttt{server/queries.ts} directly, so a
+mutation lives in \texttt{actions.ts} and a read model lives in \texttt{queries.ts}.
+
+\section{Why This App Has API Routes (and Which Ones)}
+
+In an App-Router project that prefers Server Actions, an HTTP route handler needs a
+reason to exist. The project's rule is precise: \emph{route handlers are reserved for
+real protocol boundaries}---auth/provider callbacks, webhooks, binary streaming, and
+upload boundaries that cannot be expressed cleanly as a Server Action. Anything else
+would be a second, redundant mutation style inside the same app. There are exactly three
+entries under \texttt{src/app/api}:
+
+\begin{itemize}
+	\item \texttt{api/auth/[...all]/route.ts} --- the \textbf{Better Auth} catch-all. Auth
+	      is a protocol with many endpoints (sign-in, sign-up, OAuth callbacks, verify
+	      email, reset password). The library owns them; the route just forwards.
+	\item \texttt{api/pack-artifacts/[id]/route.ts} --- an \textbf{authenticated binary
+	      stream}. Generated audio and images live in private R2; this route checks
+	      ownership and streams bytes (or redirects to a public URL), so R2 credentials
+	      never reach the browser.
+	\item \texttt{api/artifacts/[id]/} --- an \textbf{empty placeholder} directory (no
+	      \texttt{route.ts}); it has been superseded by \texttt{pack-artifacts}.
+\end{itemize}
+
+Each is a genuine protocol boundary. The artifact route is the clearest illustration of
+``why not a Server Action'': the product needs to return raw bytes with content-type and
+cache headers, which is an HTTP response contract, not a typed function result.
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{api/pack-artifacts/[id]/route.ts} --- ownership check, then stream or redirect.}]
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const [{ id }, session] = await Promise.all([params, getSessionOrNull()]);
+  if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
+
+  const artifact = await getOwnedArtifactObject({ artifactId: id, userId: session.user.id });
+  if (!artifact) return new NextResponse("Not found", { status: 404 });
+
+  if (artifact.access === "public" && artifact.publicUrl) {
+    return NextResponse.redirect(artifact.publicUrl);     // public CDN object
+  }
+  const object = await getObjectBytesByKey(artifact.objectKey); // private: stream bytes
+  return new NextResponse(new Blob([object.bytes as BlobPart], { type: artifact.mimeType }), {
+    headers: { "Cache-Control": "private, max-age=300", /* ... */ },
+  });
+}
+\end{lstlisting}
+
+\section{Driving Background Work}
+
+The heavy work---analysis and pack generation---runs in Trigger.dev, but it is always
+\emph{initiated} from the app and \emph{tracked} through the database. A server action
+records a durable row in Postgres and then enqueues a Trigger task by its typed id:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{features/media/server/actions.ts} --- enqueue a workflow after recording state.}]
+async function triggerAnalysisRun(runId: string) {
+  try {
+    await tasks.trigger<typeof analyzeMediaSubtitlesTask>("analyze-media-subtitles", { runId });
+  } catch (error) {
+    await recordContentAnalysisRunTransition({
+      runId, status: "failed", stage: "failed",
+      message: "Failed to trigger reusable subtitle analysis.", /* ... */
+    });
+    throw error;
+  }
+}
+\end{lstlisting}
+
+The task itself (in \texttt{src/trigger}) is a thin wrapper: it re-validates its payload
+with Zod and delegates to a workflow function in \texttt{lib/server}. Trigger
+configuration (\texttt{trigger.config.ts}) points at \texttt{./src/trigger} and sets a
+\texttt{maxDuration} of \texttt{3600}s.
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{src/trigger/analyze-media-subtitles.ts} --- the task delegates to a workflow.}]
+export const analyzeMediaSubtitlesTask = task({
+  id: "analyze-media-subtitles",
+  retry: { maxAttempts: 3, minTimeoutInMs: 2000, maxTimeoutInMs: 15000, factor: 2, randomize: true },
+  run: async (payload: AnalyzeMediaSubtitlesPayload) => {
+    const parsed = analyzeMediaSubtitlesPayloadSchema.parse(payload);
+    return runMediaAnalysisWorkflow(parsed.runId);
+  },
+});
+\end{lstlisting}
+
+\subsection{Stage-based progress, polled through the app}
+
+The workflow advances through a fixed set of stages, and each transition updates the run
+or job row (status, stage, progress message) and appends an immutable event row. The
+stages are encoded as Postgres enums in the Drizzle schema:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{lib/server/db/schema.ts} --- the two workflow stage enums.}]
+export const contentAnalysisStageEnum = pgEnum("content_analysis_stage", [
+  "queued", "fetching_subtitles", "running_nlp", "running_llm",
+  "merging_analysis", "saving_analysis", "completed", "failed",
+]);
+
+export const packGenerationStageEnum = pgEnum("pack_generation_stage", [
+  "queued", "selecting_terms", "generating_content", "generating_assets",
+  "saving_pack", "completed", "failed",
+]);
+\end{lstlisting}
+
+This is the mechanism behind the ``execution versus meaning'' split from
+Chapter~\ref{ch:overview}. The browser polls the app every few seconds; the app reads the
+current stage from Postgres; the browser never speaks to Trigger.dev. A schema comment on
+the event table states the intent plainly: it gives the overview page ``something durable
+to poll without making the browser care about Trigger.dev directly.'' Figure~\ref{fig:flow}
+traces the full request-and-poll cycle.
+
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}[
+			font=\rmfamily\small, >={Stealth[round]}, node distance=20mm and 30mm,
+			actor/.style={rounded corners=2pt, draw=secprimary, fill=tblrhead, align=center,
+					text width=22mm, minimum height=10mm, inner sep=3pt},
+			svc/.style={rounded corners=2pt, draw=secsecondary!60, fill=secsecondary!7, align=center,
+					text width=24mm, minimum height=10mm, inner sep=3pt},
+			store/.style={rounded corners=2pt, draw=sectertiary!60, fill=tblrstripe, align=center,
+					text width=22mm, minimum height=10mm, inner sep=3pt},
+			lbl/.style={font=\rmfamily\scriptsize\itshape, text=textmuted, fill=white, inner sep=1.5pt},
+			e/.style={->, draw=textmuted, line width=0.6pt},
+		]
+		\node[actor] (browser) {Browser};
+		\node[svc, right=of browser] (action) {Server\\Action};
+		\node[store, right=of action] (db) {Neon\\Postgres};
+		\node[svc, below=24mm of action] (trigger) {Trigger.dev\\workflow};
+		\node[svc, right=of trigger] (work) {NLP svc /\\Gemini};
+
+		\draw[e] (browser) -- node[lbl, above]{1.~start} (action);
+		\draw[e] (action) -- node[lbl, above]{2.~insert run row} (db);
+		\draw[e] (action) -- node[lbl, left]{3.~enqueue} (trigger);
+		\draw[e] (trigger) -- node[lbl, above]{4.~call} (work);
+		\draw[e] (trigger) -- node[lbl, pos=0.4]{5.~write stage} (db.250);
+		\draw[e, dashed, draw=secprimary] (browser.south) to[bend right=38]
+		node[lbl, pos=0.32]{6.~poll stage (every few s)} (db.290);
+	\end{tikzpicture}
+	\caption{The request-and-poll cycle. A server action records durable state and
+		enqueues the workflow; Trigger.dev runs the steps and writes stage transitions back
+		to Postgres; the browser polls the app, never the workflow engine.}
+	\label{fig:flow}
+\end{figure}
+
+The two workflows differ in purpose but share this shape. Content analysis is
+\emph{reusable} across users and is cached by a pipeline fingerprint; pack generation is
+\emph{user-specific} and runs only after the learner confirms preferences. Both are owned
+by the app at the boundaries (validation, durable state, polling) and by Trigger only in
+the middle (sequencing and retries).
+
+\subsection{Idempotency and caching: never do the same work twice}
+
+Because every workflow step is a live, billable call (subtitles, the NLP service, Gemini),
+the most important property of the start path is that it \emph{does not} start redundant
+work. Both workflows are guarded by a deterministic key and a create-or-reuse insert.
+
+For reusable analysis the key is a \emph{pipeline fingerprint}---content plus the active
+pipeline version. The start action looks up that fingerprint first and, on a hit, simply
+returns the existing run's snapshot instead of triggering anything:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{media/server/actions.ts} --- reuse an existing run; only trigger on a fresh insert.}]
+const existing = await getContentAnalysisRunByFingerprint(target.content.id, MEDIA_ANALYSIS_FINGERPRINT);
+if (existing?.status === "completed" || existing?.status === "queued" || existing?.status === "running") {
+  return { ok: true, data: { analysis: await getAnalysisSnapshotByRunId(existing.id) } }; // reuse
+}
+// failed -> reset for retry; otherwise create-or-reuse, and only trigger when we actually created it
+const created = await createOrReuseContentAnalysisRun({ contentId: target.content.id,
+  pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT, pipelineDescriptor: { version: MEDIA_ANALYSIS_PIPELINE_VERSION } });
+if (created.wasCreated) await triggerAnalysisRun(created.run.id);
+\end{lstlisting}
+
+The fingerprint is backed by a unique index on \texttt{(content\_id,
+pipeline\_fingerprint)}, and the insert uses \texttt{onConflictDoNothing}, so two
+simultaneous opens of the same media page race safely: the loser of the insert re-reads
+and reuses the winner's row rather than creating a duplicate. The same discipline governs
+the workflow body, which short-circuits if it is re-entered on an already-completed run
+(Trigger may retry a task), and the per-user pack job, whose idempotency key folds the
+\emph{request preferences} into the identity so that an identical request reuses the
+job while a changed one produces a new job. The one escape hatch is explicit:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{content-generation/jobs.ts} --- the pack idempotency key (trimmed).}]
+export function computePackGenerationIdempotencyKey(input) {
+  if (input.requestSnapshot.forceRegenerate) {
+    return `${input.userId}:${input.contentId}:${crypto.randomUUID()}`;   // opt out of reuse
+  }
+  const snap = input.requestSnapshot;
+  const sig = [snap.learnerCefrLevel ?? "auto", snap.frequencyPreference,
+    [...snap.selectedVocabularyTypes].sort().join(","), snap.cefrWindowMode, snap.packSize,
+    snap.knownTermHandling, snap.exampleSentenceCount, snap.audioVoiceGender].join("|");
+  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}:${input.analysisRunId}:${sig}`;
+}
+\end{lstlisting}
+
+This is the project's entire cost-control story, and it is deliberately boring: narrow
+workflows, explicit user-triggered generation, and keys that make reruns a database lookup
+rather than another round of API calls.
+
+\subsection{The dual-write event trail}
+
+Every stage transition writes to \emph{two} places, and this pairing is worth calling out
+because it underpins both the polling model and after-the-fact debugging. A single helper
+mutates the current state on the run/job row and \emph{appends} an immutable event row:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{media-analysis/runs.ts} --- update mutable state, then append an immutable event.}]
+export async function recordContentAnalysisRunTransition(input: ContentAnalysisTransitionInput) {
+  const parsed = contentAnalysisTransitionSchema.parse(input);            // Zod at the boundary
+  const [updated] = await db.update(contentAnalysisRun)
+    .set({ status: parsed.status, stage: parsed.stage,
+      progressMessage: parsed.progressMessage ?? parsed.message, /* error fields, timestamps */ })
+    .where(eq(contentAnalysisRun.id, parsed.runId)).returning();
+  await db.insert(contentAnalysisRunEvent).values({ id: crypto.randomUUID(),
+    runId: parsed.runId, stage: parsed.stage, message: parsed.message, payload: parsed.payload });
+  return updated;
+}
+\end{lstlisting}
+
+The run row always holds the \emph{latest} status the UI polls; the event table holds the
+ordered \emph{history} of how the run got there, with arbitrary JSON payloads (counts,
+warnings, error context). The pack-generation side mirrors this exactly with
+\texttt{packGenerationJob} and \texttt{packGenerationJobEvent}. The pattern keeps the hot
+read (current stage) cheap while preserving a durable audit log that needs no extra
+infrastructure---and it is why a failed run can be reset and retried without losing the
+record that it failed.
+
+\section{The Durable Study Domain}
+
+Generating a pack is only half the product; the other half is studying it, and that loop
+is entirely app-owned domain logic---not a workflow concern. It is worth a close look
+because it is the most algorithmic code in the web app and a likely focus of the review.
+
+\subsection{An SM-2--style spaced-repetition scheduler}
+
+When a learner rates a card, the next review is computed by a pure function,
+\texttt{computeNextReviewState}, in \texttt{features/packs/server/srs.ts}. It is an
+Anki-inspired SM-2 baseline: short sub-day steps while a card is still being learned,
+then intervals that grow by the card's \emph{ease factor} once it graduates. The
+configuration makes the model legible at a glance:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- the scheduler constants.}]
+export const SRS_CONFIG = {
+  firstLearningStepMs: MINUTE_MS,          secondLearningStepMs: 10 * MINUTE_MS,
+  graduatingIntervalDays: 1,               easyIntervalDays: 4,
+  startingEaseFactor: 2.5,                 minimumEaseFactor: 1.3,
+  hardIntervalMultiplier: 1.2,             easyBonus: 1.3,
+  masteryRepetitionThreshold: 5,           masteryIntervalThresholdDays: 21,
+} as const;
+\end{lstlisting}
+
+The function is a small state machine over four ratings. \texttt{again} always lapses the
+card back to a one-minute learning step and, for a graduated card, nudges its ease down by
+\(0.2\); learning-phase cards walk the short steps until they graduate; review-phase cards
+multiply the previous interval to get the next one:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- review-phase interval growth (trimmed).}]
+const reviewResult = {
+  hard: { intervalDays: Math.max(prev + 1, clampInterval(prev * 1.2)), easeFactor: clampEase(ease - 0.15) },
+  good: { intervalDays: Math.max(prev + 1, clampInterval(prev * ease)), easeFactor: ease },
+  easy: { intervalDays: Math.max(prev + 1, clampInterval(prev * ease * 1.3)), easeFactor: clampEase(ease + 0.15) },
+}[input.rating];
+\end{lstlisting}
+
+Two LexiFlix-specific choices distinguish it from stock SM-2. First, \emph{mastery} is a
+product milestone, not an Anki state: a card becomes \texttt{mastered} once a positive
+rating coincides with either enough repetitions or a long-enough interval
+(\texttt{maybeMastered}). Second, the ease and interval are always clamped
+(\texttt{clampEase}, \texttt{clampInterval}) so the schedule cannot drift below a minimum
+or explode past a ceiling.
+
+\subsection{Effective due-state is derived, not stored}
+
+The architecture deliberately avoids a background job whose only purpose would be flipping
+cards from ``learning'' to ``due'' at their scheduled time. Instead, \texttt{pack\_item}
+stores a lifecycle \texttt{state} (\texttt{new}, \texttt{learning}, \texttt{mastered},
+\texttt{removed}) plus a \texttt{dueAt} timestamp, and the \emph{effective} state is
+computed on read by comparing \texttt{dueAt} to now:
+
+\begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- due status is a function of time, not a stored row.}]
+export function getEffectivePackCardState({ state, dueAt, now, removedAt }) {
+  if (state === "removed" || removedAt) return "removed";
+  if (state === "mastered" || state === "new") return state;
+  return dueAt && dueAt.getTime() <= now.getTime() ? "due" : "learning";
+}
+\end{lstlisting}
+
+A rating is therefore a single durable transaction in the web-app domain layer: it appends
+an immutable \texttt{review\_event}, updates the mutable scheduling fields on
+\texttt{pack\_item}, propagates cross-pack knowledge into \texttt{user\_term\_state}, and
+refreshes the \texttt{user\_streak} snapshot. The same shared study-plan read model then
+derives due, new, and future-learning counts for the dashboard, the decks list, pack
+staging, and due notifications---so reminder state can never drift from the study queue,
+because there is only one place that computes it.

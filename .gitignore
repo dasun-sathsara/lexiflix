@@ -128,3 +128,7 @@ WARP.md
 # CLI tools
 .antigravitycli/
 .vercel/
+
+# Exclude folders that end with latex in docs folder
+docs/*-latex/
+prompt.md
