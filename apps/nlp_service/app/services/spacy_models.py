@@ -110,7 +110,7 @@ class SpaCyModelManager:
             is_trf,
         )
         try:
-            nlp = spacy.load(model_name, disable=[])
+            nlp = spacy.load(model_name, disable=["parser"])
         except OSError as exc:
             raise SpaCyModelError(
                 f"Could not load model '{model_name}'.",

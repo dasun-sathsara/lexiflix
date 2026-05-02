@@ -1,4 +1,5 @@
-"""Subtitle text preprocessing — parsing, cleaning, and deduplication.
+"""Subtitle text preprocessing — parsing, cleaning, deduplication, sentence
+joining, and chunking.
 
 Extracted from the original analyzer script. Each function is a small,
 testable unit with no side-effects beyond its return value.
@@ -8,6 +9,8 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Iterator
+from datetime import timedelta
 
 import srt  # type: ignore[import-untyped]
 
@@ -39,6 +42,9 @@ _METADATA_SNIPPETS = (
     "http://",
     "https://",
 )
+
+_SENTENCE_END_RE = re.compile(r'[.!?]"?' + "$")
+_MAX_JOIN_GAP = timedelta(seconds=2)
 
 # ---------------------------------------------------------------------------
 # Cleaning
@@ -79,7 +85,7 @@ def is_subtitle_metadata_line(text: str) -> bool:
 
 
 def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
-    """Parse raw SRT markup into a list of cleaned subtitle lines.
+    """Parse raw SRT markup into a list of cleaned, sentence-joined subtitle lines.
 
     Raises ``SRTParsingError`` if the SRT content is malformed.
     """
@@ -91,17 +97,69 @@ def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
             detail=str(exc),
         ) from exc
 
-    cleaned: list[str] = []
+    items: list[tuple[str, timedelta, timedelta]] = []
     for sub in subs:
         line = sub.content.replace("\n", " ").strip()
         line = clean_subtitle_text(line)
         if line and not is_subtitle_metadata_line(line):
-            cleaned.append(line)
+            items.append((line, sub.start, sub.end))
+
+    lines = _join_broken_sentences(items)
 
     if not dedup_lines:
-        return cleaned
+        return lines
 
-    return _deduplicate_lines(cleaned)
+    return _deduplicate_lines(lines)
+
+
+def _join_broken_sentences(
+    items: list[tuple[str, timedelta, timedelta]],
+) -> list[str]:
+    """Join subtitle fragments that were split mid-sentence.
+
+    Uses timing gaps and sentence-ending punctuation heuristics:
+    - Lines that don't end with ``.!?`` are candidates for joining.
+    - A gap larger than ``_MAX_JOIN_GAP`` between two subtitles is treated
+      as a true sentence boundary.
+    """
+    if not items:
+        return []
+    result: list[str] = []
+    i = 0
+    while i < len(items):
+        line, _, end = items[i]
+        while i + 1 < len(items):
+            next_line, next_start, _ = items[i + 1]
+            gap = next_start - end
+            if gap > _MAX_JOIN_GAP:
+                break
+            if _SENTENCE_END_RE.search(line):
+                break
+            line = line + " " + next_line
+            end = items[i + 1][2]
+            i += 1
+        result.append(line)
+        i += 1
+    return result
+
+
+def chunk_lines(lines: list[str], max_chars: int = 1500) -> Iterator[str]:
+    """Group short lines into larger chunks for efficient transformer processing.
+
+    Each chunk is a single string with lines separated by newlines so that
+    spaCy can still segment them into individual sentences via ``doc.sents``.
+    """
+    chunk: list[str] = []
+    size = 0
+    for ln in lines:
+        if size + len(ln) > max_chars and chunk:
+            yield "\n".join(chunk)
+            chunk = []
+            size = 0
+        chunk.append(ln)
+        size += len(ln)
+    if chunk:
+        yield "\n".join(chunk)
 
 
 def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
