@@ -8,7 +8,7 @@ import {
   recordPackGenerationJobTransition,
   resetFailedPackGenerationJobForRetry,
 } from "@/lib/server/content-generation/jobs";
-import { generateContentPackTask } from "@/trigger/generate-content-pack";
+import type { generateContentPackTask } from "@/trigger/generate-content-pack";
 import type {
   ListPackGenerationJobsActionResult,
   PackGenerationProgressActionResult,
@@ -79,7 +79,9 @@ export async function retryPackGenerationAction(
   }
 
   try {
-    await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", { jobId: parsed.jobId });
+    await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", {
+      jobId: parsed.jobId,
+    });
   } catch (error) {
     await recordPackGenerationJobTransition({
       jobId: parsed.jobId,

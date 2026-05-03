@@ -53,7 +53,6 @@ export default async function DashboardPage() {
       <AppTopbar title="Dashboard" />
       <AppPageShell>
         <AppPageHeader
-          eyebrow={<Badge variant="secondary">Dashboard</Badge>}
           heading={
             <>
               Welcome back, <span className="text-primary">{displayName}</span>
@@ -244,7 +243,7 @@ export default async function DashboardPage() {
               <CardDescription>Due cards are computed from saved SRS dates.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-4">
                 {[
                   { label: "Due now", value: dashboard.reviewPlan.dueNow },
                   {
