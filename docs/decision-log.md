@@ -229,3 +229,23 @@
 - Decision: global known and ignored states affect all pack and generation surfaces for the same learner.
 - Reasoning: mastering or ignoring a canonical term in one title should not contradict another title's study queue.
 - Consequence: known-term mastery propagates to matching active cards, ignored terms are excluded from default queues and generation, and `again` demotes known terms back to learning.
+
+## 2026-06-13
+
+### Subtitle NLP Service Migration to Azure Container Apps (ACA)
+
+- Decision: Migrate the subtitle NLP service deployment from Google Cloud Run to Azure Container Apps (ACA) in \`southeastasia\`.
+- Reasoning: Google Cloud Platform credits expired, necessitating migration to a cost-effective alternative. Azure Container Apps Consumption plan provides a native scale-to-zero model with a monthly free tier (180,000 vCPU-seconds and 360,000 GiB-seconds) that keeps host costs at $0 when the service is idle.
+- Consequence:
+  - Replaced Google Artifact Registry and Cloud Run steps in the GitHub Actions workflow with Azure Container Registry (ACR) and Azure Container Apps deployments.
+  - Sized the Container App to 4.0 vCPUs and 8.0 GiB RAM to ensure fast spaCy-transformers loading and PyTorch processing on CPU while capping scaling at 1 active replica (\`maxReplicas=1\`).
+  - Auth setup utilizes a secure Service Principal credential stored in GitHub Secrets.
+
+### Multi-Provider LLM Integration with Azure AI Foundry
+
+- Decision: Integrate Azure AI Foundry as a toggleable LLM provider alongside Google Gemini, and deploy GPT 5.4 Nano in production.
+- Reasoning: Transitioning to Azure allows leveraging active Azure subscriptions and model catalogs. Implementing Azure AI Foundry as a separate adapter preserves Gemini support as a fallback option and maintains a provider-agnostic core pipeline.
+- Consequence:
+  - Added new \`TEXT_LLM_PROVIDER\` environment variable with values \`"gemini"\` and \`"azure-foundry"\`.
+  - Introduced the \`azure-foundry\` text content-generation and media-analysis phrase extraction adapters using Microsoft's OpenAI-compatible Node SDK (\`AzureOpenAI\`) and strict JSON schema formats (\`zodResponseFormat\`).
+  - Synced new Azure connection secrets to Vercel and Trigger.dev tasks (\`AZURE_AI_FOUNDRY_ENDPOINT\`, \`AZURE_AI_FOUNDRY_API_KEY\`, \`AZURE_AI_FOUNDRY_MODEL\`).
