@@ -307,7 +307,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="leading-relaxed text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {media.overview ?? "No overview is available for this title yet."}
               </p>
             </CardContent>
