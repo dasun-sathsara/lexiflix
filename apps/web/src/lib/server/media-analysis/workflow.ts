@@ -2,6 +2,7 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import { eq, sql } from "drizzle-orm";
+import { env } from "@/lib/env";
 
 import { db } from "@/lib/server/db";
 import type {
@@ -16,6 +17,7 @@ import {
   contentAnalysisRun,
   contentAnalysisRunEvent,
 } from "@/lib/server/db/schema";
+import { analyzeChunkWithAzureFoundry } from "@/lib/server/media-analysis/azure-foundry-analysis";
 import {
   type ContentAnalysisStage,
   cefrNumericFromLevel,
@@ -234,9 +236,11 @@ function createNlpWorkflowItems(
   return items;
 }
 
-function createLlmWorkflowItems(
-  response: Awaited<ReturnType<typeof analyzeChunkWithGemini>>,
-): WorkflowAnalysisItem[] {
+type AnalyzeChunkLlmResponse =
+  | Awaited<ReturnType<typeof analyzeChunkWithGemini>>
+  | Awaited<ReturnType<typeof analyzeChunkWithAzureFoundry>>;
+
+function createLlmWorkflowItems(response: AnalyzeChunkLlmResponse): WorkflowAnalysisItem[] {
   const items: WorkflowAnalysisItem[] = [];
 
   for (const item of response.items) {
@@ -275,8 +279,11 @@ function createLlmWorkflowItems(
 
 function mergeAnalysisItems(
   nlpResponse: Awaited<ReturnType<typeof analyzeWithNlpService>>,
-  llmResponses: Array<Awaited<ReturnType<typeof analyzeChunkWithGemini>>>,
-) {
+  llmResponses: Array<AnalyzeChunkLlmResponse>,
+): {
+  items: WorkflowAnalysisItem[];
+  warnings: string[];
+} {
   const warnings = [...nlpResponse.warnings];
   const byKey = new Map<string, WorkflowAnalysisItem>();
 
@@ -647,7 +654,10 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       runId,
       stage: "running_llm",
       message: "Running phrase extraction across subtitle chunks.",
-      progressMessage: "Analyzing subtitle phrases with Gemini...",
+      progressMessage:
+        env.TEXT_LLM_PROVIDER === "azure-foundry"
+          ? "Analyzing subtitle phrases with Azure AI Foundry..."
+          : "Analyzing subtitle phrases with Gemini...",
       payload: {
         chunkCount: chunks.length,
       },
@@ -655,21 +665,32 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     });
 
     const CONCURRENCY_LIMIT = 4;
-    logger.info("[media-analysis] running concurrent Gemini phrase extraction", {
-      runId,
-      chunkCount: chunks.length,
-      concurrencyLimit: CONCURRENCY_LIMIT,
-    });
-
-    const settledResults = await mapWithConcurrency(chunks, CONCURRENCY_LIMIT, (chunk) =>
-      analyzeChunkWithGemini({
-        chunkText: chunk.text,
-        chunkIndex: chunk.chunkIndex,
-        totalChunks: chunks.length,
-      }),
+    logger.info(
+      env.TEXT_LLM_PROVIDER === "azure-foundry"
+        ? "[media-analysis] running concurrent Azure AI Foundry phrase extraction"
+        : "[media-analysis] running concurrent Gemini phrase extraction",
+      {
+        runId,
+        chunkCount: chunks.length,
+        concurrencyLimit: CONCURRENCY_LIMIT,
+      },
     );
 
-    const llmResponses: Array<Awaited<ReturnType<typeof analyzeChunkWithGemini>>> = [];
+    const settledResults = await mapWithConcurrency(chunks, CONCURRENCY_LIMIT, (chunk) =>
+      env.TEXT_LLM_PROVIDER === "azure-foundry"
+        ? analyzeChunkWithAzureFoundry({
+            chunkText: chunk.text,
+            chunkIndex: chunk.chunkIndex,
+            totalChunks: chunks.length,
+          })
+        : analyzeChunkWithGemini({
+            chunkText: chunk.text,
+            chunkIndex: chunk.chunkIndex,
+            totalChunks: chunks.length,
+          }),
+    );
+
+    const llmResponses: Array<AnalyzeChunkLlmResponse> = [];
     const chunkFailures: string[] = [];
 
     for (const [index, result] of settledResults.entries()) {

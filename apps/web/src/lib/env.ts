@@ -64,6 +64,9 @@ const serverSchema = z
       "R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com",
     ),
     GOOGLE_CLOUD_API_KEY: z.string().min(1, "GOOGLE_CLOUD_API_KEY is required"),
+    AZURE_AI_FOUNDRY_ENDPOINT: z.string().optional(),
+    AZURE_AI_FOUNDRY_API_KEY: z.string().optional(),
+    AZURE_AI_FOUNDRY_MODEL: z.string().optional(),
     TRIGGER_SECRET_KEY: z.string().min(1, "TRIGGER_SECRET_KEY is required"),
     ANALYSIS_LLM_MODEL: z
       .string()
@@ -73,6 +76,7 @@ const serverSchema = z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
       .default("gemini-3.1-flash-lite"),
+    TEXT_LLM_PROVIDER: z.enum(["gemini", "azure-foundry"]).default("gemini"),
     CONTENT_GENERATION_AUDIO_PROVIDER: z
       .enum(["disabled", "aws-polly", "azure-mai"])
       .default("azure-mai"),
@@ -133,6 +137,30 @@ const serverSchema = z
         path: ["AZURE_SPEECH_API_KEY"],
         message: "AZURE_SPEECH_API_KEY is required when using azure-mai",
       });
+    }
+
+    if (value.TEXT_LLM_PROVIDER === "azure-foundry") {
+      if (!value.AZURE_AI_FOUNDRY_ENDPOINT) {
+        context.addIssue({
+          code: "custom",
+          path: ["AZURE_AI_FOUNDRY_ENDPOINT"],
+          message: "AZURE_AI_FOUNDRY_ENDPOINT is required when TEXT_LLM_PROVIDER is azure-foundry",
+        });
+      }
+      if (!value.AZURE_AI_FOUNDRY_API_KEY) {
+        context.addIssue({
+          code: "custom",
+          path: ["AZURE_AI_FOUNDRY_API_KEY"],
+          message: "AZURE_AI_FOUNDRY_API_KEY is required when TEXT_LLM_PROVIDER is azure-foundry",
+        });
+      }
+      if (!value.AZURE_AI_FOUNDRY_MODEL) {
+        context.addIssue({
+          code: "custom",
+          path: ["AZURE_AI_FOUNDRY_MODEL"],
+          message: "AZURE_AI_FOUNDRY_MODEL is required when TEXT_LLM_PROVIDER is azure-foundry",
+        });
+      }
     }
   });
 
