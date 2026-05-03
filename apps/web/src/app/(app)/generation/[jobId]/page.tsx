@@ -28,17 +28,7 @@ export default async function GenerationProgressPage({
       <AppTopbar title={generation.content.title} />
       <AppPageShell>
         <div className="flex flex-col gap-1">
-          <Link
-            href="/generation"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground w-fit"
-          >
-            <ChevronLeft className="size-3" />
-            Generation Jobs
-          </Link>
           <h1 className="text-2xl font-semibold tracking-tight">{generation.content.title}</h1>
-          {generation.content.subtitle ? (
-            <p className="text-sm text-muted-foreground">{generation.content.subtitle}</p>
-          ) : null}
         </div>
         <GenerationProgressClient initialGeneration={generation} />
       </AppPageShell>
