@@ -17,8 +17,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ignoreTermGloballyAction,
@@ -30,13 +37,15 @@ import {
   restorePackItemAction,
   unignoreTermAction,
 } from "@/features/packs/server/actions";
-import type { PackCardView, PackStagingView } from "@/features/packs/types";
+import type { PackCardView, PackStagingView, PackVocabularyKind } from "@/features/packs/types";
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
 import { PackStagingHero } from "./pack-staging-hero";
 import { PackStagingSidebar } from "./pack-staging-sidebar";
 
 type TabValue = "all" | PackCardView["state"];
+type VocabularyTypeFilter = "all" | PackVocabularyKind;
+const VOCABULARY_TYPE_FILTERS = ["word", "phrasal_verb", "idiom", "slang"] as const;
 
 function label(value: string) {
   return value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
@@ -58,6 +67,7 @@ function toTabValue(value: string): TabValue {
 export function PackStagingClient({ pack }: { pack: PackStagingView }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = React.useState<TabValue>("all");
+  const [vocabularyType, setVocabularyType] = React.useState<VocabularyTypeFilter>("all");
   const [cards, setCards] = React.useState(pack.cards);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = React.useState(false);
@@ -79,7 +89,23 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
       ),
     [cards],
   );
-  const filtered = activeTab === "all" ? cards : cards.filter((item) => item.state === activeTab);
+  const stateFilteredCards =
+    activeTab === "all" ? cards : cards.filter((item) => item.state === activeTab);
+  const vocabularyTypeCounts = React.useMemo(
+    () =>
+      stateFilteredCards.reduce<Record<PackVocabularyKind, number>>(
+        (counts, card) => {
+          counts[card.kind] += 1;
+          return counts;
+        },
+        { word: 0, phrasal_verb: 0, idiom: 0, slang: 0 },
+      ),
+    [stateFilteredCards],
+  );
+  const filtered =
+    vocabularyType === "all"
+      ? stateFilteredCards
+      : stateFilteredCards.filter((item) => item.kind === vocabularyType);
   const progressPct = Math.round((stats.mastered / Math.max(1, stats.total)) * 100);
   const selectedCount = selectedIds.size;
 
@@ -145,18 +171,15 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
       <PackStagingHero pack={pack} stats={stats} progressPct={progressPct} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Layers className="size-4 text-muted-foreground" />
                     Flashcards
                   </CardTitle>
-                  <CardDescription className="mt-1">
-                    Generated meanings and generated examples for this pack.
-                  </CardDescription>
                 </div>
                 {isSelectionMode ? (
                   <div className="flex items-center gap-2">
@@ -218,14 +241,20 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0">
-              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(toTabValue(value))}>
+            <CardContent className="px-4 pb-3 pt-0">
+              <Tabs
+                value={activeTab}
+                onValueChange={(value) => {
+                  setActiveTab(toTabValue(value));
+                  setSelectedIds(new Set());
+                }}
+              >
                 <TabsList className="w-full justify-start">
                   {(["all", "new", "learning", "due", "mastered", "removed"] as const).map(
                     (tab) => (
                       <TabsTrigger key={tab} value={tab} className="gap-1.5">
                         {label(tab)}
-                        <span className="text-xs opacity-70">
+                        <span className="opacity-70">
                           (
                           {tab === "all"
                             ? stats.total
@@ -238,7 +267,34 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                     ),
                   )}
                 </TabsList>
-                <TabsContent value={activeTab} className="mt-3 space-y-3">
+                <TabsContent value={activeTab} className="mt-1.5 space-y-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Showing <span className="font-medium text-foreground">{filtered.length}</span>{" "}
+                      of <span className="font-medium text-foreground">{cards.length}</span> cards
+                    </p>
+                    <Select
+                      value={vocabularyType}
+                      onValueChange={(value) => {
+                        setVocabularyType(value as VocabularyTypeFilter);
+                        setSelectedIds(new Set());
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-full sm:w-[250px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">
+                          All vocabulary types ({stateFilteredCards.length})
+                        </SelectItem>
+                        {VOCABULARY_TYPE_FILTERS.map((kind) => (
+                          <SelectItem key={kind} value={kind}>
+                            {label(kind)} ({vocabularyTypeCounts[kind]})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {isSelectionMode && filtered.length > 0 ? (
                     <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-3 py-2">
                       <Checkbox
@@ -253,10 +309,6 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                       </label>
                     </div>
                   ) : null}
-                  <p className="text-sm text-muted-foreground">
-                    Showing <span className="font-medium text-foreground">{filtered.length}</span>{" "}
-                    of <span className="font-medium text-foreground">{cards.length}</span> cards
-                  </p>
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -271,10 +323,12 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium">No cards in this category</p>
-                    <p className="text-sm text-muted-foreground">
-                      {activeTab === "all"
-                        ? "This pack has no active cards."
-                        : `No ${activeTab} cards right now.`}
+                    <p className="text-muted-foreground">
+                      {vocabularyType !== "all"
+                        ? `No ${label(vocabularyType).toLowerCase()} cards match this filter.`
+                        : activeTab === "all"
+                          ? "This pack has no active cards."
+                          : `No ${activeTab} cards right now.`}
                     </p>
                   </div>
                 </CardContent>

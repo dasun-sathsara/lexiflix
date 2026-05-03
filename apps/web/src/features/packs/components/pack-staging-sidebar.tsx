@@ -134,9 +134,9 @@ export function PackStagingSidebar({
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="mt-2 w-full gap-1.5 border-amber-200/60 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
+                className="mt-2 w-full gap-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 disabled={pendingAction}
               >
                 <RotateCcw className="size-3.5" />
@@ -155,7 +155,7 @@ export function PackStagingSidebar({
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={onResetPack}
-                  className="bg-amber-600 text-white hover:bg-amber-600/90"
+                  className="border-transparent bg-destructive/10 text-destructive shadow-none hover:bg-destructive/15"
                 >
                   Reset
                 </AlertDialogAction>

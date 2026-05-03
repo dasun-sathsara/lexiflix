@@ -110,7 +110,7 @@ export function PackStagingCardItem({
         isSelected && "ring-2 ring-primary ring-offset-2",
       )}
     >
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="px-4 ">
         <div className="flex gap-4">
           {isSelectionMode ? (
             <div className="flex items-start pt-1">
@@ -118,9 +118,9 @@ export function PackStagingCardItem({
             </div>
           ) : null}
 
-          <div className="min-w-0 flex-1 space-y-3">
+          <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-lg font-semibold tracking-tight">{item.displayText}</span>
+              <span className="text-lg tracking-tight">{item.displayText}</span>
               <Badge variant="secondary">{label(item.kind)}</Badge>
               {item.partOfSpeech ? <Badge variant="outline">{item.partOfSpeech}</Badge> : null}
               <Badge className={`border ${cefrBadgeClass(item.cefrLevel)}`}>
@@ -138,12 +138,10 @@ export function PackStagingCardItem({
               ) : null}
             </div>
 
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{truncate(item.meaning)}</p>
+            <div className="space-y-2">
+              <p className="text-sm text-foreground/86">{truncate(item.meaning)}</p>
               {firstExample ? (
-                <p className="text-sm italic text-foreground/80">
-                  Generated example: &quot;{firstExample}&quot;
-                </p>
+                <p className="text-sm italic text-foreground/60">&quot;{firstExample}&quot;</p>
               ) : null}
             </div>
           </div>
