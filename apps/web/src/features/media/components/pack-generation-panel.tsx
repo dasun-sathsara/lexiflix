@@ -35,7 +35,11 @@ import { Textarea } from "@/components/ui/textarea";
 import type { GenerationDialogDefaults, PackGenerationSnapshot } from "@/features/media/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "./_utils";
+import {
+  GENERATION_STAGE_LABELS,
+  GENERATION_VOCABULARY_TYPES,
+  VOCABULARY_TYPE_LABELS,
+} from "./_utils";
 
 export type PackGenerationPanelProps = {
   generation: PackGenerationSnapshot | null;
@@ -124,9 +128,8 @@ export function PackGenerationPanel({
       <CardContent className="space-y-3">
         {generation ? (
           <div className="rounded-xl border bg-card/60 p-3 text-sm">
-            <div className="font-medium">{generation.stage.replaceAll("_", " ")}</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              Job id: <code>{generation.jobId}</code>
+            <div className="font-medium">
+              {GENERATION_STAGE_LABELS[generation.stage] ?? generation.stage}
             </div>
           </div>
         ) : null}
@@ -171,7 +174,7 @@ export function PackGenerationPanel({
           <DialogHeader>
             <DialogTitle>Generate Pack</DialogTitle>
             <DialogDescription>
-              Choose the learner-specific request snapshot for this run.
+              Configure the vocabulary pack for this title.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">

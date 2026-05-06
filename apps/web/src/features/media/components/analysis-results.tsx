@@ -73,7 +73,9 @@ export function AnalysisResults({ snapshot }: { snapshot: MediaAnalysisSnapshot 
             <BarChart3 className="size-5 text-muted-foreground" />
             Linguistic Profile
           </CardTitle>
-          <CardDescription>Real reusable analysis loaded from Postgres.</CardDescription>
+          <CardDescription>
+            Vocabulary and difficulty profile extracted from the subtitles.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <AnalysisSummaryGrid snapshot={snapshot} />

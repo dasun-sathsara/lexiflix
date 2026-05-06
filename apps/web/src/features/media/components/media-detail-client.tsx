@@ -1,6 +1,17 @@
 "use client";
 
-import { BookOpen, Calendar, Clock, Film, Loader2, Star, Tv } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Film,
+  Loader2,
+  Sparkles,
+  Star,
+  Tv,
+  XCircle,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -15,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   getAnalysisStatusAction,
   getPackGenerationStatusAction,
@@ -26,7 +36,7 @@ import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/m
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
-import { formatRuntime, getCefrColor } from "./_utils";
+import { ANALYSIS_PIPELINE_STEPS, formatRuntime, getCefrColor } from "./_utils";
 import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
 
@@ -318,54 +328,97 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
           ) : analysis.status === "queued" || analysis.status === "running" ? (
             <Card>
               <CardHeader>
-                <CardTitle>Analysis In Progress</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Loader2 className="size-5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                  Analyzing Subtitles
+                </CardTitle>
                 <CardDescription>
-                  {analysis.progressMessage ?? "Polling durable run state..."}
+                  {analysis.progressMessage ?? "Processing your title..."}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 rounded-xl border bg-card/60 p-4">
-                  <Loader2 className="size-5 animate-spin text-indigo-600 dark:text-indigo-400" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{analysis.stage ?? "queued"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Run id: <code>{analysis.runId}</code>
-                    </p>
-                  </div>
+              <CardContent>
+                <div className="space-y-1">
+                  {ANALYSIS_PIPELINE_STEPS.map((step, index) => {
+                    const currentStageIndex = ANALYSIS_PIPELINE_STEPS.findIndex(
+                      (s) => s.stage === analysis.stage,
+                    );
+                    const stepIndex = ANALYSIS_PIPELINE_STEPS.findIndex(
+                      (s) => s.stage === step.stage,
+                    );
+                    const isCompleted = stepIndex < currentStageIndex;
+                    const isActive = step.stage === analysis.stage;
+                    const isPending = stepIndex > currentStageIndex;
+
+                    return (
+                      <div key={step.stage} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center pt-0.5">
+                          {isCompleted ? (
+                            <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
+                          ) : isActive ? (
+                            <div className="relative">
+                              <div className="size-5 rounded-full border-2 border-indigo-500 bg-indigo-500/10" />
+                              <span className="absolute inset-0 size-5 animate-ping rounded-full border-2 border-indigo-400 opacity-40" />
+                            </div>
+                          ) : (
+                            <div className="size-5 rounded-full border-2 border-border bg-muted/50" />
+                          )}
+                          {index < ANALYSIS_PIPELINE_STEPS.length - 1 ? (
+                            <div
+                              className={cn(
+                                "w-0.5 min-h-6",
+                                isCompleted ? "bg-emerald-500/40" : "bg-border",
+                              )}
+                            />
+                          ) : null}
+                        </div>
+                        <div className="pb-4">
+                          <p
+                            className={cn(
+                              "text-sm font-medium",
+                              isPending && "text-muted-foreground",
+                            )}
+                          >
+                            {step.label}
+                          </p>
+                          {isActive ? (
+                            <p className="text-xs text-muted-foreground">{step.description}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <Skeleton className="h-32 w-full rounded-xl" />
               </CardContent>
             </Card>
           ) : analysis.status === "failed" ? (
             <Card>
               <CardHeader>
-                <CardTitle>Analysis Failed</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="size-5 text-rose-600 dark:text-rose-400" />
+                  Analysis Failed
+                </CardTitle>
                 <CardDescription>
-                  The durable run failed. Review the error and retry when ready.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-                  {analysis.errorMessage ?? "The reusable analysis run failed."}
-                </div>
-                {analysis.runId ? (
-                  <p className="text-xs text-muted-foreground">
-                    Run id: <code>{analysis.runId}</code>
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Analysis Not Started</CardTitle>
-                <CardDescription>
-                  Start subtitle analysis to load a real linguistic profile for this title.
+                  Something went wrong during analysis. You can retry from the sidebar.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  The page now uses durable run state. Nothing is simulated here anymore.
+                <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
+                  {analysis.errorMessage ?? "An unexpected error occurred during analysis."}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-xl bg-primary/10 p-3">
+                  <Sparkles className="size-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight">
+                  Unlock this title's vocabulary
+                </h3>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  Start an analysis to extract the key words, idioms, and phrases from the
+                  subtitles and see how challenging this title is for your level.
                 </p>
               </CardContent>
             </Card>

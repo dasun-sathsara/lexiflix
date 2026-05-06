@@ -1,4 +1,6 @@
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
+import type { ContentAnalysisStage } from "@/lib/server/media-analysis/contracts";
+import type { ContentGenerationStage } from "@/lib/server/content-generation/contracts";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
 /** Canonical CEFR level ordering used for chart axes and comparisons. */
@@ -18,6 +20,42 @@ export const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [
   "phrasal_verb",
   "idiom",
   "slang",
+];
+
+/** Human-readable labels for analysis pipeline stages. */
+export const ANALYSIS_STAGE_LABELS: Record<ContentAnalysisStage, string> = {
+  queued: "Queued",
+  fetching_subtitles: "Fetching subtitles",
+  running_nlp: "Analyzing vocabulary",
+  running_llm: "Evaluating difficulty",
+  merging_analysis: "Building profile",
+  saving_analysis: "Saving results",
+  completed: "Complete",
+  failed: "Failed",
+};
+
+/** Human-readable labels for pack generation stages. */
+export const GENERATION_STAGE_LABELS: Record<ContentGenerationStage, string> = {
+  queued: "Queued",
+  selecting_terms: "Selecting terms",
+  generating_content: "Generating content",
+  generating_assets: "Generating assets",
+  saving_pack: "Saving pack",
+  completed: "Complete",
+  failed: "Failed",
+};
+
+/** Pipeline steps shown during analysis in-progress view. */
+export const ANALYSIS_PIPELINE_STEPS: {
+  stage: ContentAnalysisStage;
+  label: string;
+  description: string;
+}[] = [
+  { stage: "fetching_subtitles", label: "Fetching subtitles", description: "Downloading subtitle data" },
+  { stage: "running_nlp", label: "Analyzing vocabulary", description: "Extracting and analyzing words" },
+  { stage: "running_llm", label: "Evaluating difficulty", description: "Rating CEFR difficulty levels" },
+  { stage: "merging_analysis", label: "Building profile", description: "Combining analysis results" },
+  { stage: "saving_analysis", label: "Saving results", description: "Storing the linguistic profile" },
 ];
 
 /**

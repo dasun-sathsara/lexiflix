@@ -72,10 +72,9 @@ export function AnalysisSidebar({
             Subtitle Analysis
           </CardTitle>
           <CardDescription>
-            {snapshot.progressMessage ??
-              (needsSeason
-                ? "Choose a season to resolve the durable analysis target."
-                : "Start reusable subtitle analysis for this title.")}
+            {needsSeason
+              ? "Pick a season to begin analysis."
+              : "Analyze the subtitles to understand the vocabulary in this title."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -143,21 +142,9 @@ export function AnalysisSidebar({
             </div>
           ) : null}
 
-          {isProcessing ? (
-            <div className="rounded-xl border bg-card/60 p-4 text-sm text-muted-foreground">
-              The page is polling durable run state by <code>{snapshot.runId}</code>.
-            </div>
-          ) : null}
-
-          {isCompleted ? (
-            <div className="rounded-xl border border-emerald-200/60 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300">
-              Reusable analysis is complete and cached for this pipeline fingerprint.
-            </div>
-          ) : null}
-
           {media.mediaType === "tv" && !media.selectedSeasonNumber ? (
             <div className="rounded-xl border bg-card/60 p-4 text-sm text-muted-foreground">
-              TV analysis runs at the season level. Pick a season first.
+              Select a season above to get started.
             </div>
           ) : null}
         </CardContent>
