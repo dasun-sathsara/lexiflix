@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth-guards";
 import type { ListNotificationsActionResult, NotificationMutationResult } from "../types";
 import {
+  dismissAllNotifications,
   dismissNotification,
   listUserNotifications,
   markNotificationRead,
@@ -59,5 +60,11 @@ export async function dismissNotificationAction(
   }
 
   await dismissNotification({ userId: session.user.id, id: parsed.data.id });
+  return { ok: true, data: undefined };
+}
+
+export async function clearAllNotificationsAction(): Promise<NotificationMutationResult> {
+  const session = await requireSession();
+  await dismissAllNotifications({ userId: session.user.id });
   return { ok: true, data: undefined };
 }
