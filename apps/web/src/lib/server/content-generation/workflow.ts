@@ -6,6 +6,8 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
+import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { sendPackStatusEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { persistGeneratedArtifact } from "@/lib/server/content-generation/artifacts";
 import {
@@ -29,11 +31,55 @@ import {
   packGenerationJobEvent,
   packItem,
   packItemContent,
+  user as userTable,
 } from "@/lib/server/db/schema";
 import { deleteObjectByKey } from "@/lib/storage/r2";
 
 function textByAnalysisItem(items: GeneratedTextItem[]) {
   return new Map(items.map((item) => [item.analysisItemId, item]));
+}
+
+async function sendPackStatusEmailIfEnabled({
+  userId,
+  status,
+  packTitle,
+  jobId,
+  packId,
+}: {
+  userId: string;
+  status: "completed" | "failed";
+  packTitle: string;
+  jobId: string;
+  packId?: string;
+}) {
+  try {
+    const [userRow, preferences] = await Promise.all([
+      db.query.user.findFirst({ where: eq(userTable.id, userId) }),
+      getSettingsPreferences(userId),
+    ]);
+
+    if (!userRow || !preferences.emailRemindersEnabled) return;
+
+    const baseUrl = env.NEXT_PUBLIC_APP_URL;
+    const actionUrl =
+      status === "completed" && packId
+        ? `${baseUrl}/pack/${packId}`
+        : `${baseUrl}/generation/${jobId}`;
+
+    await sendPackStatusEmail({
+      email: userRow.email,
+      userName: userRow.name,
+      status,
+      packTitle,
+      actionUrl,
+    });
+  } catch (error) {
+    logger.warn("[content-generation] failed to send pack status email", {
+      jobId,
+      status,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function getAudioConfig() {
@@ -333,6 +379,13 @@ export async function runPackGenerationWorkflow(jobId: string) {
         packId,
         title: contentRow?.title ?? "Generated",
       });
+      await sendPackStatusEmailIfEnabled({
+        userId: job.userId,
+        status: "completed",
+        packTitle: contentRow?.title ?? "Generated",
+        jobId,
+        packId,
+      });
     } catch (error) {
       const warning =
         error instanceof Error ? error.message : "Failed to create pack-ready notification.";
@@ -380,6 +433,12 @@ export async function runPackGenerationWorkflow(jobId: string) {
           userId: failedJob.userId,
           jobId,
           title: failedContent?.title ?? "Generated",
+        });
+        await sendPackStatusEmailIfEnabled({
+          userId: failedJob.userId,
+          status: "failed",
+          packTitle: failedContent?.title ?? "Generated",
+          jobId,
         });
       } catch (notificationError) {
         logger.warn("[content-generation] failed to create failure notification", {

@@ -1,5 +1,6 @@
 import { render } from "@react-email/render";
 import { Resend } from "resend";
+import { PackStatusEmail } from "./email/templates/pack-status";
 import { ResetPassword } from "./email/templates/reset-password";
 import { VerifyEmail } from "./email/templates/verify-email";
 import { env } from "./env";
@@ -95,5 +96,61 @@ export async function sendPasswordResetEmail({
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw error;
+  }
+}
+
+interface SendPackStatusEmailParams {
+  email: string;
+  userName: string;
+  status: "completed" | "failed";
+  packTitle: string;
+  actionUrl: string;
+}
+
+export async function sendPackStatusEmail({
+  email,
+  userName,
+  status,
+  packTitle,
+  actionUrl,
+}: SendPackStatusEmailParams) {
+  try {
+    const recipientEmail = env.NEXT_PUBLIC_ENV === "development" ? "dasunx.pm@gmail.com" : email;
+
+    if (env.NEXT_PUBLIC_ENV === "development" && email !== recipientEmail) {
+      console.log(`[DEV MODE] Redirecting pack status email from ${email} to ${recipientEmail}`);
+    }
+
+    const emailHtml = await render(
+      PackStatusEmail({
+        userName,
+        status,
+        packTitle,
+        actionUrl,
+      }),
+    );
+
+    const subject =
+      status === "completed"
+        ? `${packTitle} vocabulary pack is ready`
+        : `${packTitle} vocabulary pack generation failed`;
+
+    const { data, error } = await resend.emails.send({
+      from: "Lexiflix <onboarding@resend.dev>",
+      to: [recipientEmail],
+      subject,
+      html: emailHtml,
+    });
+
+    if (error) {
+      console.error("Failed to send pack status email:", error);
+      return null;
+    }
+
+    console.log("Pack status email sent successfully:", data);
+    return data;
+  } catch (error) {
+    console.error("Error sending pack status email:", error);
+    return null;
   }
 }
