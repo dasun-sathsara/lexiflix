@@ -242,7 +242,11 @@ export async function getStudySessionView({
 
   const cards = await getPackCards(packId, userId);
   const studyPlan = await getPackStudyPlan({ packId, userId });
-  const resolvedMode = initialCardId ? "preview" : mode;
+  const resolvedMode = initialCardId
+    ? "preview"
+    : mode === "new" && studyPlan.dueCount > 0
+      ? "due"
+      : mode;
   const queue = buildStudyQueue({
     cards,
     mode: resolvedMode,

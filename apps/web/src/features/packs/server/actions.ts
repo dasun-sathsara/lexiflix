@@ -280,104 +280,81 @@ async function updateTermStateAndCards({
   nextState: "known" | "learning" | "ignored";
 }) {
   const now = new Date();
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(userTermState)
-      .values({
-        userId,
-        termId: item.termId,
+  await db
+    .insert(userTermState)
+    .values({
+      userId,
+      termId: item.termId,
+      state: nextState,
+      source: "manual",
+      lastPackItemId: item.id,
+      firstSeenAt: now,
+      lastSeenAt: now,
+      knownAt: nextState === "known" ? now : null,
+      ignoredAt: nextState === "ignored" ? now : null,
+    })
+    .onConflictDoUpdate({
+      target: [userTermState.userId, userTermState.termId],
+      set: {
         state: nextState,
         source: "manual",
         lastPackItemId: item.id,
-        firstSeenAt: now,
+        firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${now})`,
         lastSeenAt: now,
-        knownAt: nextState === "known" ? now : null,
+        knownAt:
+          nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
         ignoredAt: nextState === "ignored" ? now : null,
+        updatedAt: now,
+      },
+    });
+
+  const matchingRows = await db
+    .select({ id: packItem.id, packId: packItem.packId })
+    .from(packItem)
+    .innerJoin(pack, eq(pack.id, packItem.packId))
+    .where(
+      and(
+        eq(pack.userId, userId),
+        eq(packItem.termId, item.termId),
+        isNull(packItem.removedAt),
+        ne(packItem.state, "removed"),
+      ),
+    );
+
+  if (matchingRows.length === 0) {
+    return;
+  }
+
+  const matchingIds = matchingRows.map((row) => row.id);
+  if (nextState === "known") {
+    await db
+      .update(packItem)
+      .set({ state: "mastered", masteredAt: now, updatedAt: now })
+      .where(inArray(packItem.id, matchingIds));
+  } else if (nextState === "learning") {
+    await db
+      .update(packItem)
+      .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
+      .where(inArray(packItem.id, matchingIds));
+  } else {
+    await db
+      .update(packItem)
+      .set({
+        state: "removed",
+        removedAt: now,
+        removalReason: "term_ignored",
+        updatedAt: now,
       })
-      .onConflictDoUpdate({
-        target: [userTermState.userId, userTermState.termId],
-        set: {
-          state: nextState,
-          source: "manual",
-          lastPackItemId: item.id,
-          firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${now})`,
-          lastSeenAt: now,
-          knownAt:
-            nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
-          ignoredAt: nextState === "ignored" ? now : null,
-          updatedAt: now,
-        },
-      });
+      .where(inArray(packItem.id, matchingIds));
+  }
 
-    const matchingRows = await tx
-      .select({ id: packItem.id, packId: packItem.packId })
-      .from(packItem)
-      .innerJoin(pack, eq(pack.id, packItem.packId))
-      .where(
-        and(
-          eq(pack.userId, userId),
-          eq(packItem.termId, item.termId),
-          isNull(packItem.removedAt),
-          ne(packItem.state, "removed"),
-        ),
-      );
-
-    if (matchingRows.length > 0) {
-      if (nextState === "known") {
-        await tx
-          .update(packItem)
-          .set({ state: "mastered", masteredAt: now, updatedAt: now })
-          .where(
-            inArray(
-              packItem.id,
-              matchingRows.map((row) => row.id),
-            ),
-          );
-      } else if (nextState === "learning") {
-        await tx
-          .update(packItem)
-          .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
-          .where(
-            inArray(
-              packItem.id,
-              matchingRows.map((row) => row.id),
-            ),
-          );
-      } else {
-        await tx
-          .update(packItem)
-          .set({
-            state: "removed",
-            removedAt: now,
-            removalReason: "term_ignored",
-            updatedAt: now,
-          })
-          .where(
-            inArray(
-              packItem.id,
-              matchingRows.map((row) => row.id),
-            ),
-          );
-      }
-
-      for (const packId of new Set(matchingRows.map((row) => row.packId))) {
-        const activeRows = await tx
-          .select({ id: packItem.id })
-          .from(packItem)
-          .where(
-            and(
-              eq(packItem.packId, packId),
-              ne(packItem.state, "removed"),
-              isNull(packItem.removedAt),
-            ),
-          );
-        await tx
-          .update(pack)
-          .set({ itemCount: activeRows.length, updatedAt: now })
-          .where(eq(pack.id, packId));
-      }
-    }
-  });
+  for (const packId of new Set(matchingRows.map((row) => row.packId))) {
+    const activeCount = await countActiveItems(packId);
+    await db
+      .update(pack)
+      .set({ itemCount: activeCount, updatedAt: now })
+      .where(eq(pack.id, packId));
+  }
 }
 
 async function runTermAction(input: {
@@ -455,56 +432,55 @@ export async function unignoreTermAction(input: {
   }
 
   const now = new Date();
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(userTermState)
-      .values({
-        userId: session.user.id,
-        termId: item.termId,
+  await db
+    .insert(userTermState)
+    .values({
+      userId: session.user.id,
+      termId: item.termId,
+      state: "learning",
+      source: "manual",
+      lastPackItemId: item.id,
+      firstSeenAt: now,
+      lastSeenAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [userTermState.userId, userTermState.termId],
+      set: {
         state: "learning",
         source: "manual",
+        ignoredAt: null,
         lastPackItemId: item.id,
-        firstSeenAt: now,
         lastSeenAt: now,
-      })
-      .onConflictDoUpdate({
-        target: [userTermState.userId, userTermState.termId],
-        set: {
-          state: "learning",
-          source: "manual",
-          ignoredAt: null,
-          lastPackItemId: item.id,
-          lastSeenAt: now,
-          updatedAt: now,
-        },
-      });
-    const ignoredRows = await tx
-      .select({ id: packItem.id, firstStudiedAt: packItem.firstStudiedAt })
-      .from(packItem)
-      .innerJoin(pack, eq(pack.id, packItem.packId))
-      .where(
-        and(
-          eq(pack.userId, session.user.id),
-          eq(packItem.termId, item.termId),
-          eq(packItem.removalReason, "term_ignored"),
-        ),
-      );
+        updatedAt: now,
+      },
+    });
 
-    const newIds = ignoredRows.filter((row) => !row.firstStudiedAt).map((row) => row.id);
-    const learningIds = ignoredRows.filter((row) => row.firstStudiedAt).map((row) => row.id);
-    if (newIds.length > 0) {
-      await tx
-        .update(packItem)
-        .set({ state: "new", removedAt: null, removalReason: null, updatedAt: now })
-        .where(inArray(packItem.id, newIds));
-    }
-    if (learningIds.length > 0) {
-      await tx
-        .update(packItem)
-        .set({ state: "learning", removedAt: null, removalReason: null, updatedAt: now })
-        .where(inArray(packItem.id, learningIds));
-    }
-  });
+  const ignoredRows = await db
+    .select({ id: packItem.id, firstStudiedAt: packItem.firstStudiedAt })
+    .from(packItem)
+    .innerJoin(pack, eq(pack.id, packItem.packId))
+    .where(
+      and(
+        eq(pack.userId, session.user.id),
+        eq(packItem.termId, item.termId),
+        eq(packItem.removalReason, "term_ignored"),
+      ),
+    );
+
+  const newIds = ignoredRows.filter((row) => !row.firstStudiedAt).map((row) => row.id);
+  const learningIds = ignoredRows.filter((row) => row.firstStudiedAt).map((row) => row.id);
+  if (newIds.length > 0) {
+    await db
+      .update(packItem)
+      .set({ state: "new", removedAt: null, removalReason: null, updatedAt: now })
+      .where(inArray(packItem.id, newIds));
+  }
+  if (learningIds.length > 0) {
+    await db
+      .update(packItem)
+      .set({ state: "learning", removedAt: null, removalReason: null, updatedAt: now })
+      .where(inArray(packItem.id, learningIds));
+  }
 
   revalidatePackSurfaces(input.packId);
   return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
@@ -582,123 +558,122 @@ export async function ratePackItemAction(input: {
     reviewedAt,
   });
 
-  await db.transaction(async (tx) => {
-    await tx.insert(reviewEvent).values({
-      id: crypto.randomUUID(),
+  await db.insert(reviewEvent).values({
+    id: crypto.randomUUID(),
+    userId: session.user.id,
+    packItemId: item.id,
+    termId: item.termId,
+    rating: input.rating,
+    reviewedAt,
+    responseTimeMs: input.responseTimeMs ?? null,
+  });
+  await db
+    .update(packItem)
+    .set({
+      state: next.state,
+      dueAt: next.dueAt,
+      lastReviewedAt: reviewedAt,
+      lastRating: input.rating,
+      repetitionCount: next.repetitionCount,
+      lapseCount: next.lapseCount,
+      intervalDays: next.intervalDays,
+      easeFactor: next.easeFactor,
+      firstStudiedAt: item.firstStudiedAt ?? reviewedAt,
+      masteredAt: next.masteredAt,
+      updatedAt: reviewedAt,
+    })
+    .where(eq(packItem.id, item.id));
+  await db
+    .insert(userTermState)
+    .values({
       userId: session.user.id,
-      packItemId: item.id,
       termId: item.termId,
-      rating: input.rating,
-      reviewedAt,
-      responseTimeMs: input.responseTimeMs ?? null,
-    });
-    await tx
-      .update(packItem)
-      .set({
-        state: next.state,
-        dueAt: next.dueAt,
-        lastReviewedAt: reviewedAt,
-        lastRating: input.rating,
-        repetitionCount: next.repetitionCount,
-        lapseCount: next.lapseCount,
-        intervalDays: next.intervalDays,
-        easeFactor: next.easeFactor,
-        firstStudiedAt: item.firstStudiedAt ?? reviewedAt,
-        masteredAt: next.masteredAt,
-        updatedAt: reviewedAt,
-      })
-      .where(eq(packItem.id, item.id));
-    await tx
-      .insert(userTermState)
-      .values({
-        userId: session.user.id,
-        termId: item.termId,
+      state: nextTermState,
+      source: "review",
+      totalReviews: 1,
+      totalLapses: input.rating === "again" ? 1 : 0,
+      lastPackItemId: item.id,
+      firstSeenAt: reviewedAt,
+      lastSeenAt: reviewedAt,
+      lastReviewedAt: reviewedAt,
+      knownAt: nextTermState === "known" ? reviewedAt : null,
+    })
+    .onConflictDoUpdate({
+      target: [userTermState.userId, userTermState.termId],
+      set: {
         state: nextTermState,
         source: "review",
-        totalReviews: 1,
-        totalLapses: input.rating === "again" ? 1 : 0,
+        totalReviews: sql`${userTermState.totalReviews} + 1`,
+        totalLapses:
+          input.rating === "again"
+            ? sql`${userTermState.totalLapses} + 1`
+            : userTermState.totalLapses,
         lastPackItemId: item.id,
-        firstSeenAt: reviewedAt,
+        firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
         lastSeenAt: reviewedAt,
         lastReviewedAt: reviewedAt,
-        knownAt: nextTermState === "known" ? reviewedAt : null,
+        knownAt:
+          nextTermState === "known"
+            ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
+            : shouldDemoteKnownTerm
+              ? null
+              : userTermState.knownAt,
+        ignoredAt: null,
+        updatedAt: reviewedAt,
+      },
+    });
+
+  const matchingRows = await db
+    .select({ id: packItem.id })
+    .from(packItem)
+    .innerJoin(pack, eq(pack.id, packItem.packId))
+    .where(
+      and(
+        eq(pack.userId, session.user.id),
+        eq(packItem.termId, item.termId),
+        ne(packItem.state, "removed"),
+        isNull(packItem.removedAt),
+      ),
+    );
+  const matchingIds = matchingRows.map((row) => row.id);
+  if (knownAfterReview && matchingIds.length > 0) {
+    await db
+      .update(packItem)
+      .set({ state: "mastered", masteredAt: reviewedAt, updatedAt: reviewedAt })
+      .where(inArray(packItem.id, matchingIds));
+  } else if (shouldDemoteKnownTerm && matchingIds.length > 0) {
+    await db
+      .update(packItem)
+      .set({
+        state: "learning",
+        dueAt: next.dueAt,
+        masteredAt: null,
+        updatedAt: reviewedAt,
       })
-      .onConflictDoUpdate({
-        target: [userTermState.userId, userTermState.termId],
-        set: {
-          state: nextTermState,
-          source: "review",
-          totalReviews: sql`${userTermState.totalReviews} + 1`,
-          totalLapses:
-            input.rating === "again"
-              ? sql`${userTermState.totalLapses} + 1`
-              : userTermState.totalLapses,
-          lastPackItemId: item.id,
-          firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
-          lastSeenAt: reviewedAt,
-          lastReviewedAt: reviewedAt,
-          knownAt:
-            nextTermState === "known"
-              ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
-              : shouldDemoteKnownTerm
-                ? null
-                : userTermState.knownAt,
-          ignoredAt: null,
-          updatedAt: reviewedAt,
-        },
-      });
-    const matchingRows = await tx
-      .select({ id: packItem.id })
-      .from(packItem)
-      .innerJoin(pack, eq(pack.id, packItem.packId))
-      .where(
-        and(
-          eq(pack.userId, session.user.id),
-          eq(packItem.termId, item.termId),
-          ne(packItem.state, "removed"),
-          isNull(packItem.removedAt),
-        ),
-      );
-    const matchingIds = matchingRows.map((row) => row.id);
-    if (knownAfterReview && matchingIds.length > 0) {
-      await tx
-        .update(packItem)
-        .set({ state: "mastered", masteredAt: reviewedAt, updatedAt: reviewedAt })
-        .where(inArray(packItem.id, matchingIds));
-    } else if (shouldDemoteKnownTerm && matchingIds.length > 0) {
-      await tx
-        .update(packItem)
-        .set({
-          state: "learning",
-          dueAt: next.dueAt,
-          masteredAt: null,
-          updatedAt: reviewedAt,
-        })
-        .where(inArray(packItem.id, matchingIds));
-    }
-    await tx
-      .insert(userStreak)
-      .values({
-        userId: session.user.id,
+      .where(inArray(packItem.id, matchingIds));
+  }
+
+  await db
+    .insert(userStreak)
+    .values({
+      userId: session.user.id,
+      currentStreakDays: nextStreak.currentStreakDays,
+      longestStreakDays: nextStreak.longestStreakDays,
+      lastStudyAt: reviewedAt,
+      streakStartedAt: nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
+    })
+    .onConflictDoUpdate({
+      target: userStreak.userId,
+      set: {
         currentStreakDays: nextStreak.currentStreakDays,
         longestStreakDays: nextStreak.longestStreakDays,
         lastStudyAt: reviewedAt,
         streakStartedAt:
           nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-      })
-      .onConflictDoUpdate({
-        target: userStreak.userId,
-        set: {
-          currentStreakDays: nextStreak.currentStreakDays,
-          longestStreakDays: nextStreak.longestStreakDays,
-          lastStudyAt: reviewedAt,
-          streakStartedAt:
-            nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-          updatedAt: reviewedAt,
-        },
-      });
-    await tx.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId));
-  });
+        updatedAt: reviewedAt,
+      },
+    });
+  await db.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId));
 
   const nextDueRows = await db
     .select({ dueAt: packItem.dueAt })

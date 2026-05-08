@@ -209,9 +209,10 @@ export function buildStudyQueue({
   newCardLimit: number;
   requestedCardId?: string | null;
 }) {
-  const activeCards = cards.filter((card) => card.state !== "mastered" && card.state !== "removed");
+  const previewableCards = cards.filter((card) => card.state !== "removed");
+  const activeCards = previewableCards.filter((card) => card.state !== "mastered");
   const requestedCard = requestedCardId
-    ? activeCards.find((card) => card.id === requestedCardId)
+    ? previewableCards.find((card) => card.id === requestedCardId)
     : null;
 
   if (mode === "preview") {
