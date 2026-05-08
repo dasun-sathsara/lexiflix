@@ -38,6 +38,7 @@ import {
   unignoreTermAction,
 } from "@/features/packs/server/actions";
 import type { PackCardView, PackStagingView, PackVocabularyKind } from "@/features/packs/types";
+import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
 import { PackStagingHero } from "./pack-staging-hero";
@@ -45,7 +46,7 @@ import { PackStagingSidebar } from "./pack-staging-sidebar";
 
 type TabValue = "all" | PackCardView["state"];
 type VocabularyTypeFilter = "all" | PackVocabularyKind;
-const VOCABULARY_TYPE_FILTERS = ["word", "phrasal_verb", "idiom", "slang"] as const;
+const VOCABULARY_TYPE_FILTERS = VOCABULARY_KINDS;
 
 function label(value: string) {
   return value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
@@ -289,7 +290,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                         </SelectItem>
                         {VOCABULARY_TYPE_FILTERS.map((kind) => (
                           <SelectItem key={kind} value={kind}>
-                            {label(kind)} ({vocabularyTypeCounts[kind]})
+                            {formatVocabularyKindLabel(kind)} ({vocabularyTypeCounts[kind]})
                           </SelectItem>
                         ))}
                       </SelectContent>

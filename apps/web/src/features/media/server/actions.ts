@@ -15,6 +15,7 @@ import type {
   StartPackGenerationActionResult,
   StartPackGenerationInput,
 } from "@/features/media/types";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
@@ -102,7 +103,7 @@ async function triggerPackGenerationJob(jobId: string) {
       stage: "failed",
       message: "Failed to trigger pack generation.",
       errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage: error instanceof Error ? error.message : "Failed to trigger pack generation.",
+      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
       payload: {
         triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
         triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),

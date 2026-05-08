@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  formatGenerationLabel,
-  getGenerationStatusCopy,
+  getGenerationProgressState,
   getGenerationStatusMessage,
   isGenerationActive,
 } from "../lib/status";
@@ -61,7 +60,7 @@ export function GenerationJobsClient({
       </div>
       <div className="space-y-2">
         {jobs.map((job) => {
-          const status = getGenerationStatusCopy(job.status);
+          const progress = getGenerationProgressState(job);
           const isActive = isGenerationActive(job.status);
           const isFailed = job.status === "failed";
           const hasMissingPack = job.status === "completed" && !job.packHref;
@@ -76,7 +75,7 @@ export function GenerationJobsClient({
               "border-rose-200/70 bg-rose-500/10 text-rose-700 dark:border-rose-500/20 dark:text-rose-300",
             job.status === "cancelled" && "border-border bg-muted text-muted-foreground",
           );
-          const message = job.errorMessage ?? getGenerationStatusMessage(job);
+          const message = getGenerationStatusMessage(job);
 
           return (
             <div
@@ -117,10 +116,7 @@ export function GenerationJobsClient({
                   <div className="flex flex-wrap items-center gap-1.5">
                     <Badge variant="secondary" className={statusClass}>
                       {isActive ? <Loader2 className="mr-1 size-3 animate-spin" /> : null}
-                      {status.label}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                      {formatGenerationLabel(job.stage)}
+                      {progress.label}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {formatRelativeTime(job.updatedAt)}

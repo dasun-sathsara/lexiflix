@@ -59,10 +59,7 @@ function AnalysisSummaryGrid({ snapshot }: { snapshot: MediaAnalysisSnapshot }) 
 export function AnalysisResults({ snapshot }: { snapshot: MediaAnalysisSnapshot }) {
   const distribution = buildCefrDistributionEntries(snapshot);
   const vocabularyCounts = Object.fromEntries(
-    GENERATION_VOCABULARY_TYPES.map((kind) => [
-      kind,
-      snapshot.summary?.kindCounts?.[kind] ?? 0,
-    ]),
+    GENERATION_VOCABULARY_TYPES.map((kind) => [kind, snapshot.summary?.kindCounts?.[kind] ?? 0]),
   );
 
   return (

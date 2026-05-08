@@ -2,6 +2,7 @@
 
 import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import {
@@ -89,8 +90,7 @@ export async function retryPackGenerationAction(
       stage: "failed",
       message: "Failed to trigger pack generation retry.",
       errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage:
-        error instanceof Error ? error.message : "Failed to trigger pack generation retry.",
+      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
       payload: {
         triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
         triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),

@@ -6,6 +6,7 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { sendPackStatusEmail } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -291,79 +292,95 @@ export async function runPackGenerationWorkflow(jobId: string) {
     });
 
     try {
-      await db.transaction(async (tx) => {
-        const existingPack = await tx.query.pack.findFirst({
-          where: and(eq(pack.userId, job.userId), eq(pack.contentId, job.contentId)),
-        });
-        if (existingPack) {
-          logger.info("[content-generation] replacing existing pack", {
-            jobId,
-            existingPackId: existingPack.id,
-          });
-          await tx.delete(pack).where(eq(pack.id, existingPack.id));
-        }
-
-        await tx.insert(pack).values({
-          id: packId,
-          userId: job.userId,
-          contentId: job.contentId,
-          sourceJobId: job.id,
-          analysisRunId: job.analysisRunId ?? "",
-          status: "active",
-          name: `${contentRow?.title ?? "Generated"} vocabulary`,
-          learnerCefrLevelAtGeneration: job.requestSnapshot.learnerCefrLevel,
-          frequencyPreferenceAtGeneration: job.requestSnapshot.frequencyPreference,
-          selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
-          contentGenerationPipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
-          contentGenerationPromptVersion: CONTENT_GENERATION_PIPELINE_VERSION,
-          itemCount: selectedItems.length,
-          estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
-        });
-
-        for (const [index, item] of selectedItems.entries()) {
-          const packItemId = crypto.randomUUID();
-          const generated = textMap.get(item.analysisItemId);
-          if (!generated) {
-            throw new Error(`Missing generated text for ${item.displayText}.`);
-          }
-
-          await tx.insert(packItem).values({
-            id: packItemId,
-            packId,
-            contentAnalysisItemId: item.analysisItemId,
-            termId: item.termId,
-            sortOrder: index + 1,
-            includedReason: item.includedReason,
-            dueAt: now,
-          });
-          await tx.insert(packItemContent).values({
-            packItemId,
-            meaning: generated.meaning,
-            exampleSentences: generated.exampleSentences,
-            audioArtifactId: audioArtifacts.get(item.analysisItemId) ?? null,
-            imageArtifactId: imageArtifacts.get(item.analysisItemId) ?? null,
-            generatedAt: now,
-          });
-        }
-
-        await tx
-          .update(packGenerationJob)
-          .set({
-            status: "completed",
-            stage: "completed",
-            progressMessage: "Pack generation complete.",
-            completedAt: now,
-            updatedAt: now,
-          })
-          .where(eq(packGenerationJob.id, jobId));
-        await tx.insert(packGenerationJobEvent).values({
-          id: crypto.randomUUID(),
-          jobId,
-          stage: "completed",
-          message: "Pack generation complete.",
-          payload: { packId, warnings },
-        });
+      const existingPack = await db.query.pack.findFirst({
+        where: and(eq(pack.userId, job.userId), eq(pack.contentId, job.contentId)),
       });
+      if (existingPack) {
+        logger.info("[content-generation] replacing existing pack", {
+          jobId,
+          existingPackId: existingPack.id,
+        });
+      }
+
+      const packItemRows = selectedItems.map((item, index) => ({
+        id: crypto.randomUUID(),
+        packId,
+        contentAnalysisItemId: item.analysisItemId,
+        termId: item.termId,
+        sortOrder: index + 1,
+        includedReason: item.includedReason,
+        dueAt: now,
+      }));
+      const packItemContentRows = selectedItems.map((item, index) => {
+        const generated = textMap.get(item.analysisItemId);
+        if (!generated) {
+          throw new Error(`Missing generated text for ${item.displayText}.`);
+        }
+
+        return {
+          packItemId: packItemRows[index].id,
+          meaning: generated.meaning,
+          exampleSentences: generated.exampleSentences,
+          audioArtifactId: audioArtifacts.get(item.analysisItemId) ?? null,
+          imageArtifactId: imageArtifacts.get(item.analysisItemId) ?? null,
+          generatedAt: now,
+        };
+      });
+
+      const insertPackQuery = db.insert(pack).values({
+        id: packId,
+        userId: job.userId,
+        contentId: job.contentId,
+        sourceJobId: job.id,
+        analysisRunId: job.analysisRunId ?? "",
+        status: "active",
+        name: `${contentRow?.title ?? "Generated"} vocabulary`,
+        learnerCefrLevelAtGeneration: job.requestSnapshot.learnerCefrLevel,
+        frequencyPreferenceAtGeneration: job.requestSnapshot.frequencyPreference,
+        selectedVocabularyTypes: job.requestSnapshot.selectedVocabularyTypes,
+        contentGenerationPipelineVersion: CONTENT_GENERATION_PIPELINE_VERSION,
+        contentGenerationPromptVersion: CONTENT_GENERATION_PIPELINE_VERSION,
+        itemCount: selectedItems.length,
+        estimatedStudyMinutes: Math.max(1, Math.ceil(selectedItems.length * 1.5)),
+      });
+      const insertPackItemsQuery = db.insert(packItem).values(packItemRows);
+      const insertPackItemContentQuery = db.insert(packItemContent).values(packItemContentRows);
+      const completeJobQuery = db
+        .update(packGenerationJob)
+        .set({
+          status: "completed",
+          stage: "completed",
+          progressMessage: "Pack generation complete.",
+          completedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(packGenerationJob.id, jobId));
+      const completeEventQuery = db.insert(packGenerationJobEvent).values({
+        id: crypto.randomUUID(),
+        jobId,
+        stage: "completed",
+        message: "Pack generation complete.",
+        payload: { packId, warnings },
+      });
+
+      if (existingPack) {
+        await db.batch([
+          db.delete(pack).where(eq(pack.id, existingPack.id)),
+          insertPackQuery,
+          insertPackItemsQuery,
+          insertPackItemContentQuery,
+          completeJobQuery,
+          completeEventQuery,
+        ]);
+      } else {
+        await db.batch([
+          insertPackQuery,
+          insertPackItemsQuery,
+          insertPackItemContentQuery,
+          completeJobQuery,
+          completeEventQuery,
+        ]);
+      }
     } catch (error) {
       await Promise.allSettled(uploadedObjectKeys.map((key) => deleteObjectByKey(key)));
       await Promise.allSettled(
@@ -420,7 +437,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
       stage: "failed",
       message,
       errorCode: "PACK_GENERATION_FAILED",
-      errorMessage: message,
+      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
       payload: { warnings },
     });
     const failedJob = await getPackGenerationJobById(jobId);

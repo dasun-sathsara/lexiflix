@@ -403,7 +403,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
               </CardHeader>
               <CardContent>
                 <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-                  {analysis.errorMessage ?? "An unexpected error occurred during analysis."}
+                  Subtitle analysis could not be completed. Retry the analysis or try another title.
                 </div>
               </CardContent>
             </Card>
@@ -417,8 +417,8 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                   Unlock this title's vocabulary
                 </h3>
                 <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Start an analysis to extract the key words, idioms, and phrases from the
-                  subtitles and see how challenging this title is for your level.
+                  Start an analysis to extract the key words, idioms, and phrases from the subtitles
+                  and see how challenging this title is for your level.
                 </p>
               </CardContent>
             </Card>

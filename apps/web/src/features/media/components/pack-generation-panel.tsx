@@ -33,13 +33,13 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { GenerationDialogDefaults, PackGenerationSnapshot } from "@/features/media/types";
+import {
+  getGenerationProgressState,
+  getGenerationStatusMessage,
+} from "@/features/pack-generation/lib/status";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-import {
-  GENERATION_STAGE_LABELS,
-  GENERATION_VOCABULARY_TYPES,
-  VOCABULARY_TYPE_LABELS,
-} from "./_utils";
+import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "./_utils";
 
 export type PackGenerationPanelProps = {
   generation: PackGenerationSnapshot | null;
@@ -64,6 +64,7 @@ export function PackGenerationPanel({
   const [internalOpen, setInternalOpen] = React.useState(false);
   const [form, setForm] = React.useState(generationDefaults);
   const isProcessing = generation?.status === "queued" || generation?.status === "running";
+  const progress = generation ? getGenerationProgressState(generation) : null;
   const dialogOpen = open ?? internalOpen;
 
   const setDialogOpen = React.useCallback(
@@ -121,21 +122,18 @@ export function PackGenerationPanel({
           Pack Generation
         </CardTitle>
         <CardDescription>
-          {generation?.progressMessage ??
-            "Generate learner-specific study content from this analysis."}
+          {progress?.description ?? "Generate learner-specific study content from this analysis."}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {generation ? (
           <div className="rounded-xl border bg-card/60 p-3 text-sm">
-            <div className="font-medium">
-              {GENERATION_STAGE_LABELS[generation.stage] ?? generation.stage}
-            </div>
+            <div className="font-medium">{progress?.label}</div>
           </div>
         ) : null}
-        {generation?.errorMessage ? (
+        {generation?.status === "failed" ? (
           <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-            {generation.errorMessage}
+            {getGenerationStatusMessage(generation)}
           </div>
         ) : null}
         {generation?.packHref ? (
@@ -173,9 +171,7 @@ export function PackGenerationPanel({
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Generate Pack</DialogTitle>
-            <DialogDescription>
-              Configure the vocabulary pack for this title.
-            </DialogDescription>
+            <DialogDescription>Configure the vocabulary pack for this title.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 text-sm">

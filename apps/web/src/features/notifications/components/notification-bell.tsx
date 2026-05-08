@@ -115,10 +115,20 @@ export function NotificationBell() {
           </div>
           {notifications.length > 0 ? (
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={markAllAsRead}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs"
+                onClick={markAllAsRead}
+              >
                 Mark all read
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={clearAll}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={clearAll}
+              >
                 Clear all
               </Button>
             </div>

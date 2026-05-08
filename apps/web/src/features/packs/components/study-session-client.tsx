@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ratePackItemAction } from "@/features/packs/server/actions";
 import type { PackReviewRating, StudySessionView } from "@/features/packs/types";
+import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
 import { clampToInt, formatDueLabel } from "./_utils";
 
@@ -286,7 +287,9 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                         {activeCard.displayText}
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                        <Badge variant="outline">{activeCard.kind.replaceAll("_", " ")}</Badge>
+                        <Badge variant="outline">
+                          {formatVocabularyKindLabel(activeCard.kind)}
+                        </Badge>
                         {activeCard.cefrLevel ? (
                           <Badge variant="secondary">{activeCard.cefrLevel}</Badge>
                         ) : null}

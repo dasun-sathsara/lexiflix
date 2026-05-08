@@ -125,9 +125,9 @@ export function AnalysisSidebar({
             </div>
           ) : null}
 
-          {snapshot.errorMessage ? (
+          {isFailed ? (
             <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-              {snapshot.errorMessage}
+              Subtitle analysis could not be completed. Retry the analysis or try another title.
             </div>
           ) : null}
 

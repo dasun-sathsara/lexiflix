@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   formatGenerationLabel,
-  getGenerationStatusCopy,
+  getGenerationProgressState,
+  getGenerationStageCopy,
   getGenerationStatusMessage,
   isGenerationActive,
 } from "../lib/status";
@@ -59,7 +60,7 @@ export function GenerationProgressClient({
   const [isPending, startTransition] = useTransition();
   const [retryError, setRetryError] = useState<string | null>(null);
 
-  const status = getGenerationStatusCopy(generation.status);
+  const progress = getGenerationProgressState(generation);
   const isActive = isGenerationActive(generation.status);
   const isFailed = generation.status === "failed";
   const isCompleted = generation.status === "completed";
@@ -127,10 +128,10 @@ export function GenerationProgressClient({
                 {isActive ? (
                   <span className="flex items-center gap-1.5">
                     <Loader2 className="size-3 animate-spin" />
-                    {status.label}
+                    {progress.label}
                   </span>
                 ) : (
-                  status.label
+                  progress.label
                 )}
               </Badge>
               <p className="text-sm font-semibold leading-snug">{generation.content.title}</p>
@@ -142,7 +143,7 @@ export function GenerationProgressClient({
 
           {/* Status message */}
           <p className="text-xs text-muted-foreground">
-            {getGenerationStatusMessage(generation)}
+            {progress.description}
             {isPending ? <Loader2 className="inline ml-1.5 size-3 animate-spin" /> : null}
           </p>
 
@@ -233,11 +234,6 @@ export function GenerationProgressClient({
                   <p className="font-medium text-rose-900 dark:text-rose-200">
                     {getGenerationStatusMessage(generation)}
                   </p>
-                  {generation.errorMessage ? (
-                    <p className="text-xs text-rose-800/80 dark:text-rose-300/80">
-                      {generation.errorMessage}
-                    </p>
-                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -294,8 +290,9 @@ export function GenerationProgressClient({
           ) : (
             <ol className="relative ml-1.5 border-l border-border/60">
               {generation.events.map((event, i) => {
-                const isFirst = i === 0;
-                const dotClass = isFirst
+                const isCurrent = i === generation.events.length - 1;
+                const eventCopy = getGenerationStageCopy(event.stage);
+                const dotClass = isCurrent
                   ? isActive
                     ? "bg-blue-500 ring-4 ring-blue-500/20"
                     : isFailed
@@ -312,16 +309,14 @@ export function GenerationProgressClient({
                       )}
                     />
                     <div className="flex items-baseline gap-2">
-                      <p className="text-sm font-medium leading-snug">
-                        {formatGenerationLabel(event.stage)}
-                      </p>
+                      <p className="text-sm font-medium leading-snug">{eventCopy.label}</p>
                       <time className="shrink-0 text-xs text-muted-foreground/50 tabular-nums">
                         {formatRelativeTime(event.createdAt)}
                       </time>
                     </div>
-                    {event.message ? (
-                      <p className="mt-0.5 text-sm text-muted-foreground">{event.message}</p>
-                    ) : null}
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {event.message ?? eventCopy.description}
+                    </p>
                   </li>
                 );
               })}

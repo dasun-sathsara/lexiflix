@@ -1,5 +1,3 @@
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { GenerationProgressClient } from "@/features/pack-generation/components/generation-progress-client";

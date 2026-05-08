@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PackCardView } from "@/features/packs/types";
 import { cn } from "@/lib/utils";
+import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
 import { cefrBadgeClass } from "./_utils";
 
@@ -121,7 +122,7 @@ export function PackStagingCardItem({
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg tracking-tight">{item.displayText}</span>
-              <Badge variant="secondary">{label(item.kind)}</Badge>
+              <Badge variant="secondary">{formatVocabularyKindLabel(item.kind)}</Badge>
               {item.partOfSpeech ? <Badge variant="outline">{item.partOfSpeech}</Badge> : null}
               <Badge className={`border ${cefrBadgeClass(item.cefrLevel)}`}>
                 {item.cefrLevel ?? "CEFR n/a"}

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
-import { and, eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/server/db";
 import type {
@@ -15,7 +15,6 @@ import {
   contentAnalysisItem,
   contentAnalysisRun,
   contentAnalysisRunEvent,
-  vocabularyTerm,
 } from "@/lib/server/db/schema";
 import {
   type ContentAnalysisStage,
@@ -64,6 +63,8 @@ type WorkflowAnalysisItem = {
   filteredOutReason: string | null;
 };
 
+type PersistedAnalysisItem = typeof contentAnalysisItem.$inferInsert;
+
 type WorkflowResult = {
   runId: string;
   contentId: string;
@@ -74,6 +75,8 @@ type WorkflowResult = {
 };
 
 const MAX_CONTEXTS_PER_ITEM = 5;
+const PUBLIC_ANALYSIS_FAILURE_MESSAGE =
+  "Subtitle analysis could not be completed. Retry the analysis or try another title.";
 
 function normalizeTermText(value: string) {
   return value
@@ -355,67 +358,69 @@ function buildSummary(
   } satisfies ContentAnalysisSummary;
 }
 
-async function resolveVocabularyTerm(item: WorkflowAnalysisItem) {
-  const [existing] = await db
-    .select()
-    .from(vocabularyTerm)
-    .where(
-      and(
-        eq(vocabularyTerm.kind, item.kind),
-        eq(vocabularyTerm.normalizedText, item.normalizedText),
-      ),
-    )
-    .limit(1);
+function buildVocabularyUpsertSql(items: WorkflowAnalysisItem[]) {
+  const rowValues = items.map(
+    (item) =>
+      sql`(${sql`${item.kind}`}, ${sql`${item.normalizedText}`}, ${sql`${crypto.randomUUID()}`}, ${sql`${item.displayText}`}, ${sql`${item.lemma ?? null}`}, ${sql`${item.partOfSpeech ?? null}`}, ${sql`${item.baseCefrLevel ?? null}`}, ${sql`${item.baseCefrNumeric ?? null}`}, ${sql`${item.notes ?? null}`})`,
+  );
 
-  const values = {
-    kind: item.kind,
-    normalizedText: item.normalizedText,
-    lemma: item.lemma,
-    displayText: item.displayText,
-    partOfSpeech: item.partOfSpeech,
-    baseCefrLevel: item.baseCefrLevel,
-    baseCefrNumeric: item.baseCefrNumeric,
-    notes: item.notes,
+  return sql<{ id: string; kind: StoredVocabularyKind; normalized_text: string }[]>`
+    INSERT INTO vocabulary_term (kind, normalized_text, id, display_text, lemma, part_of_speech, base_cefr_level, base_cefr_numeric, notes)
+    VALUES ${sql.join(rowValues, sql`, `)}
+    ON CONFLICT (kind, normalized_text)
+    DO UPDATE SET
+      display_text = excluded.display_text,
+      lemma = excluded.lemma,
+      part_of_speech = excluded.part_of_speech,
+      base_cefr_level = excluded.base_cefr_level,
+      base_cefr_numeric = excluded.base_cefr_numeric,
+      notes = excluded.notes
+    RETURNING id, kind, normalized_text`;
+}
+
+function mergePersistedAnalysisItem(
+  target: PersistedAnalysisItem,
+  incoming: PersistedAnalysisItem,
+): PersistedAnalysisItem {
+  const targetConfidence = target.cefrConfidence ?? -1;
+  const incomingConfidence = incoming.cefrConfidence ?? -1;
+  const primary =
+    incomingConfidence > targetConfidence ? { ...incoming, id: target.id } : { ...target };
+  const fallback = incomingConfidence > targetConfidence ? target : incoming;
+
+  return {
+    ...primary,
+    occurrenceCount: (target.occurrenceCount ?? 0) + (incoming.occurrenceCount ?? 0),
+    representativeContext: primary.representativeContext ?? fallback.representativeContext ?? null,
+    contexts: dedupeContexts([...(primary.contexts ?? []), ...(fallback.contexts ?? [])]),
+    frequencyRank: primary.frequencyRank ?? fallback.frequencyRank ?? null,
+    cefrLevel: primary.cefrLevel ?? fallback.cefrLevel ?? null,
+    cefrNumeric: primary.cefrNumeric ?? fallback.cefrNumeric ?? null,
+    cefrConfidence: primary.cefrConfidence ?? fallback.cefrConfidence ?? null,
+    cefrNote: primary.cefrNote ?? fallback.cefrNote ?? null,
+    isSelectable: target.isSelectable || incoming.isSelectable,
+    filteredOutReason:
+      target.isSelectable || incoming.isSelectable
+        ? null
+        : (primary.filteredOutReason ?? fallback.filteredOutReason ?? null),
   };
+}
 
-  if (existing) {
-    const [updated] = await db
-      .update(vocabularyTerm)
-      .set(values)
-      .where(eq(vocabularyTerm.id, existing.id))
-      .returning();
-    return updated;
+function dedupeAnalysisItemsByTermId(items: PersistedAnalysisItem[]) {
+  const byTermId = new Map<string, PersistedAnalysisItem>();
+
+  for (const item of items) {
+    const existing = byTermId.get(item.termId);
+
+    if (existing) {
+      byTermId.set(item.termId, mergePersistedAnalysisItem(existing, item));
+      continue;
+    }
+
+    byTermId.set(item.termId, item);
   }
 
-  const [inserted] = await db
-    .insert(vocabularyTerm)
-    .values({
-      id: crypto.randomUUID(),
-      ...values,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted) {
-    return inserted;
-  }
-
-  const [collided] = await db
-    .select()
-    .from(vocabularyTerm)
-    .where(
-      and(
-        eq(vocabularyTerm.kind, item.kind),
-        eq(vocabularyTerm.normalizedText, item.normalizedText),
-      ),
-    )
-    .limit(1);
-
-  if (!collided) {
-    throw new Error(`Failed to resolve vocabulary term ${item.kind}:${item.normalizedText}.`);
-  }
-
-  return collided;
+  return [...byTermId.values()];
 }
 
 async function persistAnalysisOutput(input: {
@@ -426,63 +431,94 @@ async function persistAnalysisOutput(input: {
 }) {
   const completedAt = new Date();
 
-  await db
-    .delete(contentAnalysisItem)
-    .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id));
+  try {
+    // Batch 1: delete existing items + bulk upsert vocabulary terms (single HTTP request)
+    const [_, upsertResult] = await db.batch([
+      db
+        .delete(contentAnalysisItem)
+        .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id)),
+      db.execute<{ id: string; kind: StoredVocabularyKind; normalized_text: string }>(
+        buildVocabularyUpsertSql(input.items),
+      ),
+    ]);
 
-  for (const item of input.items) {
-    const term = await resolveVocabularyTerm(item);
+    const termIdByItemKey = new Map<string, string>();
+    for (const row of upsertResult.rows) {
+      termIdByItemKey.set(createWorkflowItemKey(row.kind, row.normalized_text), row.id);
+    }
 
-    await db.insert(contentAnalysisItem).values({
-      id: crypto.randomUUID(),
-      analysisRunId: input.context.run.id,
-      contentId: input.context.content.id,
-      termId: term.id,
-      analysisSource: item.analysisSource,
-      surfaceForm: item.surfaceForm,
-      representativeContext: item.representativeContext,
-      contexts: item.contexts,
-      occurrenceCount: item.occurrenceCount,
-      frequencyRank: item.frequencyRank,
-      cefrLevel: item.cefrLevel,
-      cefrNumeric: item.cefrNumeric,
-      cefrConfidence: item.cefrConfidence,
-      cefrNote: item.cefrNote,
-      isSelectable: item.isSelectable,
-      filteredOutReason: item.filteredOutReason,
-      analyzedAt: completedAt,
-    });
-  }
+    const analysisItems = dedupeAnalysisItemsByTermId(
+      input.items.map((item) => {
+        const termId = termIdByItemKey.get(createWorkflowItemKey(item.kind, item.normalizedText));
+        if (!termId) {
+          throw new Error(`Missing term ID for ${item.kind}:${item.normalizedText}`);
+        }
+        return {
+          id: crypto.randomUUID(),
+          analysisRunId: input.context.run.id,
+          contentId: input.context.content.id,
+          termId,
+          analysisSource: item.analysisSource,
+          surfaceForm: item.surfaceForm,
+          representativeContext: item.representativeContext ?? null,
+          contexts: item.contexts ?? null,
+          occurrenceCount: item.occurrenceCount,
+          frequencyRank: item.frequencyRank ?? null,
+          cefrLevel: item.cefrLevel ?? null,
+          cefrNumeric: item.cefrNumeric ?? null,
+          cefrConfidence: item.cefrConfidence ?? null,
+          cefrNote: item.cefrNote ?? null,
+          isSelectable: item.isSelectable,
+          filteredOutReason: item.filteredOutReason ?? null,
+          analyzedAt: completedAt,
+        };
+      }),
+    );
 
-  const [updated] = await db
-    .update(contentAnalysisRun)
-    .set({
-      status: "completed",
-      stage: "completed",
-      progressMessage: "Analysis completed.",
-      summary: input.summary,
+    // Batch 2: insert analysis items + mark run completed (single HTTP request)
+    const CHUNK_SIZE = 200;
+    const chunks = [];
+    for (let i = 0; i < analysisItems.length; i += CHUNK_SIZE) {
+      chunks.push(db.insert(contentAnalysisItem).values(analysisItems.slice(i, i + CHUNK_SIZE)));
+    }
+
+    // @ts-expect-error — TypeScript cannot prove the spread array has >=1 elements
+    await db.batch([
+      ...chunks,
+      db
+        .update(contentAnalysisRun)
+        .set({
+          status: "completed",
+          stage: "completed",
+          progressMessage: "Analysis completed.",
+          summary: input.summary,
+          warnings: input.warnings,
+          errorCode: null,
+          errorMessage: null,
+          completedAt,
+        })
+        .where(eq(contentAnalysisRun.id, input.context.run.id)),
+      db.insert(contentAnalysisRunEvent).values({
+        id: crypto.randomUUID(),
+        runId: input.context.run.id,
+        stage: "completed",
+        message: "Analysis completed.",
+        payload: {
+          itemCount: input.items.length,
+          warningCount: input.warnings.length,
+        },
+      }),
+    ]);
+  } catch (error) {
+    await transitionRun({
+      runId: input.context.run.id,
+      stage: "failed",
+      message: `Saving analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+      progressMessage: "Saving analysis failed.",
       warnings: input.warnings,
-      errorCode: null,
-      errorMessage: null,
-      completedAt,
-    })
-    .where(eq(contentAnalysisRun.id, input.context.run.id))
-    .returning();
-
-  if (!updated) {
-    throw new Error(`Content analysis run ${input.context.run.id} disappeared during save.`);
+    });
+    throw error;
   }
-
-  await db.insert(contentAnalysisRunEvent).values({
-    id: crypto.randomUUID(),
-    runId: input.context.run.id,
-    stage: "completed",
-    message: "Analysis completed.",
-    payload: {
-      itemCount: input.items.length,
-      warningCount: input.warnings.length,
-    },
-  });
 }
 
 async function transitionRun(input: {
@@ -686,9 +722,9 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         status: "failed",
         stage: "failed",
         message,
-        progressMessage: message,
+        progressMessage: "Subtitle analysis could not be completed.",
         errorCode: "WORKFLOW_FAILED",
-        errorMessage: message,
+        errorMessage: PUBLIC_ANALYSIS_FAILURE_MESSAGE,
         completedAt: new Date(),
         payload: { error },
       });
