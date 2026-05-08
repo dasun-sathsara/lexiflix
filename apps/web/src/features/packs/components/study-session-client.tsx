@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ratePackItemAction } from "@/features/packs/server/actions";
@@ -47,26 +46,29 @@ const ratingOptions: {
     rating: "again",
     copy: "Again",
     hint: "Needs another pass",
-    className: "border-rose-500/70 bg-rose-500/85 text-white hover:bg-rose-500 hover:text-white",
+    className:
+      "border-rose-300 bg-rose-100 text-rose-700 hover:bg-rose-200 hover:border-rose-400 dark:border-rose-800/50 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-950/80",
   },
   {
     rating: "hard",
     copy: "Hard",
     hint: "Remembered slowly",
-    className: "border-amber-500/70 bg-amber-500/85 text-white hover:bg-amber-500 hover:text-white",
+    className:
+      "border-amber-300 bg-amber-100 text-amber-700 hover:bg-amber-200 hover:border-amber-400 dark:border-amber-800/50 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-950/80",
   },
   {
     rating: "good",
     copy: "Good",
     hint: "Remembered",
-    className: "border-blue-500/70 bg-blue-500/85 text-white hover:bg-blue-500 hover:text-white",
+    className:
+      "border-sky-300 bg-sky-100 text-sky-700 hover:bg-sky-200 hover:border-sky-400 dark:border-sky-800/50 dark:bg-sky-950/60 dark:text-sky-300 dark:hover:bg-sky-950/80",
   },
   {
     rating: "easy",
     copy: "Easy",
     hint: "Knew it quickly",
     className:
-      "border-emerald-500/70 bg-emerald-500/85 text-white hover:bg-emerald-500 hover:text-white",
+      "border-teal-300 bg-teal-100 text-teal-700 hover:bg-teal-200 hover:border-teal-400 dark:border-teal-800/50 dark:bg-teal-950/60 dark:text-teal-300 dark:hover:bg-teal-950/80",
   },
 ];
 
@@ -259,7 +261,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
   if (!hasCards) {
     return (
-      <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
+      <SoftGradientBackground className="relative z-0 h-dvh w-full overflow-hidden">
         <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-center justify-center gap-4 px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))] text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Nothing to study right now</h1>
           <p className="text-sm text-muted-foreground">
@@ -280,7 +282,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
   if (isComplete) {
     return (
-      <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
+      <SoftGradientBackground className="relative z-0 h-dvh w-full overflow-hidden">
         <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-center justify-center gap-5 px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))] text-center">
           <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
             Session complete
@@ -318,196 +320,204 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   }
 
   return (
-    <SoftGradientBackground className="fixed inset-0 z-0 h-dvh w-full overflow-hidden">
-      <div className="mx-auto flex h-dvh w-full max-w-5xl flex-col gap-4 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-[calc(7rem+env(safe-area-inset-bottom))] sm:pt-6">
-        <div className="rounded-xl border bg-background/75 p-3 shadow-sm backdrop-blur-md sm:p-4">
-          <div className="flex items-center justify-between gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="-ml-2 gap-2 hover:bg-background/80"
-            >
-              <Link href={`/pack/${session.packId}`}>
-                <ArrowLeft className="size-4" />
-                <span className="font-medium">Exit</span>
-              </Link>
-            </Button>
+    <SoftGradientBackground className="relative z-0 h-dvh w-full overflow-hidden">
+      {/* ── Top bar ─────────────────────────────────────────── */}
+      <header className="relative z-20 border-b border-border/40 bg-background/60 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:h-16 sm:px-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="-ml-1.5 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Link href={`/pack/${session.packId}`}>
+              <ArrowLeft className="size-4" />
+              <span className="hidden sm:inline">Exit</span>
+            </Link>
+          </Button>
 
-            <div className="min-w-0 flex-1 text-center">
-              <div className="truncate text-base font-semibold tracking-tight sm:text-lg">
-                {session.mediaTitle}
-              </div>
-              <div className="mt-0.5 truncate text-xs text-muted-foreground sm:text-sm">
-                {modeLabels[session.mode]} · {session.packName}
-              </div>
+          <div className="min-w-0 flex-1 text-center">
+            <div className="truncate text-sm font-semibold tracking-tight sm:text-base">
+              {session.mediaTitle}
             </div>
-
-            <Badge
-              variant="secondary"
-              className="hidden border-primary/20 bg-primary/10 font-semibold text-primary sm:inline-flex"
-            >
-              Card {displayIndex} of {session.cards.length}
-            </Badge>
-            <Badge variant="outline" className="font-semibold sm:hidden">
-              {displayIndex}/{session.cards.length}
-            </Badge>
+            <div className="truncate text-xs text-muted-foreground">
+              {modeLabels[session.mode]} &middot; {session.packName}
+            </div>
           </div>
 
-          <div className="mt-3">
-            <Progress value={progressPct} className="h-1.5 bg-muted/70" />
-          </div>
+          <Badge
+            variant="secondary"
+            className="hidden border-primary/15 bg-primary/8 font-semibold tabular-nums text-primary sm:inline-flex"
+          >
+            {displayIndex} / {session.cards.length}
+          </Badge>
+          <Badge
+            variant="secondary"
+            className="border-primary/15 bg-primary/8 font-semibold tabular-nums text-primary sm:hidden"
+          >
+            {displayIndex}/{session.cards.length}
+          </Badge>
         </div>
+        <Progress value={progressPct} className="h-[3px] rounded-none bg-muted/50" />
+      </header>
 
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-          <Card className="min-h-[min(500px,calc(100dvh-14rem))] max-h-full w-full max-w-4xl overflow-hidden border bg-background/95 shadow-xl shadow-primary/5 sm:min-h-[560px]">
-            <CardContent className="p-0">
-              <div className="group relative max-h-full w-full overflow-y-auto text-left">
-                <button
-                  type="button"
-                  onClick={revealCard}
-                  tabIndex={state.isFlipped ? -1 : 0}
-                  aria-pressed={state.isFlipped}
-                  aria-disabled={Boolean(state.pendingRating)}
-                  aria-hidden={state.isFlipped}
-                  className={
-                    "flex min-h-[min(500px,calc(100dvh-14rem))] w-full flex-col items-center justify-center gap-5 border-0 bg-transparent p-6 text-inherit transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-[560px] sm:p-10 " +
-                    (state.isFlipped
-                      ? "pointer-events-none absolute inset-0 scale-[0.98] opacity-0"
-                      : "relative opacity-100")
-                  }
-                >
-                  <div className="max-w-2xl space-y-5 text-center">
-                    <div className="mx-auto flex w-fit items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                      <BookOpen className="size-3.5" />
-                      Prompt
-                    </div>
-                    <div className="text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
-                      {activeCard.displayText}
-                    </div>
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-                      {activeCard.partOfSpeech ? (
-                        <Badge variant="outline">{activeCard.partOfSpeech}</Badge>
-                      ) : null}
-                      {activeCard.cefrLevel ? (
-                        <Badge variant="secondary">{activeCard.cefrLevel}</Badge>
-                      ) : null}
-                    </div>
-                    <div className="pt-2">
-                      <span className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm">
-                        Reveal answer
-                      </span>
-                    </div>
-                  </div>
-                </button>
+      {/* ── Card area ───────────────────────────────────────── */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pt-6">
+        <div className="relative h-full max-h-[32rem] w-full max-w-[52rem] sm:max-h-[34rem]">
+          {/* Prompt side */}
+          <button
+            type="button"
+            onClick={revealCard}
+            tabIndex={state.isFlipped ? -1 : 0}
+            aria-pressed={state.isFlipped}
+            aria-disabled={Boolean(state.pendingRating)}
+            aria-hidden={state.isFlipped}
+            className={cn(
+              "flex h-full w-full flex-col items-center justify-center rounded-2xl border border-border/50 bg-background/95 px-8 text-center shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-12",
+              state.isFlipped
+                ? "pointer-events-none absolute inset-0 scale-[0.97] opacity-0"
+                : "relative scale-100 opacity-100",
+            )}
+          >
+            {/* Decorative accent line */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+            {/* Subtle dot pattern */}
+            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(#94a3b810_1px,_transparent_1px)] [background-size:20px_20px] dark:bg-[radial-gradient(#1f293730_1px,_transparent_1px)]" />
+            <div className="relative flex flex-col items-center gap-4">
+              <span className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                {activeCard.displayText}
+              </span>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {activeCard.partOfSpeech ? (
+                  <Badge variant="outline" className="font-normal">
+                    {activeCard.partOfSpeech}
+                  </Badge>
+                ) : null}
+                {activeCard.cefrLevel ? (
+                  <Badge variant="secondary" className="font-normal">
+                    {activeCard.cefrLevel}
+                  </Badge>
+                ) : null}
+              </div>
+              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs tracking-wide text-muted-foreground/70">
+                <span className="inline-block size-1.5 rounded-full bg-primary/40" />
+                Tap to reveal
+              </span>
+            </div>
+          </button>
 
-                <div
-                  aria-hidden={!state.isFlipped}
-                  className={
-                    "flex min-h-[min(500px,calc(100dvh-14rem))] flex-col transition-all duration-300 sm:min-h-[560px] " +
-                    (state.isFlipped
-                      ? "relative opacity-100"
-                      : "pointer-events-none absolute inset-0 opacity-0")
-                  }
-                >
-                  <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 p-5 sm:gap-6 sm:p-8">
-                    <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-                      <div className="min-w-0">
-                        <div className="mb-2 flex w-fit items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-                          <BookOpen className="size-3.5" />
-                          Answer
-                        </div>
-                        <div className="text-2xl font-semibold tracking-tight text-primary sm:text-3xl">
-                          {activeCard.displayText}
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap gap-2 text-sm text-muted-foreground">
-                          <Badge variant="outline">
-                            {formatVocabularyKindLabel(activeCard.kind)}
-                          </Badge>
-                          {activeCard.cefrLevel ? (
-                            <Badge variant="secondary">{activeCard.cefrLevel}</Badge>
-                          ) : null}
-                        </div>
-                      </div>
-                      {activeCard.audioUrl ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5 rounded-full"
-                          tabIndex={state.isFlipped ? 0 : -1}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            new Audio(activeCard.audioUrl ?? undefined).play();
-                          }}
-                        >
-                          <Volume2 className="size-4" />
-                          Play audio
-                        </Button>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-lg border bg-muted/25 p-4">
-                      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                        <BookOpen className="size-3.5" />
-                        Meaning
-                      </div>
-                      <p className="text-base leading-relaxed text-foreground/90">
-                        {activeCard.meaning ?? "No meaning has been saved for this card."}
-                      </p>
-                    </div>
-
-                    {activeCard.exampleSentences.length > 0 ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                          <Quote className="size-3.5" />
-                          {activeCard.exampleSentences.length === 1 ? "Example" : "Examples"}
-                        </div>
-                        <div className="space-y-3">
-                          {activeCard.exampleSentences.map((example) => (
-                            <div
-                              key={example}
-                              className="rounded-lg border bg-background/70 px-4 py-3"
-                            >
-                              <p className="text-sm leading-relaxed text-foreground/80">
-                                &quot;{example}&quot;
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {activeCard.imageUrl ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase text-muted-foreground">
-                          <ImageIcon className="size-3.5" />
-                          Visual cue
-                        </div>
-                        <div className="relative h-40 w-full overflow-hidden rounded-lg border bg-muted sm:h-52">
-                          <Image
-                            src={activeCard.imageUrl}
-                            alt={`Generated image for ${activeCard.displayText}`}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 768px"
-                            className="object-cover"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
+          {/* Answer side */}
+          <div
+            aria-hidden={!state.isFlipped}
+            className={cn(
+              "absolute inset-0 flex flex-col overflow-y-auto rounded-2xl border border-border/50 bg-background/95 shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out",
+              state.isFlipped
+                ? "scale-100 opacity-100"
+                : "pointer-events-none scale-[1.02] opacity-0",
+            )}
+          >
+            {/* Decorative accent line */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[2px] rounded-t-2xl bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+            {/* Answer header */}
+            <div className="flex items-start justify-between gap-4 border-b border-border/40 px-6 py-5 sm:px-8">
+              <div className="min-w-0 space-y-1">
+                <div className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  {activeCard.displayText}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className="font-normal">
+                    {formatVocabularyKindLabel(activeCard.kind)}
+                  </Badge>
+                  {activeCard.cefrLevel ? (
+                    <Badge variant="secondary" className="font-normal">
+                      {activeCard.cefrLevel}
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              {activeCard.audioUrl ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                  tabIndex={state.isFlipped ? 0 : -1}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    new Audio(activeCard.audioUrl ?? undefined).play();
+                  }}
+                >
+                  <Volume2 className="size-4" />
+                </Button>
+              ) : null}
+            </div>
+
+            {/* Answer content */}
+            <div className="flex-1 space-y-5 px-6 py-5 sm:space-y-6 sm:px-8">
+              {/* Meaning */}
+              <div>
+                <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  <BookOpen className="size-3" />
+                  Meaning
+                </div>
+                <p className="text-[15px] leading-relaxed text-foreground/85 sm:text-base">
+                  {activeCard.meaning ?? "No meaning has been saved for this card."}
+                </p>
+              </div>
+
+              {/* Examples */}
+              {activeCard.exampleSentences.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    <Quote className="size-3" />
+                    {activeCard.exampleSentences.length === 1 ? "Example" : "Examples"}
+                  </div>
+                  <div className="space-y-2.5">
+                    {activeCard.exampleSentences.map((example) => (
+                      <div
+                        key={example}
+                        className="rounded-lg border-l-2 border-primary/20 bg-muted/30 py-2.5 pl-4 pr-3"
+                      >
+                        <p className="text-sm italic leading-relaxed text-foreground/70">
+                          &ldquo;{example}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Image */}
+              {activeCard.imageUrl ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    <ImageIcon className="size-3" />
+                    Visual cue
+                  </div>
+                  <div className="relative h-40 w-full overflow-hidden rounded-xl bg-muted sm:h-52">
+                    <Image
+                      src={activeCard.imageUrl}
+                      alt={`Generated image for ${activeCard.displayText}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 768px"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* ── Rating bar ──────────────────────────────────────── */}
       <div
-        className={
-          "fixed inset-x-0 bottom-0 z-50 border-t bg-background/90 shadow-[0_-18px_45px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/75 " +
-          (state.isFlipped ? "opacity-100" : "pointer-events-none opacity-0")
-        }
+        className={cn(
+          "absolute inset-x-0 bottom-0 z-50 border-t border-border/40 bg-background/70 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500",
+          state.isFlipped
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-2 opacity-0",
+        )}
       >
         {isPreviewMode ? (
           <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:px-6">
@@ -519,15 +529,15 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             </Button>
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-4xl px-4 pb-[calc(0.9rem+env(safe-area-inset-bottom))] pt-3 sm:px-6">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <div className="mx-auto w-full max-w-3xl px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {ratingOptions.map(({ rating, copy, hint, className }, index) => (
                 <Button
                   key={rating}
                   type="button"
                   variant="outline"
                   className={cn(
-                    "h-10 justify-between rounded-lg px-3 text-left text-sm shadow-sm transition-transform hover:-translate-y-0.5 sm:h-11",
+                    "h-auto justify-between rounded-xl px-3.5 py-2.5 text-left shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md sm:py-3",
                     className,
                   )}
                   disabled={Boolean(state.pendingRating)}
@@ -535,12 +545,10 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                   aria-label={`${copy}. ${hint}. Keyboard shortcut ${index + 1}.`}
                   tabIndex={state.isFlipped ? 0 : -1}
                 >
-                  <div className="flex min-w-0 flex-col leading-tight">
-                    <span className="font-semibold">
-                      {state.pendingRating === rating ? "Saving..." : copy}
-                    </span>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                  <span className="text-sm">
+                    {state.pendingRating === rating ? "Saving..." : copy}
+                  </span>
+                  <span className="shrink-0 rounded-md bg-black/[0.06] px-2 py-0.5 text-[11px] tabular-nums dark:bg-white/[0.08]">
                     {state.pendingRating === rating ? "" : activeCard.ratingPreviews[rating]}
                   </span>
                 </Button>
