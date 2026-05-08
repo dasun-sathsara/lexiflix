@@ -1,0 +1,207 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="autolayout" name="Page-1">
+    <mxGraphModel dx="1786" dy="1003" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="group_0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffd9b3;strokeColor=#c25100;fontColor=#c25100;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="Azure Container Apps (ACA)" vertex="1">
+          <mxGeometry height="144" width="238" x="1320" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="nlp_service" parent="group_0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#c25100;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="FastAPI NLP Compute Service&lt;br&gt;(Python, spaCy, Stateless)" vertex="1">
+          <mxGeometry height="93.91304347826086" width="198.33333333333331" x="19.833333333333332" y="25.043478260869563" as="geometry" />
+        </mxCell>
+        <mxCell id="nlp_service_icon" parent="nlp_service" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/fastapi;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="26.444444444444443" width="26.444444444444443" x="12.395833333333332" y="31.304347826086957" as="geometry" />
+        </mxCell>
+        <mxCell id="group_1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe4b5;strokeColor=#b8651e;fontColor=#b8651e;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="Client" vertex="1">
+          <mxGeometry height="123" width="228" x="160" y="486" as="geometry" />
+        </mxCell>
+        <mxCell id="user_browser" parent="group_1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b8651e;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Learner / Client Browser" vertex="1">
+          <mxGeometry height="75" width="180" x="24" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="user_browser_icon" parent="user_browser" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/googlechrome;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="32" width="32" x="15" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="group_2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#def0dc;strokeColor=#5c8a49;fontColor=#5c8a49;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="Durable Data Stores" vertex="1">
+          <mxGeometry height="293" width="238" x="1320" y="96" as="geometry" />
+        </mxCell>
+        <mxCell id="neon_db" parent="group_2" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5c8a49;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Neon Serverless Postgres&lt;br&gt;(System of Record)" vertex="1">
+          <mxGeometry height="106" width="190" x="24" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="neon_db_icon" parent="neon_db" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/postgresql;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="28.9811320754717" width="28.9811320754717" x="15" y="37.411764705882355" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudflare_r2" parent="group_2" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5c8a49;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Cloudflare R2&lt;br&gt;(Object Storage)" vertex="1">
+          <mxGeometry height="96" width="196" x="24" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudflare_r2_icon" parent="cloudflare_r2" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/cloudflare;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="32" width="32" x="16.333333333333332" y="33.88235294117647" as="geometry" />
+        </mxCell>
+        <mxCell id="group_3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5e6d3;strokeColor=#8b7355;fontColor=#8b7355;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="External APIs &amp;amp; Cloud Services" vertex="1">
+          <mxGeometry height="428" width="238" x="1320" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="llm_providers" parent="group_3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8b7355;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=12;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="LLM Providers&lt;br&gt;(Gemini &amp;amp; Azure AI Foundry)" vertex="1">
+          <mxGeometry height="80" width="195.37313432835822" x="21.313432835820898" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="llm_providers_icon" parent="llm_providers" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://unpkg.com/@lobehub/icons-static-svg@1.91.0/icons/gemini-color.svg;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="28.417910447761194" width="28.417910447761194" x="13.32089552238806" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="media_apis" parent="group_3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8b7355;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=12;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Media &amp;amp; Subtitle APIs&lt;br&gt;(TMDB &amp;amp; OpenSubtitles)" vertex="1">
+          <mxGeometry height="80" width="195.37313432835822" x="21.313432835820898" y="174" as="geometry" />
+        </mxCell>
+        <mxCell id="media_apis_icon" parent="media_apis" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/themoviedatabase;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="28.417910447761194" width="28.417910447761194" x="13.32089552238806" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="utility_apis" parent="group_3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8b7355;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=12;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Utility APIs&lt;br&gt;(TTS &amp;amp; Resend Email)" vertex="1">
+          <mxGeometry height="80" width="195.37313432835822" x="21.313432835820898" y="324" as="geometry" />
+        </mxCell>
+        <mxCell id="utility_apis_icon" parent="utility_apis" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/resend;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="28.417910447761194" width="28.417910447761194" x="13.32089552238806" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="group_4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff4cc;strokeColor=#b8901a;fontColor=#b8901a;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="Trigger.dev Cloud" vertex="1">
+          <mxGeometry height="143" width="298" x="880" y="476" as="geometry" />
+        </mxCell>
+        <mxCell id="trigger_engine" parent="group_4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b8901a;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Trigger.dev Cloud Engine&lt;br&gt;(Asynchronous Workflow Orchestrator)" vertex="1">
+          <mxGeometry height="95" width="250" x="24" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="trigger_engine_icon" parent="trigger_engine" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/serverless;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="32" width="32" x="15" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="group_5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5e6d3;strokeColor=#8b7355;fontColor=#8b7355;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=0;strokeWidth=2;sketch=1;arcSize=8;" value="Vercel " vertex="1">
+          <mxGeometry height="186" width="346" x="466" y="452" as="geometry" />
+        </mxCell>
+        <mxCell id="group_6" parent="group_5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#8b7355;fontColor=#8b7355;verticalAlign=top;fontFamily=Comic Sans MS,cursive;fontStyle=0;dashed=1;strokeWidth=1.5;sketch=1;arcSize=8;" value=" Web App" vertex="1">
+          <mxGeometry height="138" width="298" x="24" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="web_app" parent="group_6" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b8651e;strokeWidth=2;fontColor=#1e293b;fontFamily=Comic Sans MS,cursive;fontSize=13;fontStyle=0;sketch=1;align=left;spacingLeft=58;" value="Next.js Web Application&lt;br&gt;(React UI, Server Actions, Auth, Drizzle)" vertex="1">
+          <mxGeometry height="90" width="250" x="24" y="24" as="geometry" />
+        </mxCell>
+        <mxCell id="web_app_icon" parent="web_app" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/nextdotjs;pointerEvents=0;" value="" vertex="1">
+          <mxGeometry height="32" width="32" x="15" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="user_browser" style="edgeStyle=orthogonalEdgeStyle;rounded=1;curved=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="web_app" value="HTTPS / UI">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="364" y="550" />
+              <mxPoint x="494" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="web_app" style="edgeStyle=orthogonalEdgeStyle;rounded=1;curved=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="trigger_engine" value="Trigger tasks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="764" y="550" />
+              <mxPoint x="894" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="web_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="neon_db" value="SQL (ORM)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="594" y="400" />
+              <mxPoint x="594" y="150" />
+              <mxPoint x="594" y="150" />
+              <mxPoint x="594" y="150" />
+              <mxPoint x="1314" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="web_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="cloudflare_r2" value="S3 GET">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="674" y="430" />
+              <mxPoint x="674" y="310" />
+              <mxPoint x="674" y="310" />
+              <mxPoint x="674" y="310" />
+              <mxPoint x="1314" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="web_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="media_apis" value="Search API">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="674" y="670" />
+              <mxPoint x="674" y="800" />
+              <mxPoint x="674" y="800" />
+              <mxPoint x="674" y="800" />
+              <mxPoint x="1294" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="nlp_service" value="POST /analyze">
+          <mxGeometry relative="1" x="-0.0115" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1200" y="510" />
+              <mxPoint x="1200" y="506" />
+            </Array>
+            <mxPoint x="1270" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="llm_providers" value="LLM runs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1029" y="660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="utility_apis" value="TTS &amp;amp; Resend">
+          <mxGeometry relative="1" x="-0.0687" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="984" y="700" />
+              <mxPoint x="984" y="930" />
+              <mxPoint x="984" y="930" />
+              <mxPoint x="984" y="930" />
+              <mxPoint x="1294" y="930" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="neon_db" value="SQL (Jobs)">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="984" y="400" />
+              <mxPoint x="984" y="180" />
+              <mxPoint x="984" y="180" />
+              <mxPoint x="984" y="180" />
+              <mxPoint x="1314" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="cloudflare_r2" value="S3 PUT">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1074" y="440" />
+              <mxPoint x="1074" y="340" />
+              <mxPoint x="1074" y="340" />
+              <mxPoint x="1074" y="340" />
+              <mxPoint x="1314" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="web_app" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="utility_apis" value="Resend emails">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="594" y="700" />
+              <mxPoint x="594" y="960" />
+              <mxPoint x="594" y="960" />
+              <mxPoint x="594" y="960" />
+              <mxPoint x="1294" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="trigger_engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;curved=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#555555;jumpStyle=arc;jumpSize=6;fontFamily=Comic Sans MS,cursive;fontStyle=0;" target="media_apis" value="Fetch subtitles">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1074" y="660" />
+              <mxPoint x="1074" y="780" />
+              <mxPoint x="1074" y="780" />
+              <mxPoint x="1074" y="780" />
+              <mxPoint x="1294" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
