@@ -1,4 +1,4 @@
-import { ArrowLeft, Film, Play, Tv } from "lucide-react";
+import { Film, Play, Tv } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -21,7 +21,7 @@ export type PackStagingHeroProps = {
  */
 export function PackStagingHero({ pack, stats, progressPct }: PackStagingHeroProps) {
   return (
-    <Card className="relative overflow-hidden border-indigo-200/60 dark:border-indigo-500/20">
+    <Card className="relative min-h-[280px] overflow-hidden border-indigo-200/60 dark:border-indigo-500/20 sm:min-h-[320px]">
       {pack.media.backdropUrl ? (
         <div className="absolute inset-0">
           <Image
@@ -32,19 +32,10 @@ export function PackStagingHero({ pack, stats, progressPct }: PackStagingHeroPro
             sizes="(max-width: 1024px) 100vw, 1024px"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/85 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/70 to-background/95" />
         </div>
       ) : null}
-      <CardContent className="relative p-6 sm:p-8">
-        <div className="mb-5 -mt-1">
-          <Button variant="ghost" size="sm" asChild className="gap-2 hover:bg-background/60">
-            <Link href="/decks">
-              <ArrowLeft className="size-4" />
-              Back to Decks
-            </Link>
-          </Button>
-        </div>
-
+      <CardContent className="relative p-4 sm:p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">

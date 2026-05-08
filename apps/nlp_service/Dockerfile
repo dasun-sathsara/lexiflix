@@ -11,12 +11,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     NLP_HOST=0.0.0.0 \
     NLP_PORT=8000 \
     NLP_DEBUG=false \
-    NLP_LOG_LEVEL=info \
-    NLP_SPACY_PREFER_GPU=false \
-    NLP_SPACY_PREFER_TRANSFORMER=true
+    NLP_LOG_LEVEL=info
 
 ARG UV_VERSION=0.8.13
-ARG SPACY_MODEL=en_core_web_trf
 ARG UV_HTTP_TIMEOUT=120
 
 ENV UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT}
@@ -40,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
 
 RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv pip install pip \
-    && uv run python -m spacy download "${SPACY_MODEL}"
+    && uv run python -m spacy download en_core_web_trf
 
 COPY app ./app
 COPY main.py ./main.py

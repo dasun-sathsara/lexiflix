@@ -64,9 +64,9 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
               {year} • {isMovie ? "Movie" : "TV"}
             </span>
           </div>
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-2 flex gap-1 overflow-hidden p-0.5 -m-0.5">
             {genres.map((genre) => (
-              <Badge key={genre} variant="secondary">
+              <Badge key={genre} variant="secondary" className="truncate max-w-full shrink min-w-0">
                 {genre}
               </Badge>
             ))}

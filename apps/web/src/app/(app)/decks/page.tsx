@@ -83,14 +83,17 @@ function CardCountPill({
 }
 
 function DeckRow({ deck }: { deck: DeckSummary }) {
-  const progressPct = clampToInt((deck.counts.mastered / Math.max(1, deck.counts.total)) * 100);
   const cardsToStudy = deck.studyPlan.dueCount + deck.studyPlan.newAvailableToday;
+  const readyCards = cardsToStudy;
+  const todaysTotal = Math.max(readyCards, deck.studyPlan.newTotal);
+  const completedToday = Math.max(0, todaysTotal - readyCards);
+  const todayProgressPct = todaysTotal > 0 ? clampToInt((completedToday / todaysTotal) * 100) : 100;
   const hasCardsToStudy = cardsToStudy > 0;
   const studyHref =
     deck.studyPlan.dueCount > 0 ? `/study/${deck.id}?mode=due` : `/study/${deck.id}?mode=new`;
 
   return (
-    <div className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-muted/30 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+    <div className="group flex flex-col gap-3 rounded-[calc(var(--radius)+2px)] border bg-card/70 p-3 shadow-sm backdrop-blur-sm transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-card sm:flex-row sm:items-center sm:gap-4 sm:p-4">
       {/* Poster */}
       <div className="relative h-[88px] w-[60px] shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
         {deck.posterUrl ? (
@@ -160,13 +163,26 @@ function DeckRow({ deck }: { deck: DeckSummary }) {
           ) : null}
         </div>
 
-        {/* Row 3: Progress + mastered ratio + est. time */}
+        {/* Row 3: Today's progress + ready count + est. time */}
         <div className="flex items-center gap-3">
-          <Progress value={progressPct} className="h-1.5 flex-1 bg-muted/60" />
-          <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
-            {deck.counts.mastered}
+          <div className="flex min-w-[160px] flex-1 items-center gap-2">
+            <Progress
+              value={todayProgressPct}
+              className={cn(
+                "h-1.5 flex-1 bg-muted/50",
+                todayProgressPct === 0 && "[&>div]:bg-muted-foreground/20",
+                todayProgressPct > 0 && todayProgressPct < 100 && "[&>div]:bg-primary/50",
+                todayProgressPct === 100 && "[&>div]:bg-emerald-500/65",
+              )}
+            />
+            <span className="w-8 shrink-0 text-right tabular-nums text-xs text-muted-foreground">
+              {todayProgressPct}%
+            </span>
+          </div>
+          <span className="hidden shrink-0 tabular-nums text-xs text-muted-foreground sm:inline">
+            {completedToday}
             <span className="mx-0.5 opacity-40">/</span>
-            {deck.counts.total}
+            {todaysTotal}
           </span>
           <span className="hidden shrink-0 items-center gap-1 text-xs text-muted-foreground sm:flex">
             <Clock className="size-3" />

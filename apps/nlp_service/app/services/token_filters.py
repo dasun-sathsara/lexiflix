@@ -7,6 +7,8 @@ original analyzer's ``token_should_be_excluded`` and related helpers.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from spacy.tokens import Token  # type: ignore[import-untyped]
 
 _TITLE_MARKERS = {"agent", "dr", "doctor", "miss", "mr", "mrs", "ms"}
@@ -99,18 +101,24 @@ def token_looks_like_name_reference(token: Token) -> bool:
     return False
 
 
-def _verb_lemma(token: Token) -> str | None:
-    """Resolve a spaCy token to its base verb lemma via lemminflect, when spaCy's built-in
-    lemmatizer produces an inflection rather than the root form.
-    """
+@lru_cache(maxsize=20_000)
+def _verb_lemma_cached(text: str) -> str | None:
+    """Cached lemminflect verb-lemma lookup (by surface form)."""
     from lemminflect import getLemma  # type: ignore[import-untyped]
 
-    lemmas = getLemma(token.text, upos="VERB")
+    lemmas = getLemma(text, upos="VERB")
     for candidate in lemmas:
         cleaned = candidate.casefold().strip()
         if cleaned and cleaned.isalpha():
             return cleaned
     return None
+
+
+def _verb_lemma(token: Token) -> str | None:
+    """Resolve a spaCy token to its base verb lemma via lemminflect, when spaCy's built-in
+    lemmatizer produces an inflection rather than the root form.
+    """
+    return _verb_lemma_cached(token.text)
 
 
 def get_valid_lemma(token: Token, allowed_pos: set[str]) -> str | None:

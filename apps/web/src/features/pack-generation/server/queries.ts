@@ -1,7 +1,11 @@
 import "server-only";
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { buildContentMediaHref } from "@/features/media/lib/content-media";
+import {
+  getGenerationStageCopy,
+  PUBLIC_GENERATION_FAILURE_MESSAGE,
+} from "@/features/pack-generation/lib/status";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { content, pack, packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
@@ -13,6 +17,8 @@ import type {
 } from "../types";
 
 const RECENT_VISIBLE_JOB_LIMIT = 8;
+const TECHNICAL_MESSAGE_PATTERN =
+  /\b(neon|driver|transaction|constraint|database|sql|trigger|r2|s3|aws|api key|stack|exception)\b/i;
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
@@ -45,11 +51,20 @@ function payloadWarnings(payload: WorkflowEventPayload | null | undefined) {
     : [];
 }
 
+function publicWarningMessage(message: string) {
+  return TECHNICAL_MESSAGE_PATTERN.test(message)
+    ? "Some optional study assets could not be created."
+    : message;
+}
+
 function mapEvent(row: typeof packGenerationJobEvent.$inferSelect): PackGenerationProgressEvent {
   return {
     id: row.id,
     stage: row.stage,
-    message: row.message,
+    message:
+      row.stage === "failed"
+        ? PUBLIC_GENERATION_FAILURE_MESSAGE
+        : getGenerationStageCopy(row.stage).description,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -69,18 +84,23 @@ async function mapJobView({
   const eventRows = includeEvents
     ? await db.query.packGenerationJobEvent.findMany({
         where: eq(packGenerationJobEvent.jobId, job.id),
-        orderBy: desc(packGenerationJobEvent.createdAt),
+        orderBy: asc(packGenerationJobEvent.createdAt),
       })
     : [];
-  const warnings = eventRows.flatMap((event) => payloadWarnings(event.payload));
+  const warnings = eventRows
+    .flatMap((event) => payloadWarnings(event.payload))
+    .map(publicWarningMessage);
 
   return {
     jobId: job.id,
     status: job.status,
     stage: job.stage,
-    progressMessage: job.progressMessage,
+    progressMessage:
+      job.status === "failed"
+        ? PUBLIC_GENERATION_FAILURE_MESSAGE
+        : (job.progressMessage ?? getGenerationStageCopy(job.stage).description),
     errorCode: job.errorCode,
-    errorMessage: job.errorMessage,
+    errorMessage: job.status === "failed" ? PUBLIC_GENERATION_FAILURE_MESSAGE : null,
     warnings,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),

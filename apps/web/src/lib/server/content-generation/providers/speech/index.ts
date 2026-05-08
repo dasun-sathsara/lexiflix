@@ -44,32 +44,12 @@ export async function generateSpeechArtifacts(input: {
     return generateSpeechWithPolly(input);
   }
 
-  if (input.audioConfig.audioProvider !== "mock") {
-    logger.warn("[content-generation:audio] provider not implemented", {
-      provider: input.audioConfig.audioProvider,
-    });
-
-    return {
-      artifacts: [],
-      warnings: [`Audio provider '${input.audioConfig.audioProvider}' is not implemented yet.`],
-    };
-  }
-
-  const artifacts = input.selectedItems.map((item) => ({
-    itemKey: item.analysisItemId,
-    bytes: new TextEncoder().encode(`mock audio for ${item.displayText}`),
-    mimeType: "audio/mpeg",
-    extension: "mp3",
-    metadata: {
-      provider: input.audioConfig.audioProvider,
-      voice: input.audioConfig.audioVoice,
-      script: item.displayText,
-    },
-  }));
-
-  logger.info("[content-generation:audio] mock artifacts generated", {
-    artifactCount: artifacts.length,
+  logger.warn("[content-generation:audio] provider not implemented", {
+    provider: input.audioConfig.audioProvider,
   });
 
-  return { artifacts, warnings: [] };
+  return {
+    artifacts: [],
+    warnings: [`Audio provider '${input.audioConfig.audioProvider}' is not implemented yet.`],
+  };
 }

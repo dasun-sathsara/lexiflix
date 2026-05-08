@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
+  clearAllNotificationsAction,
   dismissNotificationAction,
   listNotificationsAction,
   markAllVisibleNotificationsReadAction,
@@ -80,6 +81,13 @@ export function NotificationBell() {
     });
   }, []);
 
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+    startTransition(async () => {
+      await clearAllNotificationsAction();
+    });
+  }, []);
+
   return (
     <DropdownMenu onOpenChange={(open) => open && refresh()}>
       <DropdownMenuTrigger asChild>
@@ -106,9 +114,24 @@ export function NotificationBell() {
             </p>
           </div>
           {notifications.length > 0 ? (
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={markAllAsRead}>
-              Mark all read
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs"
+                onClick={markAllAsRead}
+              >
+                Mark all read
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-muted-foreground"
+                onClick={clearAll}
+              >
+                Clear all
+              </Button>
+            </div>
           ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

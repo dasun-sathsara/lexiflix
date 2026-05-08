@@ -220,9 +220,13 @@ function MoviePosterGrid({
                 </p>
 
                 {item.genres.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2 flex gap-1.5 overflow-hidden p-0.5 -m-0.5">
                     {item.genres.slice(0, 2).map((genre) => (
-                      <Badge key={genre.id} variant="secondary">
+                      <Badge
+                        key={genre.id}
+                        variant="secondary"
+                        className="truncate max-w-full shrink min-w-0"
+                      >
                         {genre.name}
                       </Badge>
                     ))}
@@ -315,13 +319,17 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
                 </p>
 
                 {/* Genres + hint */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 overflow-hidden p-0.5 -m-0.5">
                   {item.genres.slice(0, 3).map((genre) => (
-                    <Badge key={genre.id} variant="secondary">
+                    <Badge
+                      key={genre.id}
+                      variant="secondary"
+                      className="truncate max-w-full shrink min-w-0"
+                    >
                       {genre.name}
                     </Badge>
                   ))}
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
                     Season-level analysis
                   </span>
                 </div>

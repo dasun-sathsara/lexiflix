@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -36,7 +37,7 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     )
 
     try:
-        result = pipeline.analyze(request)
+        result = await asyncio.to_thread(pipeline.analyze, request)
     except SRTParsingError as exc:
         logger.warning("SRT parsing failed: %s", exc)
         raise HTTPException(
@@ -73,6 +74,15 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
             detail={
                 "error": "nlp_service_error",
                 "message": str(exc),
+            },
+        ) from exc
+    except Exception as exc:
+        logger.exception("Unexpected error during analysis (job_id=%s)", request.job_id)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "internal_error",
+                "message": "An unexpected error occurred during analysis.",
             },
         ) from exc
 

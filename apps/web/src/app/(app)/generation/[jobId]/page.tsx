@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { GenerationProgressClient } from "@/features/pack-generation/components/generation-progress-client";
 import { getPackGenerationProgressView } from "@/features/pack-generation/server/queries";
@@ -24,13 +23,11 @@ export default async function GenerationProgressPage({
 
   return (
     <>
-      <AppTopbar title="Generation Jobs" />
+      <AppTopbar title={generation.content.title} />
       <AppPageShell>
-        <AppPageHeader
-          eyebrow="Pack generation"
-          heading="Generation Progress"
-          description="Durable progress for a user-owned pack generation job."
-        />
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{generation.content.title}</h1>
+        </div>
         <GenerationProgressClient initialGeneration={generation} />
       </AppPageShell>
     </>

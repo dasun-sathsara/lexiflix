@@ -1,5 +1,6 @@
 import type { CefrLevel } from "@/features/assessment/lib/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
 
 export type StatusState = {
   type: "success" | "error";
@@ -15,18 +16,10 @@ export function toSettingsTab(value: string | null): SettingsTab {
 }
 
 export const vocabularyTypeLabels: Record<StoredVocabularyKind, string> = {
-  word: "Words",
-  phrasal_verb: "Phrasal verbs",
-  idiom: "Idioms",
-  slang: "Slang",
+  ...VOCABULARY_KIND_LABELS,
 };
 
-export const STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = [
-  "word",
-  "phrasal_verb",
-  "idiom",
-  "slang",
-];
+export const STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = [...VOCABULARY_KINDS];
 
 export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 

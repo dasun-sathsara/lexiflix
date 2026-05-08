@@ -22,13 +22,19 @@ from app.schemas.responses import (
 )
 from app.services.cefr import CEFRLookup
 from app.services.spacy_models import model_manager
-from app.services.text_processing import parse_srt_content, split_plain_text
+from app.services.text_processing import (
+    chunk_lines,
+    parse_srt_content,
+    split_plain_text,
+)
 from app.services.token_filters import get_valid_lemma, token_looks_like_name_reference
 
 logger = logging.getLogger(__name__)
 
-# Maximum number of context examples to keep per candidate
+# Maximum number of context examples to keep per candidate after scoring
 _MAX_CONTEXTS = 3
+# Upper bound on unique contexts collected before scoring/selection
+_MAX_CONTEXT_CANDIDATES = 20
 
 
 class AnalysisPipeline:
@@ -86,13 +92,6 @@ class AnalysisPipeline:
             pipeline_version=request.pipeline_version,
         )
 
-        # Add model-fallback warning if relevant
-        if not model_manager.is_transformer:
-            warnings.append(
-                f"Transformer model not available — using '{model_manager.model_name}'. "
-                "Results may be less accurate."
-            )
-
         return AnalyzeResponse(
             metadata=metadata,
             candidates=candidates,
@@ -111,18 +110,16 @@ class AnalysisPipeline:
         return split_plain_text(request.content, dedup_lines=dedup)
 
     def _run_spacy(self, lines: list[str], batch_size: int) -> Iterable[Doc]:
-        """Run the spaCy pipeline over the extracted lines."""
+        """Run the spaCy pipeline over chunked subtitle lines."""
         nlp = model_manager.nlp
-        is_trf = model_manager.is_transformer
-        # Transformers don't support multiprocessing well
-        n_process = 1 if is_trf else -1
+        chunks = list(chunk_lines(lines))
         logger.info(
-            "Running spaCy (batch_size=%d, n_process=%s) …",
+            "Running spaCy (chunks=%d, batch_size=%d) …",
+            len(chunks),
             batch_size,
-            n_process,
         )
         try:
-            return nlp.pipe(lines, batch_size=batch_size, n_process=n_process)
+            return nlp.pipe(chunks, batch_size=batch_size, n_process=1)
         except Exception as exc:
             raise PipelineError(
                 "spaCy pipeline processing failed.",
@@ -143,42 +140,42 @@ class AnalysisPipeline:
         word_stats: dict[str, WordStats] = {}
 
         for doc in docs:
-            # The doc.text gives us the original line for context
-            line_text = doc.text
+            for sent in doc.sents:
+                sent_text = sent.text
 
-            for token in doc:
-                lemma = get_valid_lemma(token, allowed_pos)
-                if not lemma:
-                    continue
+                for token in sent:
+                    lemma = get_valid_lemma(token, allowed_pos)
+                    if not lemma:
+                        continue
 
-                stats = word_stats.get(lemma)
-                if stats is None:
-                    stats = WordStats()
-                    word_stats[lemma] = stats
-                stats.count += 1
-                if token.pos_:
-                    stats.pos_counts[token.pos_] += 1
+                    stats = word_stats.get(lemma)
+                    if stats is None:
+                        stats = WordStats()
+                        word_stats[lemma] = stats
+                    stats.count += 1
+                    if token.pos_:
+                        stats.pos_counts[token.pos_] += 1
 
-                surface = token.text.casefold().strip()
-                if surface and surface.isalpha():
-                    stats.surface_counts[surface] += 1
+                    surface = token.text.casefold().strip()
+                    if surface and surface.isalpha():
+                        stats.surface_counts[surface] += 1
 
-                if token.text.islower():
-                    stats.lowercase_count += 1
-                elif token.text[:1].isupper():
-                    stats.capitalized_count += 1
+                    if token.text.islower():
+                        stats.lowercase_count += 1
+                    elif token.text[:1].isupper():
+                        stats.capitalized_count += 1
 
-                if token_looks_like_name_reference(token):
-                    stats.name_like_count += 1
+                    if token_looks_like_name_reference(token):
+                        stats.name_like_count += 1
 
-                # Collect context examples (up to limit)
-                if (
-                    len(stats.contexts) < _MAX_CONTEXTS
-                    and line_text not in stats.contexts
-                ):
-                    stats.contexts.append(line_text)
+                    if (
+                        len(stats.contexts) < _MAX_CONTEXT_CANDIDATES
+                        and sent_text not in stats.contexts
+                    ):
+                        stats.contexts.append(sent_text)
 
         self._apply_calibrated_cefr(word_stats)
+        self._select_best_contexts(word_stats)
         return self._prune_word_stats(word_stats, include_propn=include_propn)
 
     def _apply_calibrated_cefr(self, word_stats: dict[str, WordStats]) -> None:
@@ -189,6 +186,54 @@ class AnalysisPipeline:
             stats.cefr_label = result.level_label
             stats.cefr_confidence = result.confidence
             stats.cefr_note = result.note
+
+    @staticmethod
+    def _score_context(text: str) -> float:
+        """Score a sentence for its usefulness as a vocabulary example context.
+
+        Rewards sentences that are 6–18 words long, penalises sentences that
+        start with a third-person pronoun (likely referring out of the
+        sentence), and gives a small bonus for sentences with several
+        longer content words.
+        """
+        words = text.split()
+        n = len(words)
+        if n < 1:
+            return -100.0
+
+        if n < 6:
+            score = float(n) * 0.5
+        elif n <= 18:
+            score = 8.0 + (n - 6) * 0.15
+        else:
+            score = 9.8 - (n - 18) * 0.05
+
+        first = words[0].casefold().rstrip(".,!?;:\"'")
+        if first in {
+            "he", "she", "it", "they", "we",
+            "his", "her", "its", "their",
+            "this", "that", "these", "those",
+            "him", "them",
+        }:
+            score -= 2.5
+
+        long_words = sum(1 for w in words if len(w) > 3)
+        if long_words >= 3:
+            score += 1.0
+
+        return score
+
+    @staticmethod
+    def _select_best_contexts(word_stats: dict[str, WordStats]) -> None:
+        """Trim each candidate's context list to the top-scoring examples."""
+        for stats in word_stats.values():
+            if len(stats.contexts) <= _MAX_CONTEXTS:
+                continue
+            stats.contexts = sorted(
+                stats.contexts,
+                key=AnalysisPipeline._score_context,
+                reverse=True,
+            )[:_MAX_CONTEXTS]
 
     @staticmethod
     def _prune_word_stats(

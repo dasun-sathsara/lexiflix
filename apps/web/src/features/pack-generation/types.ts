@@ -61,6 +61,10 @@ export type PackGenerationProgressActionResult = ActionResult<{
   generation: PackGenerationProgressView;
 }>;
 
+export type PackGenerationRetryActionResult = ActionResult<{
+  generation: PackGenerationProgressView;
+}>;
+
 export type ListPackGenerationJobsActionResult = ActionResult<{
   jobs: PackGenerationProgressView[];
 }>;

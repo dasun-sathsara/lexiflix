@@ -36,6 +36,8 @@ type ResolvedTvDetail = {
 
 type ResolvedTmdbDetail = ResolvedMovieDetail | ResolvedTvDetail;
 const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
+const PUBLIC_ANALYSIS_FAILURE_MESSAGE =
+  "Subtitle analysis could not be completed. Retry the analysis or try another title.";
 
 function parseTmdbNotFound(error: unknown) {
   return error instanceof Error && error.message.includes("TMDB Error: 404");
@@ -210,7 +212,7 @@ export async function getAnalysisSnapshotByRunId(
     stage: run.stage,
     progressMessage: run.progressMessage ?? null,
     errorCode: run.errorCode ?? null,
-    errorMessage: run.errorMessage ?? null,
+    errorMessage: status === "failed" ? PUBLIC_ANALYSIS_FAILURE_MESSAGE : null,
     warnings: run.warnings ?? [],
     summary: run.summary ?? null,
     items: run.status === "completed" ? await getCompletedItems(run.id) : [],

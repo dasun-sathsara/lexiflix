@@ -181,3 +181,11 @@ export async function dismissNotification({ userId, id }: { userId: string; id: 
     .set({ status: "dismissed", dismissedAt: now, updatedAt: now })
     .where(and(eq(notification.userId, userId), eq(notification.id, id)));
 }
+
+export async function dismissAllNotifications({ userId }: { userId: string }) {
+  const now = new Date();
+  await db
+    .update(notification)
+    .set({ status: "dismissed", dismissedAt: now, updatedAt: now })
+    .where(and(eq(notification.userId, userId), ne(notification.status, "dismissed")));
+}

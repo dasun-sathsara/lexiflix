@@ -1,23 +1,62 @@
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import type { ContentAnalysisStage } from "@/lib/server/media-analysis/contracts";
+import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
 
 /** Canonical CEFR level ordering used for chart axes and comparisons. */
 export const CEFR_LEVEL_ORDER: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 /** Human-readable labels for each vocabulary kind presented in pack generation. */
 export const VOCABULARY_TYPE_LABELS: Record<StoredVocabularyKind, string> = {
-  word: "Words",
-  phrasal_verb: "Phrasal verbs",
-  idiom: "Idioms",
-  slang: "Slang",
+  ...VOCABULARY_KIND_LABELS,
 };
 
 /** Vocabulary kinds that are eligible for inclusion in a generated study pack. */
-export const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [
-  "word",
-  "phrasal_verb",
-  "idiom",
-  "slang",
+export const GENERATION_VOCABULARY_TYPES: StoredVocabularyKind[] = [...VOCABULARY_KINDS];
+
+/** Human-readable labels for analysis pipeline stages. */
+export const ANALYSIS_STAGE_LABELS: Record<ContentAnalysisStage, string> = {
+  queued: "Queued",
+  fetching_subtitles: "Fetching subtitles",
+  running_nlp: "Analyzing vocabulary",
+  running_llm: "Evaluating difficulty",
+  merging_analysis: "Building profile",
+  saving_analysis: "Saving results",
+  completed: "Complete",
+  failed: "Failed",
+};
+
+/** Pipeline steps shown during analysis in-progress view. */
+export const ANALYSIS_PIPELINE_STEPS: {
+  stage: ContentAnalysisStage;
+  label: string;
+  description: string;
+}[] = [
+  {
+    stage: "fetching_subtitles",
+    label: "Fetching subtitles",
+    description: "Downloading subtitle data",
+  },
+  {
+    stage: "running_nlp",
+    label: "Analyzing vocabulary",
+    description: "Extracting and analyzing words",
+  },
+  {
+    stage: "running_llm",
+    label: "Evaluating difficulty",
+    description: "Rating CEFR difficulty levels",
+  },
+  {
+    stage: "merging_analysis",
+    label: "Building profile",
+    description: "Combining analysis results",
+  },
+  {
+    stage: "saving_analysis",
+    label: "Saving results",
+    description: "Storing the linguistic profile",
+  },
 ];
 
 /**

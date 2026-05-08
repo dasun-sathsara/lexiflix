@@ -11,6 +11,7 @@ import {
   Shield,
   Sparkles,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
@@ -32,9 +33,17 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { NavUser } from "@/features/sidebar/components/nav-user";
 import { cn } from "@/lib/utils";
+
+const NotificationBell = dynamic(
+  () =>
+    import("@/features/notifications/components/notification-bell").then((m) => m.NotificationBell),
+  {
+    ssr: false,
+    loading: () => <div className="h-9 w-9" />,
+  },
+);
 
 type NavItem = {
   title: string;

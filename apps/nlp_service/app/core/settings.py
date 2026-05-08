@@ -17,15 +17,16 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
 
+    # --- Auth ---
+    api_key: str | None = None
+
     # --- Server ---
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "info"
 
     # --- spaCy ---
-    spacy_prefer_gpu: bool = True
-    spacy_prefer_transformer: bool = True
-    spacy_batch_size: int = 200
+    spacy_batch_size: int = 125
 
     # --- Pipeline defaults ---
     default_include_propn: bool = False
