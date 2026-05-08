@@ -184,8 +184,6 @@ class AnalysisPipeline:
             result = self._cefr_lookup.resolve_candidate(lemma, stats.dominant_pos)
             stats.cefr_num = result.level_num
             stats.cefr_label = result.level_label
-            stats.cefr_confidence = result.confidence
-            stats.cefr_note = result.note
 
     @staticmethod
     def _score_context(text: str) -> float:
@@ -210,10 +208,21 @@ class AnalysisPipeline:
 
         first = words[0].casefold().rstrip(".,!?;:\"'")
         if first in {
-            "he", "she", "it", "they", "we",
-            "his", "her", "its", "their",
-            "this", "that", "these", "those",
-            "him", "them",
+            "he",
+            "she",
+            "it",
+            "they",
+            "we",
+            "his",
+            "her",
+            "its",
+            "their",
+            "this",
+            "that",
+            "these",
+            "those",
+            "him",
+            "them",
         }:
             score -= 2.5
 
@@ -292,8 +301,6 @@ class AnalysisPipeline:
                 cefr_numeric=stats.cefr_num,
                 count=stats.count,
                 contexts=[CandidateContext(text=ctx) for ctx in stats.contexts],
-                confidence=stats.cefr_confidence,
-                notes=stats.cefr_note,
             )
             for lemma, stats in sorted_items
         ]

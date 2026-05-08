@@ -40,14 +40,6 @@ class VocabularyCandidate(BaseModel):
         default_factory=list,
         description="Representative usage examples (may be empty).",
     )
-    confidence: float | None = Field(
-        default=None,
-        description="Calibrated CEFR confidence score in the range [0, 1].",
-    )
-    notes: str | None = Field(
-        default=None,
-        description="Machine-readable CEFR provenance or downgrade reason.",
-    )
 
 
 class AnalysisMetadata(BaseModel):
