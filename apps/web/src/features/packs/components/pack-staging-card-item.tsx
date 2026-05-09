@@ -132,10 +132,20 @@ export function PackStagingCardItem({
                 {label(item.state)}
               </Badge>
               {item.audioUrl ? (
-                <Badge variant="outline" className="gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-5 gap-1 rounded-full px-2 py-0 text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    new Audio(item.audioUrl ?? undefined).play();
+                  }}
+                  aria-label={`Play audio for ${item.displayText}`}
+                >
                   <Volume2 className="size-3" />
                   Audio
-                </Badge>
+                </Button>
               ) : null}
             </div>
 

@@ -405,6 +405,23 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
               </span>
             </div>
           </button>
+          {activeCard.audioUrl ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Play pronunciation"
+              className={cn(
+                "absolute left-1/2 top-1/2 z-10 -translate-x-1/2 translate-y-8 rounded-full text-muted-foreground hover:text-foreground",
+                state.isFlipped ? "pointer-events-none opacity-0" : "opacity-100",
+              )}
+              onClick={() => {
+                new Audio(activeCard.audioUrl ?? undefined).play();
+              }}
+            >
+              <Volume2 className="size-5" />
+            </Button>
+          ) : null}
 
           {/* Answer side */}
           <div
