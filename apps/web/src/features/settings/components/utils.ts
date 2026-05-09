@@ -1,4 +1,4 @@
-import type { CefrLevel } from "@/features/assessment/lib/types";
+import type { CefrLevel } from "@/features/assessment/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
 

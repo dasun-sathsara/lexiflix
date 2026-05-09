@@ -18,7 +18,7 @@ import {
   type CuratedAdminQueryState,
   getAdminSortOptions,
   getDefaultAdminSort,
-} from "@/features/curation/lib/admin-query";
+} from "@/features/curation/utils";
 import type { Genre, TMDBMediaType } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 

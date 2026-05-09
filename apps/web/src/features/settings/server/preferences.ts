@@ -1,6 +1,8 @@
+import "server-only";
+
 import { eq } from "drizzle-orm";
 
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
+import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
 import type { SettingsPreferences } from "@/features/settings/types";
 import {
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,

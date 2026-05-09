@@ -5,8 +5,8 @@ import {
   buildCuratedAdminDiscoverParams,
   parseCuratedAdminCatalogFilter,
   parseCuratedAdminSearchParams,
-} from "@/features/curation/lib/admin-query";
-import { listCuratedEntriesForAdmin } from "@/features/curation/server/catalog";
+} from "@/features/curation/utils";
+import { listCuratedEntriesForAdmin } from "@/features/curation/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireAdmin } from "@/lib/auth-guards";
 import { discoverMedia, getGenres, searchMedia } from "@/lib/tmdb";

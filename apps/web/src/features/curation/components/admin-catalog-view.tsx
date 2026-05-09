@@ -5,12 +5,11 @@ import { Suspense } from "react";
 import { AppEmptyState } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CuratedAdminCatalogFilter } from "@/features/curation/lib/admin-query";
-import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
-
-import { FiltersSkeleton } from "./_utils";
+import type { CuratedCatalogEntry } from "@/features/curation/types";
+import type { CuratedAdminCatalogFilter } from "@/features/curation/utils";
 import { AdminCatalogFilters } from "./admin-catalog-filters";
 import { AdminCatalogList } from "./admin-catalog-list";
+import { FiltersSkeleton } from "./utils";
 
 export type AdminCatalogViewProps = {
   catalogFilter: CuratedAdminCatalogFilter;

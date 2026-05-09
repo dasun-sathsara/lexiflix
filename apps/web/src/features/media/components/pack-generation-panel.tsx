@@ -36,10 +36,10 @@ import type { GenerationDialogDefaults, PackGenerationSnapshot } from "@/feature
 import {
   getGenerationProgressState,
   getGenerationStatusMessage,
-} from "@/features/pack-generation/lib/status";
+} from "@/features/pack-generation/utils";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "./_utils";
+import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "./utils";
 
 export type PackGenerationPanelProps = {
   generation: PackGenerationSnapshot | null;

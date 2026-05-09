@@ -3,9 +3,8 @@
 import { Reorder, useDragControls } from "motion/react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-
-import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 import { reorderCuratedEntriesAction } from "@/features/curation/server/actions";
+import type { CuratedCatalogEntry } from "@/features/curation/types";
 
 import { AdminCatalogRow } from "./admin-catalog-row";
 

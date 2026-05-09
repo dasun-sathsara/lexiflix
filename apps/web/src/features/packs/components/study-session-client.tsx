@@ -20,7 +20,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
-import { clampToInt, formatDueLabel, formatElapsed } from "./_utils";
+import { clampToInt, formatDueLabel, formatElapsed } from "./utils";
 
 const modeLabels: Record<StudySessionView["mode"], string> = {
   due: "Due reviews",

@@ -3,15 +3,11 @@ import { Suspense } from "react";
 
 import { AppEmptyState } from "@/components/common/app-surface";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type {
-  AnnotatedTMDBResult,
-  CuratedAdminQueryState,
-} from "@/features/curation/lib/admin-query";
+import type { AnnotatedTMDBResult, CuratedAdminQueryState } from "@/features/curation/utils";
 import type { Genre } from "@/lib/tmdb-shared";
-
-import { ControlsSkeleton, PaginationRow } from "./_utils";
 import { AdminDiscoverControls } from "./admin-curated-controls";
 import { AdminDiscoverRow } from "./admin-discover-row";
+import { ControlsSkeleton, PaginationRow } from "./utils";
 
 export type AdminDiscoverViewProps = {
   queryState: CuratedAdminQueryState;

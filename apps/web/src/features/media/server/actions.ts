@@ -15,7 +15,7 @@ import type {
   StartPackGenerationActionResult,
   StartPackGenerationInput,
 } from "@/features/media/types";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";

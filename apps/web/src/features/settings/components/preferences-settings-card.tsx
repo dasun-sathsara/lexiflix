@@ -28,7 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/lib/types";
+import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
 import type { SettingsPreferences } from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
@@ -44,7 +44,7 @@ import {
   settingsFieldClass,
   settingsLabelClass,
   vocabularyTypeLabels,
-} from "./_utils";
+} from "./utils";
 
 type PreferencesSettingsCardProps = {
   initialPreferences: SettingsPreferences;
