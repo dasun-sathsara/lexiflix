@@ -47,6 +47,39 @@ export type MediaDetailClientProps = {
   pageData: MediaDetailPageData;
 };
 
+function isGenerationActive(
+  generation: MediaDetailPageData["generation"],
+): generation is NonNullable<MediaDetailPageData["generation"]> {
+  return generation?.status === "queued" || generation?.status === "running";
+}
+
+function mergeGenerationSnapshot(
+  current: MediaDetailPageData["generation"],
+  incoming: MediaDetailPageData["generation"],
+) {
+  if (!incoming) {
+    return current;
+  }
+  if (!current) {
+    return incoming;
+  }
+  if (current.jobId === incoming.jobId) {
+    return incoming;
+  }
+
+  const currentUpdatedAt = Date.parse(current.updatedAt);
+  const incomingUpdatedAt = Date.parse(incoming.updatedAt);
+  if (Number.isFinite(currentUpdatedAt) && Number.isFinite(incomingUpdatedAt)) {
+    return incomingUpdatedAt >= currentUpdatedAt ? incoming : current;
+  }
+
+  if (isGenerationActive(current) && !isGenerationActive(incoming)) {
+    return current;
+  }
+
+  return incoming;
+}
+
 /**
  * Main client component for the media detail page. Orchestrates polling,
  * status updates, and handles actions like starting analysis and generating packs.
@@ -61,12 +94,19 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const [generationDialogOpen, setGenerationDialogOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const [isGenerationPending, startGenerationTransition] = React.useTransition();
+  const mediaTargetKey = `${media.mediaType}:${media.tmdbId}:${media.selectedSeasonNumber ?? "all"}`;
+  const previousMediaTargetKeyRef = React.useRef(mediaTargetKey);
 
   React.useEffect(() => {
+    const targetChanged = previousMediaTargetKeyRef.current !== mediaTargetKey;
+    previousMediaTargetKeyRef.current = mediaTargetKey;
+
     setAnalysis(pageData.analysis);
-    setGeneration(pageData.generation);
+    setGeneration((current) =>
+      targetChanged ? pageData.generation : mergeGenerationSnapshot(current, pageData.generation),
+    );
     setActionMessage(null);
-  }, [pageData.analysis, pageData.generation]);
+  }, [mediaTargetKey, pageData.analysis, pageData.generation]);
 
   React.useEffect(() => {
     const hasValidRunId = Boolean(analysis.runId);
@@ -182,17 +222,21 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   ) => {
     setActionMessage(null);
     startGenerationTransition(async () => {
-      const result = await startPackGenerationAction({
-        tmdbId: media.tmdbId,
-        mediaType: media.mediaType,
-        seasonNumber: media.selectedSeasonNumber,
-        request,
-      });
-      if (result.ok) {
-        setGeneration(result.data.generation);
-        return;
+      try {
+        const result = await startPackGenerationAction({
+          tmdbId: media.tmdbId,
+          mediaType: media.mediaType,
+          seasonNumber: media.selectedSeasonNumber,
+          request,
+        });
+        if (result.ok) {
+          setGeneration(result.data.generation);
+          return;
+        }
+        setActionMessage(result.error);
+      } catch (error) {
+        setActionMessage(error instanceof Error ? error.message : "Failed to start generation.");
       }
-      setActionMessage(result.error);
     });
   };
 

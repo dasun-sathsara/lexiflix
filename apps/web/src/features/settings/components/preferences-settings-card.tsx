@@ -64,6 +64,10 @@ type PreferencesSettingsCardProps = {
   setGenerationKnownTermHandling: (
     value: SettingsPreferences["generationKnownTermHandling"],
   ) => void;
+  generationAudioVoiceGenderDefault: SettingsPreferences["generationAudioVoiceGenderDefault"];
+  setGenerationAudioVoiceGenderDefault: (
+    value: SettingsPreferences["generationAudioVoiceGenderDefault"],
+  ) => void;
   generationExampleSentenceCount: string;
   setGenerationExampleSentenceCount: (value: string) => void;
   generationCustomInstructionsDefault: string;
@@ -101,6 +105,8 @@ export function PreferencesSettingsCard({
   setGenerationCefrWindowMode,
   generationKnownTermHandling,
   setGenerationKnownTermHandling,
+  generationAudioVoiceGenderDefault,
+  setGenerationAudioVoiceGenderDefault,
   generationExampleSentenceCount,
   setGenerationExampleSentenceCount,
   generationCustomInstructionsDefault,
@@ -363,6 +369,29 @@ export function PreferencesSettingsCard({
                       <SelectItem value="balanced">Balanced</SelectItem>
                       <SelectItem value="common_first">Common first</SelectItem>
                       <SelectItem value="challenge_first">Challenge first</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={settingsFieldClass}>
+                  <Label htmlFor="generation-audio-voice-gender" className={settingsLabelClass}>
+                    Audio voice
+                  </Label>
+                  <Select
+                    value={generationAudioVoiceGenderDefault}
+                    onValueChange={(value) => {
+                      setGenerationAudioVoiceGenderDefault(
+                        value as SettingsPreferences["generationAudioVoiceGenderDefault"],
+                      );
+                      setPreferencesStatus(null);
+                    }}
+                  >
+                    <SelectTrigger id="generation-audio-voice-gender" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

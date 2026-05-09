@@ -12,6 +12,7 @@ export type StoredVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
 export type StoredFrequencyPreference = "balanced" | "common_first" | "challenge_first";
 export type GenerationCefrWindowMode = "same_level" | "one_level_above" | "all_levels_above";
 export type GenerationKnownTermHandling = "exclude_known" | "downrank_known" | "include_known";
+export type GenerationAudioVoiceGender = "female" | "male";
 export type CuratedSourceProvider = "tmdb";
 export type CuratedMediaType = "movie" | "tv";
 export type CuratedCurationScope = "movie" | "show" | "season";
@@ -74,6 +75,7 @@ export type GenerationRequestSnapshot = {
   cefrWindowMode: GenerationCefrWindowMode;
   packSize: number;
   knownTermHandling: GenerationKnownTermHandling;
+  audioVoiceGender: GenerationAudioVoiceGender;
   exampleSentenceCount: 1 | 2 | 3;
   customInstructions: string | null;
   forceRegenerate: boolean;

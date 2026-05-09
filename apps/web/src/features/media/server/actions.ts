@@ -103,13 +103,12 @@ async function triggerPackGenerationJob(jobId: string) {
       stage: "failed",
       message: "Failed to trigger pack generation.",
       errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
+      errorMessage: error instanceof Error ? error.message : PUBLIC_GENERATION_FAILURE_MESSAGE,
       payload: {
         triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
         triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
       },
     });
-    throw error;
   }
 }
 
@@ -256,6 +255,8 @@ export async function startPackGenerationAction(
     cefrWindowMode: parsed.request.cefrWindowMode ?? preferences.generationCefrWindowMode,
     packSize: parsed.request.packSize ?? preferences.generationPackSizeDefault,
     knownTermHandling: parsed.request.knownTermHandling ?? preferences.generationKnownTermHandling,
+    audioVoiceGender:
+      parsed.request.audioVoiceGender ?? preferences.generationAudioVoiceGenderDefault,
     exampleSentenceCount:
       parsed.request.exampleSentenceCount ?? preferences.generationExampleSentenceCount,
     customInstructions:

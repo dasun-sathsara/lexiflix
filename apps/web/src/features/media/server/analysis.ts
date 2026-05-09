@@ -268,6 +268,7 @@ export async function getMediaDetailPageData(input: {
     cefrWindowMode: preferences.generationCefrWindowMode,
     packSize: preferences.generationPackSizeDefault,
     knownTermHandling: preferences.generationKnownTermHandling,
+    audioVoiceGender: preferences.generationAudioVoiceGenderDefault,
     exampleSentenceCount: preferences.generationExampleSentenceCount,
     customInstructions: preferences.generationCustomInstructionsDefault,
   };

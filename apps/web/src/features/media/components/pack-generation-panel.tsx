@@ -80,6 +80,7 @@ export function PackGenerationPanel({
   }, [generationDefaults]);
 
   const vocabularyTypesAreValid = form.selectedVocabularyTypes.length > 0;
+  const isRegeneration = generation?.status === "completed";
 
   const toggleVocabularyType = (kind: StoredVocabularyKind, checked: boolean) => {
     setForm((current) => {
@@ -104,7 +105,7 @@ export function PackGenerationPanel({
       return;
     }
 
-    onStartGeneration({ ...form, forceRegenerate });
+    onStartGeneration({ ...form, forceRegenerate: forceRegenerate || isRegeneration });
     setDialogOpen(false);
   };
 
@@ -254,6 +255,26 @@ export function PackGenerationPanel({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5 text-sm">
+              <Label>Audio voice</Label>
+              <Select
+                value={form.audioVoiceGender}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    audioVoiceGender: value as GenerationDialogDefaults["audioVoiceGender"],
+                  }))
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5 text-sm sm:col-span-2">
               <Label>Vocabulary types</Label>
               <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
@@ -305,20 +326,11 @@ export function PackGenerationPanel({
             </CollapsibleContent>
           </Collapsible>
           <DialogFooter>
-            {generation?.status === "completed" ? (
-              <Button
-                variant="outline"
-                onClick={() => submit(true)}
-                disabled={!vocabularyTypesAreValid}
-              >
-                Regenerate
-              </Button>
-            ) : null}
             <Button
-              onClick={() => submit(false)}
+              onClick={() => submit(isRegeneration)}
               disabled={isGenerating || !vocabularyTypesAreValid}
             >
-              Start
+              {isRegeneration ? "Regenerate" : "Start"}
             </Button>
           </DialogFooter>
         </DialogContent>

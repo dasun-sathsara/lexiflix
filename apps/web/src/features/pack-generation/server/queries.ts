@@ -38,6 +38,7 @@ function requestSummary(
     cefrWindowMode: request.cefrWindowMode,
     packSize: request.packSize,
     knownTermHandling: request.knownTermHandling,
+    audioVoiceGender: request.audioVoiceGender,
     exampleSentenceCount: request.exampleSentenceCount,
     hasCustomInstructions: Boolean(request.customInstructions),
     forceRegenerate: request.forceRegenerate,

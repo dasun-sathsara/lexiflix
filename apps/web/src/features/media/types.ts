@@ -2,6 +2,7 @@ import type { PackGenerationProgressView } from "@/features/pack-generation/type
 import type { ActionResult } from "@/lib/action-result";
 import type {
   ContentAnalysisSummary,
+  GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
   StoredCefrLevel,
@@ -77,6 +78,7 @@ export type GenerationDialogDefaults = {
   cefrWindowMode: GenerationCefrWindowMode;
   packSize: number;
   knownTermHandling: GenerationKnownTermHandling;
+  audioVoiceGender: GenerationAudioVoiceGender;
   exampleSentenceCount: 1 | 2 | 3;
   customInstructions: string | null;
 };

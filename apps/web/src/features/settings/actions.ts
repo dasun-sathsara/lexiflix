@@ -8,6 +8,7 @@ import { z } from "zod";
 import { CEFR_LEVELS } from "@/features/assessment/lib/types";
 import {
   FREQUENCY_PREFERENCES,
+  GENERATION_AUDIO_VOICE_GENDERS,
   GENERATION_CEFR_WINDOW_MODES,
   GENERATION_KNOWN_TERM_HANDLINGS,
   getSettingsPreferences,
@@ -45,6 +46,7 @@ const updateSettingsPreferencesSchema = z.object({
   generationPackSizeDefault: z.number().int().min(1).max(100),
   generationCefrWindowMode: z.enum(GENERATION_CEFR_WINDOW_MODES),
   generationKnownTermHandling: z.enum(GENERATION_KNOWN_TERM_HANDLINGS),
+  generationAudioVoiceGenderDefault: z.enum(GENERATION_AUDIO_VOICE_GENDERS),
   generationExampleSentenceCount: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   generationCustomInstructionsDefault: z
     .string()
@@ -188,6 +190,7 @@ export async function updateSettingsPreferencesAction(
     generationPackSizeDefault,
     generationCefrWindowMode,
     generationKnownTermHandling,
+    generationAudioVoiceGenderDefault,
     generationExampleSentenceCount,
     generationCustomInstructionsDefault,
     emailRemindersEnabled,
@@ -206,6 +209,7 @@ export async function updateSettingsPreferencesAction(
       generationPackSizeDefault,
       generationCefrWindowMode,
       generationKnownTermHandling,
+      generationAudioVoiceGenderDefault,
       generationExampleSentenceCount,
       generationCustomInstructionsDefault,
       emailRemindersEnabled,
@@ -222,6 +226,7 @@ export async function updateSettingsPreferencesAction(
         generationPackSizeDefault,
         generationCefrWindowMode,
         generationKnownTermHandling,
+        generationAudioVoiceGenderDefault,
         generationExampleSentenceCount,
         generationCustomInstructionsDefault,
         emailRemindersEnabled,
