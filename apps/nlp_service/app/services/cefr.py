@@ -77,51 +77,27 @@ class CEFRLookup:
         analyzer: CEFRAnalyzer | None = None,
     ) -> None:
         self.analyzer = analyzer or CEFRAnalyzer()
-        self._cache_pos: dict[tuple[str, str], tuple[int, str]] = {}
-        self._cache_avg: dict[str, tuple[int, str]] = {}
-        self._cache_candidate: dict[tuple[str, str], CEFRResult] = {}
-        self._cache_candidate_lemma: dict[str, CEFRResult] = {}
 
     def get_pos_level(self, word: str, pos_ptb: str) -> tuple[int | None, str | None]:
         """Fetch the CEFR level for a specific word/POS combination from cefrpy."""
-        key = (word, pos_ptb)
-        if key in self._cache_pos:
-            return self._cache_pos[key]
         try:
             val = self.analyzer.get_word_pos_level_CEFR(word, pos_ptb)
         except Exception:
             val = None
-        num, label = normalize_cefr_value(val)
-        if num is not None and label is not None:
-            self._cache_pos[key] = (num, label)
-        return num, label
+        return normalize_cefr_value(val)
 
     def get_average_level(self, word: str) -> tuple[int | None, str | None]:
         """Fetch the average CEFR level for a word across all its POS usages from cefrpy."""
-        if word in self._cache_avg:
-            return self._cache_avg[word]
         try:
             val = self.analyzer.get_average_word_level_CEFR(word)
         except Exception:
             val = None
-        num, label = normalize_cefr_value(val)
-        if num is not None and label is not None:
-            self._cache_avg[word] = (num, label)
-        return num, label
+        return normalize_cefr_value(val)
 
     def resolve_candidate(self, lemma: str, pos: str | None) -> CEFRResult:
         """Resolve a final CEFR label for an aggregated candidate."""
-
         lemma = lemma.casefold().strip()
         pos_ptb = coarse_to_base_ptb(pos)
-
-        if pos_ptb:
-            cache_key = (lemma, pos_ptb)
-            if cache_key in self._cache_candidate:
-                return self._cache_candidate[cache_key]
-        else:
-            if lemma in self._cache_candidate_lemma:
-                return self._cache_candidate_lemma[lemma]
 
         level_num: int | None = None
         level_label: str | None = None
@@ -137,22 +113,7 @@ class CEFRLookup:
         if level_num is None:
             level_num, level_label = self.get_average_level(lemma)
 
-        # Build the result
-        if level_num is not None:
-            result = CEFRResult(
-                level_num=level_num,
-                level_label=level_label,
-            )
-        else:
-            result = CEFRResult(
-                level_num=None,
-                level_label=None,
-            )
-
-        # Cache the result
-        if pos_ptb:
-            self._cache_candidate[(lemma, pos_ptb)] = result
-        else:
-            self._cache_candidate_lemma[lemma] = result
-
-        return result
+        return CEFRResult(
+            level_num=level_num,
+            level_label=level_label,
+        )
