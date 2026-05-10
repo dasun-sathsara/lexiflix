@@ -168,9 +168,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 \section{Driving Background Work}
 
-The heavy work---analysis and pack generation---runs in Trigger.dev, but it is always
-\emph{initiated} from the app and \emph{tracked} through the database. A server action
-records a durable row in Postgres and then enqueues a Trigger task by its typed id:
+As outlined in Chapter~\ref{ch:overview}, the system has two asynchronous jobs: reusable content analysis and user-specific pack generation. Both follow the same pattern: a server action records a durable row in Postgres, then enqueues a Trigger task by its typed id.
 
 \begin{lstlisting}[language=TypeScript, caption={\texttt{features/media/server/actions.ts} --- enqueue a workflow after recording state.}]
 async function triggerAnalysisRun(runId: string) {
@@ -346,51 +344,12 @@ Generating a pack is only half the product; the other half is studying it, and t
 is entirely app-owned domain logic---not a workflow concern. It is worth a close look
 because it is the most algorithmic code in the web app and a likely focus of the review.
 
-\subsection{An SM-2--style spaced-repetition scheduler}
+The full SRS algorithm---state machine, interval formulas, ease factor calculations, and
+mastery gate---is documented in the companion SRS Algorithm document. This section covers
+only the architectural integration point: derived due-state computed from a stored
+\texttt{dueAt} timestamp.
 
-When a learner rates a card, the next review is computed by a pure function,
-\texttt{computeNextReviewState}, in \texttt{features/packs/server/srs.ts}. It is an
-Anki-inspired SM-2 baseline: short sub-day steps while a card is still being learned,
-then intervals that grow by the card's \emph{ease factor} once it graduates. The
-configuration makes the model legible at a glance:
 
-\begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- the scheduler constants.}]
-export const SRS_CONFIG = {
-  firstLearningStepMs: MINUTE_MS,          secondLearningStepMs: 10 * MINUTE_MS,
-  graduatingIntervalDays: 1,               easyIntervalDays: 4,
-  startingEaseFactor: 2.5,                 minimumEaseFactor: 1.3,
-  hardIntervalMultiplier: 1.2,             easyBonus: 1.3,
-  masteryRepetitionThreshold: 5,           masteryIntervalThresholdDays: 21,
-} as const;
-\end{lstlisting}
-
-The function is a small state machine over four ratings. \texttt{again} always lapses the
-card back to a one-minute learning step and, for a graduated card, nudges its ease down by
-\(0.2\); learning-phase cards walk the short steps until they graduate; review-phase cards
-multiply the previous interval to get the next one:
-
-\begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- review-phase interval growth (trimmed).}]
-const reviewResult = {
-  hard: { intervalDays: Math.max(prev + 1, clampInterval(prev * 1.2)), easeFactor: clampEase(ease - 0.15) },
-  good: { intervalDays: Math.max(prev + 1, clampInterval(prev * ease)), easeFactor: ease },
-  easy: { intervalDays: Math.max(prev + 1, clampInterval(prev * ease * 1.3)), easeFactor: clampEase(ease + 0.15) },
-}[input.rating];
-\end{lstlisting}
-
-Two LexiFlix-specific choices distinguish it from stock SM-2. First, \emph{mastery} is a
-product milestone, not an Anki state: a card becomes \texttt{mastered} once a positive
-rating coincides with either enough repetitions or a long-enough interval
-(\texttt{maybeMastered}). Second, the ease and interval are always clamped
-(\texttt{clampEase}, \texttt{clampInterval}) so the schedule cannot drift below a minimum
-or explode past a ceiling.
-
-\subsection{Effective due-state is derived, not stored}
-
-The architecture deliberately avoids a background job whose only purpose would be flipping
-cards from ``learning'' to ``due'' at their scheduled time. Instead, \texttt{pack\_item}
-stores a lifecycle \texttt{state} (\texttt{new}, \texttt{learning}, \texttt{mastered},
-\texttt{removed}) plus a \texttt{dueAt} timestamp, and the \emph{effective} state is
-computed on read by comparing \texttt{dueAt} to now:
 
 \begin{lstlisting}[language=TypeScript, caption={\texttt{packs/server/srs.ts} --- due status is a function of time, not a stored row.}]
 export function getEffectivePackCardState({ state, dueAt, now, removedAt }) {
