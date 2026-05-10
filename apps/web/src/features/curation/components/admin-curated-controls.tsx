@@ -1,13 +1,11 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -38,242 +36,236 @@ const SORT_LABELS: Record<string, string> = {
 
 const DECADES = [2020, 2010, 2000, 1990, 1980, 1970, 1960, 1950] as const;
 
+// ---------------------------------------------------------------------------
+// Compact Segment (mini pill toggle)
+// ---------------------------------------------------------------------------
+
+function Segment<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/40 p-0.5 shadow-xs">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={cn(
+            "inline-flex items-center justify-center rounded px-2 py-1 text-xs font-medium transition-colors",
+            value === opt.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------
+
+/**
+ * Compact toolbar for the admin Discover view. Selects push updates to the
+ * URL immediately; the search input commits on Enter.
+ */
 export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverControlsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
 
-  const [mode, setMode] = useState<CuratedAdminMode>(queryState.mode);
-  const [mediaType, setMediaType] = useState<TMDBMediaType>(queryState.mediaType);
+  // Local state for search input only (needs explicit commit)
   const [query, setQuery] = useState<string>(queryState.query);
-  const [genreId, setGenreId] = useState<string>(queryState.genreId ?? "all");
-  const [sortBy, setSortBy] = useState<string>(queryState.sortBy);
-  const [decade, setDecade] = useState<string>(
-    queryState.decade != null ? String(queryState.decade) : "all",
-  );
-
   const prevQueryRef = useRef(queryState);
   useEffect(() => {
     if (prevQueryRef.current !== queryState) {
-      setMode(queryState.mode);
-      setMediaType(queryState.mediaType);
       setQuery(queryState.query);
-      setGenreId(queryState.genreId ?? "all");
-      setSortBy(queryState.sortBy);
-      setDecade(queryState.decade != null ? String(queryState.decade) : "all");
       prevQueryRef.current = queryState;
     }
   }, [queryState]);
 
-  function handleMediaTypeChange(newType: TMDBMediaType) {
-    setMediaType(newType);
-    setGenreId("all");
-    setSortBy(getDefaultAdminSort(newType));
+  const push = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value == null || value === "") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
+      params.delete("page");
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`);
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
+  function handleModeChange(next: CuratedAdminMode) {
+    push({
+      view: "discover",
+      mode: next,
+      ...(next === "search" ? { genre: null, sort: null, decade: null } : { q: null }),
+    });
   }
 
-  function buildApplyUrl(): string {
-    const params = new URLSearchParams(searchParams.toString());
-
-    params.set("view", "discover");
-    params.set("mode", mode);
-    params.set("type", mediaType);
-    params.delete("page");
-
-    if (mode === "search") {
-      if (query.trim()) {
-        params.set("q", query.trim());
-      } else {
-        params.delete("q");
-      }
-      params.delete("genre");
-      params.delete("sort");
-      params.delete("decade");
-    } else {
-      params.delete("q");
-
-      if (genreId && genreId !== "all") {
-        params.set("genre", genreId);
-      } else {
-        params.delete("genre");
-      }
-
-      const defaultSort = getDefaultAdminSort(mediaType);
-      if (sortBy && sortBy !== defaultSort) {
-        params.set("sort", sortBy);
-      } else {
-        params.delete("sort");
-      }
-
-      if (decade && decade !== "all") {
-        params.set("decade", decade);
-      } else {
-        params.delete("decade");
-      }
-    }
-
-    return `${pathname}?${params.toString()}`;
+  function handleMediaTypeChange(next: TMDBMediaType) {
+    push({
+      view: "discover",
+      type: next,
+      // Reset filters tied to the previous media type
+      genre: null,
+      sort: null,
+    });
   }
 
-  function handleApply() {
-    router.push(buildApplyUrl());
+  function handleSearchCommit() {
+    const value = query.trim();
+    push({ view: "discover", mode: "search", q: value || null });
+  }
+
+  function handleGenreChange(next: string) {
+    push({ view: "discover", genre: next === "all" ? null : next });
+  }
+
+  function handleSortChange(next: string) {
+    const defaultSort = getDefaultAdminSort(queryState.mediaType);
+    push({ view: "discover", sort: next === defaultSort ? null : next });
+  }
+
+  function handleDecadeChange(next: string) {
+    push({ view: "discover", decade: next === "all" ? null : next });
   }
 
   function handleReset() {
-    const params = new URLSearchParams();
-    params.set("view", "discover");
-    router.push(`${pathname}?${params.toString()}`);
-    setMode("search");
-    setMediaType("movie");
+    startTransition(() => {
+      router.push(`${pathname}?view=discover`);
+    });
     setQuery("");
-    setGenreId("all");
-    setSortBy(getDefaultAdminSort("movie"));
-    setDecade("all");
   }
 
-  const sortOptions = getAdminSortOptions(mediaType);
+  const sortOptions = getAdminSortOptions(queryState.mediaType);
+  const hasActiveFilters =
+    queryState.query !== "" ||
+    queryState.genreId != null ||
+    queryState.decade != null ||
+    queryState.mode !== "search" ||
+    queryState.mediaType !== "movie" ||
+    queryState.sortBy !== getDefaultAdminSort(queryState.mediaType);
 
   return (
-    <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
-      <CardHeader className="gap-1.5 border-b py-3.5">
-        <CardTitle className="text-base font-semibold">Discovery controls</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 py-3.5">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Mode
-            </span>
-            <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
-              {(["search", "browse"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  className={cn(
-                    "inline-flex min-h-8 items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
-                    mode === m
-                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                  )}
-                >
-                  {m === "search" ? "Search" : "Browse"}
-                </button>
-              ))}
-            </div>
-          </div>
+    <div className="flex flex-wrap items-center gap-2 rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 px-3 py-2 shadow-xs">
+      <Segment<CuratedAdminMode>
+        options={[
+          { value: "search", label: "Search" },
+          { value: "browse", label: "Browse" },
+        ]}
+        value={queryState.mode}
+        onChange={handleModeChange}
+      />
 
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Type
-            </span>
-            <div className="inline-flex flex-wrap items-center gap-1 rounded-[calc(var(--radius)+2px)] border bg-muted/50 p-0.75 shadow-sm">
-              {(["movie", "tv"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => handleMediaTypeChange(t)}
-                  className={cn(
-                    "inline-flex min-h-8 items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-all",
-                    mediaType === t
-                      ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                  )}
-                >
-                  {t === "movie" ? "Movies" : "TV Shows"}
-                </button>
-              ))}
-            </div>
-          </div>
+      <Segment<TMDBMediaType>
+        options={[
+          { value: "movie", label: "Movies" },
+          { value: "tv", label: "TV" },
+        ]}
+        value={queryState.mediaType}
+        onChange={handleMediaTypeChange}
+      />
+
+      <div className="mx-0.5 hidden h-5 w-px bg-border/60 sm:block" />
+
+      {queryState.mode === "search" ? (
+        <div className="relative min-w-0 flex-1 basis-64">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search titles on TMDB…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchCommit();
+            }}
+            onBlur={() => {
+              if (query.trim() !== queryState.query) {
+                handleSearchCommit();
+              }
+            }}
+            className="h-8 border-border/80 pl-8 text-sm shadow-xs"
+          />
         </div>
+      ) : (
+        <>
+          <Select value={queryState.genreId ?? "all"} onValueChange={handleGenreChange}>
+            <SelectTrigger size="sm" className="h-8 w-[140px] text-xs">
+              <SelectValue placeholder="Genre" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All genres</SelectItem>
+              {genres.map((g) => (
+                <SelectItem key={g.id} value={String(g.id)}>
+                  {g.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {mode === "search" ? (
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              Title Search
-            </Label>
-            <div className="relative max-w-lg">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search titles..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleApply();
-                }}
-                className="pl-10 shadow-sm"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 max-w-3xl">
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                Genre
-              </Label>
-              <Select value={genreId} onValueChange={setGenreId}>
-                <SelectTrigger className="w-full shadow-sm">
-                  <SelectValue placeholder="All genres" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All genres</SelectItem>
-                  {genres.map((g) => (
-                    <SelectItem key={g.id} value={String(g.id)}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Select value={queryState.sortBy} onValueChange={handleSortChange}>
+            <SelectTrigger size="sm" className="h-8 w-[150px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {SORT_LABELS[opt] ?? opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                Sort by
-              </Label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full shadow-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {SORT_LABELS[opt] ?? opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Select
+            value={queryState.decade != null ? String(queryState.decade) : "all"}
+            onValueChange={handleDecadeChange}
+          >
+            <SelectTrigger size="sm" className="h-8 w-[120px] text-xs">
+              <SelectValue placeholder="Decade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any decade</SelectItem>
+              {DECADES.map((d) => (
+                <SelectItem key={d} value={String(d)}>
+                  {d}s
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                Decade
-              </Label>
-              <Select value={decade} onValueChange={setDecade}>
-                <SelectTrigger className="w-full shadow-sm">
-                  <SelectValue placeholder="Any decade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Any decade</SelectItem>
-                  {DECADES.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d}s
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-2 pt-2">
-          <Button size="sm" onClick={handleApply}>
-            Apply
-          </Button>
-          <Button size="sm" variant="ghost" onClick={handleReset}>
+      <div className="ml-auto flex items-center gap-1">
+        {hasActiveFilters ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 gap-1.5 px-2 text-xs"
+            onClick={handleReset}
+          >
+            <RotateCcw className="size-3.5" />
             Reset
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        ) : null}
+      </div>
+    </div>
   );
 }

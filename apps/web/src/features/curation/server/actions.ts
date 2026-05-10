@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   deleteCuratedEntryById,
+  reorderCuratedEntries,
   setCuratedEntryFeaturedRank,
   setCuratedEntryPublishedState,
   upsertCuratedEntryFromTmdb,
 } from "@/features/curation/server/catalog";
+import type { ActionResult } from "@/lib/action-result";
 import { requireAdmin } from "@/lib/auth-guards";
 
 const tmdbMutationSchema = z.object({
@@ -98,4 +100,26 @@ export async function deleteCuratedEntryAction(formData: FormData) {
 
   await deleteCuratedEntryById(parsed.id);
   revalidateCuratedRoutes();
+}
+
+// ---------------------------------------------------------------------------
+// Reorder
+// ---------------------------------------------------------------------------
+
+const reorderSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(500),
+});
+
+export async function reorderCuratedEntriesAction(
+  input: z.input<typeof reorderSchema>,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = reorderSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid reorder payload." };
+  }
+
+  await reorderCuratedEntries(parsed.data.ids);
+  revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }

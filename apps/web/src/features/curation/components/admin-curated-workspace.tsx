@@ -16,9 +16,6 @@ import { cn } from "@/lib/utils";
 import { AdminCatalogView } from "./admin-catalog-view";
 import { AdminDiscoverView } from "./admin-discover-view";
 
-/**
- * Props for the AdminCuratedWorkspace component.
- */
 interface AdminCuratedWorkspaceProps {
   queryState: CuratedAdminQueryState;
   catalogFilter: CuratedAdminCatalogFilter;
@@ -31,12 +28,6 @@ interface AdminCuratedWorkspaceProps {
   genreMap: Record<number, string>;
 }
 
-/**
- * Orchestrates the admin curation workspace, allowing administrators to toggle
- * between discovering new media to add to the catalog and managing existing
- * curated entries. Handles layout, routing params, and conditional rendering
- * for both views.
- */
 export function AdminCuratedWorkspace({
   queryState,
   catalogFilter,
@@ -89,62 +80,58 @@ export function AdminCuratedWorkspace({
 
   return (
     <AppPageShell>
-      <section className="flex flex-col gap-2">
-        <AppPageHeader heading="Curated Catalog" />
-
-        <div className="flex flex-wrap gap-2.5">
-          <AppStat icon={Layers} label="Catalog" value={stats.total} hint="items" />
-          <AppStat
-            icon={Eye}
-            label="Published"
-            value={stats.published}
-            hint="live"
-            tone="success"
-          />
-          <AppStat icon={Film} label="Movies" value={stats.movies} />
-          <AppStat icon={Tv} label="TV Shows" value={stats.tv} />
-        </div>
-      </section>
-
-      <AppPanel className="inline-flex self-start items-center gap-1 p-1">
-        <Link
-          href={discoverHref}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
-            isDiscover
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <LayoutGrid className="size-4" />
-          Discover & Add
-        </Link>
-
-        <Link
-          href={catalogHref}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
-            isCatalog
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <Layers className="size-4" />
-          Manage Catalog
-          {allEntriesCount > 0 && (
-            <span
+      <AppPageHeader
+        heading="Curated Catalog"
+        description="Manage the curated catalog — discover, add, reorder, and publish entries."
+        stats={
+          <>
+            <AppStat icon={Layers} label="Catalog" value={stats.total} />
+            <AppStat icon={Eye} label="Published" value={stats.published} tone="success" />
+            <AppStat icon={Film} label="Movies" value={stats.movies} />
+            <AppStat icon={Tv} label="TV" value={stats.tv} />
+          </>
+        }
+        actions={
+          <AppPanel className="inline-flex items-center gap-1 p-1">
+            <Link
+              href={discoverHref}
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs tabular-nums",
-                isCatalog
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-muted/80 text-muted-foreground/60",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                isDiscover
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {allEntriesCount}
-            </span>
-          )}
-        </Link>
-      </AppPanel>
+              <LayoutGrid className="size-4" />
+              Discover & Add
+            </Link>
+            <Link
+              href={catalogHref}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
+                isCatalog
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Layers className="size-4" />
+              Manage Catalog
+              {allEntriesCount > 0 ? (
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs tabular-nums",
+                    isCatalog
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-muted/80 text-muted-foreground/60",
+                  )}
+                >
+                  {allEntriesCount}
+                </span>
+              ) : null}
+            </Link>
+          </AppPanel>
+        }
+      />
 
       {isDiscover && (
         <AdminDiscoverView
