@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 _MODEL_NAME = "en_core_web_trf"
 
-
 class SpaCyModelManager:
     """Singleton-ish manager for the loaded spaCy pipeline.
 
@@ -44,7 +43,7 @@ class SpaCyModelManager:
         return self._nlp
 
     def load(self) -> None:
-        """Load the ``en_core_web_trf`` pipeline. Safe to call multiple times (idempotent)."""
+        """Load the ``en_core_web_trf`` pipeline."""
         if self._nlp is not None:
             logger.info("spaCy model already loaded — skipping.")
             return

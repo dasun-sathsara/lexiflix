@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-import pytest
-
 from app.services.text_processing import (
     _deduplicate_lines,
     _join_broken_sentences,
