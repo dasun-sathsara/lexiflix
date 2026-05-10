@@ -111,6 +111,7 @@ class CEFRLookup:
 
     def resolve_candidate(self, lemma: str, pos: str | None) -> CEFRResult:
         """Resolve a final CEFR label for an aggregated candidate."""
+
         lemma = lemma.casefold().strip()
         pos_ptb = coarse_to_base_ptb(pos)
 
