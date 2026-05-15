@@ -1,0 +1,28 @@
+{
+  "include": [
+    "apps/nlp_service/app"
+  ],
+  "venvPath": "apps/nlp_service",
+  "venv": ".venv",
+  "extraPaths": [
+    "apps/nlp_service"
+  ],
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "recommended",
+  "reportMissingImports": "warning",
+  "reportCallInDefaultInitializer": "none",
+  "reportMissingTypeStubs": "none",
+  "reportDeprecated": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownParameterType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportImplicitStringConcatenation": "none",
+  "reportPrivateImportUsage": "none",
+  "reportMissingParameterType": "none",
+  "reportUnannotatedClassAttribute": "none",
+  "reportUnusedParameter": "none",
+  "reportUnusedImport": "none",
+  "reportUnusedCallResult": "none",
+  "reportAny": "none"
+}
