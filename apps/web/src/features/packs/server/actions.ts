@@ -10,7 +10,7 @@ import type {
   PackRatingActionResult,
   PackReviewRating,
 } from "@/features/packs/types";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 import { db } from "@/lib/server/db";
 import { pack, packItem, reviewEvent, userStreak, userTermState } from "@/lib/server/db/schema";
 import { getOwnedPackId } from "./queries";

@@ -1,4 +1,4 @@
-import type { ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/contracts/action-result";
 
 export type NotificationView = {
   id: string;

@@ -1,4 +1,4 @@
-export { clampToInt } from "@/lib/number-utils";
+export { clampToInt } from "@/lib/primitives/numbers";
 
 import type { PlanTone } from "../types";
 

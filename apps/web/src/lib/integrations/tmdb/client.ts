@@ -1,6 +1,6 @@
 import "server-only";
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import type {
   GenreResponse,
   TMDBMovieDetails,
@@ -8,7 +8,7 @@ import type {
   TMDBResult,
   TMDBTvDetails,
   TMDBTvSeasonDetails,
-} from "@/lib/tmdb-shared";
+} from "@/lib/integrations/tmdb/contracts";
 
 const BASE_URL = "https://api.themoviedb.org/3";
 
@@ -18,7 +18,7 @@ export type {
   TMDBResult,
   TMDBTvDetails,
   TMDBTvSeasonDetails,
-} from "@/lib/tmdb-shared";
+} from "@/lib/integrations/tmdb/contracts";
 
 type FetchOptions = {
   tags?: string[];

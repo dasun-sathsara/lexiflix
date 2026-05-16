@@ -4,8 +4,8 @@ import { FeaturesSection } from "@/features/marketing/components/features";
 import { Footer } from "@/features/marketing/components/footer";
 import { HomeHero } from "@/features/marketing/components/home-hero";
 import { MarketingNavbar } from "@/features/marketing/components/marketing-navbar";
-import { getSessionOrNull } from "@/lib/auth-guards";
-import { cn } from "@/lib/utils";
+import { getSessionOrNull } from "@/lib/auth/guards";
+import { cn } from "@/lib/ui/cn";
 
 export default async function Home() {
   // Public landing surface: optional session read only controls signed-in navigation.

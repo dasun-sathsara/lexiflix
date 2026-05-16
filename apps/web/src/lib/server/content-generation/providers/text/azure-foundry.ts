@@ -4,13 +4,13 @@ import { logger } from "@trigger.dev/sdk";
 import { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import { env } from "@/lib/env";
-import { mapWithConcurrency } from "@/lib/server/concurrency";
+import { env } from "@/lib/config/env";
 import type {
   GeneratedTextItem,
   GenerationRequestSnapshot,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
+import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
 
 // Dynamically initialized only if configured
 let openaiClient: AzureOpenAI | null = null;

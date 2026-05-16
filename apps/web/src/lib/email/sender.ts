@@ -1,9 +1,9 @@
 import { render } from "@react-email/render";
 import { Resend } from "resend";
-import { PackStatusEmail } from "./email/templates/pack-status";
-import { ResetPassword } from "./email/templates/reset-password";
-import { VerifyEmail } from "./email/templates/verify-email";
-import { env } from "./env";
+import { env } from "@/lib/config/env";
+import { PackStatusEmail } from "./templates/pack-status";
+import { ResetPassword } from "./templates/reset-password";
+import { VerifyEmail } from "./templates/verify-email";
 
 const resend = new Resend(env.RESEND_API_KEY);
 

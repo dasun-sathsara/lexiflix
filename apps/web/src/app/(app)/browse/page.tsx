@@ -6,7 +6,7 @@ import { MediaGrid } from "@/features/browse/components/media-grid";
 import { PaginationControls } from "@/features/browse/components/pagination-controls";
 import { getBrowseView } from "@/features/browse/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { getSessionOrNull } from "@/lib/auth-guards";
+import { getSessionOrNull } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
   title: "Browse - LexiFlix",

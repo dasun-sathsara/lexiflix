@@ -1,1 +1,1 @@
-export { formatRelativeTime } from "@/lib/format";
+export { formatRelativeTime } from "@/lib/primitives/dates";

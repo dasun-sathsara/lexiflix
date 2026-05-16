@@ -1,7 +1,7 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import type {
   GeneratedBinaryArtifact,
   GeneratedTextItem,

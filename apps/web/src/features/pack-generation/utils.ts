@@ -1,6 +1,6 @@
 import type { PackGenerationProgressView } from "@/features/pack-generation/types";
+import { VOCABULARY_KIND_LABELS } from "@/lib/domain/vocabulary";
 import type { ContentGenerationStage } from "@/lib/server/content-generation/contracts";
-import { VOCABULARY_KIND_LABELS } from "@/lib/vocabulary-kind-labels";
 
 type GenerationStatus = PackGenerationProgressView["status"];
 type GenerationTone = "default" | "success" | "danger" | "muted";

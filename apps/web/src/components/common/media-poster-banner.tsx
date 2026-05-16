@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 export type MediaPosterBannerProps = {
   /** Optional backdrop image URL rendered behind the banner content. */

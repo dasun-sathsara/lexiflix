@@ -7,8 +7,9 @@ import {
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
-import { sendPackStatusEmail } from "@/lib/email";
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
+import { sendPackStatusEmail } from "@/lib/email/sender";
+import { deleteObjectByKey } from "@/lib/integrations/storage/r2";
 import { persistGeneratedArtifact } from "@/lib/server/content-generation/artifacts";
 import {
   CONTENT_GENERATION_PIPELINE_VERSION,
@@ -35,7 +36,6 @@ import {
   packItemContent,
   user as userTable,
 } from "@/lib/server/db/schema";
-import { deleteObjectByKey } from "@/lib/storage/r2";
 
 function textByAnalysisItem(items: GeneratedTextItem[]) {
   return new Map(items.map((item) => [item.analysisItemId, item]));

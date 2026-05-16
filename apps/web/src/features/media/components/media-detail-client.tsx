@@ -13,7 +13,7 @@ import {
 } from "@/features/media/server/actions";
 import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/media/types";
 import { retryPackGenerationAction } from "@/features/pack-generation/server/actions";
-import { usePolling } from "@/lib/hooks/use-polling";
+import { usePolling } from "@/lib/ui/hooks/use-polling";
 import { AnalysisSidebar } from "./analysis-sidebar";
 import { MediaAnalysisContent } from "./media-analysis-content";
 import { MediaDetailBanner } from "./media-detail-banner";

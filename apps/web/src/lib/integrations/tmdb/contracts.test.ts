@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildTmdbImageUrl } from "./tmdb-shared";
+import { buildTmdbImageUrl } from "./contracts";
 
 describe("buildTmdbImageUrl", () => {
   it("returns a correct URL for a valid path and size", () => {

@@ -1,6 +1,6 @@
 import type { ComponentPropsWithoutRef } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 export function GoogleIcon({ className, ...props }: ComponentPropsWithoutRef<"svg">) {
   return (

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 import type { ListNotificationsActionResult, NotificationMutationResult } from "../types";
 import {
   dismissAllNotifications,

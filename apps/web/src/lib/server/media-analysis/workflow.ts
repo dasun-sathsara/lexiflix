@@ -2,9 +2,7 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import { eq, sql } from "drizzle-orm";
-import { env } from "@/lib/env";
-import { mapWithConcurrency } from "@/lib/server/concurrency";
-
+import { env } from "@/lib/config/env";
 import { db } from "@/lib/server/db";
 import type {
   ContentAnalysisSummary,
@@ -34,6 +32,7 @@ import {
   normalizeSubtitleText,
   type SubtitleLine,
 } from "@/lib/server/media-analysis/subtitle-processing";
+import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
 
 type ContentRow = typeof content.$inferSelect;
 type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;

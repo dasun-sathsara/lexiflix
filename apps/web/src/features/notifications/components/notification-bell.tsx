@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatRelativeTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/primitives/dates";
+import { cn } from "@/lib/ui/cn";
 import {
   clearAllNotificationsAction,
   dismissNotificationAction,

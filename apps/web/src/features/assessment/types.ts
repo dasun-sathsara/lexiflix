@@ -1,7 +1,7 @@
-import type { ActionResult } from "@/lib/action-result";
-import type { CefrLevel } from "@/lib/cefr";
+import type { ActionResult } from "@/lib/contracts/action-result";
+import type { CefrLevel } from "@/lib/domain/cefr";
 
-export { CEFR_LEVELS, type CefrLevel } from "@/lib/cefr";
+export { CEFR_LEVELS, type CefrLevel } from "@/lib/domain/cefr";
 
 export type AssessmentItemType = "cloze" | "meaning";
 

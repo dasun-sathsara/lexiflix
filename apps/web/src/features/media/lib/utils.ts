@@ -1,13 +1,13 @@
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
-import { CEFR_LEVELS, getCefrColorClass } from "@/lib/cefr";
+import { CEFR_LEVELS, getCefrColorClass } from "@/lib/domain/cefr";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import type { ContentAnalysisStage } from "@/lib/server/media-analysis/contracts";
 
-export { getCefrColorClass } from "@/lib/cefr";
+export { getCefrColorClass } from "@/lib/domain/cefr";
 export {
   VOCABULARY_KIND_LABELS as VOCABULARY_TYPE_LABELS,
   VOCABULARY_KINDS as GENERATION_VOCABULARY_TYPES,
-} from "@/lib/vocabulary-kind-labels";
+} from "@/lib/domain/vocabulary";
 
 /** Human-readable labels for analysis pipeline stages. */
 export const ANALYSIS_STAGE_LABELS: Record<ContentAnalysisStage, string> = {

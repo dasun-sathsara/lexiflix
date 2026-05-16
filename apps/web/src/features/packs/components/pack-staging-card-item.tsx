@@ -28,9 +28,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PackCardView } from "@/features/packs/types";
-import type { ActionResult } from "@/lib/action-result";
-import { cn } from "@/lib/utils";
-import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
+import type { ActionResult } from "@/lib/contracts/action-result";
+import { formatVocabularyKindLabel } from "@/lib/domain/vocabulary";
+import { cn } from "@/lib/ui/cn";
 
 import { cefrBadgeClass } from "./utils";
 

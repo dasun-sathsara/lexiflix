@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
+import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/content-generation/constants";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
 export { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH };

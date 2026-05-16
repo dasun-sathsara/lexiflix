@@ -5,7 +5,7 @@ import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
 import { EmailVerificationBanner } from "@/features/sidebar/components/email-verification-banner";
 import { mapToSidebarUser } from "@/features/sidebar/lib/user-view";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();

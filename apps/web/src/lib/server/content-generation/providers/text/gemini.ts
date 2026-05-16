@@ -3,13 +3,13 @@ import "server-only";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
 import { logger } from "@trigger.dev/sdk";
 import { z } from "zod";
-import { env } from "@/lib/env";
-import { mapWithConcurrency } from "@/lib/server/concurrency";
+import { env } from "@/lib/config/env";
 import type {
   GeneratedTextItem,
   GenerationRequestSnapshot,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
+import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
 
 const geminiClient = new GoogleGenAI({
   vertexai: true,

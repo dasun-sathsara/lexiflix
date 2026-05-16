@@ -1,12 +1,6 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { db } from "@/lib/server/db";
-import { content } from "@/lib/server/db/schema";
-import {
-  type ResolveContentTargetInput,
-  resolveContentTargetInputSchema,
-} from "@/lib/server/media-analysis/contracts";
 import {
   getMovieDetails,
   getTvDetails,
@@ -14,7 +8,13 @@ import {
   type TMDBMovieDetails,
   type TMDBTvDetails,
   type TMDBTvSeasonDetails,
-} from "@/lib/tmdb";
+} from "@/lib/integrations/tmdb/client";
+import { db } from "@/lib/server/db";
+import { content } from "@/lib/server/db/schema";
+import {
+  type ResolveContentTargetInput,
+  resolveContentTargetInputSchema,
+} from "@/lib/server/media-analysis/contracts";
 
 type ContentRow = typeof content.$inferSelect;
 

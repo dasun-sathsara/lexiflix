@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 import {
   buildCefrDistributionEntries,

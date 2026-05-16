@@ -38,8 +38,8 @@ import {
   unignoreTermAction,
 } from "@/features/packs/server/actions";
 import type { PackCardView, PackStagingView, PackVocabularyKind } from "@/features/packs/types";
-import type { ActionResult } from "@/lib/action-result";
-import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
+import type { ActionResult } from "@/lib/contracts/action-result";
+import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/domain/vocabulary";
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
 import { PackStagingHero } from "./pack-staging-hero";

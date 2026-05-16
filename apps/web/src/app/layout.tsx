@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Ubuntu_Mono } from "next/font/google";
 import "../styles/globals.css";
-import { SITE_URL } from "@/lib/site";
-import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/config/site";
+import { cn } from "@/lib/ui/cn";
 import { AppProviders } from "@/providers/app-providers";
 
 const inter = Inter({

@@ -2,8 +2,8 @@
 
 import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { ActionResult } from "@/lib/action-result";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireAdmin } from "@/lib/auth/guards";
+import type { ActionResult } from "@/lib/contracts/action-result";
 import { db } from "@/lib/server/db";
 import {
   content,

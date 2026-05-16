@@ -1,4 +1,4 @@
-import type { ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/contracts/action-result";
 export type PackCardState = "new" | "learning" | "due" | "mastered" | "removed";
 export type PackContentKind = "movie" | "season";
 export type PackVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";

@@ -5,7 +5,7 @@ import { BookOpen, CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react
 import { AppErrorAlert } from "@/components/common/app-surface";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MediaDetailPageData } from "@/features/media/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 import { AnalysisResults } from "./analysis-results";
 import { ANALYSIS_PIPELINE_STEPS } from "./utils";
 

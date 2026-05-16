@@ -17,8 +17,8 @@ import type {
 } from "@/features/media/types";
 import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
-import { requireSession } from "@/lib/auth-guards";
-import { env } from "@/lib/env";
+import { requireSession } from "@/lib/auth/guards";
+import { env } from "@/lib/config/env";
 import { generationRequestSchema } from "@/lib/server/content-generation/contracts";
 import {
   computePackGenerationIdempotencyKey,

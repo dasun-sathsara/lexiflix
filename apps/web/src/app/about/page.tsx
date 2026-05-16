@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { About } from "@/features/marketing/components/about";
 import { Footer } from "@/features/marketing/components/footer";
 import { MarketingNavbar } from "@/features/marketing/components/marketing-navbar";
-import { getSessionOrNull } from "@/lib/auth-guards";
+import { getSessionOrNull } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
   title: "About LexiFlix | A self-funded startup for learning English from movies & TV",

@@ -13,7 +13,7 @@ import {
   startAssessmentAction,
 } from "@/features/assessment/server/actions";
 import type { AssessmentResult, PublicAssessmentItem } from "@/features/assessment/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 type Selection = number | "idk" | null;
 

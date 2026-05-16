@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect, unauthorized } from "next/navigation";
 
-import { auth, isAdminEmail, type Session } from "@/lib/auth";
+import { auth, isAdminEmail, type Session } from "@/lib/auth/server";
 import { db } from "@/lib/server/db";
 import { user } from "@/lib/server/db/schema";
 

@@ -2,7 +2,7 @@
 
 import { animate } from "motion/react";
 import { memo, useCallback, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 interface GlowingEffectProps {
   blur?: number;

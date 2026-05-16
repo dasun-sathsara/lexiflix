@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 import { ForgotPasswordForm } from "./forgot-password-form";
 import { LoginForm } from "./sign-form";
 import { SignupForm } from "./signup-form";

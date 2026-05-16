@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 export function LoadRing({ value, className }: { value: number; className?: string }) {
   const size = 168;

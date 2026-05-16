@@ -1,8 +1,8 @@
 import "server-only";
 
-import { discoverMedia, getGenres, searchMedia } from "@/lib/tmdb";
-import type { Genre, TMDBResult } from "@/lib/tmdb-shared";
-import { buildTmdbDecadeDateRange } from "@/lib/tmdb-shared";
+import { discoverMedia, getGenres, searchMedia } from "@/lib/integrations/tmdb/client";
+import type { Genre, TMDBResult } from "@/lib/integrations/tmdb/contracts";
+import { buildTmdbDecadeDateRange } from "@/lib/integrations/tmdb/contracts";
 
 interface GetBrowseViewParams {
   searchParams: Record<string, string | string[] | undefined>;

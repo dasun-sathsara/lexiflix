@@ -8,7 +8,7 @@ import { CardCountPill } from "@/features/packs/components/card-count-pill";
 import { clampToInt } from "@/features/packs/components/utils";
 import { formatRelativeTime } from "@/features/packs/lib/format";
 import type { DeckSummary } from "@/features/packs/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 interface DeckRowProps {
   deck: DeckSummary;

@@ -1,7 +1,7 @@
 import { Check, Clapperboard, Headphones, ListChecks, Repeat } from "lucide-react";
 
 import { WobbleCard } from "@/components/common/wobble-card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 const features = [
   {

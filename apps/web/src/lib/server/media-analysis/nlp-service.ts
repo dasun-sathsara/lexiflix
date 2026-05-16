@@ -2,13 +2,13 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import {
   type NlpAnalysisRequest,
   nlpAnalysisRequestSchema,
   nlpAnalysisResponseSchema,
 } from "@/lib/server/media-analysis/contracts";
-import { createTimeoutSignal, readJsonSafely } from "@/lib/server/request-utils";
+import { createTimeoutSignal, readJsonSafely } from "@/lib/server/utils/request";
 
 async function fetchWithRetry(
   url: string,

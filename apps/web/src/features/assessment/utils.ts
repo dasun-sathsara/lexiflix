@@ -1,5 +1,5 @@
 import { ITEM_BANK } from "@/features/assessment/data/item-bank";
-import { CEFR_LEVELS } from "@/lib/cefr";
+import { CEFR_LEVELS } from "@/lib/domain/cefr";
 import type {
   AssessmentItem,
   AssessmentResult,

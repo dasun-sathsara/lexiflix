@@ -1,5 +1,5 @@
 import type { CuratedCatalogEntry } from "@/features/curation/types";
-import { CEFR_LEVELS } from "@/lib/cefr";
+import { CEFR_LEVELS } from "@/lib/domain/cefr";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 
 export function resolveActiveLevel(

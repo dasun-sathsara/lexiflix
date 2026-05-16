@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatRelativeTime } from "@/lib/format";
-import { usePolling } from "@/lib/hooks/use-polling";
-import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/primitives/dates";
+import { cn } from "@/lib/ui/cn";
+import { usePolling } from "@/lib/ui/hooks/use-polling";
 import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
 import {

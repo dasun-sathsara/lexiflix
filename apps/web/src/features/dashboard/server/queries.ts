@@ -5,7 +5,7 @@ import { getEffectivePackCardState } from "@/features/packs/server/srs";
 import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { getAppWeekStart } from "@/features/packs/server/study-time";
 import type { PackCardState } from "@/features/packs/types";
-import { toIso } from "@/lib/server/datetime";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
 import { db } from "@/lib/server/db";
 import {
   content,
@@ -15,7 +15,7 @@ import {
   userStreak,
   userTermState,
 } from "@/lib/server/db/schema";
-import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { toIso } from "@/lib/server/utils/datetime";
 
 import type { DashboardView } from "../types";
 

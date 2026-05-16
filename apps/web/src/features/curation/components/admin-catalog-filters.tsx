@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 import type { CuratedAdminCatalogFilter } from "@/features/curation/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 interface AdminCatalogFiltersProps {
   filter: CuratedAdminCatalogFilter;

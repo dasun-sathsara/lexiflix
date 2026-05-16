@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LoadRing } from "@/features/dashboard/components/load-ring";
 import { planToneDot } from "@/features/dashboard/lib/utils";
 import type { PlanTone } from "@/features/dashboard/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 interface PlanItem {
   label: string;

@@ -3,8 +3,8 @@
 import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
 import { SignInSchema, SignUpSchema } from "@/features/auth/types";
-import type { ActionResult } from "@/lib/action-result";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/server";
+import type { ActionResult } from "@/lib/contracts/action-result";
 
 export async function signupAction(formData: FormData): Promise<ActionResult> {
   const raw = {

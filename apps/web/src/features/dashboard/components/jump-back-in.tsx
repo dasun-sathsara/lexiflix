@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { clampToInt } from "@/features/dashboard/lib/utils";
 import type { DashboardPackSummary } from "@/features/dashboard/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 interface JumpBackInProps {
   packs: DashboardPackSummary[];

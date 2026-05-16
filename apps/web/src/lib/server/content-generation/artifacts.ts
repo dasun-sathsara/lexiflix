@@ -3,11 +3,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { logger } from "@trigger.dev/sdk";
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
+import { buildPublicUrl } from "@/lib/integrations/storage/r2";
 import type { GeneratedBinaryArtifact } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { artifactObject } from "@/lib/server/db/schema";
-import { buildPublicUrl } from "@/lib/storage/r2";
 
 const r2Client = new S3Client({
   region: "auto",

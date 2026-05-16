@@ -1,11 +1,11 @@
 import type { CefrLevel } from "@/features/assessment/types";
 import type { SettingsTab } from "@/features/settings/types";
-import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
+import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/content-generation/constants";
 
 export {
   VOCABULARY_KIND_LABELS as vocabularyTypeLabels,
   VOCABULARY_KINDS as STUDY_VOCABULARY_TYPES,
-} from "@/lib/vocabulary-kind-labels";
+} from "@/lib/domain/vocabulary";
 
 export function toSettingsTab(value: string | null): SettingsTab {
   return value === "preferences" ? "preferences" : "account";

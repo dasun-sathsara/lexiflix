@@ -17,7 +17,7 @@ import {
   parseAssessmentState,
   toPublicItem,
 } from "@/features/assessment/utils";
-import { getSessionOrNull } from "@/lib/auth-guards";
+import { getSessionOrNull } from "@/lib/auth/guards";
 import { db } from "@/lib/server/db";
 import { cefrAssessmentAttempt, cefrAssessmentResponse, cefrProfile } from "@/lib/server/db/schema";
 

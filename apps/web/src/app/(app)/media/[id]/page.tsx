@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { MediaDetailClient } from "@/features/media/components/media-detail-client";
 import { getMediaDetailPageData } from "@/features/media/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { requireSession } from "@/lib/auth-guards";
-import type { TMDBMediaType } from "@/lib/tmdb-shared";
+import { requireSession } from "@/lib/auth/guards";
+import type { TMDBMediaType } from "@/lib/integrations/tmdb/contracts";
 
 export const metadata: Metadata = {
   title: "Media",

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { StudySessionClient } from "@/features/packs/components/study-session-client";
 import { getStudySessionView } from "@/features/packs/server/queries";
 import type { StudyMode } from "@/features/packs/types";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 
 function toStudyMode(value: string | string[] | undefined): StudyMode {
   const raw = Array.isArray(value) ? value[0] : value;

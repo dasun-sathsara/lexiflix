@@ -9,8 +9,8 @@ import {
   curateTmdbItemAction,
   refreshCuratedEntryAction,
 } from "@/features/curation/server/actions";
-import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
-import { cn } from "@/lib/utils";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
+import { cn } from "@/lib/ui/cn";
 
 interface AdminDiscoverRowProps {
   result: {

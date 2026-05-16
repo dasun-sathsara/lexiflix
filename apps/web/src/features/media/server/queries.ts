@@ -16,15 +16,19 @@ import {
   getPackGenerationProgressView,
 } from "@/features/pack-generation/server/queries";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
-import { extractYear } from "@/lib/format";
+import type {
+  TMDBMediaType,
+  TMDBMovieDetails,
+  TMDBTvDetails,
+} from "@/lib/integrations/tmdb/client";
+import { getMovieDetails, getTvDetails } from "@/lib/integrations/tmdb/client";
+import { extractYear } from "@/lib/primitives/dates";
 import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
-import { toUserFriendlyAnalysisError } from "@/lib/server/error-mapping";
+import { toUserFriendlyAnalysisError } from "@/lib/server/errors";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
-import type { TMDBMediaType, TMDBMovieDetails, TMDBTvDetails } from "@/lib/tmdb";
-import { getMovieDetails, getTvDetails } from "@/lib/tmdb";
 
 type ResolvedMovieDetail = {
   mediaType: "movie";

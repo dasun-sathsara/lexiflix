@@ -9,11 +9,6 @@ import type {
   CuratedCatalogListFilters,
 } from "@/features/curation/types";
 import { buildCuratedAdminDiscoverParams } from "@/features/curation/utils";
-import { extractYear } from "@/lib/format";
-import { toIso } from "@/lib/server/datetime";
-import { db } from "@/lib/server/db";
-import type { CuratedGenreSnapshot, StoredCefrLevel } from "@/lib/server/db/json-contracts";
-import { curatedEntry } from "@/lib/server/db/schema";
 import {
   discoverMedia,
   getGenres,
@@ -23,7 +18,12 @@ import {
   type TMDBMediaType,
   type TMDBMovieDetails,
   type TMDBTvDetails,
-} from "@/lib/tmdb";
+} from "@/lib/integrations/tmdb/client";
+import { extractYear } from "@/lib/primitives/dates";
+import { db } from "@/lib/server/db";
+import type { CuratedGenreSnapshot, StoredCefrLevel } from "@/lib/server/db/json-contracts";
+import { curatedEntry } from "@/lib/server/db/schema";
+import { toIso } from "@/lib/server/utils/datetime";
 
 function extractDecade(year: number | null) {
   if (!year) {

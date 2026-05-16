@@ -6,7 +6,7 @@ import { AppSectionHeader } from "@/components/common/app-page-header";
 import { Badge } from "@/components/ui/badge";
 import { formatRating, formatYear } from "@/features/curation/lib/format";
 import type { CuratedCatalogEntry } from "@/features/curation/types";
-import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
 
 interface MoviePosterGridProps {
   items: CuratedCatalogEntry[];

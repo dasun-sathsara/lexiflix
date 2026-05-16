@@ -2,7 +2,7 @@ import "server-only";
 
 import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { logger } from "@trigger.dev/sdk";
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import type {
   GeneratedBinaryArtifact,
   GeneratedTextItem,

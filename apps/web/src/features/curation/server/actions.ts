@@ -10,8 +10,8 @@ import {
   setCuratedEntryPublishedState,
   upsertCuratedEntryFromTmdb,
 } from "@/features/curation/server/queries";
-import type { ActionResult } from "@/lib/action-result";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireAdmin } from "@/lib/auth/guards";
+import type { ActionResult } from "@/lib/contracts/action-result";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 
 const tmdbMutationSchema = z.object({

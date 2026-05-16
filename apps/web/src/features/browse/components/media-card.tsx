@@ -4,8 +4,12 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { extractYear } from "@/lib/format";
-import { buildTmdbImageUrl, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb-shared";
+import {
+  buildTmdbImageUrl,
+  TMDB_IMAGE_SIZES,
+  type TMDBResult,
+} from "@/lib/integrations/tmdb/contracts";
+import { extractYear } from "@/lib/primitives/dates";
 
 interface MediaCardProps {
   media: TMDBResult;

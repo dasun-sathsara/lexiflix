@@ -10,8 +10,8 @@ import type {
   CuratedAdminQueryState,
   CuratedCatalogEntry,
 } from "@/features/curation/types";
-import type { Genre } from "@/lib/tmdb-shared";
-import { cn } from "@/lib/utils";
+import type { Genre } from "@/lib/integrations/tmdb/contracts";
+import { cn } from "@/lib/ui/cn";
 
 import { AdminCatalogView } from "./admin-catalog-view";
 import { AdminDiscoverView } from "./admin-discover-view";

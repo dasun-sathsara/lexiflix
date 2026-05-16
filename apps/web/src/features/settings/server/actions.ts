@@ -19,13 +19,13 @@ import type {
   UpdateProfileActionResult,
   UpdateSettingsPreferencesActionResult,
 } from "@/features/settings/types";
-import type { ActionResult } from "@/lib/action-result";
-import { auth } from "@/lib/auth";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
+import { auth } from "@/lib/auth/server";
+import type { ActionResult } from "@/lib/contracts/action-result";
+import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/integrations/storage/r2";
 import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
-import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/storage/r2";
 
 type UpdateUserBody = Parameters<typeof auth.api.updateUser>[0]["body"];
 

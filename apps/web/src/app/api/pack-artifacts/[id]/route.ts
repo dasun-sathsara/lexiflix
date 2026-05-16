@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getOwnedArtifactObject } from "@/features/packs/server/queries";
-import { getSessionOrNull } from "@/lib/auth-guards";
-import { getObjectBytesByKey } from "@/lib/storage/r2";
+import { getSessionOrNull } from "@/lib/auth/guards";
+import { getObjectBytesByKey } from "@/lib/integrations/storage/r2";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const [{ id }, session] = await Promise.all([params, getSessionOrNull()]);

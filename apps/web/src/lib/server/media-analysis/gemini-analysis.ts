@@ -3,7 +3,7 @@ import "server-only";
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
 import { logger } from "@trigger.dev/sdk";
 
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import {
   type AnalysisLlmItem,
   analysisLlmItemSchema,

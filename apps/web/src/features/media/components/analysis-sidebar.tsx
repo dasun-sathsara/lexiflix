@@ -9,7 +9,7 @@ import type {
   MediaDetailPageData,
   PackGenerationSnapshot,
 } from "@/features/media/types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 import { PackGenerationPanel } from "./pack-generation-panel";
 import { getCefrColorClass, getChallengeSignal } from "./utils";
 

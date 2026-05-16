@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { buildTmdbDecadeDateRange, type Genre } from "@/lib/tmdb-shared";
+import { buildTmdbDecadeDateRange, type Genre } from "@/lib/integrations/tmdb/contracts";
 
 interface BrowseControlsProps {
   genres: Genre[];

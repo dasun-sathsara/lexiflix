@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/select";
 import type { CuratedAdminMode, CuratedAdminQueryState } from "@/features/curation/types";
 import { getAdminSortOptions, getDefaultAdminSort } from "@/features/curation/utils";
-import type { Genre, TMDBMediaType } from "@/lib/tmdb-shared";
-import { cn } from "@/lib/utils";
+import type { Genre, TMDBMediaType } from "@/lib/integrations/tmdb/contracts";
+import { cn } from "@/lib/ui/cn";
 
 interface AdminDiscoverControlsProps {
   queryState: CuratedAdminQueryState;

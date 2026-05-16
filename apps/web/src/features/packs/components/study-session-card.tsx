@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { PackReviewRating, StudySessionView } from "@/features/packs/types";
-import { cn } from "@/lib/utils";
-import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
+import { formatVocabularyKindLabel } from "@/lib/domain/vocabulary";
+import { cn } from "@/lib/ui/cn";
 
 const modeLabels: Record<StudySessionView["mode"], string> = {
   due: "Due reviews",

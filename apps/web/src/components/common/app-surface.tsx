@@ -2,7 +2,7 @@ import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 export function AppStat({
   label,

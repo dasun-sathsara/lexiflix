@@ -1,5 +1,6 @@
 import type { PackGenerationProgressView } from "@/features/pack-generation/types";
-import type { ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/contracts/action-result";
+import type { TMDBMediaType } from "@/lib/integrations/tmdb/contracts";
 import type {
   ContentAnalysisSummary,
   GenerationAudioVoiceGender,
@@ -10,7 +11,6 @@ import type {
   StoredVocabularyKind,
 } from "@/lib/server/db/json-contracts";
 import type { ContentAnalysisStage } from "@/lib/server/media-analysis/contracts";
-import type { TMDBMediaType } from "@/lib/tmdb-shared";
 
 export type MediaAnalysisViewStatus =
   | "not_started"

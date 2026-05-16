@@ -3,8 +3,8 @@
 import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
-import { requireSession } from "@/lib/auth-guards";
-import { env } from "@/lib/env";
+import { requireSession } from "@/lib/auth/guards";
+import { env } from "@/lib/config/env";
 import {
   recordPackGenerationJobTransition,
   resetFailedPackGenerationJobForRetry,

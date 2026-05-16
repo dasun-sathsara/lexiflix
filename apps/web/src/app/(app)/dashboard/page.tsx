@@ -4,7 +4,7 @@ import { buildDashboardViewModel } from "@/features/dashboard/lib/view-model";
 import { getDashboardView } from "@/features/dashboard/server/queries";
 import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
 import { getEffectiveCefrLevel } from "@/features/settings/components/utils";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 
 export default async function DashboardPage() {
   const session = await requireSession();

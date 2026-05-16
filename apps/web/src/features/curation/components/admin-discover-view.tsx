@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { AppEmptyState } from "@/components/common/app-surface";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AnnotatedTMDBResult, CuratedAdminQueryState } from "@/features/curation/types";
-import type { Genre } from "@/lib/tmdb-shared";
+import type { Genre } from "@/lib/integrations/tmdb/contracts";
 import { AdminDiscoverControls } from "./admin-curated-controls";
 import { AdminDiscoverRow } from "./admin-discover-row";
 import { ControlsSkeleton, PaginationRow } from "./utils";

@@ -1,5 +1,5 @@
 import type { CefrLevel } from "@/features/assessment/types";
-import type { ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/contracts/action-result";
 import type {
   GenerationAudioVoiceGender,
   GenerationCefrWindowMode,

@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { Pacifico } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 const pacifico = Pacifico({
   subsets: ["latin"],

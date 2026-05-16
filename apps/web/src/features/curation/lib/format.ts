@@ -1,4 +1,4 @@
-import { extractYear } from "@/lib/format";
+import { extractYear } from "@/lib/primitives/dates";
 
 export function formatYear(date: string | null) {
   const year = extractYear(date);

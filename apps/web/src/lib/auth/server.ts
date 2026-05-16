@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { sendEmailVerificationEmail, sendPasswordResetEmail } from "./email";
-import { env } from "./env";
-import { db } from "./server/db";
-import { deleteObjectByUrl } from "./storage/r2";
+import { env } from "@/lib/config/env";
+import { sendEmailVerificationEmail, sendPasswordResetEmail } from "@/lib/email/sender";
+import { deleteObjectByUrl } from "@/lib/integrations/storage/r2";
+import { db } from "@/lib/server/db";
 
 const baseURL = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const ADMIN_EMAILS = new Set(["dasunx.pm@gmail.com"]);

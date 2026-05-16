@@ -9,7 +9,7 @@ import { GenerationJobsClient } from "@/features/pack-generation/components/gene
 import { computeGenerationStats } from "@/features/pack-generation/lib/deck-stats";
 import { listPackGenerationProgressForDecks } from "@/features/pack-generation/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 
 export default async function GenerationStatusPage() {
   const session = await requireSession();

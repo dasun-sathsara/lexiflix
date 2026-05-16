@@ -1,3 +1,4 @@
+import type { TMDBMediaType, TMDBResult } from "@/lib/integrations/tmdb/contracts";
 import type {
   CuratedCurationScope,
   CuratedGenreSnapshot,
@@ -5,7 +6,6 @@ import type {
   CuratedSourceProvider,
   StoredCefrLevel,
 } from "@/lib/server/db/json-contracts";
-import type { TMDBMediaType, TMDBResult } from "@/lib/tmdb-shared";
 
 export type { CuratedCurationScope, CuratedGenreSnapshot, CuratedMediaType, CuratedSourceProvider };
 

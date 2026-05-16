@@ -1,4 +1,4 @@
-import { buildTmdbDecadeDateRange, type TMDBMediaType } from "@/lib/tmdb-shared";
+import { buildTmdbDecadeDateRange, type TMDBMediaType } from "@/lib/integrations/tmdb/contracts";
 import type {
   CuratedAdminCatalogFilter,
   CuratedAdminMode,

@@ -6,7 +6,7 @@ import {
   parseCuratedAdminSearchParams,
 } from "@/features/curation/utils";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireAdmin } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
   title: "Curated Admin — LexiFlix",

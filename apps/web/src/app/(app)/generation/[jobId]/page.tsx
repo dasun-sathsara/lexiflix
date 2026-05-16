@@ -3,7 +3,7 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { GenerationProgressClient } from "@/features/pack-generation/components/generation-progress-client";
 import { getPackGenerationProgressView } from "@/features/pack-generation/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { requireSession } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth/guards";
 
 export default async function GenerationProgressPage({
   params,

@@ -34,7 +34,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NavUser } from "@/features/sidebar/components/nav-user";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/ui/cn";
 
 const NotificationBell = dynamic(
   () =>

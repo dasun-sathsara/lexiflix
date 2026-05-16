@@ -1,7 +1,7 @@
 import "server-only";
 
-import { env } from "@/lib/env";
-import { createTimeoutSignal, readJsonSafely } from "@/lib/server/request-utils";
+import { env } from "@/lib/config/env";
+import { createTimeoutSignal, readJsonSafely } from "@/lib/server/utils/request";
 
 export type OpenSubtitlesSearchCriteria = {
   type?: "movie" | "episode";
