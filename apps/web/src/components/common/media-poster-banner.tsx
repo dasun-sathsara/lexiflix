@@ -9,7 +9,7 @@ export type MediaPosterBannerProps = {
   backdropUrl?: string | null;
   /** Accessible alt text for the backdrop image. */
   backdropAlt?: string;
-  /** Row of badges shown above the title (media kind, CEFR level, etc.). */
+  /** Row of badges shown floated to the top-right of the banner (media kind, certification, CEFR level, etc.). */
   badges?: ReactNode;
   /** Main title rendered as the H1. */
   title: ReactNode;
@@ -17,7 +17,7 @@ export type MediaPosterBannerProps = {
   meta?: ReactNode;
   /** Additional content rendered in the primary column (genre chips, progress bar, etc.). */
   children?: ReactNode;
-  /** Optional right-aligned actions (CTAs). */
+  /** Optional right-aligned actions (CTAs, poster art). */
   actions?: ReactNode;
   /** Extra classes merged onto the outer Card. */
   className?: string;
@@ -68,11 +68,13 @@ export function MediaPosterBanner({
         </div>
       ) : null}
 
-      <CardContent className="relative flex min-h-[300px] flex-col justify-end gap-3 px-5 pb-2 pt-4 sm:min-h-[320px] sm:px-6 sm:pb-3 sm:pt-5 lg:min-h-[340px]">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
-          <div className="min-w-0 space-y-2 lg:max-w-xl">
-            {badges ? <div className="flex flex-wrap items-center gap-1.5">{badges}</div> : null}
+      <CardContent className="relative flex min-h-[300px] flex-col px-5 pb-2 pt-4 sm:min-h-[320px] sm:px-6 sm:pb-3 sm:pt-5 lg:min-h-[360px]">
+        {badges ? (
+          <div className="flex flex-wrap items-center justify-end gap-1.5">{badges}</div>
+        ) : null}
 
+        <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div className="min-w-0 flex-1 space-y-2 lg:max-w-2xl">
             <div className="space-y-1">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
               {meta ? (
@@ -86,7 +88,9 @@ export function MediaPosterBanner({
           </div>
 
           {actions ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">{actions}</div>
+            <div className="flex shrink-0 flex-col items-end justify-end gap-2 sm:flex-row sm:items-end">
+              {actions}
+            </div>
           ) : null}
         </div>
       </CardContent>

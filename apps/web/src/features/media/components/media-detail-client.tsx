@@ -249,14 +249,68 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const hasSubMeta =
     showOriginalTitle ||
     Boolean(media.originalLanguage) ||
-    Boolean(media.originCountryCodes?.length) ||
-    Boolean(media.imdbId);
+    Boolean(media.originCountryCodes?.length);
 
   return (
     <AppPageShell>
       <MediaPosterBanner
         backdropUrl={backdropUrl}
         backdropAlt={`${media.title} backdrop`}
+        actions={
+          <div className="flex flex-col items-end gap-3">
+            {typeof media.voteAverage === "number" ? (
+              <div className="flex items-center gap-2 rounded-xl border border-foreground/10 bg-white/70 px-3 py-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-background/60">
+                <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-lg font-semibold tabular-nums text-foreground">
+                    {media.voteAverage.toFixed(1)}
+                    <span className="ml-1 text-xs font-normal text-foreground/50">/10</span>
+                  </span>
+                  {typeof media.voteCount === "number" ? (
+                    <span className="text-[10px] uppercase tracking-wide text-foreground/55">
+                      {media.voteCount.toLocaleString()} votes
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {media.imdbId ? (
+              <a
+                href={`https://www.imdb.com/title/${media.imdbId}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-foreground/15 bg-white/70 px-2.5 py-1 text-xs font-medium text-foreground/75 shadow-sm backdrop-blur-md transition-colors hover:bg-white/90 hover:text-foreground dark:border-white/10 dark:bg-background/60 dark:hover:bg-background/80"
+              >
+                View on IMDb
+                <ExternalLink className="size-3 opacity-60" />
+              </a>
+            ) : null}
+
+            {media.mediaType === "tv" && media.availableSeasonCount ? (
+              <Select
+                value={media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined}
+                onValueChange={handleSeasonChange}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-8 w-[168px] border-foreground/15 bg-white/80 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60"
+                >
+                  <SelectValue placeholder="Choose a season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: media.availableSeasonCount }, (_, index) => index + 1).map(
+                    (seasonNumber) => (
+                      <SelectItem key={seasonNumber} value={String(seasonNumber)}>
+                        Season {seasonNumber}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+        }
         badges={
           <>
             <Badge
@@ -305,21 +359,10 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                 {formatRuntime(media.runtimeMinutes)}
               </span>
             ) : null}
-            {typeof media.voteAverage === "number" ? (
-              <span className="flex items-center gap-1.5">
-                <Star className="size-4 fill-yellow-400 text-yellow-400" />
-                {media.voteAverage.toFixed(1)}
-                {typeof media.voteCount === "number" ? (
-                  <span className="text-xs">({media.voteCount.toLocaleString()} votes)</span>
-                ) : null}
-              </span>
-            ) : null}
           </>
         }
       >
-        {media.genres.length > 0 ||
-          (media.mediaType === "tv" && media.availableSeasonCount) ||
-          hasSubMeta ? (
+        {media.genres.length > 0 || hasSubMeta ? (
           <div className="flex flex-col gap-2">
             {hasSubMeta ? (
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground/55">
@@ -327,7 +370,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                   <span className="italic text-foreground/70">{media.originalTitle}</span>
                 ) : null}
                 {showOriginalTitle &&
-                  (media.originalLanguage || media.originCountryCodes?.length || media.imdbId) ? (
+                  (media.originalLanguage || media.originCountryCodes?.length) ? (
                   <span className="select-none text-foreground/30">·</span>
                 ) : null}
                 {media.originalLanguage || media.originCountryCodes?.length ? (
@@ -344,20 +387,6 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                     ) : null}
                   </span>
                 ) : null}
-                {media.imdbId && (media.originalLanguage || media.originCountryCodes?.length) ? (
-                  <span className="select-none text-foreground/30">·</span>
-                ) : null}
-                {media.imdbId ? (
-                  <a
-                    href={`https://www.imdb.com/title/${media.imdbId}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-0.5 rounded-sm border border-foreground/15 bg-white/60 px-1.5 py-0.5 font-medium text-foreground/70 transition-colors hover:bg-white/80 hover:text-foreground dark:bg-white/5 dark:hover:bg-white/10"
-                  >
-                    IMDb
-                    <ExternalLink className="size-2.5 opacity-60" />
-                  </a>
-                ) : null}
               </div>
             ) : null}
             {media.genres.length > 0 ? (
@@ -372,29 +401,6 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                   </Badge>
                 ))}
               </div>
-            ) : null}
-
-            {media.mediaType === "tv" && media.availableSeasonCount ? (
-              <Select
-                value={media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined}
-                onValueChange={handleSeasonChange}
-              >
-                <SelectTrigger
-                  size="sm"
-                  className="h-6 w-fit border-foreground/15 bg-white/80 px-2 text-xs font-medium text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60"
-                >
-                  <SelectValue placeholder="Choose a season" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: media.availableSeasonCount }, (_, index) => index + 1).map(
-                    (seasonNumber) => (
-                      <SelectItem key={seasonNumber} value={String(seasonNumber)}>
-                        Season {seasonNumber}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
             ) : null}
           </div>
         ) : null}
