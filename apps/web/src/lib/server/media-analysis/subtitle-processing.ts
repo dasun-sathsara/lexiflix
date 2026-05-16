@@ -55,11 +55,57 @@ export function decodeHtmlEntities(value: string) {
     .replaceAll("&gt;", ">");
 }
 
+const METADATA_PREFIXES = [
+  "caption by",
+  "captions by",
+  "downloaded from",
+  "encoded by",
+  "resync by",
+  "resynced by",
+  "rip by",
+  "subscene",
+  "subtitle by",
+  "subtitles by",
+  "synced by",
+  "thanks to ",
+  "translated by",
+  "www.",
+] as const;
+
+const METADATA_SNIPPETS = [
+  "opensubtitles",
+  "subscene",
+  "tvsubtitles",
+  "yify",
+  "yts",
+  "http://",
+  "https://",
+] as const;
+
+/** True for credit / release lines that must not reach NLP. */
+export function isSubtitleMetadataLine(text: string) {
+  const normalized = text.toLowerCase().trim();
+  if (!normalized) {
+    return true;
+  }
+  if (METADATA_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return true;
+  }
+  return METADATA_SNIPPETS.some((snippet) => normalized.includes(snippet));
+}
+
+/**
+ * Full subtitle line cleaning for the media-analysis path.
+ * Production NLP calls send `plain_text` after this — NLP does not re-clean.
+ */
 export function normalizeSubtitleText(value: string) {
   return decodeHtmlEntities(value)
     .replace(/<[^>]+>/g, " ")
-    .replace(/\{\\[^}]+\}/g, " ")
+    .replace(/\{[^}]*\}/g, " ")
+    .replace(/\[[^\]]*]/g, " ")
+    .replace(/\([^)]*\)/g, " ")
     .replace(/[♪♫]+/g, " ")
+    .replace(/^[A-Z][A-Z0-9\s\-]{1,20}:\s*/, "")
     .replace(/\r/g, " ")
     .replace(/\n+/g, " ")
     .replace(/\s+/g, " ")
@@ -171,7 +217,7 @@ export function parseDownloadedSubtitle(sourceLabel: string, subtitleText: strin
 
   for (const line of parsed) {
     const normalized = normalizeSubtitleText(line.text);
-    if (!normalized) {
+    if (!normalized || isSubtitleMetadataLine(normalized)) {
       continue;
     }
 

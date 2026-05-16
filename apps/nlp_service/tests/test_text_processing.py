@@ -182,21 +182,22 @@ class TestChunkLines:
 
 
 class TestSplitPlainText:
-    """Tests for splitting and cleaning plain text."""
+    """Tests for splitting pre-cleaned plain text (caller owns cleaning)."""
 
-    def test_splits_and_cleans_lines(self) -> None:
-        text = "Hello world\nJOHN: Hi there\n[music playing]"
+    def test_splits_non_empty_lines(self) -> None:
+        text = "Hello world\n\n  Hi there  \n"
         result = split_plain_text(text, dedup_lines=False)
         assert result == ["Hello world", "Hi there"]
+
+    def test_does_not_re_clean_srt_artifacts(self) -> None:
+        # Web owns cleaning; plain_text path must not strip speaker labels.
+        text = "JOHN: Hi there\n[music playing]"
+        result = split_plain_text(text, dedup_lines=False)
+        assert result == ["JOHN: Hi there", "[music playing]"]
 
     def test_deduplicates_by_default(self) -> None:
         text = "Hello\nhello\nHELLO\nWorld"
         result = split_plain_text(text)
-        assert result == ["Hello", "World"]
-
-    def test_skips_metadata_lines(self) -> None:
-        text = "Hello\nSubtitle by John\nWorld"
-        result = split_plain_text(text, dedup_lines=False)
         assert result == ["Hello", "World"]
 
     def test_empty_text(self) -> None:

@@ -17,41 +17,33 @@ from app.schemas.requests import AnalyzeRequest
 from app.schemas.responses import (
     AnalysisMetadata,
     AnalyzeResponse,
-    CandidateContext,
     VocabularyCandidate,
 )
-from app.services.cefr import CEFRLookup
+from app.services.cefr import resolve_cefr
 from app.services.spacy_models import model_manager
 from app.services.text_processing import (
     chunk_lines,
     parse_srt_content,
     split_plain_text,
 )
-from app.services.token_filters import get_valid_lemma, token_looks_like_name_reference
+from app.services.token_filters import get_valid_lemma
 
 logger = logging.getLogger(__name__)
 
-# Maximum number of context examples to keep per candidate after scoring
 _MAX_CONTEXTS = 3
-# Upper bound on unique contexts collected before scoring/selection
-_MAX_CONTEXT_CANDIDATES = 20
 
 
 class AnalysisPipeline:
-    """Stateless orchestrator for the full analysis flow.
+    """Orchestrator for the full analysis flow.
 
-    Designed to be instantiated once and called many times.
-    Heavy resources (spaCy model, CEFR analyzer) are shared via singletons.
+    Instantiated once and reused across requests. The spaCy model is shared
+    via ``model_manager``.
     """
-
-    def __init__(self) -> None:
-        self._cefr_lookup = CEFRLookup()
 
     def analyze(self, request: AnalyzeRequest) -> AnalyzeResponse:
         """Run the complete analysis pipeline on an incoming request."""
         warnings: list[str] = []
 
-        # 1. Text extraction
         lines = self._extract_lines(request)
         if not lines:
             raise EmptyContentError(
@@ -65,10 +57,7 @@ class AnalysisPipeline:
             f"{total_chars:,}",
         )
 
-        # 2. spaCy NLP processing
         docs = self._run_spacy(lines, request.options.batch_size)
-
-        # 3. Token filtering + CEFR resolution
         word_stats = self._process_docs(
             docs,
             include_propn=request.options.include_propn,
@@ -81,7 +70,6 @@ class AnalysisPipeline:
 
         logger.info("Pipeline: %d unique candidate lemmas", len(word_stats))
 
-        # 4. Build response
         candidates = self._build_candidates(word_stats)
         metadata = AnalysisMetadata(
             job_id=request.job_id,
@@ -97,10 +85,6 @@ class AnalysisPipeline:
             candidates=candidates,
             warnings=warnings,
         )
-
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
 
     def _extract_lines(self, request: AnalyzeRequest) -> list[str]:
         """Dispatch to the correct text extractor based on content_type."""
@@ -132,7 +116,7 @@ class AnalysisPipeline:
         *,
         include_propn: bool,
     ) -> dict[str, WordStats]:
-        """Filter tokens, count frequencies, calibrate CEFR levels, collect contexts."""
+        """Filter tokens, count frequencies, assign CEFR, collect contexts."""
         allowed_pos: set[str] = {"NOUN", "VERB", "ADJ", "ADV"}
         if include_propn:
             allowed_pos.add("PROPN")
@@ -153,8 +137,20 @@ class AnalysisPipeline:
                         stats = WordStats()
                         word_stats[lemma] = stats
                     stats.count += 1
-                    if token.pos_:
-                        stats.pos_counts[token.pos_] += 1
+                    # Participial ADJs remapped to a verb lemma should count as VERB
+                    # so CEFR POS lookup matches the stored lemma form.
+                    pos = token.pos_
+                    if (
+                        pos == "ADJ"
+                        and lemma != token.lemma_.casefold().strip()
+                        and (
+                            token.text.casefold().endswith("ed")
+                            or token.text.casefold().endswith("ing")
+                        )
+                    ):
+                        pos = "VERB"
+                    if pos:
+                        stats.pos_counts[pos] += 1
 
                     surface = token.text.casefold().strip()
                     if surface and surface.isalpha():
@@ -165,84 +161,22 @@ class AnalysisPipeline:
                     elif token.text[:1].isupper():
                         stats.capitalized_count += 1
 
-                    if token_looks_like_name_reference(token):
-                        stats.name_like_count += 1
-
                     if (
-                        len(stats.contexts) < _MAX_CONTEXT_CANDIDATES
+                        len(stats.contexts) < _MAX_CONTEXTS
                         and sent_text not in stats.contexts
                     ):
                         stats.contexts.append(sent_text)
 
-        self._apply_calibrated_cefr(word_stats)
-        self._select_best_contexts(word_stats)
+        self._apply_cefr(word_stats)
         return self._prune_word_stats(word_stats, include_propn=include_propn)
 
-    def _apply_calibrated_cefr(self, word_stats: dict[str, WordStats]) -> None:
-        """Assign calibrated CEFR labels after lemma aggregation."""
+    @staticmethod
+    def _apply_cefr(word_stats: dict[str, WordStats]) -> None:
+        """Assign CEFR labels after lemma aggregation."""
         for lemma, stats in word_stats.items():
-            result = self._cefr_lookup.resolve_candidate(lemma, stats.dominant_pos)
-            stats.cefr_num = result.level_num
-            stats.cefr_label = result.level_label
-
-    @staticmethod
-    def _score_context(text: str) -> float:
-        """Score a sentence for its usefulness as a vocabulary example context.
-
-        Rewards sentences that are 6–18 words long, penalises sentences that
-        start with a third-person pronoun (likely referring out of the
-        sentence), and gives a small bonus for sentences with several
-        longer content words.
-        """
-        words = text.split()
-        n = len(words)
-        if n < 1:
-            return -100.0
-
-        if n < 6:
-            score = float(n) * 0.5
-        elif n <= 18:
-            score = 8.0 + (n - 6) * 0.15
-        else:
-            score = 9.8 - (n - 18) * 0.05
-
-        first = words[0].casefold().rstrip(".,!?;:\"'")
-        if first in {
-            "he",
-            "she",
-            "it",
-            "they",
-            "we",
-            "his",
-            "her",
-            "its",
-            "their",
-            "this",
-            "that",
-            "these",
-            "those",
-            "him",
-            "them",
-        }:
-            score -= 2.5
-
-        long_words = sum(1 for w in words if len(w) > 3)
-        if long_words >= 3:
-            score += 1.0
-
-        return score
-
-    @staticmethod
-    def _select_best_contexts(word_stats: dict[str, WordStats]) -> None:
-        """Trim each candidate's context list to the top-scoring examples."""
-        for stats in word_stats.values():
-            if len(stats.contexts) <= _MAX_CONTEXTS:
-                continue
-            stats.contexts = sorted(
-                stats.contexts,
-                key=AnalysisPipeline._score_context,
-                reverse=True,
-            )[:_MAX_CONTEXTS]
+            level_num, level_label = resolve_cefr(lemma, stats.dominant_pos)
+            stats.cefr_num = level_num
+            stats.cefr_label = level_label
 
     @staticmethod
     def _prune_word_stats(
@@ -250,38 +184,24 @@ class AnalysisPipeline:
         *,
         include_propn: bool,
     ) -> dict[str, WordStats]:
-        """Drop low-signal artifacts and proper nouns that slipped past token filtering."""
+        """Drop low-signal artifacts and title-case name-like one-offs."""
         filtered: dict[str, WordStats] = {}
         for lemma, stats in word_stats.items():
-            if AnalysisPipeline._should_drop_low_signal_candidate(stats):
+            if stats.count == 1 and stats.cefr_num is None:
                 continue
-            if not include_propn and AnalysisPipeline._looks_like_missed_proper_noun(
-                stats
-            ):
+            if not include_propn and AnalysisPipeline._looks_like_missed_name(stats):
                 continue
             filtered[lemma] = stats
         return filtered
 
     @staticmethod
-    def _should_drop_low_signal_candidate(stats: WordStats) -> bool:
-        """Drop one-off garbage that has no CEFR signal and no repetition."""
-        if stats.count == 1 and stats.cefr_num is None:
-            return True
-        return False
-
-    @staticmethod
-    def _looks_like_missed_proper_noun(stats: WordStats) -> bool:
-        """Prune candidates that behave like names even when NER/POS missed them."""
-        if stats.count == 0:
-            return False
-        if stats.lowercase_count > 0:
+    def _looks_like_missed_name(stats: WordStats) -> bool:
+        """Drop never-lowercase, mostly capitalized lemmas with no easy CEFR signal."""
+        if stats.count == 0 or stats.lowercase_count > 0:
             return False
         if stats.cefr_num is not None and stats.cefr_num < 4:
             return False
-
-        capitalized_ratio = stats.capitalized_count / stats.count
-        name_like_ratio = stats.name_like_count / stats.count
-        return capitalized_ratio >= 0.8 and name_like_ratio >= 0.5
+        return stats.capitalized_count / stats.count >= 0.8
 
     @staticmethod
     def _build_candidates(
@@ -298,13 +218,11 @@ class AnalysisPipeline:
                 lemma=lemma,
                 type=stats.pos_category,
                 cefr_level=stats.cefr_label,
-                cefr_numeric=stats.cefr_num,
                 count=stats.count,
-                contexts=[CandidateContext(text=ctx) for ctx in stats.contexts],
+                contexts=list(stats.contexts),
             )
             for lemma, stats in sorted_items
         ]
 
 
-# Module-level singleton
 pipeline = AnalysisPipeline()

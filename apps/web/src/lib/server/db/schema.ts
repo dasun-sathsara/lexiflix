@@ -493,7 +493,7 @@ export const vocabularyTerm = pgTable(
   Reusable content-analysis output from the NLP pipeline and the batched analysis LLM pipeline.
   This table intentionally stops at reusable analysis data and does not store user-specific pack
   generation output such as meanings, example sentences, or audio assets.
-  `contexts` intentionally mirrors the current NLP service candidate context contract.
+  `contexts` is a string list of representative usage lines (legacy `{ text }` objects may exist until rebuild).
 */
 export const contentAnalysisItem = pgTable(
   "content_analysis_item",

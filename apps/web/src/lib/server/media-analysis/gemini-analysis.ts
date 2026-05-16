@@ -162,36 +162,31 @@ function normalizeGeminiItem(rawItem: unknown) {
     displayText,
     cefrLevel,
     representativeContext,
-    contexts: representativeContext ? [{ text: representativeContext }] : [],
+    contexts: representativeContext ? [representativeContext] : [],
     rationale,
   });
 
   return parsed.success ? parsed.data : null;
 }
 
+const KIND_ALIASES: Record<string, string> = {
+  "phrasal verb": "phrasal_verb",
+  phrasal_verb: "phrasal_verb",
+  idiom: "idiom",
+  slang: "slang",
+};
+
 function normalizeKind(value: unknown) {
   if (typeof value !== "string") {
     return value;
   }
-
-  switch (value.trim().toLowerCase()) {
-    case "phrasal verb":
-    case "phrasal_verb":
-      return "phrasal_verb";
-    case "idiom":
-      return "idiom";
-    case "slang":
-      return "slang";
-    default:
-      return value;
-  }
+  return KIND_ALIASES[value.trim().toLowerCase()] ?? value;
 }
 
 function normalizeCefrLevel(value: unknown) {
   if (typeof value !== "string") {
     return null;
   }
-
   const normalized = value.trim().toUpperCase();
   return ["A1", "A2", "B1", "B2", "C1", "C2"].includes(normalized) ? normalized : null;
 }

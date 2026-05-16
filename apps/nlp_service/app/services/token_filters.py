@@ -1,8 +1,7 @@
 """Token-level filtering logic.
 
-Encapsulates all the heuristic rules that decide whether a spaCy token
-should be excluded from the vocabulary candidate list. Extracted from the
-original analyzer's ``token_should_be_excluded`` and related helpers.
+Encapsulates the heuristic rules that decide whether a spaCy token
+should be excluded from the vocabulary candidate list.
 """
 
 from __future__ import annotations
@@ -12,7 +11,6 @@ from functools import lru_cache
 from spacy.tokens import Token  # type: ignore[import-untyped]
 
 _TITLE_MARKERS = {"agent", "dr", "doctor", "miss", "mr", "mrs", "ms"}
-_SHORT_NAME_CONNECTORS = {"and", "of", "the"}
 
 
 def is_named_entity_token(token: Token) -> bool:
@@ -21,17 +19,13 @@ def is_named_entity_token(token: Token) -> bool:
 
 
 def is_disfluency_or_filler(token: Token) -> bool:
-    """Detect interjections / discourse fillers using linguistic signals only.
-
-    No hardcoded word lists — relies on POS, PTB tag, and dependency label.
-    """
+    """Detect interjections / discourse fillers using linguistic signals only."""
     if token.pos_ == "INTJ":
         return True
     if token.tag_.upper() == "UH":
         return True
     if token.dep_ in {"discourse", "intj"}:
         return True
-    # Very short stop-wordy fragments in filler-prone POS categories
     lemma = token.lemma_.lower()
     if token.is_stop and len(lemma) <= 4 and token.pos_ in {"X", "PART", "ADV"}:
         return True
@@ -74,14 +68,13 @@ def token_should_be_excluded(token: Token, allowed_pos: set[str]) -> bool:
 
 
 def token_looks_like_name_reference(token: Token) -> bool:
-    """Heuristic for short title-cased references that NER may miss."""
+    """Cheap local heuristic for title-cased name references NER may miss.
+
+    Only inspects immediate neighbors — no full-doc scans.
+    """
     text = token.text.strip()
     if not text or not token.is_alpha or not text[0].isupper():
         return False
-
-    alpha_tokens = [doc_token for doc_token in token.doc if doc_token.is_alpha]
-    if len(alpha_tokens) == 1:
-        return True
 
     if token.i > 0:
         prev = token.doc[token.i - 1].text.rstrip(".").casefold()
@@ -91,19 +84,12 @@ def token_looks_like_name_reference(token: Token) -> bool:
     if token.i + 1 < len(token.doc) and token.doc[token.i + 1].text in {"'s", "’s"}:
         return True
 
-    if len(alpha_tokens) <= 3 and all(
-        doc_token.text[0].isupper()
-        or doc_token.text.casefold() in _SHORT_NAME_CONNECTORS
-        for doc_token in alpha_tokens
-    ):
-        return True
-
     return False
 
 
-@lru_cache(maxsize=20_000)
+@lru_cache(maxsize=8_192)
 def _verb_lemma_cached(text: str) -> str | None:
-    """Cached lemminflect verb-lemma lookup (by surface form)."""
+    """Cached lemminflect verb-lemma lookup (casefolded surface form)."""
     from lemminflect import getLemma  # type: ignore[import-untyped]
 
     lemmas = getLemma(text, upos="VERB")
@@ -115,15 +101,17 @@ def _verb_lemma_cached(text: str) -> str | None:
 
 
 def _verb_lemma(token: Token) -> str | None:
-    """Resolve a spaCy token to its base verb lemma via lemminflect, when spaCy's built-in
-    lemmatizer produces an inflection rather than the root form.
-    """
-    return _verb_lemma_cached(token.text)
+    """Resolve a spaCy token to its base verb lemma via lemminflect."""
+    return _verb_lemma_cached(token.text.casefold())
 
 
 def get_valid_lemma(token: Token, allowed_pos: set[str]) -> str | None:
     """Return cleaned lemma if the token passes all filters, else ``None``."""
     if token_should_be_excluded(token, allowed_pos):
+        return None
+
+    # Soft name-reference exclusion (title markers / possessive) before lemma work
+    if token_looks_like_name_reference(token) and token.pos_ in {"PROPN", "NOUN"}:
         return None
 
     lemma = token.lemma_.casefold().strip()
@@ -141,7 +129,6 @@ def get_valid_lemma(token: Token, allowed_pos: set[str]) -> str | None:
         if verb_lemma:
             lemma = verb_lemma
 
-    # Only purely alphabetic lemmas survive
     if not lemma or not lemma.isalpha():
         return None
 

@@ -11,6 +11,24 @@ import { contentAnalysisItem, userTermState, vocabularyTerm } from "@/lib/server
 
 const cefrOrder: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
+function normalizeContextList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw
+    .map((entry) => {
+      if (typeof entry === "string") {
+        return entry.trim();
+      }
+      if (entry && typeof entry === "object" && "text" in entry) {
+        const text = (entry as { text: unknown }).text;
+        return typeof text === "string" ? text.trim() : "";
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
 function allowedLevels(
   level: StoredCefrLevel | null,
   mode: GenerationRequestSnapshot["cefrWindowMode"],
@@ -115,7 +133,7 @@ export async function selectGenerationItems(input: {
       occurrenceCount: row.occurrenceCount,
       frequencyRank: row.frequencyRank,
       representativeContext: row.representativeContext,
-      contexts: row.contexts ?? [],
+      contexts: normalizeContextList(row.contexts),
       includedReason:
         row.termState === "known"
           ? `included despite ${row.termState} term handling`

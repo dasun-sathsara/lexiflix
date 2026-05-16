@@ -55,7 +55,7 @@ export type SelectedGenerationItem = {
   occurrenceCount: number;
   frequencyRank: number | null;
   representativeContext: string | null;
-  contexts: Array<{ text: string }>;
+  contexts: string[];
   includedReason: string;
 };
 

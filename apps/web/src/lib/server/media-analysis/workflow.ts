@@ -48,8 +48,9 @@ type WorkflowAnalysisItem = {
   lemma: string | null;
   displayText: string;
   partOfSpeech: string | null;
-  baseCefrLevel: StoredCefrLevel | null;
-  baseCefrNumeric: number | null;
+  /** Term-catalog CEFR (same value as run-item CEFR for current pipelines). */
+  cefrLevel: StoredCefrLevel | null;
+  cefrNumeric: number | null;
   notes: string | null;
   analysisSource: "nlp" | "analysis_llm";
   surfaceForm: string;
@@ -57,12 +58,6 @@ type WorkflowAnalysisItem = {
   contexts: NlpCandidateContext[];
   occurrenceCount: number;
   frequencyRank: number | null;
-  cefrLevel: StoredCefrLevel | null;
-  cefrNumeric: number | null;
-  cefrConfidence: number | null;
-  cefrNote: string | null;
-  isSelectable: boolean;
-  filteredOutReason: string | null;
 };
 
 type PersistedAnalysisItem = typeof contentAnalysisItem.$inferInsert;
@@ -114,22 +109,29 @@ function averageCefrLevel(levels: number[]) {
   }
 }
 
-function dedupeContexts(contexts: NlpCandidateContext[]) {
+function normalizeContextEntry(context: unknown): string | null {
+  if (typeof context === "string") {
+    return normalizeSubtitleText(context) || null;
+  }
+  if (context && typeof context === "object" && "text" in context) {
+    const text = (context as { text: unknown }).text;
+    return typeof text === "string" ? normalizeSubtitleText(text) || null : null;
+  }
+  return null;
+}
+
+function dedupeContexts(contexts: unknown[]): NlpCandidateContext[] {
   const unique: NlpCandidateContext[] = [];
   const seen = new Set<string>();
 
   for (const context of contexts) {
-    const normalized = normalizeSubtitleText(context.text);
-    if (!normalized) {
-      continue;
-    }
-
-    if (seen.has(normalized)) {
+    const normalized = normalizeContextEntry(context);
+    if (!normalized || seen.has(normalized)) {
       continue;
     }
 
     seen.add(normalized);
-    unique.push({ text: normalized });
+    unique.push(normalized);
 
     if (unique.length >= MAX_CONTEXTS_PER_ITEM) {
       break;
@@ -191,9 +193,6 @@ function mergeWorkflowItem(target: WorkflowAnalysisItem, incoming: WorkflowAnaly
   target.representativeContext ??= incoming.representativeContext;
   target.cefrLevel ??= incoming.cefrLevel;
   target.cefrNumeric ??= incoming.cefrNumeric;
-  target.cefrConfidence =
-    Math.max(target.cefrConfidence ?? 0, incoming.cefrConfidence ?? 0) || null;
-  target.cefrNote ??= incoming.cefrNote;
   target.notes ??= incoming.notes;
 }
 
@@ -209,27 +208,23 @@ function createNlpWorkflowItems(
     }
 
     const contexts = dedupeContexts(candidate.contexts);
+    const cefrLevel = candidate.cefr_level ?? null;
+    const cefrNumeric = cefrNumericFromLevel(cefrLevel);
     items.push({
       kind: "word",
       normalizedText,
       lemma: normalizeTermText(candidate.lemma) || candidate.lemma,
       displayText: candidate.lemma || candidate.text,
       partOfSpeech: candidate.type,
-      baseCefrLevel: candidate.cefr_level ?? null,
-      baseCefrNumeric: candidate.cefr_numeric ?? cefrNumericFromLevel(candidate.cefr_level ?? null),
-      notes: candidate.notes ?? null,
+      cefrLevel,
+      cefrNumeric,
+      notes: null,
       analysisSource: "nlp",
       surfaceForm: candidate.text,
-      representativeContext: contexts[0]?.text ?? null,
+      representativeContext: contexts[0] ?? null,
       contexts,
       occurrenceCount: candidate.count,
       frequencyRank: null,
-      cefrLevel: candidate.cefr_level ?? null,
-      cefrNumeric: candidate.cefr_numeric ?? cefrNumericFromLevel(candidate.cefr_level ?? null),
-      cefrConfidence: candidate.confidence ?? null,
-      cefrNote: candidate.notes ?? null,
-      isSelectable: true,
-      filteredOutReason: null,
     });
   }
 
@@ -250,27 +245,23 @@ function createLlmWorkflowItems(response: AnalyzeChunkLlmResponse): WorkflowAnal
     }
 
     const contexts = dedupeContexts(item.contexts);
+    const cefrLevel = item.cefrLevel ?? null;
+    const cefrNumeric = item.cefrNumeric ?? cefrNumericFromLevel(cefrLevel);
     items.push({
       kind: item.kind,
       normalizedText,
       lemma: normalizedText,
       displayText: item.displayText,
       partOfSpeech: null,
-      baseCefrLevel: item.cefrLevel ?? null,
-      baseCefrNumeric: item.cefrNumeric,
+      cefrLevel,
+      cefrNumeric,
       notes: item.rationale ?? null,
       analysisSource: "analysis_llm",
       surfaceForm: item.displayText,
-      representativeContext: item.representativeContext ?? contexts[0]?.text ?? null,
+      representativeContext: item.representativeContext ?? contexts[0] ?? null,
       contexts,
       occurrenceCount: 1,
       frequencyRank: null,
-      cefrLevel: item.cefrLevel ?? null,
-      cefrNumeric: item.cefrNumeric,
-      cefrConfidence: null,
-      cefrNote: item.rationale ?? null,
-      isSelectable: true,
-      filteredOutReason: null,
     });
   }
 
@@ -351,23 +342,19 @@ function buildSummary(
       .map((candidate) => normalizeTermText(candidate.lemma || candidate.text))
       .filter(Boolean),
   ).size;
-  const selectableItems = items.filter((item) => item.isSelectable);
   const kindCounts = items.reduce<Partial<Record<StoredVocabularyKind, number>>>((acc, item) => {
     acc[item.kind] = (acc[item.kind] ?? 0) + 1;
     return acc;
   }, {});
-  const cefrDistribution = selectableItems.reduce<Partial<Record<StoredCefrLevel, number>>>(
-    (acc, item) => {
-      if (!item.cefrLevel) {
-        return acc;
-      }
-
-      acc[item.cefrLevel] = (acc[item.cefrLevel] ?? 0) + 1;
+  const cefrDistribution = items.reduce<Partial<Record<StoredCefrLevel, number>>>((acc, item) => {
+    if (!item.cefrLevel) {
       return acc;
-    },
-    {},
-  );
-  const cefrValues = selectableItems
+    }
+
+    acc[item.cefrLevel] = (acc[item.cefrLevel] ?? 0) + 1;
+    return acc;
+  }, {});
+  const cefrValues = items
     .map((item) => item.cefrNumeric)
     .filter((value): value is number => typeof value === "number");
   const totalDurationSeconds =
@@ -377,7 +364,7 @@ function buildSummary(
     totalWordCount,
     uniqueLemmaCount,
     extractedItemCount: items.length,
-    selectableItemCount: selectableItems.length,
+    selectableItemCount: items.length,
     kindCounts,
     cefrDistribution,
     averageCefrLevel: averageCefrLevel(cefrValues),
@@ -388,9 +375,13 @@ function buildSummary(
 }
 
 function buildVocabularyUpsertSql(items: WorkflowAnalysisItem[]) {
+  if (items.length === 0) {
+    return null;
+  }
+
   const rowValues = items.map(
     (item) =>
-      sql`(${sql`${item.kind}`}, ${sql`${item.normalizedText}`}, ${sql`${crypto.randomUUID()}`}, ${sql`${item.displayText}`}, ${sql`${item.lemma ?? null}`}, ${sql`${item.partOfSpeech ?? null}`}, ${sql`${item.baseCefrLevel ?? null}`}, ${sql`${item.baseCefrNumeric ?? null}`}, ${sql`${item.notes ?? null}`})`,
+      sql`(${sql`${item.kind}`}, ${sql`${item.normalizedText}`}, ${sql`${crypto.randomUUID()}`}, ${sql`${item.displayText}`}, ${sql`${item.lemma ?? null}`}, ${sql`${item.partOfSpeech ?? null}`}, ${sql`${item.cefrLevel ?? null}`}, ${sql`${item.cefrNumeric ?? null}`}, ${sql`${item.notes ?? null}`})`,
   );
 
   return sql<{ id: string; kind: StoredVocabularyKind; normalized_text: string }[]>`
@@ -411,27 +402,17 @@ function mergePersistedAnalysisItem(
   target: PersistedAnalysisItem,
   incoming: PersistedAnalysisItem,
 ): PersistedAnalysisItem {
-  const targetConfidence = target.cefrConfidence ?? -1;
-  const incomingConfidence = incoming.cefrConfidence ?? -1;
-  const primary =
-    incomingConfidence > targetConfidence ? { ...incoming, id: target.id } : { ...target };
-  const fallback = incomingConfidence > targetConfidence ? target : incoming;
-
   return {
-    ...primary,
+    ...target,
     occurrenceCount: (target.occurrenceCount ?? 0) + (incoming.occurrenceCount ?? 0),
-    representativeContext: primary.representativeContext ?? fallback.representativeContext ?? null,
-    contexts: dedupeContexts([...(primary.contexts ?? []), ...(fallback.contexts ?? [])]),
-    frequencyRank: primary.frequencyRank ?? fallback.frequencyRank ?? null,
-    cefrLevel: primary.cefrLevel ?? fallback.cefrLevel ?? null,
-    cefrNumeric: primary.cefrNumeric ?? fallback.cefrNumeric ?? null,
-    cefrConfidence: primary.cefrConfidence ?? fallback.cefrConfidence ?? null,
-    cefrNote: primary.cefrNote ?? fallback.cefrNote ?? null,
-    isSelectable: target.isSelectable || incoming.isSelectable,
-    filteredOutReason:
-      target.isSelectable || incoming.isSelectable
-        ? null
-        : (primary.filteredOutReason ?? fallback.filteredOutReason ?? null),
+    representativeContext: target.representativeContext ?? incoming.representativeContext ?? null,
+    contexts: dedupeContexts([...(target.contexts ?? []), ...(incoming.contexts ?? [])]),
+    frequencyRank: target.frequencyRank ?? incoming.frequencyRank ?? null,
+    cefrLevel: target.cefrLevel ?? incoming.cefrLevel ?? null,
+    cefrNumeric: target.cefrNumeric ?? incoming.cefrNumeric ?? null,
+    cefrNote: target.cefrNote ?? incoming.cefrNote ?? null,
+    isSelectable: true,
+    filteredOutReason: null,
   };
 }
 
@@ -461,19 +442,24 @@ async function persistAnalysisOutput(input: {
   const completedAt = new Date();
 
   try {
-    // Batch 1: delete existing items + bulk upsert vocabulary terms (single HTTP request)
-    const [_, upsertResult] = await db.batch([
-      db
-        .delete(contentAnalysisItem)
-        .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id)),
-      db.execute<{ id: string; kind: StoredVocabularyKind; normalized_text: string }>(
-        buildVocabularyUpsertSql(input.items),
-      ),
-    ]);
+    // Clear previous items for this run, then upsert terms when present.
+    await db
+      .delete(contentAnalysisItem)
+      .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id));
 
+    const upsertSql = buildVocabularyUpsertSql(input.items);
     const termIdByItemKey = new Map<string, string>();
-    for (const row of upsertResult.rows) {
-      termIdByItemKey.set(createWorkflowItemKey(row.kind, row.normalized_text), row.id);
+
+    if (upsertSql) {
+      const upsertResult = await db.execute<{
+        id: string;
+        kind: StoredVocabularyKind;
+        normalized_text: string;
+      }>(upsertSql);
+
+      for (const row of upsertResult.rows) {
+        termIdByItemKey.set(createWorkflowItemKey(row.kind, row.normalized_text), row.id);
+      }
     }
 
     const analysisItems = dedupeAnalysisItemsByTermId(
@@ -495,25 +481,16 @@ async function persistAnalysisOutput(input: {
           frequencyRank: item.frequencyRank ?? null,
           cefrLevel: item.cefrLevel ?? null,
           cefrNumeric: item.cefrNumeric ?? null,
-          cefrConfidence: item.cefrConfidence ?? null,
-          cefrNote: item.cefrNote ?? null,
-          isSelectable: item.isSelectable,
-          filteredOutReason: item.filteredOutReason ?? null,
+          cefrConfidence: null,
+          cefrNote: item.notes ?? null,
+          isSelectable: true,
+          filteredOutReason: null,
           analyzedAt: completedAt,
         };
       }),
     );
 
-    // Batch 2: insert analysis items + mark run completed (single HTTP request)
-    const CHUNK_SIZE = 200;
-    const chunks = [];
-    for (let i = 0; i < analysisItems.length; i += CHUNK_SIZE) {
-      chunks.push(db.insert(contentAnalysisItem).values(analysisItems.slice(i, i + CHUNK_SIZE)));
-    }
-
-    // @ts-expect-error — TypeScript cannot prove the spread array has >=1 elements
-    await db.batch([
-      ...chunks,
+    const finalize = [
       db
         .update(contentAnalysisRun)
         .set({
@@ -537,7 +514,19 @@ async function persistAnalysisOutput(input: {
           warningCount: input.warnings.length,
         },
       }),
-    ]);
+    ];
+
+    if (analysisItems.length === 0) {
+      await db.batch([finalize[0], finalize[1]]);
+    } else {
+      const CHUNK_SIZE = 200;
+      const chunks = [];
+      for (let i = 0; i < analysisItems.length; i += CHUNK_SIZE) {
+        chunks.push(db.insert(contentAnalysisItem).values(analysisItems.slice(i, i + CHUNK_SIZE)));
+      }
+      // @ts-expect-error — TypeScript cannot prove the spread array has >=1 elements
+      await db.batch([...chunks, ...finalize]);
+    }
   } catch (error) {
     await transitionRun({
       runId: input.context.run.id,

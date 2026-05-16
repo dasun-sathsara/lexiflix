@@ -2,7 +2,8 @@
 
 Internal Python microservice for subtitle analysis and vocabulary extraction. Called by Trigger.dev workflows as a single compute step — not intended for direct browser access.
 
-The service uses `cefrpy` directly as the single source for CEFR level resolution.
+The service uses `cefrpy` for CEFR level resolution. Production web callers send
+pre-cleaned `plain_text`; the SRT path is for direct API/Bruno testing.
 
 ## Architecture Role
 
@@ -144,15 +145,13 @@ curl -X POST http://localhost:8000/api/v1/analyze \
 
 All settings are read from environment variables with an `NLP_` prefix:
 
-| Variable                       | Default   | Description                               |
-| ------------------------------ | --------- | ----------------------------------------- |
-| `NLP_DEBUG`                    | `false`   | Enable debug mode (auto-reload, API docs) |
-| `NLP_HOST`                     | `0.0.0.0` | Server bind address                       |
-| `NLP_PORT`                     | `8000`    | Server port                               |
-| `NLP_LOG_LEVEL`                | `info`    | Logging level                             |
-| `NLP_SPACY_PREFER_GPU`         | `true`    | Attempt GPU acceleration                  |
-| `NLP_SPACY_PREFER_TRANSFORMER` | `true`    | Prefer transformer models                 |
-| `NLP_SPACY_BATCH_SIZE`         | `200`     | Default spaCy batch size                  |
+| Variable        | Default   | Description                               |
+| --------------- | --------- | ----------------------------------------- |
+| `NLP_DEBUG`     | `false`   | Enable debug mode (auto-reload, API docs) |
+| `NLP_HOST`      | `0.0.0.0` | Server bind address                       |
+| `NLP_PORT`      | `8000`    | Server port                               |
+| `NLP_LOG_LEVEL` | `info`    | Logging level                             |
+| `NLP_API_KEY`   | _(none)_  | Optional API key for analyze routes       |
 
 ## API Endpoints
 

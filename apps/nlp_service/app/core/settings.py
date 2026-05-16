@@ -25,13 +25,6 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "info"
 
-    # --- spaCy ---
-    spacy_batch_size: int = 125
-
-    # --- Pipeline defaults ---
-    default_include_propn: bool = False
-    default_dedup_lines: bool = True
-
     model_config = {"env_prefix": "NLP_", "env_file": ".env", "extra": "ignore"}
 
 

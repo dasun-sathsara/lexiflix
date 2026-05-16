@@ -54,8 +54,6 @@ export const nlpAnalysisRequestSchema = z.object({
   job_id: z.string().min(1).nullable().optional(),
   content: z.string().min(1),
   content_type: z.enum(["srt", "plain_text"]).default("srt"),
-  user_cefr_level: z.string().min(1).nullable().optional(),
-  study_language: z.string().min(1).nullable().optional(),
   pipeline_version: z.string().min(1).nullable().optional(),
   options: nlpAnalysisOptionsSchema.default(() => ({
     include_propn: false,
@@ -64,20 +62,24 @@ export const nlpAnalysisRequestSchema = z.object({
   })),
 });
 
-export const nlpCandidateContextSchema = z.object({
-  text: z.string().min(1),
-});
+/** Accept new `string[]` contexts and legacy `{ text }[]` rows for rebuild windows. */
+const contextListSchema = z
+  .array(z.union([z.string(), z.object({ text: z.string() })]))
+  .default([])
+  .transform((items) =>
+    items
+      .map((item) => (typeof item === "string" ? item : item.text))
+      .map((text) => text.trim())
+      .filter(Boolean),
+  );
 
 export const nlpVocabularyCandidateSchema = z.object({
   text: z.string().min(1),
   lemma: z.string().min(1),
   type: z.string().min(1),
   cefr_level: cefrSchema.nullable().optional(),
-  cefr_numeric: z.number().int().min(1).max(6).nullable().optional(),
   count: z.number().int().min(1),
-  contexts: z.array(nlpCandidateContextSchema).default([]),
-  confidence: z.number().min(0).max(1).nullable().optional(),
-  notes: z.string().min(1).nullable().optional(),
+  contexts: contextListSchema,
 });
 
 export const nlpAnalysisMetadataSchema = z.object({
@@ -101,7 +103,7 @@ export const analysisLlmItemSchema = z.object({
   displayText: z.string().min(1),
   cefrLevel: cefrSchema.nullable().optional(),
   representativeContext: z.string().min(1).nullable().optional(),
-  contexts: z.array(nlpCandidateContextSchema).default([]),
+  contexts: contextListSchema,
   rationale: z.string().min(1).nullable().optional(),
 });
 

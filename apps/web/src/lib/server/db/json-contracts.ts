@@ -57,11 +57,10 @@ export type ContentAnalysisSummary = {
 };
 
 /*
-  Mirrors the current NLP service response contract in apps/nlp_service.
+  Mirrors the current NLP service context list (plain strings).
+  Older rows may still store `{ text: string }[]` until re-analysis.
 */
-export type NlpCandidateContext = {
-  text: string;
-};
+export type NlpCandidateContext = string;
 
 /*
   Keep generated example sentences lightweight until the UI needs richer structure.

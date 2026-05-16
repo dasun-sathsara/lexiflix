@@ -22,6 +22,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["analysis"])
 
 
+def _http_for_domain_error(exc: NLPServiceError) -> tuple[int, str]:
+    if isinstance(exc, SRTParsingError):
+        return 422, "srt_parsing_error"
+    if isinstance(exc, EmptyContentError):
+        return 422, "empty_content"
+    if isinstance(exc, PipelineError):
+        return 500, "pipeline_error"
+    return 500, "nlp_service_error"
+
+
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     """Analyze subtitle content and return structured vocabulary candidates.
@@ -38,44 +48,22 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
 
     try:
         result = await asyncio.to_thread(pipeline.analyze, request)
-    except SRTParsingError as exc:
-        logger.warning("SRT parsing failed: %s", exc)
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "error": "srt_parsing_error",
-                "message": str(exc),
-                "detail": exc.detail,
-            },
-        ) from exc
-    except EmptyContentError as exc:
-        logger.warning("Empty content: %s", exc)
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "error": "empty_content",
-                "message": str(exc),
-            },
-        ) from exc
-    except PipelineError as exc:
-        logger.error("Pipeline error: %s", exc, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "pipeline_error",
-                "message": str(exc),
-                "detail": exc.detail,
-            },
-        ) from exc
     except NLPServiceError as exc:
-        logger.error("NLP service error: %s", exc, exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "nlp_service_error",
-                "message": str(exc),
-            },
-        ) from exc
+        status, error_code = _http_for_domain_error(exc)
+        logger.log(
+            logging.WARNING if status < 500 else logging.ERROR,
+            "%s: %s",
+            type(exc).__name__,
+            exc,
+            exc_info=status >= 500,
+        )
+        detail: dict[str, str | None] = {
+            "error": error_code,
+            "message": str(exc),
+        }
+        if getattr(exc, "detail", None):
+            detail["detail"] = exc.detail
+        raise HTTPException(status_code=status, detail=detail) from exc
     except Exception as exc:
         logger.exception("Unexpected error during analysis (job_id=%s)", request.job_id)
         raise HTTPException(

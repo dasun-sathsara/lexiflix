@@ -5,14 +5,6 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class CandidateContext(BaseModel):
-    """A representative usage context for a candidate vocabulary item."""
-
-    text: str = Field(
-        ..., description="The sentence or subtitle line where the word appeared."
-    )
-
-
 class VocabularyCandidate(BaseModel):
     """A single candidate vocabulary item extracted by the NLP pipeline."""
 
@@ -29,14 +21,10 @@ class VocabularyCandidate(BaseModel):
         default=None,
         description="CEFR label (A1–C2) if resolvable, else null.",
     )
-    cefr_numeric: int | None = Field(
-        default=None,
-        description="Numeric CEFR (1=A1 … 6=C2) if resolvable, else null.",
-    )
     count: int = Field(
         ..., ge=1, description="Raw occurrence count in the source text."
     )
-    contexts: list[CandidateContext] = Field(
+    contexts: list[str] = Field(
         default_factory=list,
         description="Representative usage examples (may be empty).",
     )
@@ -70,7 +58,7 @@ class AnalyzeResponse(BaseModel):
     candidates: list[VocabularyCandidate]
     warnings: list[str] = Field(
         default_factory=list,
-        description="Non-fatal warnings (e.g. fallback model used, missing CEFR data).",
+        description="Non-fatal warnings.",
     )
 
 

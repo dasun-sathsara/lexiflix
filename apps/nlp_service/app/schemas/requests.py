@@ -8,11 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class AnalysisOptions(BaseModel):
-    """Optional pipeline toggles the caller can send.
-
-    Designed for forward compatibility — the TypeScript workflow layer can
-    evolve without breaking the request shape by adding new optional fields here.
-    """
+    """Pipeline toggles the caller can send."""
 
     include_propn: bool = Field(
         default=False,
@@ -34,6 +30,8 @@ class AnalyzeRequest(BaseModel):
     """Top-level request body for ``POST /api/v1/analyze``.
 
     Accepts either raw SRT content or already-extracted plain text.
+    Production callers send pre-cleaned ``plain_text``; SRT parsing lives here
+    for direct/API testing only.
     """
 
     job_id: str | None = Field(
@@ -49,17 +47,9 @@ class AnalyzeRequest(BaseModel):
         default="srt",
         description="Format of the content field.",
     )
-    user_cefr_level: str | None = Field(
-        default=None,
-        description="Learner's current CEFR level (e.g. 'B1'). Reserved for future filtering.",
-    )
-    study_language: str | None = Field(
-        default=None,
-        description="Language being studied. Currently only 'en' is supported.",
-    )
     pipeline_version: str | None = Field(
         default=None,
-        description="Optional version tag for pipeline feature gating.",
+        description="Optional version tag echoed in response metadata.",
     )
     options: AnalysisOptions = Field(
         default_factory=AnalysisOptions,

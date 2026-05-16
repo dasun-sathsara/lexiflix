@@ -21,7 +21,6 @@ class WordStats:
     surface_counts: Counter[str] = field(default_factory=Counter)
     capitalized_count: int = 0
     lowercase_count: int = 0
-    name_like_count: int = 0
     contexts: list[str] = field(default_factory=list)
 
     @property

@@ -223,15 +223,22 @@ export async function runPackGenerationWorkflow(jobId: string) {
       message: "Generating best-effort learning assets.",
     });
 
-    const [speechResult, imageResult] = await Promise.all([
-      generateSpeechArtifacts({ selectedItems, textItems, audioConfig }),
-      generateImageArtifacts({
-        textItems,
-        imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
-        imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
-      }),
-    ]);
-    warnings.push(...speechResult.warnings, ...imageResult.warnings);
+    const speechResult = await generateSpeechArtifacts({
+      selectedItems,
+      textItems,
+      audioConfig,
+    });
+    warnings.push(...speechResult.warnings);
+
+    // Image generation is optional and currently a no-op stub — only invoke when enabled.
+    const imageResult = env.CONTENT_GENERATION_IMAGE_ENABLED
+      ? await generateImageArtifacts({
+          textItems,
+          imageEnabled: true,
+          imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+        })
+      : { artifacts: [], warnings: [] as string[] };
+    warnings.push(...imageResult.warnings);
 
     logger.info("[content-generation] asset generation completed", {
       jobId,
