@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { LoadRing } from "@/features/dashboard/components/load-ring";
-import type { PlanTone } from "@/features/dashboard/lib/utils";
 import { planToneDot } from "@/features/dashboard/lib/utils";
+import type { PlanTone } from "@/features/dashboard/types";
 import { cn } from "@/lib/utils";
 
 interface PlanItem {

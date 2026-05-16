@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-import type { CuratedAdminCatalogFilter } from "@/features/curation/utils";
+import type { CuratedAdminCatalogFilter } from "@/features/curation/types";
 import { cn } from "@/lib/utils";
 
 interface AdminCatalogFiltersProps {

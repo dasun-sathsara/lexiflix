@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { clampToInt } from "@/features/dashboard/lib/utils";
-import type { DashboardFocusPack } from "@/features/dashboard/server/queries";
+import type { DashboardFocusPack } from "@/features/dashboard/types";
 
 interface NeedsAttentionProps {
   focusPacks: DashboardFocusPack[];

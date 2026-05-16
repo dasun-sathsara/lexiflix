@@ -1,5 +1,4 @@
-import type { DeckStats } from "@/features/packs/components/decks-content";
-import type { DeckSummary } from "@/features/packs/types";
+import type { DeckStats, DeckSummary } from "@/features/packs/types";
 
 export function computeDeckStats(decks: DeckSummary[]): DeckStats {
   return decks.reduce(

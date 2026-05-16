@@ -138,3 +138,9 @@ export type PackRatingActionResult =
       reviewedCards: number;
     }
   | { ok: false; error: string };
+export interface DeckStats {
+  totalDue: number;
+  totalNew: number;
+  totalLearning: number;
+  totalEstimatedMinutes: number;
+}

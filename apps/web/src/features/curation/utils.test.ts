@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  parseCuratedAdminSearchParams,
   buildCuratedAdminDiscoverParams,
   parseCuratedAdminCatalogFilter,
+  parseCuratedAdminSearchParams,
 } from "./utils";
 
 describe("parseCuratedAdminSearchParams — parsePage behavior", () => {

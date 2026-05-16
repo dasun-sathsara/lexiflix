@@ -1,21 +1,5 @@
-import { clampToInt, type PlanTone } from "@/features/dashboard/lib/utils";
-import type { DashboardView } from "@/features/dashboard/server/queries";
-
-export interface DashboardViewModel {
-  displayName: string;
-  userLevel: string | null;
-  hasPacks: boolean;
-  streakDays: number;
-  todayLoadPct: number;
-  readyNow: number;
-  hasWorkNow: boolean;
-  heroDescription: string;
-  nextStudyHref: string;
-  nextStudyLabel: string;
-  planItems: { label: string; value: number; tone: PlanTone }[];
-  showAssessmentBanner: boolean;
-  dashboard: DashboardView;
-}
+import { clampToInt } from "@/features/dashboard/lib/utils";
+import type { DashboardView, DashboardViewModel, PlanTone } from "../types";
 
 export function buildDashboardViewModel(opts: {
   session: { user: { name: string | null; email: string | null } };

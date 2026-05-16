@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { AdminCuratedWorkspace } from "@/features/curation/components/admin-curated-workspace";
+import { listCuratedEntriesForAdmin } from "@/features/curation/server/queries";
+import type { AnnotatedTMDBResult } from "@/features/curation/types";
 import {
-  type AnnotatedTMDBResult,
   buildCuratedAdminDiscoverParams,
   parseCuratedAdminCatalogFilter,
   parseCuratedAdminSearchParams,
 } from "@/features/curation/utils";
-import { listCuratedEntriesForAdmin } from "@/features/curation/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireAdmin } from "@/lib/auth-guards";
 import { discoverMedia, getGenres, searchMedia } from "@/lib/tmdb";

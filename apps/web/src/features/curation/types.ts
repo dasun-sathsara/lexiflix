@@ -5,6 +5,7 @@ import type {
   CuratedSourceProvider,
   StoredCefrLevel,
 } from "@/lib/server/db/json-contracts";
+import type { TMDBMediaType, TMDBResult } from "@/lib/tmdb-shared";
 
 export type { CuratedCurationScope, CuratedGenreSnapshot, CuratedMediaType, CuratedSourceProvider };
 
@@ -52,4 +53,25 @@ export type CuratedCatalogListFilters = {
   isPublished?: boolean;
   limit?: number;
   level?: StoredCefrLevel;
+};
+
+export type CuratedAdminMode = "search" | "browse";
+export type CuratedAdminView = "discover" | "catalog";
+
+export type CuratedAdminQueryState = {
+  view: CuratedAdminView;
+  mode: CuratedAdminMode;
+  mediaType: TMDBMediaType;
+  query: string;
+  page: number;
+  genreId: string | null;
+  sortBy: string;
+  decade: number | null;
+};
+
+export type AnnotatedTMDBResult = TMDBResult & { isCurated: boolean };
+
+export type CuratedAdminCatalogFilter = {
+  mediaType: "all" | "movie" | "tv";
+  status: "all" | "published" | "hidden";
 };

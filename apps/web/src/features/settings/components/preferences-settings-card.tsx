@@ -29,14 +29,15 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
-import type { SettingsPreferences } from "@/features/settings/types";
+import type {
+  ManualOverrideSelection,
+  SettingsPreferences,
+  StatusState,
+} from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
-
 import {
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  type ManualOverrideSelection,
   STUDY_VOCABULARY_TYPES,
-  type StatusState,
   settingsCardClass,
   settingsCardContentClass,
   settingsCardFooterClass,

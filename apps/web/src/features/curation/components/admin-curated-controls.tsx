@@ -13,12 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  type CuratedAdminMode,
-  type CuratedAdminQueryState,
-  getAdminSortOptions,
-  getDefaultAdminSort,
-} from "@/features/curation/utils";
+import type { CuratedAdminMode, CuratedAdminQueryState } from "@/features/curation/types";
+import { getAdminSortOptions, getDefaultAdminSort } from "@/features/curation/utils";
 import type { Genre, TMDBMediaType } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 

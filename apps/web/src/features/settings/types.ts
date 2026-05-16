@@ -35,3 +35,12 @@ export type UpdateProfileActionResult = ActionResult<{
     image: string | null;
   };
 }>;
+
+export type StatusState = {
+  type: "success" | "error";
+  message: string;
+} | null;
+
+export type ManualOverrideSelection = CefrLevel | "assessed";
+
+export type SettingsTab = "account" | "preferences";

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { clampToInt } from "@/features/dashboard/lib/utils";
-import type { DashboardPackSummary } from "@/features/dashboard/server/queries";
+import type { DashboardPackSummary } from "@/features/dashboard/types";
 import { cn } from "@/lib/utils";
 
 interface JumpBackInProps {

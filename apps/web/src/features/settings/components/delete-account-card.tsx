@@ -22,9 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import type { StatusState } from "@/features/settings/types";
 import {
-  type StatusState,
   settingsCardClass,
   settingsCardContentClass,
   settingsCardFooterClass,

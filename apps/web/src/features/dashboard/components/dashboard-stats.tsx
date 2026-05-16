@@ -1,7 +1,7 @@
 import { BookOpen, Sparkles, TrendingUp } from "lucide-react";
 
 import { AppStat } from "@/components/common/app-surface";
-import type { DashboardView } from "@/features/dashboard/server/queries";
+import type { DashboardView } from "@/features/dashboard/types";
 
 interface DashboardStatsProps {
   stats: DashboardView["stats"];

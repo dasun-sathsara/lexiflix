@@ -1,18 +1,10 @@
 import type { TMDBMediaType } from "@/lib/tmdb-shared";
-
-export type CuratedAdminMode = "search" | "browse";
-export type CuratedAdminView = "discover" | "catalog";
-
-export type CuratedAdminQueryState = {
-  view: CuratedAdminView;
-  mode: CuratedAdminMode;
-  mediaType: TMDBMediaType;
-  query: string;
-  page: number;
-  genreId: string | null;
-  sortBy: string;
-  decade: number | null;
-};
+import type {
+  CuratedAdminCatalogFilter,
+  CuratedAdminMode,
+  CuratedAdminQueryState,
+  CuratedAdminView,
+} from "./types";
 
 const MOVIE_SORT_OPTIONS = [
   "popularity.desc",
@@ -114,19 +106,6 @@ export function buildCuratedAdminDiscoverParams(state: CuratedAdminQueryState) {
 
   return params;
 }
-
-// ---------------------------------------------------------------------------
-// Catalog filter types (appended — do not remove above code)
-// ---------------------------------------------------------------------------
-
-import type { TMDBResult } from "@/lib/tmdb-shared";
-
-export type AnnotatedTMDBResult = TMDBResult & { isCurated: boolean };
-
-export type CuratedAdminCatalogFilter = {
-  mediaType: "all" | "movie" | "tv";
-  status: "all" | "published" | "hidden";
-};
 
 export function parseCuratedAdminCatalogFilter(
   params: Record<string, string | string[] | undefined>,

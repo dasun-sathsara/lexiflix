@@ -16,48 +16,7 @@ import {
 } from "@/lib/server/db/schema";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
-export type DashboardPackSummary = {
-  id: string;
-  title: string;
-  kind: "Movie" | "TV";
-  posterUrl: string | null;
-  masteredCount: number;
-  totalCount: number;
-  dueCount: number;
-  newAvailableToday: number;
-  lastStudiedAt: string | null;
-};
-
-export type DashboardFocusPack = {
-  id: string;
-  title: string;
-  due: number;
-  total: number;
-};
-
-export type DashboardView = {
-  stats: {
-    currentStreakDays: number;
-    totalTermsKnown: number;
-    reviewsDue: number;
-    reviewsCompletedThisWeek: number;
-    estimatedDueMinutes: number;
-    newCardsPerDay: number;
-    newCardsCompletedToday: number;
-    newCardsAvailableToday: number;
-  };
-  recentPacks: DashboardPackSummary[];
-  reviewPlan: {
-    dueNow: number;
-    dueLaterToday: number;
-    dueTomorrow: number;
-    nextLearningDueAt: string | null;
-    isCompleteForToday: boolean;
-    focusPacks: DashboardFocusPack[];
-  };
-  nextStudyHref: string;
-  nextStudyLabel: string;
-};
+import type { DashboardView } from "../types";
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;

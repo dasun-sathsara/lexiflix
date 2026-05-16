@@ -5,7 +5,7 @@ import { DashboardHero } from "@/features/dashboard/components/dashboard-hero";
 import { DashboardStats } from "@/features/dashboard/components/dashboard-stats";
 import { JumpBackIn } from "@/features/dashboard/components/jump-back-in";
 import { NeedsAttention } from "@/features/dashboard/components/needs-attention";
-import type { DashboardViewModel } from "@/features/dashboard/lib/view-model";
+import type { DashboardViewModel } from "@/features/dashboard/types";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 
 interface DashboardContentProps {

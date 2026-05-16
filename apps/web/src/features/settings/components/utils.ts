@@ -1,15 +1,7 @@
 import type { CefrLevel } from "@/features/assessment/types";
+import type { SettingsTab } from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
-
-export type StatusState = {
-  type: "success" | "error";
-  message: string;
-} | null;
-
-export type ManualOverrideSelection = CefrLevel | "assessed";
-
-export type SettingsTab = "account" | "preferences";
 
 export function toSettingsTab(value: string | null): SettingsTab {
   return value === "preferences" ? "preferences" : "account";

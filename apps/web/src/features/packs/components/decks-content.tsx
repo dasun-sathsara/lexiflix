@@ -15,15 +15,8 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { DeckRow } from "@/features/packs/components/deck-row";
-import type { DeckSummary } from "@/features/packs/types";
+import type { DeckStats, DeckSummary } from "@/features/packs/types";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-
-export interface DeckStats {
-  totalDue: number;
-  totalNew: number;
-  totalLearning: number;
-  totalEstimatedMinutes: number;
-}
 
 interface DecksContentProps {
   decks: DeckSummary[];
