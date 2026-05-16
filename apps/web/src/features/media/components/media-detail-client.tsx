@@ -5,18 +5,20 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Film,
+  Globe,
   Loader2,
   Sparkles,
   Star,
   Tv,
   XCircle,
 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { MediaPosterBanner } from "@/components/common/media-poster-banner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getCountryName, getLanguageName } from "@/features/media/lib/locale-display";
 import {
   getAnalysisStatusAction,
   getPackGenerationStatusAction,
@@ -36,7 +39,7 @@ import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/m
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
-import { ANALYSIS_PIPELINE_STEPS, formatRuntime, getCefrColor } from "./_utils";
+import { ANALYSIS_PIPELINE_STEPS, formatRuntime } from "./_utils";
 import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
 
@@ -242,114 +245,160 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
 
   const backdropUrl = buildTmdbImageUrl(media.backdropPath, TMDB_IMAGE_SIZES.backdrop.lg);
 
+  const showOriginalTitle = Boolean(media.originalTitle) && media.originalTitle !== media.title;
+  const hasSubMeta =
+    showOriginalTitle ||
+    Boolean(media.originalLanguage) ||
+    Boolean(media.originCountryCodes?.length) ||
+    Boolean(media.imdbId);
+
   return (
     <AppPageShell>
-      <Card className="relative min-h-[280px] overflow-hidden border-indigo-200/60 dark:border-indigo-500/20 sm:min-h-[320px]">
-        {backdropUrl ? (
-          <div className="absolute inset-0">
-            <Image
-              src={backdropUrl}
-              alt={`${media.title} backdrop`}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/70 to-background/95" />
-          </div>
-        ) : null}
+      <MediaPosterBanner
+        backdropUrl={backdropUrl}
+        backdropAlt={`${media.title} backdrop`}
+        badges={
+          <>
+            <Badge
+              variant="secondary"
+              className="border border-indigo-300/60 bg-white/85 text-indigo-700 shadow-sm backdrop-blur-md dark:border-indigo-400/30 dark:bg-indigo-950/60 dark:text-indigo-200"
+            >
+              {media.mediaType === "movie" ? (
+                <Film className="mr-1 size-3.5" />
+              ) : (
+                <Tv className="mr-1 size-3.5" />
+              )}
+              {media.mediaType === "movie" ? "Movie" : "TV Show"}
+            </Badge>
 
-        <CardContent className="relative p-4 sm:p-6">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+            {media.contentCertification ? (
               <Badge
                 variant="secondary"
-                className="border border-indigo-200/60 bg-white/60 text-indigo-700 backdrop-blur-sm dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
+                className="border border-foreground/15 bg-white/85 text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/70"
               >
-                {media.mediaType === "movie" ? (
-                  <Film className="mr-1 size-3.5" />
-                ) : (
-                  <Tv className="mr-1 size-3.5" />
-                )}
-                {media.mediaType === "movie" ? "Movie" : "TV Show"}
+                {media.contentCertification}
               </Badge>
-              {media.selectedSeasonNumber ? (
-                <Badge variant="secondary">Season {media.selectedSeasonNumber}</Badge>
-              ) : null}
-              {analysis.summary?.averageCefrLevel ? (
-                <Badge className={cn("border", getCefrColor(analysis.summary.averageCefrLevel))}>
-                  {analysis.summary.averageCefrLevel}
-                </Badge>
-              ) : null}
-            </div>
+            ) : null}
 
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{media.title}</h1>
-
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                {media.releaseYear ? (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="size-4" />
-                    {media.releaseYear}
-                  </span>
+            {analysis.summary?.averageCefrLevel ? (
+              <Badge
+                variant="secondary"
+                className="border border-foreground/15 bg-white/85 text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/70"
+              >
+                {analysis.summary.averageCefrLevel}
+              </Badge>
+            ) : null}
+          </>
+        }
+        title={media.title}
+        meta={
+          <>
+            {media.releaseYear ? (
+              <span className="flex items-center gap-1">
+                <Calendar className="size-4" />
+                {media.releaseYear}
+              </span>
+            ) : null}
+            {formatRuntime(media.runtimeMinutes) ? (
+              <span className="flex items-center gap-1">
+                <Clock className="size-4" />
+                {formatRuntime(media.runtimeMinutes)}
+              </span>
+            ) : null}
+            {typeof media.voteAverage === "number" ? (
+              <span className="flex items-center gap-1.5">
+                <Star className="size-4 fill-yellow-400 text-yellow-400" />
+                {media.voteAverage.toFixed(1)}
+                {typeof media.voteCount === "number" ? (
+                  <span className="text-xs">({media.voteCount.toLocaleString()} votes)</span>
                 ) : null}
-                {formatRuntime(media.runtimeMinutes) ? (
-                  <span className="flex items-center gap-1">
-                    <Clock className="size-4" />
-                    {formatRuntime(media.runtimeMinutes)}
-                  </span>
+              </span>
+            ) : null}
+          </>
+        }
+      >
+        {media.genres.length > 0 ||
+          (media.mediaType === "tv" && media.availableSeasonCount) ||
+          hasSubMeta ? (
+          <div className="flex flex-col gap-2">
+            {hasSubMeta ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground/55">
+                {showOriginalTitle ? (
+                  <span className="italic text-foreground/70">{media.originalTitle}</span>
                 ) : null}
-                {typeof media.voteAverage === "number" ? (
-                  <span className="flex items-center gap-1.5">
-                    <Star className="size-4 fill-yellow-400 text-yellow-400" />
-                    {media.voteAverage.toFixed(1)}
-                    {typeof media.voteCount === "number" ? (
-                      <span className="text-xs">({media.voteCount.toLocaleString()} votes)</span>
+                {showOriginalTitle &&
+                  (media.originalLanguage || media.originCountryCodes?.length || media.imdbId) ? (
+                  <span className="select-none text-foreground/30">·</span>
+                ) : null}
+                {media.originalLanguage || media.originCountryCodes?.length ? (
+                  <span className="flex items-center gap-1">
+                    <Globe className="size-3 shrink-0 text-foreground/40" />
+                    {media.originalLanguage ? (
+                      <span>{getLanguageName(media.originalLanguage)}</span>
+                    ) : null}
+                    {media.originalLanguage && media.originCountryCodes?.length ? (
+                      <span className="text-foreground/30">·</span>
+                    ) : null}
+                    {media.originCountryCodes?.length ? (
+                      <span>{media.originCountryCodes.map(getCountryName).join(", ")}</span>
                     ) : null}
                   </span>
                 ) : null}
+                {media.imdbId && (media.originalLanguage || media.originCountryCodes?.length) ? (
+                  <span className="select-none text-foreground/30">·</span>
+                ) : null}
+                {media.imdbId ? (
+                  <a
+                    href={`https://www.imdb.com/title/${media.imdbId}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-0.5 rounded-sm border border-foreground/15 bg-white/60 px-1.5 py-0.5 font-medium text-foreground/70 transition-colors hover:bg-white/80 hover:text-foreground dark:bg-white/5 dark:hover:bg-white/10"
+                  >
+                    IMDb
+                    <ExternalLink className="size-2.5 opacity-60" />
+                  </a>
+                ) : null}
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {media.genres.map((genre) => (
-                <Badge
-                  key={genre}
-                  variant="secondary"
-                  className="border border-muted-foreground/20 bg-muted/50"
-                >
-                  {genre}
-                </Badge>
-              ))}
-            </div>
+            ) : null}
+            {media.genres.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {media.genres.map((genre) => (
+                  <Badge
+                    key={genre}
+                    variant="secondary"
+                    className="border border-foreground/15 bg-white/80 text-foreground/85 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60 dark:text-foreground/90"
+                  >
+                    {genre}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
 
             {media.mediaType === "tv" && media.availableSeasonCount ? (
-              <div className="max-w-xs">
-                <Select
-                  value={
-                    media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined
-                  }
-                  onValueChange={handleSeasonChange}
+              <Select
+                value={media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined}
+                onValueChange={handleSeasonChange}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-6 w-fit border-foreground/15 bg-white/80 px-2 text-xs font-medium text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60"
                 >
-                  <SelectTrigger className="w-full bg-background/80 backdrop-blur-sm">
-                    <SelectValue placeholder="Choose a season" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from(
-                      { length: media.availableSeasonCount },
-                      (_, index) => index + 1,
-                    ).map((seasonNumber) => (
+                  <SelectValue placeholder="Choose a season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: media.availableSeasonCount }, (_, index) => index + 1).map(
+                    (seasonNumber) => (
                       <SelectItem key={seasonNumber} value={String(seasonNumber)}>
                         Season {seasonNumber}
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
             ) : null}
           </div>
-        </CardContent>
-      </Card>
+        ) : null}
+      </MediaPosterBanner>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">

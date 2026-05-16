@@ -1,14 +1,11 @@
 import { Film, Play, Tv } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
+import { MediaPosterBanner } from "@/components/common/media-poster-banner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { PackStagingView } from "@/features/packs/types";
-
-import { cefrBadgeClass } from "./_utils";
 
 export type PackStagingHeroProps = {
   pack: PackStagingView;
@@ -20,98 +17,80 @@ export type PackStagingHeroProps = {
  * Renders the hero header for the pack staging view, showing media info and study progress.
  */
 export function PackStagingHero({ pack, stats, progressPct }: PackStagingHeroProps) {
+  const metaLine = [
+    pack.media.releaseYear,
+    pack.media.subtitle,
+    `${stats.total} active cards`,
+    `${pack.studyPlan.futureLearningCount} scheduled`,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
   return (
-    <Card className="relative min-h-[280px] overflow-hidden border-indigo-200/60 dark:border-indigo-500/20 sm:min-h-[320px]">
-      {pack.media.backdropUrl ? (
-        <div className="absolute inset-0">
-          <Image
-            src={pack.media.backdropUrl}
-            alt={`${pack.media.title} backdrop`}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 1024px"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/70 to-background/95" />
-        </div>
-      ) : null}
-      <CardContent className="relative p-4 sm:p-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="secondary"
-                className="border border-indigo-200/60 bg-white/60 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
-              >
-                {pack.media.kind === "movie" ? (
-                  <Film className="mr-1 size-3.5" />
-                ) : (
-                  <Tv className="mr-1 size-3.5" />
-                )}
-                Study Pack
-              </Badge>
-              {pack.learnerCefrLevelAtGeneration ? (
-                <Badge className={`border ${cefrBadgeClass(pack.learnerCefrLevelAtGeneration)}`}>
-                  {pack.learnerCefrLevelAtGeneration}
-                </Badge>
-              ) : null}
-            </div>
-
-            <div className="space-y-1">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                {pack.media.title}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {[
-                  pack.media.releaseYear,
-                  pack.media.subtitle,
-                  `${stats.total} active cards`,
-                  `${pack.studyPlan.futureLearningCount} scheduled`,
-                ]
-                  .filter(Boolean)
-                  .join(" • ")}
-              </p>
-            </div>
-
-            <div className="max-w-md space-y-1">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Overall progress</span>
-                <span className="font-normal text-foreground">{progressPct}% mastered</span>
-              </div>
-              <Progress value={progressPct} className="h-2" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {pack.studyPlan.dueCount > 0 ? (
-              <Button size="default" className="gap-2 shadow-sm" asChild>
-                <Link href={`/study/${pack.id}?mode=due`}>
-                  <Play className="size-4" />
-                  Review Due
-                  <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
-                    {pack.studyPlan.dueCount}
-                  </Badge>
-                </Link>
-              </Button>
-            ) : pack.studyPlan.newAvailableToday > 0 ? (
-              <Button size="default" className="gap-2 shadow-sm" asChild>
-                <Link href={`/study/${pack.id}?mode=new`}>
-                  <Play className="size-4" />
-                  Learn New
-                  <Badge variant="secondary" className="ml-1 bg-white/20 text-white">
-                    {pack.studyPlan.newAvailableToday}
-                  </Badge>
-                </Link>
-              </Button>
+    <MediaPosterBanner
+      backdropUrl={pack.media.backdropUrl}
+      backdropAlt={`${pack.media.title} backdrop`}
+      badges={
+        <>
+          <Badge
+            variant="secondary"
+            className="border border-indigo-300/60 bg-white/85 text-indigo-700 shadow-sm backdrop-blur-md dark:border-indigo-400/30 dark:bg-indigo-950/60 dark:text-indigo-200"
+          >
+            {pack.media.kind === "movie" ? (
+              <Film className="mr-1 size-3.5" />
             ) : (
-              <Button size="default" className="gap-2 shadow-sm" disabled>
-                <Play className="size-4" />
-                Complete For Now
-              </Button>
+              <Tv className="mr-1 size-3.5" />
             )}
-          </div>
+            Study Pack
+          </Badge>
+          {pack.learnerCefrLevelAtGeneration ? (
+            <Badge
+              variant="secondary"
+              className="border border-foreground/15 bg-white/85 text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/70"
+            >
+              {pack.learnerCefrLevelAtGeneration}
+            </Badge>
+          ) : null}
+        </>
+      }
+      title={pack.media.title}
+      meta={metaLine ? <span>{metaLine}</span> : null}
+      actions={
+        pack.studyPlan.dueCount > 0 ? (
+          <Button size="default" className="gap-2 shadow-md" asChild>
+            <Link href={`/study/${pack.id}?mode=due`}>
+              <Play className="size-4" />
+              Review Due
+              <Badge variant="secondary" className="ml-1 border-0 bg-white/25 text-white">
+                {pack.studyPlan.dueCount}
+              </Badge>
+            </Link>
+          </Button>
+        ) : pack.studyPlan.newAvailableToday > 0 ? (
+          <Button size="default" className="gap-2 shadow-md" asChild>
+            <Link href={`/study/${pack.id}?mode=new`}>
+              <Play className="size-4" />
+              Learn New
+              <Badge variant="secondary" className="ml-1 border-0 bg-white/25 text-white">
+                {pack.studyPlan.newAvailableToday}
+              </Badge>
+            </Link>
+          </Button>
+        ) : (
+          <Button size="default" className="gap-2 shadow-md" disabled>
+            <Play className="size-4" />
+            Complete For Now
+          </Button>
+        )
+      }
+    >
+      <div className="max-w-md space-y-1.5">
+        <div className="flex items-center justify-between text-xs font-medium text-foreground/75">
+          <span>Overall progress</span>
+          <span className="font-semibold text-foreground">{progressPct}% mastered</span>
         </div>
-      </CardContent>
-    </Card>
+        <Progress value={progressPct} className="h-1.5 bg-foreground/15" />
+      </div>
+    </MediaPosterBanner>
   );
 }
