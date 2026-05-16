@@ -10,6 +10,7 @@ import {
   Settings2,
   Shield,
   Sparkles,
+  Users,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -102,9 +103,13 @@ const adminItems: NavItem[] = [
     url: "/admin/curated",
     icon: Shield,
   },
+  {
+    title: "Users",
+    url: "/admin/users",
+    icon: Users,
+  },
 ];
 
-// Clean navigation menu component with proper active states
 function NavMenu({
   items,
   label,

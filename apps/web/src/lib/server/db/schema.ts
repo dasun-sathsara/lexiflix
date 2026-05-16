@@ -133,15 +133,33 @@ export const notificationStatusEnum = pgEnum("notification_status", [
 /*
   Better Auth core tables remain first-class because the existing app already depends on them.
 */
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").default(false).notNull(),
-  image: text("image"),
-  role: userRoleEnum("role").default("learner").notNull(),
-  ...auditColumns,
-});
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").default(false).notNull(),
+    image: text("image"),
+    role: userRoleEnum("role").default("learner").notNull(),
+    banned: boolean("banned").default(false).notNull(),
+    banReason: text("ban_reason"),
+    banExpires: timestamp("ban_expires"),
+    generationLimit: integer("generation_limit"),
+    generationUsageCount: integer("generation_usage_count").default(0).notNull(),
+    ...auditColumns,
+  },
+  (table) => [
+    check(
+      "user_generation_limit_non_negative_check",
+      sql`${table.generationLimit} IS NULL OR ${table.generationLimit} >= 0`,
+    ),
+    check(
+      "user_generation_usage_count_non_negative_check",
+      sql`${table.generationUsageCount} >= 0`,
+    ),
+  ],
+);
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),

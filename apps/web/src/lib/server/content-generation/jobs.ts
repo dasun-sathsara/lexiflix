@@ -5,7 +5,7 @@ import type { GenerationRequestSnapshot } from "@/lib/server/content-generation/
 import { CONTENT_GENERATION_PIPELINE_VERSION } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
-import { packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
+import { packGenerationJob, packGenerationJobEvent, user } from "@/lib/server/db/schema";
 
 export function computePackGenerationIdempotencyKey(input: {
   userId: string;
@@ -50,20 +50,87 @@ export async function createOrReusePackGenerationJob(input: {
     return { job: existing, wasCreated: false };
   }
 
-  const [job] = await db
-    .insert(packGenerationJob)
-    .values({
-      id: crypto.randomUUID(),
-      userId: input.userId,
-      contentId: input.contentId,
-      analysisRunId: input.analysisRunId,
-      idempotencyKey: input.idempotencyKey,
-      requestSnapshot: input.requestSnapshot,
-      progressMessage: "Pack generation queued.",
+  const [quota] = await db
+    .select({
+      generationLimit: user.generationLimit,
+      generationsUsed: user.generationUsageCount,
     })
-    .returning();
+    .from(user)
+    .where(eq(user.id, input.userId));
+
+  if (!quota) {
+    throw new Error("User account was not found.");
+  }
+
+  if (quota.generationLimit !== null && quota.generationsUsed >= quota.generationLimit) {
+    const reused = await db.query.packGenerationJob.findFirst({
+      where: and(
+        eq(packGenerationJob.userId, input.userId),
+        eq(packGenerationJob.idempotencyKey, input.idempotencyKey),
+      ),
+    });
+
+    if (reused) {
+      return { job: reused, wasCreated: false };
+    }
+
+    throw new Error(
+      `You have reached your lifetime generation limit of ${quota.generationLimit.toLocaleString()}.`,
+    );
+  }
+
+  let job: typeof packGenerationJob.$inferSelect | undefined;
+
+  try {
+    [job] = await db
+      .insert(packGenerationJob)
+      .values({
+        id: crypto.randomUUID(),
+        userId: input.userId,
+        contentId: input.contentId,
+        analysisRunId: input.analysisRunId,
+        idempotencyKey: input.idempotencyKey,
+        requestSnapshot: input.requestSnapshot,
+        progressMessage: "Pack generation queued.",
+      })
+      .onConflictDoNothing({
+        target: [packGenerationJob.userId, packGenerationJob.idempotencyKey],
+      })
+      .returning();
+  } catch (error) {
+    const [latestQuota] = await db
+      .select({
+        generationLimit: user.generationLimit,
+        generationsUsed: user.generationUsageCount,
+      })
+      .from(user)
+      .where(eq(user.id, input.userId));
+
+    if (
+      latestQuota?.generationLimit !== null &&
+      latestQuota?.generationLimit !== undefined &&
+      latestQuota.generationsUsed >= latestQuota.generationLimit
+    ) {
+      throw new Error(
+        `You have reached your lifetime generation limit of ${latestQuota.generationLimit.toLocaleString()}.`,
+      );
+    }
+
+    throw error;
+  }
 
   if (!job) {
+    const reused = await db.query.packGenerationJob.findFirst({
+      where: and(
+        eq(packGenerationJob.userId, input.userId),
+        eq(packGenerationJob.idempotencyKey, input.idempotencyKey),
+      ),
+    });
+
+    if (reused) {
+      return { job: reused, wasCreated: false };
+    }
+
     throw new Error("Failed to create pack generation job.");
   }
 

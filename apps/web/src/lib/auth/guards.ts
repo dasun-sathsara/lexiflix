@@ -28,14 +28,19 @@ async function syncAdminRoleIfNeeded(session: Session | null): Promise<Session |
   };
 }
 
+async function getActiveSession(session: Session | null): Promise<Session | null> {
+  const syncedSession = await syncAdminRoleIfNeeded(session);
+  return syncedSession?.user.banned ? null : syncedSession;
+}
+
 export async function getSessionOrNull() {
   const session = (await auth.api.getSession({ headers: await headers() })) as Session | null;
-  return syncAdminRoleIfNeeded(session);
+  return getActiveSession(session);
 }
 
 export async function getSessionFromRequestHeaders(requestHeaders: Headers) {
   const session = (await auth.api.getSession({ headers: requestHeaders })) as Session | null;
-  return syncAdminRoleIfNeeded(session);
+  return getActiveSession(session);
 }
 
 export async function requireSession() {

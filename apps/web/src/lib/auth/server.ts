@@ -1,13 +1,18 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
+import { eq } from "drizzle-orm";
 import { env } from "@/lib/config/env";
 import { sendEmailVerificationEmail, sendPasswordResetEmail } from "@/lib/email/sender";
 import { deleteObjectByUrl } from "@/lib/integrations/storage/r2";
 import { db } from "@/lib/server/db";
+import { user as userTable } from "@/lib/server/db/schema";
 
 const baseURL = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 const ADMIN_EMAILS = new Set(["dasunx.pm@gmail.com"]);
+const DISABLED_ACCOUNT_MESSAGE =
+  "This account has been disabled. Contact an administrator for help.";
 
 const trustedOrigins = (() => {
   const origins = new Set<string>(["http://localhost:3000", baseURL]);
@@ -39,6 +44,43 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
+  databaseHooks: {
+    session: {
+      create: {
+        async before(session) {
+          const account = await db.query.user.findFirst({
+            columns: { banned: true },
+            where: eq(userTable.id, session.userId),
+          });
+
+          if (account?.banned) {
+            throw new APIError("FORBIDDEN", { message: DISABLED_ACCOUNT_MESSAGE });
+          }
+        },
+      },
+    },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-out") {
+        return;
+      }
+
+      const currentSession = await getSessionFromCtx(ctx);
+      if (!currentSession) {
+        return;
+      }
+
+      const account = await db.query.user.findFirst({
+        columns: { banned: true },
+        where: eq(userTable.id, currentSession.user.id),
+      });
+
+      if (account?.banned) {
+        throw new APIError("FORBIDDEN", { message: DISABLED_ACCOUNT_MESSAGE });
+      }
+    }),
+  },
   plugins: [nextCookies()],
   socialProviders: {
     google: {
@@ -77,6 +119,26 @@ export const auth = betterAuth({
       role: {
         type: "string",
         input: false,
+      },
+      banned: {
+        type: "boolean",
+        input: false,
+        defaultValue: false,
+      },
+      banReason: {
+        type: "string",
+        input: false,
+        required: false,
+      },
+      banExpires: {
+        type: "date",
+        input: false,
+        required: false,
+      },
+      generationLimit: {
+        type: "number",
+        input: false,
+        required: false,
       },
     },
     deleteUser: {
