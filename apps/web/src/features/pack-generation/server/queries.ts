@@ -3,10 +3,14 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { buildContentMediaHref } from "@/features/media/utils";
 import { getGenerationStageCopy } from "@/features/pack-generation/utils";
+import { toIso } from "@/lib/server/datetime";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { content, pack, packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
-import { toUserFriendlyGenerationError } from "@/lib/server/error-mapping";
+import {
+  TECHNICAL_MESSAGE_PATTERN,
+  toUserFriendlyGenerationError,
+} from "@/lib/server/error-mapping";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import type {
   PackGenerationProgressEvent,
@@ -15,12 +19,6 @@ import type {
 } from "../types";
 
 const RECENT_VISIBLE_JOB_LIMIT = 8;
-const TECHNICAL_MESSAGE_PATTERN =
-  /\b(neon|driver|transaction|constraint|database|sql|trigger|r2|s3|aws|api key|stack|exception)\b/i;
-
-function toIso(value: Date | null | undefined) {
-  return value ? value.toISOString() : null;
-}
 
 function contentSubtitle(row: typeof content.$inferSelect) {
   return row.kind === "season" && row.tmdbSeasonNumber ? `Season ${row.tmdbSeasonNumber}` : null;

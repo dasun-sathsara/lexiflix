@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { PackGenerationProgressView } from "./types";
 import {
   formatGenerationLabel,
-  isGenerationActive,
   getGenerationProgressState,
   getGenerationStatusMessage,
+  isGenerationActive,
   PUBLIC_GENERATION_FAILURE_MESSAGE,
 } from "./utils";
-import type { PackGenerationProgressView } from "./types";
 
 describe("formatGenerationLabel", () => {
   it("maps known labels correctly", () => {

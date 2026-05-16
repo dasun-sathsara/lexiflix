@@ -165,3 +165,23 @@ export function AppPanel({ className, ...props }: HTMLAttributes<HTMLDivElement>
     />
   );
 }
+
+export function AppErrorAlert({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300",
+        className,
+      )}
+      role="alert"
+    >
+      {children}
+    </div>
+  );
+}

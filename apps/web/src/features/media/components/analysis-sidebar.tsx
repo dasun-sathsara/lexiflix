@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Loader2, Sparkles } from "lucide-react";
-
+import { AppErrorAlert } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import type {
 } from "@/features/media/types";
 import { cn } from "@/lib/utils";
 import { PackGenerationPanel } from "./pack-generation-panel";
-import { getCefrColor, getChallengeSignal } from "./utils";
+import { getCefrColorClass, getChallengeSignal } from "./utils";
 
 /** Props for the analysis sidebar on the media detail page. */
 export type AnalysisSidebarProps = {
@@ -82,7 +82,7 @@ export function AnalysisSidebar({
           {learnerLevel ? (
             <div className="rounded-xl border bg-card/60 p-3 text-sm">
               <span className="text-muted-foreground">Your current CEFR level:</span>{" "}
-              <Badge className={cn("ml-2 border", getCefrColor(learnerLevel))}>
+              <Badge className={cn("ml-2 border", getCefrColorClass(learnerLevel))}>
                 {learnerLevel}
               </Badge>
             </div>
@@ -98,7 +98,9 @@ export function AnalysisSidebar({
           {snapshot.summary?.averageCefrLevel ? (
             <div className="rounded-xl border bg-card/60 p-3 text-sm">
               <span className="text-muted-foreground">Average extracted level:</span>{" "}
-              <Badge className={cn("ml-2 border", getCefrColor(snapshot.summary.averageCefrLevel))}>
+              <Badge
+                className={cn("ml-2 border", getCefrColorClass(snapshot.summary.averageCefrLevel))}
+              >
                 {snapshot.summary.averageCefrLevel}
               </Badge>
             </div>
@@ -120,17 +122,13 @@ export function AnalysisSidebar({
             </Button>
           )}
 
-          {actionMessage ? (
-            <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-              {actionMessage}
-            </div>
-          ) : null}
+          {actionMessage ? <AppErrorAlert>{actionMessage}</AppErrorAlert> : null}
 
           {isFailed ? (
-            <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
+            <AppErrorAlert>
               {snapshot.errorMessage ??
                 "Subtitle analysis could not be completed. Retry the analysis or try another title."}
-            </div>
+            </AppErrorAlert>
           ) : null}
 
           {snapshot.warnings.length > 0 ? (

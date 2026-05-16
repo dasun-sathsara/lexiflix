@@ -1,13 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("server-only", () => ({}));
-
 import {
-  SRS_CONFIG,
+  type ComputeNextReviewStateInput,
   computeNextReviewState,
   getEffectivePackCardState,
-  type ComputeNextReviewStateInput,
+  SRS_CONFIG,
 } from "./srs";
+
+vi.mock("server-only", () => ({}));
 
 const REVIEWED_AT = new Date("2026-01-15T12:00:00.000Z");
 
@@ -86,9 +85,7 @@ describe("computeNextReviewState", () => {
       easeFactor: 2.3,
       masteredAt: null,
     });
-    expect(result.dueAt).toEqual(
-      new Date(REVIEWED_AT.getTime() + SRS_CONFIG.firstLearningStepMs),
-    );
+    expect(result.dueAt).toEqual(new Date(REVIEWED_AT.getTime() + SRS_CONFIG.firstLearningStepMs));
   });
 
   it("marks a review card mastered when the next interval crosses the mastery threshold", () => {
@@ -109,8 +106,13 @@ describe("computeNextReviewState", () => {
       lapseCount: 0,
       masteredAt: REVIEWED_AT,
     });
+    const intervalDays = result.intervalDays;
+    expect(intervalDays).not.toBeNull();
+    if (intervalDays === null) {
+      throw new Error("intervalDays is null");
+    }
     expect(result.dueAt).toEqual(
-      new Date(REVIEWED_AT.getTime() + result.intervalDays! * 24 * 60 * 60 * 1000),
+      new Date(REVIEWED_AT.getTime() + intervalDays * 24 * 60 * 60 * 1000),
     );
   });
 });

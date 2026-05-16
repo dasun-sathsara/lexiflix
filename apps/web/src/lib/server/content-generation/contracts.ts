@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
+export { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH };
+
 export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v2";
-export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 
 export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const vocabularyKinds = ["word", "phrasal_verb", "idiom", "slang"] as const;

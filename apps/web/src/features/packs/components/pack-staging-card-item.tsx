@@ -28,6 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PackCardView } from "@/features/packs/types";
+import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
 import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
@@ -41,12 +42,12 @@ export type PackStagingCardItemProps = {
   pendingAction: boolean;
   onToggleSelect: (id: string) => void;
   onRemoveCard: (id: string) => void;
-  onRunItemAction: (action: () => Promise<{ ok: true } | { ok: false; error: string }>) => void;
-  onRestore: () => Promise<{ ok: true } | { ok: false; error: string }>;
-  onReset: () => Promise<{ ok: true } | { ok: false; error: string }>;
-  onMarkKnown: () => Promise<{ ok: true } | { ok: false; error: string }>;
-  onMarkLearning: () => Promise<{ ok: true } | { ok: false; error: string }>;
-  onIgnore: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  onRunItemAction: (action: () => Promise<ActionResult<unknown>>) => void;
+  onRestore: () => Promise<ActionResult<unknown>>;
+  onReset: () => Promise<ActionResult<unknown>>;
+  onMarkKnown: () => Promise<ActionResult<unknown>>;
+  onMarkLearning: () => Promise<ActionResult<unknown>>;
+  onIgnore: () => Promise<ActionResult<unknown>>;
 };
 
 function statusBadgeClass(status: PackCardView["state"]) {

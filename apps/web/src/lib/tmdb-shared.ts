@@ -21,6 +21,31 @@ export function buildTmdbImageUrl(path: string | null | undefined, size: string)
 
 export type TMDBMediaType = "movie" | "tv";
 
+export interface TmdbDecadeDateRange {
+  gteKey: "primary_release_date.gte" | "first_air_date.gte";
+  lteKey: "primary_release_date.lte" | "first_air_date.lte";
+  gteVal: string;
+  lteVal: string;
+}
+
+export function buildTmdbDecadeDateRange(
+  decade: number,
+  mediaType: "movie" | "tv",
+): TmdbDecadeDateRange {
+  const startYear = decade;
+  const endYear = startYear + 9;
+  const isTv = mediaType === "tv";
+  const gteKey = isTv ? ("first_air_date.gte" as const) : ("primary_release_date.gte" as const);
+  const lteKey = isTv ? ("first_air_date.lte" as const) : ("primary_release_date.lte" as const);
+
+  return {
+    gteKey,
+    lteKey,
+    gteVal: `${startYear}-01-01`,
+    lteVal: `${endYear}-12-31`,
+  };
+}
+
 export interface TMDBResult {
   id: number;
   title?: string;

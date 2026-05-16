@@ -1,3 +1,5 @@
+import { toIso } from "@/lib/server/datetime";
+
 import "server-only";
 
 import { and, asc, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
@@ -31,10 +33,6 @@ import { buildStudyQueue, getPackStudyPlan, getStudyPlanForUser } from "./study-
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
 const imageArtifact = alias(artifactObject, "image_artifact");
-
-function toIso(value: Date | null | undefined) {
-  return value ? value.toISOString() : null;
-}
 
 function releaseYear(value: Date | null) {
   return value ? value.getFullYear() : null;
@@ -111,12 +109,33 @@ function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
   };
 }
 
+export async function getOwnedPackId({
+  packId,
+  userId,
+}: {
+  packId: string;
+  userId: string;
+}): Promise<{ id: string } | null> {
+  const rows = await db
+    .select({ id: pack.id })
+    .from(pack)
+    .where(and(eq(pack.id, packId), eq(pack.userId, userId)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 async function getOwnedPackRow(packId: string, userId: string) {
+  const owned = await getOwnedPackId({ packId, userId });
+  if (!owned) {
+    return null;
+  }
+
   const rows = await db
     .select({ pack, content })
     .from(pack)
     .innerJoin(content, eq(pack.contentId, content.id))
-    .where(and(eq(pack.id, packId), eq(pack.userId, userId)))
+    .where(eq(pack.id, packId))
     .limit(1);
 
   return rows[0] ?? null;

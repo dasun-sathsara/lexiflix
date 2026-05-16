@@ -1,17 +1,9 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { buildPageUrl } from "../lib/utils";
 
-/** Build a paginated query string from a base parameter map and a page number. */
-export function buildPageUrl(
-  baseParams: Record<string, string | number | null | undefined>,
-  page: number,
-): string {
-  const entries = Object.entries({ ...baseParams, page: String(page) }).filter(
-    ([, v]) => v != null && v !== "",
-  ) as [string, string][];
-  return `?${new URLSearchParams(entries).toString()}`;
-}
+export { buildPageUrl };
 
 /** Skeleton placeholder for the admin discovery controls card. */
 export function ControlsSkeleton() {

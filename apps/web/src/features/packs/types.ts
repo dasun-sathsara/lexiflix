@@ -1,3 +1,4 @@
+import type { ActionResult } from "@/lib/action-result";
 export type PackCardState = "new" | "learning" | "due" | "mastered" | "removed";
 export type PackContentKind = "movie" | "season";
 export type PackVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
@@ -122,22 +123,17 @@ export type StudySessionView = {
   cards: PackCardView[];
 };
 
-export type PackActionResult = { ok: true; activeCount: number } | { ok: false; error: string };
+export type PackActionResult = ActionResult<{ activeCount: number }>;
 
-export type PackItemActionResult =
-  | { ok: true; activeCount: number; itemId: string }
-  | { ok: false; error: string };
+export type PackItemActionResult = ActionResult<{ activeCount: number; itemId: string }>;
 
-export type PackRatingActionResult =
-  | {
-      ok: true;
-      itemId: string;
-      nextState: Exclude<PackCardState, "due" | "removed">;
-      dueAt: string;
-      nextDueAt: string | null;
-      reviewedCards: number;
-    }
-  | { ok: false; error: string };
+export type PackRatingActionResult = ActionResult<{
+  itemId: string;
+  nextState: Exclude<PackCardState, "due" | "removed">;
+  dueAt: string;
+  nextDueAt: string | null;
+  reviewedCards: number;
+}>;
 export interface DeckStats {
   totalDue: number;
   totalNew: number;

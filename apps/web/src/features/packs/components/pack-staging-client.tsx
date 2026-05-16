@@ -38,6 +38,7 @@ import {
   unignoreTermAction,
 } from "@/features/packs/server/actions";
 import type { PackCardView, PackStagingView, PackVocabularyKind } from "@/features/packs/types";
+import type { ActionResult } from "@/lib/action-result";
 import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/vocabulary-kind-labels";
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
@@ -142,7 +143,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
     });
   }
 
-  function runItemAction(action: () => Promise<{ ok: true } | { ok: false; error: string }>) {
+  function runItemAction(action: () => Promise<ActionResult<unknown>>) {
     startAction(async () => {
       const result = await action();
       if (!result.ok) {

@@ -1,8 +1,6 @@
-import type { PlanTone } from "../types";
+export { clampToInt } from "@/lib/number-utils";
 
-export function clampToInt(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
+import type { PlanTone } from "../types";
 
 export const planToneDot: Record<PlanTone, string> = {
   default: "bg-muted-foreground/45",

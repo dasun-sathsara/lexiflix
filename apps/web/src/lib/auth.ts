@@ -33,10 +33,6 @@ export function isAdminEmail(email: string | null | undefined) {
   return ADMIN_EMAILS.has(email.trim().toLowerCase());
 }
 
-export function getRoleForEmail(email: string | null | undefined) {
-  return isAdminEmail(email) ? "admin" : "learner";
-}
-
 export const auth = betterAuth({
   baseURL,
   trustedOrigins,

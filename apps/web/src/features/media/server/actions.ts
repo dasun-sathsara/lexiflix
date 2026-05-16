@@ -6,7 +6,7 @@ import {
   getAnalysisSnapshotByRunId,
   getAnalysisSnapshotForRunAndContent,
   getPackGenerationSnapshotByJobId,
-} from "@/features/media/server/analysis";
+} from "@/features/media/server/queries";
 import type {
   AnalysisStatusActionResult,
   PackGenerationStatusActionResult,
@@ -16,7 +16,7 @@ import type {
   StartPackGenerationInput,
 } from "@/features/media/types";
 import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
-import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import { generationRequestSchema } from "@/lib/server/content-generation/contracts";

@@ -6,7 +6,7 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
-import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { sendPackStatusEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { persistGeneratedArtifact } from "@/lib/server/content-generation/artifacts";

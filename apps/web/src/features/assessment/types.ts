@@ -1,6 +1,7 @@
-export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+import type { ActionResult } from "@/lib/action-result";
+import type { CefrLevel } from "@/lib/cefr";
 
-export type CefrLevel = (typeof CEFR_LEVELS)[number];
+export { CEFR_LEVELS, type CefrLevel } from "@/lib/cefr";
 
 export type AssessmentItemType = "cloze" | "meaning";
 
@@ -51,15 +52,7 @@ export type StartAssessmentResponse = {
   maxItems: number;
 };
 
-export type StartAssessmentActionResult =
-  | {
-      success: true;
-      data: StartAssessmentResponse;
-    }
-  | {
-      success: false;
-      error: string;
-    };
+export type StartAssessmentActionResult = ActionResult<StartAssessmentResponse>;
 
 export type AnswerAssessmentResponse =
   | {
@@ -79,12 +72,4 @@ export type AnswerAssessmentResponse =
       maxItems: number;
     };
 
-export type AnswerAssessmentActionResult =
-  | {
-      success: true;
-      data: AnswerAssessmentResponse;
-    }
-  | {
-      success: false;
-      error: string;
-    };
+export type AnswerAssessmentActionResult = ActionResult<AnswerAssessmentResponse>;

@@ -1,4 +1,5 @@
 import { ITEM_BANK } from "@/features/assessment/data/item-bank";
+import { CEFR_LEVELS } from "@/lib/cefr";
 import type {
   AssessmentItem,
   AssessmentResult,
@@ -142,9 +143,8 @@ function getBorderlineLabel(
     return null;
   }
 
-  const orderedLevels: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  const topIndex = orderedLevels.indexOf(topLevel);
-  const runnerIndex = orderedLevels.indexOf(runnerUp.level);
+  const topIndex = CEFR_LEVELS.indexOf(topLevel);
+  const runnerIndex = CEFR_LEVELS.indexOf(runnerUp.level);
   const adjacent = Math.abs(topIndex - runnerIndex) === 1;
 
   if (!adjacent) {

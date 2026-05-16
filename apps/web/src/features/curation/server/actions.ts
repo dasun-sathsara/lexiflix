@@ -55,7 +55,7 @@ function revalidateCuratedRoutes() {
   revalidatePath("/curated");
 }
 
-export async function curateTmdbItemAction(formData: FormData) {
+export async function curateTmdbItemAction(formData: FormData): Promise<ActionResult> {
   const session = await requireAdmin();
   const parsed = tmdbMutationSchema.parse({
     mediaType: formData.get("mediaType"),
@@ -64,9 +64,10 @@ export async function curateTmdbItemAction(formData: FormData) {
 
   await upsertCuratedEntryFromTmdb(parsed.mediaType, parsed.tmdbId, session.user.id);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
-export async function refreshCuratedEntryAction(formData: FormData) {
+export async function refreshCuratedEntryAction(formData: FormData): Promise<ActionResult> {
   const session = await requireAdmin();
   const parsed = tmdbMutationSchema.parse({
     mediaType: formData.get("mediaType"),
@@ -75,9 +76,10 @@ export async function refreshCuratedEntryAction(formData: FormData) {
 
   await upsertCuratedEntryFromTmdb(parsed.mediaType, parsed.tmdbId, session.user.id);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
-export async function setCuratedEntryPublishedAction(formData: FormData) {
+export async function setCuratedEntryPublishedAction(formData: FormData): Promise<ActionResult> {
   await requireAdmin();
   const parsed = publicationSchema.parse({
     id: formData.get("id"),
@@ -86,9 +88,12 @@ export async function setCuratedEntryPublishedAction(formData: FormData) {
 
   await setCuratedEntryPublishedState(parsed.id, parsed.isPublished);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
-export async function saveCuratedEntryFeaturedRankAction(formData: FormData) {
+export async function saveCuratedEntryFeaturedRankAction(
+  formData: FormData,
+): Promise<ActionResult> {
   await requireAdmin();
   const parsed = featuredRankSchema.parse({
     id: formData.get("id"),
@@ -97,9 +102,10 @@ export async function saveCuratedEntryFeaturedRankAction(formData: FormData) {
 
   await setCuratedEntryFeaturedRank(parsed.id, parsed.featuredRank);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
-export async function deleteCuratedEntryAction(formData: FormData) {
+export async function deleteCuratedEntryAction(formData: FormData): Promise<ActionResult> {
   await requireAdmin();
   const parsed = deleteSchema.parse({
     id: formData.get("id"),
@@ -107,9 +113,10 @@ export async function deleteCuratedEntryAction(formData: FormData) {
 
   await deleteCuratedEntryById(parsed.id);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
-export async function setCuratedEntryLevelAction(formData: FormData) {
+export async function setCuratedEntryLevelAction(formData: FormData): Promise<ActionResult> {
   await requireAdmin();
   const parsed = levelSchema.parse({
     id: formData.get("id"),
@@ -119,6 +126,7 @@ export async function setCuratedEntryLevelAction(formData: FormData) {
   const levelVal = parsed.level === "" ? null : (parsed.level as StoredCefrLevel);
   await setCuratedEntryLevel(parsed.id, levelVal);
   revalidateCuratedRoutes();
+  return { ok: true, data: undefined };
 }
 
 // ---------------------------------------------------------------------------

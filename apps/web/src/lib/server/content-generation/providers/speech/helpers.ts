@@ -1,3 +1,5 @@
+export { mapWithConcurrency } from "@/lib/server/concurrency";
+
 import "server-only";
 
 import type {
@@ -84,30 +86,6 @@ export function getSpeechArtifactTarget(metadata: Record<string, unknown>) {
     analysisItemId,
     exampleIndex,
   };
-}
-
-export async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  mapper: (item: T) => Promise<R>,
-) {
-  const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await Promise.resolve(mapper(items[currentIndex])).then(
-        (value) => ({ status: "fulfilled", value }),
-        (reason) => ({ status: "rejected", reason }),
-      );
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
-
-  return results;
 }
 
 export function delay(ms: number) {

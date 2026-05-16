@@ -4,8 +4,9 @@ import Link from "next/link";
 
 import { AppSectionHeader } from "@/components/common/app-page-header";
 import { Badge } from "@/components/ui/badge";
-import { buildPosterUrl, formatRating, formatYear } from "@/features/curation/lib/format";
+import { formatRating, formatYear } from "@/features/curation/lib/format";
 import type { CuratedCatalogEntry } from "@/features/curation/types";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 interface TvShowRowsProps {
   items: CuratedCatalogEntry[];
@@ -23,7 +24,7 @@ export function TvShowRows({ items }: TvShowRowsProps) {
       {/* Rows */}
       <div className="flex flex-col gap-3">
         {items.map((item) => {
-          const posterUrl = buildPosterUrl(item.posterPath);
+          const posterUrl = buildTmdbImageUrl(item.posterPath, TMDB_IMAGE_SIZES.poster.md);
           const year = formatYear(item.releaseDate);
           const rating = formatRating(item.voteAverage);
 

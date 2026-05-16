@@ -1,7 +1,6 @@
 import type { CuratedCatalogEntry } from "@/features/curation/types";
+import { CEFR_LEVELS } from "@/lib/cefr";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
-
-const CEFR_LEVELS: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 export function resolveActiveLevel(
   levelParam: string | undefined,

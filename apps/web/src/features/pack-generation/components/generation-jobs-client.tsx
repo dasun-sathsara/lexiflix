@@ -3,9 +3,11 @@
 import { AlertTriangle, CheckCircle2, Clock, Layers, Loader2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatRelativeTime } from "@/lib/format";
+import { usePolling } from "@/lib/hooks/use-polling";
 import { cn } from "@/lib/utils";
 import { listGenerationJobsAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
@@ -14,18 +16,6 @@ import {
   getGenerationStatusMessage,
   isGenerationActive,
 } from "../utils";
-
-function formatRelativeTime(value: string) {
-  const diff = Date.now() - new Date(value).getTime();
-  const minutes = Math.max(0, Math.floor(diff / 60_000));
-  const hours = Math.floor(diff / 3_600_000);
-  const days = Math.floor(diff / 86_400_000);
-
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
 
 export function GenerationJobsClient({
   initialJobs,
@@ -36,16 +26,20 @@ export function GenerationJobsClient({
   const [isPending, startTransition] = useTransition();
   const hasActiveJobs = jobs.some((job) => isGenerationActive(job.status));
 
-  useEffect(() => {
-    if (!hasActiveJobs) return;
-    const timer = window.setInterval(() => {
+  usePolling(
+    async (signal) => {
       startTransition(async () => {
         const result = await listGenerationJobsAction();
+        if (signal.aborted) return;
         if (result.ok) setJobs(result.data.jobs);
       });
-    }, 4000);
-    return () => window.clearInterval(timer);
-  }, [hasActiveJobs]);
+    },
+    {
+      enabled: hasActiveJobs,
+      intervalMs: 4000,
+      dependencies: [hasActiveJobs],
+    },
+  );
 
   if (jobs.length === 0) return null;
 

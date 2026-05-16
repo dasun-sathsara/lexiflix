@@ -3,7 +3,6 @@ import "server-only";
 import { env } from "@/lib/env";
 import type {
   GenreResponse,
-  TMDBMediaType,
   TMDBMovieDetails,
   TMDBResponse,
   TMDBResult,
@@ -132,12 +131,4 @@ export async function getTvSeasonDetails(tvId: number, seasonNumber: number) {
       tags: [`tv-season-details-${tvId}-${seasonNumber}`],
     },
   );
-}
-
-export async function getMediaDetails(mediaType: TMDBMediaType, tmdbId: number) {
-  if (mediaType === "movie") {
-    return getMovieDetails(tmdbId);
-  }
-
-  return getTvDetails(tmdbId);
 }

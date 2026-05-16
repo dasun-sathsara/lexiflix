@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
-import { getCefrProfile } from "@/features/assessment/server/profile";
+import { getCefrProfile } from "@/features/assessment/server/queries";
 import type {
   MediaAnalysisItemView,
   MediaAnalysisSnapshot,
@@ -15,7 +15,8 @@ import {
   getLatestPackGenerationProgressForContent,
   getPackGenerationProgressView,
 } from "@/features/pack-generation/server/queries";
-import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { getSettingsPreferences } from "@/features/settings/server/queries";
+import { extractYear } from "@/lib/format";
 import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
 import { toUserFriendlyAnalysisError } from "@/lib/server/error-mapping";
@@ -104,13 +105,14 @@ function extractMovieCertification(detail: TMDBMovieDetails): string | null {
 }
 
 function mapMovieToView(detail: TMDBMovieDetails): MediaDetailView {
+  const movieReleaseYear = extractYear(detail.release_date || null);
   return {
     tmdbId: detail.id,
     mediaType: "movie",
     title: detail.title,
     subtitle: null,
     overview: detail.overview || null,
-    releaseYear: detail.release_date ? String(new Date(detail.release_date).getFullYear()) : null,
+    releaseYear: movieReleaseYear !== null ? String(movieReleaseYear) : null,
     runtimeMinutes: detail.runtime ?? null,
     genres: detail.genres.map((genre) => genre.name),
     voteAverage: detail.vote_average ?? null,
@@ -142,15 +144,14 @@ function extractTvCertification(detail: TMDBTvDetails): string | null {
 }
 
 function mapTvToView(detail: TMDBTvDetails, selectedSeasonNumber: number | null): MediaDetailView {
+  const tvReleaseYear = extractYear(detail.first_air_date || null);
   return {
     tmdbId: detail.id,
     mediaType: "tv",
     title: detail.name,
     subtitle: selectedSeasonNumber ? `Season ${selectedSeasonNumber}` : null,
     overview: detail.overview || null,
-    releaseYear: detail.first_air_date
-      ? String(new Date(detail.first_air_date).getFullYear())
-      : null,
+    releaseYear: tvReleaseYear !== null ? String(tvReleaseYear) : null,
     runtimeMinutes: null,
     genres: detail.genres.map((genre) => genre.name),
     voteAverage: detail.vote_average ?? null,
@@ -202,13 +203,6 @@ async function getCompletedItems(runId: string): Promise<MediaAnalysisItemView[]
       return left.displayText.localeCompare(right.displayText);
     })
     .slice(0, 24);
-}
-
-async function getGenerationSnapshotForContent(input: {
-  userId: string;
-  contentId: string;
-}): Promise<PackGenerationSnapshot | null> {
-  return getLatestPackGenerationProgressForContent(input);
 }
 
 /**
@@ -331,7 +325,7 @@ export async function getMediaDetailPageData(input: {
         contentId: target.content.id,
         pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
       }),
-      generation: await getGenerationSnapshotForContent({
+      generation: await getLatestPackGenerationProgressForContent({
         userId: input.userId,
         contentId: target.content.id,
       }),
@@ -395,47 +389,12 @@ export async function getMediaDetailPageData(input: {
       contentId: target.content.id,
       pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
     }),
-    generation: await getGenerationSnapshotForContent({
+    generation: await getLatestPackGenerationProgressForContent({
       userId: input.userId,
       contentId: target.content.id,
     }),
     generationDefaults,
   };
-}
-
-/**
- * Attempts to find the latest completed or active analysis snapshot for a given content target
- * (e.g., a specific TMDB movie ID or TV season).
- */
-export async function getAnalysisSnapshotForContentTarget(input: {
-  tmdbId: number;
-  mediaType: TMDBMediaType;
-  seasonNumber?: number | null;
-}): Promise<MediaAnalysisSnapshot> {
-  const target = await resolveOrCreateContentTarget({
-    mediaType: input.mediaType,
-    tmdbId: input.tmdbId,
-    ...(input.mediaType === "tv" && input.seasonNumber ? { seasonNumber: input.seasonNumber } : {}),
-  });
-
-  if (target.status !== "resolved") {
-    return {
-      runId: null,
-      status: "season_selection_required",
-      stage: null,
-      progressMessage: "Choose a season to start reusable subtitle analysis.",
-      errorCode: null,
-      errorMessage: null,
-      warnings: [],
-      summary: null,
-      items: [],
-    };
-  }
-
-  return getAnalysisSnapshotForResolvedTarget({
-    contentId: target.content.id,
-    pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
-  });
 }
 
 /**

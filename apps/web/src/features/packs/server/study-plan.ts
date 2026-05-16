@@ -1,15 +1,13 @@
+import { toIso } from "@/lib/server/datetime";
+
 import "server-only";
 
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { PackCardView, PackStudyPlan, StudyMode, UserStudyPlan } from "@/features/packs/types";
-import { settingsPreferenceDefaults } from "@/features/settings/server/preferences";
+import { settingsPreferenceDefaults } from "@/features/settings/server/queries";
 import { db } from "@/lib/server/db";
 import { pack, packItem, userPreferences, userTermState } from "@/lib/server/db/schema";
 import { addUtcDays, getAppDateKey, getAppDayStartUtc } from "./study-time";
-
-function toIso(value: Date | null | undefined) {
-  return value ? value.toISOString() : null;
-}
 
 function emptyPackPlan(packId: string): PackStudyPlan {
   return {

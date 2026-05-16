@@ -2,18 +2,11 @@
 
 import { APIError } from "better-auth/api";
 import { headers } from "next/headers";
-import { SignInSchema, SignUpSchema } from "@/features/auth/schemas";
+import { SignInSchema, SignUpSchema } from "@/features/auth/types";
+import type { ActionResult } from "@/lib/action-result";
 import { auth } from "@/lib/auth";
 
-type ActionSuccess = { success: true };
-type ActionError = {
-  success: false;
-  message?: string;
-  errors?: Record<string, string[] | undefined>;
-};
-type ActionResponse = ActionSuccess | ActionError;
-
-export async function signupAction(formData: FormData): Promise<ActionResponse> {
+export async function signupAction(formData: FormData): Promise<ActionResult> {
   const raw = {
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -33,8 +26,9 @@ export async function signupAction(formData: FormData): Promise<ActionResponse> 
       fieldErrors[path].push(issue.message);
     }
     return {
-      success: false,
-      errors: fieldErrors,
+      ok: false,
+      error: "Validation failed",
+      fieldErrors,
     };
   }
 
@@ -53,49 +47,49 @@ export async function signupAction(formData: FormData): Promise<ActionResponse> 
     if (!response.ok) {
       const errorData = await response.json();
       return {
-        success: false,
-        message: errorData?.message || "Failed to create account",
+        ok: false,
+        error: errorData?.message || "Failed to create account",
       };
     }
 
-    return { success: true };
+    return { ok: true, data: undefined };
   } catch (err: unknown) {
     if (err instanceof APIError) {
       return {
-        success: false,
-        message: err.message || "Failed to create account",
+        ok: false,
+        error: err.message || "Failed to create account",
       };
     }
     return {
-      success: false,
-      message: "An unexpected error occurred. Please try again.",
+      ok: false,
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
 
-export async function logoutAction(): Promise<ActionResponse> {
+export async function logoutAction(): Promise<ActionResult> {
   try {
     await auth.api.signOut({
       headers: await headers(),
       asResponse: true,
     });
 
-    return { success: true };
+    return { ok: true, data: undefined };
   } catch (err: unknown) {
     if (err instanceof APIError) {
       return {
-        success: false,
-        message: err.message || "Failed to sign out",
+        ok: false,
+        error: err.message || "Failed to sign out",
       };
     }
     return {
-      success: false,
-      message: "An unexpected error occurred. Please try again.",
+      ok: false,
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
 
-export async function signInAction(formData: FormData): Promise<ActionResponse> {
+export async function signInAction(formData: FormData): Promise<ActionResult> {
   const raw = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -112,8 +106,9 @@ export async function signInAction(formData: FormData): Promise<ActionResponse> 
       fieldErrors[path].push(issue.message);
     }
     return {
-      success: false,
-      errors: fieldErrors,
+      ok: false,
+      error: "Validation failed",
+      fieldErrors,
     };
   }
 
@@ -133,22 +128,22 @@ export async function signInAction(formData: FormData): Promise<ActionResponse> 
     if (!response.ok) {
       const errorData = await response.json();
       return {
-        success: false,
-        message: errorData?.message || "Invalid email or password",
+        ok: false,
+        error: errorData?.message || "Invalid email or password",
       };
     }
 
-    return { success: true };
+    return { ok: true, data: undefined };
   } catch (err: unknown) {
     if (err instanceof APIError) {
       return {
-        success: false,
-        message: err.message || "Invalid email or password",
+        ok: false,
+        error: err.message || "Invalid email or password",
       };
     }
     return {
-      success: false,
-      message: "An unexpected error occurred. Please try again.",
+      ok: false,
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }

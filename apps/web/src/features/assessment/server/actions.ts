@@ -33,7 +33,7 @@ export async function startAssessmentAction(): Promise<StartAssessmentActionResu
 
   if (!session?.user) {
     return {
-      success: false,
+      ok: false,
       error: "Unauthorized",
     };
   }
@@ -69,7 +69,7 @@ export async function startAssessmentAction(): Promise<StartAssessmentActionResu
   };
 
   return {
-    success: true,
+    ok: true,
     data,
   };
 }
@@ -84,7 +84,7 @@ export async function answerAssessmentAction(input: {
 
   if (!session?.user) {
     return {
-      success: false,
+      ok: false,
       error: "Unauthorized",
     };
   }
@@ -93,7 +93,7 @@ export async function answerAssessmentAction(input: {
 
   if (!parsed.success) {
     return {
-      success: false,
+      ok: false,
       error: "Invalid request payload.",
     };
   }
@@ -113,14 +113,14 @@ export async function answerAssessmentAction(input: {
 
   if (!attempt) {
     return {
-      success: false,
+      ok: false,
       error: "Assessment attempt not found.",
     };
   }
 
   if (attempt.status !== "in_progress") {
     return {
-      success: false,
+      ok: false,
       error: "Assessment attempt is already completed.",
     };
   }
@@ -130,21 +130,21 @@ export async function answerAssessmentAction(input: {
     state = parseAssessmentState(attempt.state);
   } catch {
     return {
-      success: false,
+      ok: false,
       error: "Assessment state is invalid.",
     };
   }
 
   if (!state.pendingItemId) {
     return {
-      success: false,
+      ok: false,
       error: "No pending question for this attempt.",
     };
   }
 
   if (state.pendingItemId !== itemId) {
     return {
-      success: false,
+      ok: false,
       error: "Answered item does not match current question.",
     };
   }
@@ -152,7 +152,7 @@ export async function answerAssessmentAction(input: {
   const item = getItemById(itemId);
   if (!item) {
     return {
-      success: false,
+      ok: false,
       error: "Assessment item not found.",
     };
   }
@@ -229,7 +229,7 @@ export async function answerAssessmentAction(input: {
     };
 
     return {
-      success: true,
+      ok: true,
       data,
     };
   }
@@ -260,7 +260,7 @@ export async function answerAssessmentAction(input: {
   };
 
   return {
-    success: true,
+    ok: true,
     data,
   };
 }

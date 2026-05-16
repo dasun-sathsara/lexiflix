@@ -1,4 +1,4 @@
-import { getCefrProfile, shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
+import { getCefrProfile, shouldShowAssessmentBanner } from "@/features/assessment/server/queries";
 import { DashboardContent } from "@/features/dashboard/components/dashboard-content";
 import { buildDashboardViewModel } from "@/features/dashboard/lib/view-model";
 import { getDashboardView } from "@/features/dashboard/server/queries";

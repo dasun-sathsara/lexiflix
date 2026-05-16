@@ -226,6 +226,3 @@ export const env = Object.freeze({
   ...clientEnv,
   ...serverEnv,
 });
-
-export type ClientEnv = z.infer<typeof clientSchema>;
-export type ServerEnv = z.infer<typeof serverSchema>;

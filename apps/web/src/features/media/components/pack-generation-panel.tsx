@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-
+import { AppErrorAlert } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -135,9 +135,7 @@ export function PackGenerationPanel({
           </div>
         ) : null}
         {generation?.status === "failed" ? (
-          <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-            {getGenerationStatusMessage(generation)}
-          </div>
+          <AppErrorAlert>{getGenerationStatusMessage(generation)}</AppErrorAlert>
         ) : null}
         {generation?.status === "failed" ? (
           <Button

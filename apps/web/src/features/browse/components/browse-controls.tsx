@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Genre } from "@/lib/tmdb-shared";
+import { buildTmdbDecadeDateRange, type Genre } from "@/lib/tmdb-shared";
 
 interface BrowseControlsProps {
   genres: Genre[];
@@ -101,16 +101,15 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
 
           // Re-apply decade filter for the new type if active
           if (currentDecade !== "all") {
-            const startYear = Number.parseInt(currentDecade, 10);
-            const endYear = startYear + 9;
+            const decadeNum = Number.parseInt(currentDecade, 10);
             const isNewTypeTv = val === "tv";
-            const newKeyDate = isNewTypeTv ? "first_air_date" : "primary_release_date";
-            const oldKeyDate = isNewTypeTv ? "primary_release_date" : "first_air_date";
+            const newRange = buildTmdbDecadeDateRange(decadeNum, isNewTypeTv ? "tv" : "movie");
+            const oldRange = buildTmdbDecadeDateRange(decadeNum, isNewTypeTv ? "movie" : "tv");
 
-            updates[`${newKeyDate}.gte`] = `${startYear}-01-01`;
-            updates[`${newKeyDate}.lte`] = `${endYear}-12-31`;
-            updates[`${oldKeyDate}.gte`] = null;
-            updates[`${oldKeyDate}.lte`] = null;
+            updates[newRange.gteKey] = newRange.gteVal;
+            updates[newRange.lteKey] = newRange.lteVal;
+            updates[oldRange.gteKey] = null;
+            updates[oldRange.lteKey] = null;
           }
 
           updateParams(updates);
@@ -171,18 +170,18 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
                   "first_air_date.lte": null,
                 });
               } else {
-                const startYear = Number.parseInt(val, 10);
-                const endYear = startYear + 9;
+                const decadeNum = Number.parseInt(val, 10);
                 const isTv = currentType === "tv";
-                const keyDate = isTv ? "first_air_date" : "primary_release_date";
+                const currentRange = buildTmdbDecadeDateRange(decadeNum, isTv ? "tv" : "movie");
+                const otherRange = buildTmdbDecadeDateRange(decadeNum, isTv ? "movie" : "tv");
 
                 updateParams({
                   decade: val,
-                  [`${keyDate}.gte`]: `${startYear}-01-01`,
-                  [`${keyDate}.lte`]: `${endYear}-12-31`,
+                  [currentRange.gteKey]: currentRange.gteVal,
+                  [currentRange.lteKey]: currentRange.lteVal,
                   // Clear the OTHER type's date filters to be safe, though switching tabs handles this usually
-                  [isTv ? "primary_release_date.gte" : "first_air_date.gte"]: null,
-                  [isTv ? "primary_release_date.lte" : "first_air_date.lte"]: null,
+                  [otherRange.gteKey]: null,
+                  [otherRange.lteKey]: null,
                 });
               }
             }}

@@ -1,4 +1,4 @@
-import { getSettingsPreferences } from "@/features/settings/server/preferences";
+import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 

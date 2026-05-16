@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { buildBackdropUrl, buildPosterUrl, formatYear } from "@/features/curation/lib/format";
+import { formatYear } from "@/features/curation/lib/format";
+import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 interface FeaturedSpotlightProps {
   title: string;
@@ -26,8 +27,8 @@ export function FeaturedSpotlight({
   contentRating,
   tmdbId,
 }: FeaturedSpotlightProps) {
-  const posterUrl = buildPosterUrl(posterPath);
-  const backdropUrl = buildBackdropUrl(backdropPath);
+  const posterUrl = buildTmdbImageUrl(posterPath, TMDB_IMAGE_SIZES.poster.md);
+  const backdropUrl = buildTmdbImageUrl(backdropPath, TMDB_IMAGE_SIZES.backdrop.lg);
   const year = formatYear(releaseDate);
 
   return (

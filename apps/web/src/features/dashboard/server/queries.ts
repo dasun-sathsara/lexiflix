@@ -5,6 +5,7 @@ import { getEffectivePackCardState } from "@/features/packs/server/srs";
 import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { getAppWeekStart } from "@/features/packs/server/study-time";
 import type { PackCardState } from "@/features/packs/types";
+import { toIso } from "@/lib/server/datetime";
 import { db } from "@/lib/server/db";
 import {
   content,
@@ -17,10 +18,6 @@ import {
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 import type { DashboardView } from "../types";
-
-function toIso(value: Date | null | undefined) {
-  return value ? value.toISOString() : null;
-}
 
 export async function getDashboardView({ userId }: { userId: string }): Promise<DashboardView> {
   const now = new Date();

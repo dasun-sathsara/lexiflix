@@ -3,9 +3,11 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatRelativeTime } from "@/lib/format";
+import { usePolling } from "@/lib/hooks/use-polling";
 import { cn } from "@/lib/utils";
 import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
 import type { PackGenerationProgressView } from "../types";
@@ -23,17 +25,6 @@ function formatDate(value: string | null) {
         new Date(value),
       )
     : null;
-}
-
-function formatRelativeTime(value: string | null) {
-  if (!value) return null;
-  const diff = Date.now() - new Date(value).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return formatDate(value);
 }
 
 function dedupeWarnings(warnings: string[]): { message: string; count: number }[] {
@@ -66,19 +57,23 @@ export function GenerationProgressClient({
   const isCompleted = generation.status === "completed";
   const uniqueWarnings = dedupeWarnings(generation.warnings);
 
-  useEffect(() => {
-    if (!isActive) return;
-    const timer = window.setInterval(() => {
+  usePolling(
+    async (signal) => {
       startTransition(async () => {
         const result = await getPackGenerationProgressAction({
           jobId: generation.jobId,
           includeEvents: true,
         });
+        if (signal.aborted) return;
         if (result.ok) setGeneration(result.data.generation);
       });
-    }, 3500);
-    return () => window.clearInterval(timer);
-  }, [generation.jobId, isActive]);
+    },
+    {
+      enabled: isActive,
+      intervalMs: 3500,
+      dependencies: [generation.jobId, isActive],
+    },
+  );
 
   function handleRetry() {
     setRetryError(null);

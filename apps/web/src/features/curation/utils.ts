@@ -1,4 +1,4 @@
-import type { TMDBMediaType } from "@/lib/tmdb-shared";
+import { buildTmdbDecadeDateRange, type TMDBMediaType } from "@/lib/tmdb-shared";
 import type {
   CuratedAdminCatalogFilter,
   CuratedAdminMode,
@@ -92,16 +92,9 @@ export function buildCuratedAdminDiscoverParams(state: CuratedAdminQueryState) {
   };
 
   if (state.decade) {
-    const startYear = state.decade;
-    const endYear = state.decade + 9;
-
-    if (state.mediaType === "movie") {
-      params["primary_release_date.gte"] = `${startYear}-01-01`;
-      params["primary_release_date.lte"] = `${endYear}-12-31`;
-    } else {
-      params["first_air_date.gte"] = `${startYear}-01-01`;
-      params["first_air_date.lte"] = `${endYear}-12-31`;
-    }
+    const range = buildTmdbDecadeDateRange(state.decade, state.mediaType);
+    params[range.gteKey] = range.gteVal;
+    params[range.lteKey] = range.lteVal;
   }
 
   return params;

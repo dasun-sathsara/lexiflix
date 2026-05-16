@@ -2,7 +2,6 @@
 
 import { CheckCircle2, GraduationCap, Loader2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import type { FormEvent } from "react";
 
 import { AppPanel } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +28,8 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
-import type {
-  ManualOverrideSelection,
-  SettingsPreferences,
-  StatusState,
-} from "@/features/settings/types";
-import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import type { ManualOverrideSelection, SettingsPreferences } from "@/features/settings/types";
+import { usePreferencesForm } from "./use-preferences-form";
 import {
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
   STUDY_VOCABULARY_TYPES,
@@ -48,41 +43,7 @@ import {
 } from "./utils";
 
 type PreferencesSettingsCardProps = {
-  initialPreferences: SettingsPreferences;
-  manualOverrideSelection: ManualOverrideSelection;
-  setManualOverrideSelection: (value: ManualOverrideSelection) => void;
-  newCardsPerDay: string;
-  setNewCardsPerDay: (value: string) => void;
-  frequencyPreference: SettingsPreferences["frequencyPreference"];
-  setFrequencyPreference: (value: SettingsPreferences["frequencyPreference"]) => void;
-  studyVocabularyTypes: StoredVocabularyKind[];
-  setStudyVocabularyTypes: (value: StoredVocabularyKind[]) => void;
-  generationPackSizeDefault: string;
-  setGenerationPackSizeDefault: (value: string) => void;
-  generationCefrWindowMode: SettingsPreferences["generationCefrWindowMode"];
-  setGenerationCefrWindowMode: (value: SettingsPreferences["generationCefrWindowMode"]) => void;
-  generationKnownTermHandling: SettingsPreferences["generationKnownTermHandling"];
-  setGenerationKnownTermHandling: (
-    value: SettingsPreferences["generationKnownTermHandling"],
-  ) => void;
-  generationAudioVoiceGenderDefault: SettingsPreferences["generationAudioVoiceGenderDefault"];
-  setGenerationAudioVoiceGenderDefault: (
-    value: SettingsPreferences["generationAudioVoiceGenderDefault"],
-  ) => void;
-  generationExampleSentenceCount: string;
-  setGenerationExampleSentenceCount: (value: string) => void;
-  generationCustomInstructionsDefault: string;
-  setGenerationCustomInstructionsDefault: (value: string) => void;
-  emailRemindersEnabled: boolean;
-  setEmailRemindersEnabled: (value: boolean) => void;
-  streakAlertsEnabled: boolean;
-  setStreakAlertsEnabled: (value: boolean) => void;
-  effectiveCefrLevel: CefrLevel | null;
-  preferencesStatus: StatusState;
-  setPreferencesStatus: (status: StatusState) => void;
-  preferencesSubmitDisabled: boolean;
-  isSavingPreferences: boolean;
-  handlePreferencesSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  preferences: SettingsPreferences;
 };
 
 /**
@@ -90,69 +51,44 @@ type PreferencesSettingsCardProps = {
  * content generation defaults, notification toggles, and vocabulary-type
  * selection into a single submit-scoped form.
  */
-export function PreferencesSettingsCard({
-  initialPreferences,
-  manualOverrideSelection,
-  setManualOverrideSelection,
-  newCardsPerDay,
-  setNewCardsPerDay,
-  frequencyPreference,
-  setFrequencyPreference,
-  studyVocabularyTypes,
-  setStudyVocabularyTypes,
-  generationPackSizeDefault,
-  setGenerationPackSizeDefault,
-  generationCefrWindowMode,
-  setGenerationCefrWindowMode,
-  generationKnownTermHandling,
-  setGenerationKnownTermHandling,
-  generationAudioVoiceGenderDefault,
-  setGenerationAudioVoiceGenderDefault,
-  generationExampleSentenceCount,
-  setGenerationExampleSentenceCount,
-  generationCustomInstructionsDefault,
-  setGenerationCustomInstructionsDefault,
-  emailRemindersEnabled,
-  setEmailRemindersEnabled,
-  streakAlertsEnabled,
-  setStreakAlertsEnabled,
-  effectiveCefrLevel,
-  preferencesStatus,
-  setPreferencesStatus,
-  preferencesSubmitDisabled,
-  isSavingPreferences,
-  handlePreferencesSubmit,
-}: PreferencesSettingsCardProps) {
-  const parsedNewCardsPerDay = Number.parseInt(newCardsPerDay, 10);
-  const newCardsPerDayIsValid =
-    Number.isInteger(parsedNewCardsPerDay) &&
-    parsedNewCardsPerDay >= 1 &&
-    parsedNewCardsPerDay <= 100;
-
-  const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
-  const generationPackSizeIsValid =
-    Number.isInteger(parsedGenerationPackSize) && parsedGenerationPackSize >= 1;
-
-  const customInstructionsIsValid =
-    generationCustomInstructionsDefault.trim().length <= CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH;
-
-  const vocabularyTypesAreValid = studyVocabularyTypes.length > 0;
-
-  const toggleVocabularyType = (kind: StoredVocabularyKind, checked: boolean) => {
-    if (checked) {
-      setStudyVocabularyTypes(
-        studyVocabularyTypes.includes(kind)
-          ? studyVocabularyTypes
-          : [...studyVocabularyTypes, kind],
-      );
-    } else {
-      const next = studyVocabularyTypes.filter((value) => value !== kind);
-      if (next.length > 0) {
-        setStudyVocabularyTypes(next);
-      }
-    }
-    setPreferencesStatus(null);
-  };
+export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCardProps) {
+  const {
+    initialPreferences,
+    manualOverrideSelection,
+    setManualOverrideSelection,
+    newCardsPerDay,
+    setNewCardsPerDay,
+    frequencyPreference,
+    setFrequencyPreference,
+    studyVocabularyTypes,
+    generationPackSizeDefault,
+    setGenerationPackSizeDefault,
+    generationCefrWindowMode,
+    setGenerationCefrWindowMode,
+    generationKnownTermHandling,
+    setGenerationKnownTermHandling,
+    generationAudioVoiceGenderDefault,
+    setGenerationAudioVoiceGenderDefault,
+    generationExampleSentenceCount,
+    setGenerationExampleSentenceCount,
+    generationCustomInstructionsDefault,
+    setGenerationCustomInstructionsDefault,
+    emailRemindersEnabled,
+    setEmailRemindersEnabled,
+    streakAlertsEnabled,
+    setStreakAlertsEnabled,
+    effectiveCefrLevel,
+    preferencesStatus,
+    setPreferencesStatus,
+    preferencesSubmitDisabled,
+    isSavingPreferences,
+    handlePreferencesSubmit,
+    newCardsPerDayIsValid,
+    generationPackSizeIsValid,
+    customInstructionsIsValid,
+    vocabularyTypesAreValid,
+    toggleVocabularyType,
+  } = usePreferencesForm(preferences);
 
   return (
     <form onSubmit={handlePreferencesSubmit}>

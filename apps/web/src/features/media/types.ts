@@ -158,3 +158,10 @@ export type StartPackGenerationActionResult = ActionResult<{
 export type PackGenerationStatusActionResult = ActionResult<{
   generation: PackGenerationSnapshot;
 }>;
+
+export type ContentMediaReference = {
+  kind: string;
+  tmdbMovieId: number | null;
+  tmdbShowId: number | null;
+  tmdbSeasonNumber: number | null;
+};

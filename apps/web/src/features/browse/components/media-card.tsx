@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { extractYear } from "@/lib/format";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES, type TMDBResult } from "@/lib/tmdb-shared";
 
 interface MediaCardProps {
@@ -15,8 +16,9 @@ export function MediaCard({ media, genreMap }: MediaCardProps) {
   // Infer type if missing (common in discover endpoints)
   const isMovie = media.media_type === "movie" || (!media.media_type && !!media.title);
   const title = media.title || media.name || "Untitled";
-  const date = media.release_date || media.first_air_date;
-  const year = date ? new Date(date).getFullYear() : "Unknown";
+  const date = media.release_date || media.first_air_date || null;
+  const extractedYear = extractYear(date);
+  const year = extractedYear !== null ? extractedYear : "Unknown";
   const posterUrl = buildTmdbImageUrl(media.poster_path, TMDB_IMAGE_SIZES.poster.md);
 
   const genres = media.genre_ids

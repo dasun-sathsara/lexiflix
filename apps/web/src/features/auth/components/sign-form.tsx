@@ -18,9 +18,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useGoogleSignIn } from "../mutations";
-import { type SignInInput, SignInSchema } from "../schemas";
+import { useGoogleSocialAuth } from "@/features/auth/components/mutations";
 import { signInAction } from "../server/actions";
+import { type SignInInput, SignInSchema } from "../types";
 import { FormError } from "./form-error";
 import { SocialAuthButtons } from "./social-auth-buttons";
 
@@ -44,7 +44,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
     mode: "onChange",
   });
 
-  const googleSignIn = useGoogleSignIn();
+  const googleSignIn = useGoogleSocialAuth();
 
   const onSubmit = async (data: SignInInput) => {
     setServerError(null);
@@ -56,10 +56,10 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
 
     const result = await signInAction(formData);
 
-    if (!result.success) {
-      if (result.errors) {
+    if (!result.ok) {
+      if (result.fieldErrors) {
         // Handle field-specific errors
-        Object.entries(result.errors).forEach(([field, messages]) => {
+        Object.entries(result.fieldErrors).forEach(([field, messages]) => {
           if (messages?.[0]) {
             setError(field as keyof SignInInput, {
               type: "server",
@@ -68,9 +68,9 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
           }
         });
       }
-      if (result.message) {
-        setServerError(result.message);
-        toast.error(result.message);
+      if (result.error) {
+        setServerError(result.error);
+        toast.error(result.error);
       }
     } else {
       toast.success("Welcome back!");

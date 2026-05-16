@@ -14,7 +14,7 @@ import {
   getSettingsPreferences,
   STUDY_VOCABULARY_TYPES,
   settingsPreferenceDefaults,
-} from "@/features/settings/server/preferences";
+} from "@/features/settings/server/queries";
 import type {
   UpdateProfileActionResult,
   UpdateSettingsPreferencesActionResult,

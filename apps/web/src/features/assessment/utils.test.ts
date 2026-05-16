@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { AssessmentItem, AssessmentState } from "./types";
 import {
   createPriorPosterior,
-  summarizePosterior,
   parseAssessmentState,
+  summarizePosterior,
   toPublicItem,
 } from "./utils";
-import type { AssessmentItem, AssessmentState } from "./types";
 
 describe("createPriorPosterior", () => {
   it("returns an array of probabilities", () => {
@@ -93,10 +93,12 @@ describe("parseAssessmentState", () => {
 
   it("rejects missing arrays with error", () => {
     expect(() => parseAssessmentState({})).toThrow("Invalid assessment state shape.");
-    expect(() => parseAssessmentState({ posterior: [] })).toThrow("Invalid assessment state shape.");
-    expect(() =>
-      parseAssessmentState({ posterior: [], usedItemIds: [] }),
-    ).toThrow("Invalid assessment state shape.");
+    expect(() => parseAssessmentState({ posterior: [] })).toThrow(
+      "Invalid assessment state shape.",
+    );
+    expect(() => parseAssessmentState({ posterior: [], usedItemIds: [] })).toThrow(
+      "Invalid assessment state shape.",
+    );
   });
 
   it("rejects wrong posterior length with error", () => {

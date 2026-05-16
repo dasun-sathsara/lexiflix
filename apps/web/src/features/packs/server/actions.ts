@@ -13,18 +13,9 @@ import type {
 import { requireSession } from "@/lib/auth-guards";
 import { db } from "@/lib/server/db";
 import { pack, packItem, reviewEvent, userStreak, userTermState } from "@/lib/server/db/schema";
+import { getOwnedPackId } from "./queries";
 
 const REVIEW_RATINGS = new Set<PackReviewRating>(["again", "hard", "good", "easy"]);
-
-async function requireOwnedPack(packId: string, userId: string) {
-  const rows = await db
-    .select({ id: pack.id })
-    .from(pack)
-    .where(and(eq(pack.id, packId), eq(pack.userId, userId)))
-    .limit(1);
-
-  return rows[0] ?? null;
-}
 
 async function countActiveItems(packId: string) {
   const rows = await db
@@ -112,7 +103,7 @@ export async function removePackItemsAction(input: {
     return { ok: false, error: "Select at least one card to remove." };
   }
 
-  const ownedPack = await requireOwnedPack(input.packId, session.user.id);
+  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -145,7 +136,7 @@ export async function removePackItemsAction(input: {
 
   revalidatePackSurfaces(input.packId);
 
-  return { ok: true, activeCount };
+  return { ok: true, data: { activeCount } };
 }
 
 /**
@@ -156,7 +147,7 @@ export async function resetPackProgressAction(input: {
   packId: string;
 }): Promise<PackActionResult> {
   const session = await requireSession();
-  const ownedPack = await requireOwnedPack(input.packId, session.user.id);
+  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -194,7 +185,7 @@ export async function resetPackProgressAction(input: {
 
   revalidatePackSurfaces(input.packId);
 
-  return { ok: true, activeCount };
+  return { ok: true, data: { activeCount } };
 }
 
 /**
@@ -234,7 +225,7 @@ export async function restorePackItemAction(input: {
     .where(eq(pack.id, input.packId));
   revalidatePackSurfaces(input.packId);
 
-  return { ok: true, activeCount, itemId: item.id };
+  return { ok: true, data: { activeCount, itemId: item.id } };
 }
 
 /**
@@ -277,7 +268,7 @@ export async function resetPackItemAction(input: {
     .where(eq(packItem.id, item.id));
 
   revalidatePackSurfaces(input.packId);
-  return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
+  return { ok: true, data: { activeCount: await countActiveItems(input.packId), itemId: item.id } };
 }
 async function updateTermStateAndCards({
   userId,
@@ -391,7 +382,7 @@ async function runTermAction(input: {
   });
   revalidatePackSurfaces(input.packId);
 
-  return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
+  return { ok: true, data: { activeCount: await countActiveItems(input.packId), itemId: item.id } };
 }
 
 /**
@@ -451,7 +442,7 @@ export async function ratePackItemAction(input: {
     return { ok: false, error: "Choose a valid review rating." };
   }
 
-  const ownedPack = await requireOwnedPack(input.packId, session.user.id);
+  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -644,10 +635,12 @@ export async function ratePackItemAction(input: {
 
   return {
     ok: true,
-    itemId: item.id,
-    nextState: next.state,
-    dueAt: next.dueAt.toISOString(),
-    nextDueAt: nextDueAt ? nextDueAt.toISOString() : null,
-    reviewedCards: next.repetitionCount,
+    data: {
+      itemId: item.id,
+      nextState: next.state,
+      dueAt: next.dueAt.toISOString(),
+      nextDueAt: nextDueAt ? nextDueAt.toISOString() : null,
+      reviewedCards: next.repetitionCount,
+    },
   };
 }

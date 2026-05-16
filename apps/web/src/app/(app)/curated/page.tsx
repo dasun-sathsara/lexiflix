@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getCefrProfile } from "@/features/assessment/server/profile";
+import { getCefrProfile } from "@/features/assessment/server/queries";
 import { CuratedContent } from "@/features/curation/components/curated-content";
 import { partitionCuratedEntries, resolveActiveLevel } from "@/features/curation/lib/curated-feed";
 import { listPublishedCuratedEntries } from "@/features/curation/server/queries";

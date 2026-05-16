@@ -1,16 +1,15 @@
-import { headers } from "next/headers";
 import { CallToActionSection } from "@/features/marketing/components/call-to-action";
 import { FAQSection } from "@/features/marketing/components/faq";
 import { FeaturesSection } from "@/features/marketing/components/features";
 import { Footer } from "@/features/marketing/components/footer";
 import { HomeHero } from "@/features/marketing/components/home-hero";
 import { MarketingNavbar } from "@/features/marketing/components/marketing-navbar";
-import { auth } from "@/lib/auth";
+import { getSessionOrNull } from "@/lib/auth-guards";
 import { cn } from "@/lib/utils";
 
 export default async function Home() {
   // Public landing surface: optional session read only controls signed-in navigation.
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSessionOrNull();
   const isLoggedIn = !!session?.user;
 
   return (

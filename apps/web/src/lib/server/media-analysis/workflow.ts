@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@trigger.dev/sdk";
 import { eq, sql } from "drizzle-orm";
 import { env } from "@/lib/env";
+import { mapWithConcurrency } from "@/lib/server/concurrency";
 
 import { db } from "@/lib/server/db";
 import type {
@@ -139,30 +140,6 @@ function dedupeContexts(contexts: unknown[]): NlpCandidateContext[] {
   }
 
   return unique;
-}
-
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  mapper: (item: T) => Promise<R>,
-): Promise<PromiseSettledResult<R>[]> {
-  const results: PromiseSettledResult<R>[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await Promise.resolve(mapper(items[currentIndex])).then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        (reason) => ({ status: "rejected" as const, reason }),
-      );
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
-
-  return results;
 }
 
 async function getRunContext(runId: string): Promise<WorkflowRunContext> {

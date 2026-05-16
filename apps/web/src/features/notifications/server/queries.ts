@@ -98,11 +98,6 @@ export async function reconcileDueReviewNotificationForUser({ userId }: { userId
   });
 }
 
-export async function countUnreadNotifications({ userId }: { userId: string }) {
-  const rows = await listUserNotifications({ userId, limit: 50 });
-  return rows.filter((row) => row.status !== "read" && row.status !== "dismissed").length;
-}
-
 export async function createPackReadyNotification({
   userId,
   jobId,

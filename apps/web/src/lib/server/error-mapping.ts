@@ -1,6 +1,6 @@
 import "server-only";
 
-const TECHNICAL_MESSAGE_PATTERN =
+export const TECHNICAL_MESSAGE_PATTERN =
   /\b(neon|driver|transaction|constraint|database|sql|trigger|r2|s3|aws|api key|stack|exception)\b/i;
 
 export function toUserFriendlyAnalysisError(rawMsg: string | null): string {

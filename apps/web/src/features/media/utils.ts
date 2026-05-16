@@ -1,9 +1,4 @@
-type ContentMediaReference = {
-  kind: string;
-  tmdbMovieId: number | null;
-  tmdbShowId: number | null;
-  tmdbSeasonNumber: number | null;
-};
+import type { ContentMediaReference } from "./types";
 
 export function buildContentMediaHref(
   row: ContentMediaReference,

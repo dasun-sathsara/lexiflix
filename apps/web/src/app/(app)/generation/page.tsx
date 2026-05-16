@@ -6,6 +6,7 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
 import { GenerationJobsClient } from "@/features/pack-generation/components/generation-jobs-client";
+import { computeGenerationStats } from "@/features/pack-generation/lib/deck-stats";
 import { listPackGenerationProgressForDecks } from "@/features/pack-generation/server/queries";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
@@ -13,11 +14,7 @@ import { requireSession } from "@/lib/auth-guards";
 export default async function GenerationStatusPage() {
   const session = await requireSession();
   const jobs = await listPackGenerationProgressForDecks({ userId: session.user.id });
-  const activeCount = jobs.filter(
-    (job) => job.status === "queued" || job.status === "running",
-  ).length;
-  const completedCount = jobs.filter((job) => job.status === "completed").length;
-  const failedCount = jobs.filter((job) => job.status === "failed").length;
+  const stats = computeGenerationStats(jobs);
 
   return (
     <>
@@ -28,10 +25,10 @@ export default async function GenerationStatusPage() {
           description="Track active and recent pack-generation jobs without mixing them into your study decks."
           stats={
             <>
-              <AppStat icon={Activity} label="Active" value={activeCount} tone="accent" />
-              <AppStat icon={Sparkles} label="Completed" value={completedCount} tone="success" />
-              <AppStat icon={XCircle} label="Failed" value={failedCount} tone="danger" />
-              <AppStat icon={Clock} label="Recent Jobs" value={jobs.length} tone="warm" />
+              <AppStat icon={Activity} label="Active" value={stats.active} tone="accent" />
+              <AppStat icon={Sparkles} label="Completed" value={stats.completed} tone="success" />
+              <AppStat icon={XCircle} label="Failed" value={stats.failed} tone="danger" />
+              <AppStat icon={Clock} label="Recent Jobs" value={stats.total} tone="warm" />
             </>
           }
         />

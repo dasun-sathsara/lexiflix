@@ -8,29 +8,17 @@ import { toast } from "sonner";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CefrLevel } from "@/features/assessment/types";
 import { DeleteAccountCard } from "@/features/settings/components/delete-account-card";
 import { PasswordSettingsCard } from "@/features/settings/components/password-settings-card";
 import { PreferencesSettingsCard } from "@/features/settings/components/preferences-settings-card";
 import { ProfileSettingsCard } from "@/features/settings/components/profile-settings-card";
-import {
-  getEffectiveCefrLevel,
-  getInitials,
-  normalizeCustomInstructions,
-  toSettingsTab,
-} from "@/features/settings/components/utils";
+import { getInitials, toSettingsTab } from "@/features/settings/components/utils";
 import {
   changePasswordAction,
   deleteAccountAction,
   updateProfileAction,
-  updateSettingsPreferencesAction,
 } from "@/features/settings/server/actions";
-import type {
-  ManualOverrideSelection,
-  SettingsPreferences,
-  SettingsTab,
-  StatusState,
-} from "@/features/settings/types";
+import type { SettingsPreferences, SettingsTab, StatusState } from "@/features/settings/types";
 
 type SettingsClientProps = {
   user: {
@@ -74,43 +62,8 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   // -- Delete state -----------------------------------------------------------
   const [deleteStatus, setDeleteStatus] = useState<StatusState>(null);
 
-  // -- Preferences state ------------------------------------------------------
-  const [preferencesStatus, setPreferencesStatus] = useState<StatusState>(null);
-  const [initialPreferences, setInitialPreferences] = useState(preferences);
-  const [manualOverrideSelection, setManualOverrideSelection] = useState<ManualOverrideSelection>(
-    preferences.manualOverrideLevel ?? "assessed",
-  );
-  const [newCardsPerDay, setNewCardsPerDay] = useState(String(preferences.newCardsPerDay));
-  const [frequencyPreference, setFrequencyPreference] = useState(preferences.frequencyPreference);
-  const [studyVocabularyTypes, setStudyVocabularyTypes] = useState(
-    preferences.studyVocabularyTypes,
-  );
-  const [generationPackSizeDefault, setGenerationPackSizeDefault] = useState(
-    String(preferences.generationPackSizeDefault),
-  );
-  const [generationCefrWindowMode, setGenerationCefrWindowMode] = useState(
-    preferences.generationCefrWindowMode,
-  );
-  const [generationKnownTermHandling, setGenerationKnownTermHandling] = useState(
-    preferences.generationKnownTermHandling,
-  );
-  const [generationAudioVoiceGenderDefault, setGenerationAudioVoiceGenderDefault] = useState(
-    preferences.generationAudioVoiceGenderDefault,
-  );
-  const [generationExampleSentenceCount, setGenerationExampleSentenceCount] = useState(
-    String(preferences.generationExampleSentenceCount),
-  );
-  const [generationCustomInstructionsDefault, setGenerationCustomInstructionsDefault] = useState(
-    preferences.generationCustomInstructionsDefault ?? "",
-  );
-  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(
-    preferences.emailRemindersEnabled,
-  );
-  const [streakAlertsEnabled, setStreakAlertsEnabled] = useState(preferences.streakAlertsEnabled);
-
   // -- Transition wrappers ----------------------------------------------------
   const [isSavingProfile, startSavingProfile] = useTransition();
-  const [isSavingPreferences, startSavingPreferences] = useTransition();
   const [isUpdatingPassword, startUpdatingPassword] = useTransition();
   const [isDeletingAccount, startDeletingAccount] = useTransition();
 
@@ -153,50 +106,6 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     !newPassword.trim() ||
     !confirmPassword.trim() ||
     newPassword.length < 8;
-
-  const parsedNewCardsPerDay = Number.parseInt(newCardsPerDay, 10);
-  const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
-  const parsedGenerationExampleSentenceCount = Number.parseInt(generationExampleSentenceCount, 10);
-
-  const normalizedCustomInstructions = normalizeCustomInstructions(
-    generationCustomInstructionsDefault,
-  );
-
-  const manualOverrideLevel: CefrLevel | null =
-    manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
-
-  const preferencesChanged =
-    manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
-    parsedNewCardsPerDay !== initialPreferences.newCardsPerDay ||
-    frequencyPreference !== initialPreferences.frequencyPreference ||
-    [...studyVocabularyTypes].sort().join("|") !==
-      [...initialPreferences.studyVocabularyTypes].sort().join("|") ||
-    parsedGenerationPackSize !== initialPreferences.generationPackSizeDefault ||
-    generationCefrWindowMode !== initialPreferences.generationCefrWindowMode ||
-    generationKnownTermHandling !== initialPreferences.generationKnownTermHandling ||
-    generationAudioVoiceGenderDefault !== initialPreferences.generationAudioVoiceGenderDefault ||
-    parsedGenerationExampleSentenceCount !== initialPreferences.generationExampleSentenceCount ||
-    normalizedCustomInstructions !== initialPreferences.generationCustomInstructionsDefault ||
-    emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
-    streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
-
-  const preferencesSubmitDisabled =
-    isSavingPreferences ||
-    !(
-      Number.isInteger(parsedNewCardsPerDay) &&
-      parsedNewCardsPerDay >= 1 &&
-      parsedNewCardsPerDay <= 100
-    ) ||
-    !(Number.isInteger(parsedGenerationPackSize) && parsedGenerationPackSize >= 1) ||
-    !(parsedGenerationExampleSentenceCount >= 1 && parsedGenerationExampleSentenceCount <= 3) ||
-    generationCustomInstructionsDefault.trim().length > 1200 ||
-    studyVocabularyTypes.length === 0 ||
-    !preferencesChanged;
-
-  const effectiveCefrLevel = getEffectiveCefrLevel(
-    manualOverrideLevel,
-    initialPreferences.assessedLevel,
-  );
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -258,69 +167,6 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
           message: "Failed to update profile.",
         });
         toast.error("Failed to update profile");
-      }
-    });
-  };
-
-  const handlePreferencesSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (preferencesSubmitDisabled) {
-      return;
-    }
-
-    startSavingPreferences(async () => {
-      try {
-        const result = await updateSettingsPreferencesAction({
-          manualOverrideLevel,
-          newCardsPerDay: parsedNewCardsPerDay,
-          frequencyPreference,
-          studyVocabularyTypes,
-          generationPackSizeDefault: parsedGenerationPackSize,
-          generationCefrWindowMode,
-          generationKnownTermHandling,
-          generationAudioVoiceGenderDefault,
-          generationExampleSentenceCount: parsedGenerationExampleSentenceCount as 1 | 2 | 3,
-          generationCustomInstructionsDefault: normalizedCustomInstructions,
-          emailRemindersEnabled,
-          streakAlertsEnabled,
-        });
-
-        if (!result.ok) {
-          setPreferencesStatus({ type: "error", message: result.error });
-          toast.error(result.error);
-          return;
-        }
-
-        const nextPreferences = result.data.preferences;
-        setInitialPreferences(nextPreferences);
-        setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
-        setNewCardsPerDay(String(nextPreferences.newCardsPerDay));
-        setFrequencyPreference(nextPreferences.frequencyPreference);
-        setStudyVocabularyTypes(nextPreferences.studyVocabularyTypes);
-        setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
-        setGenerationCefrWindowMode(nextPreferences.generationCefrWindowMode);
-        setGenerationKnownTermHandling(nextPreferences.generationKnownTermHandling);
-        setGenerationAudioVoiceGenderDefault(nextPreferences.generationAudioVoiceGenderDefault);
-        setGenerationExampleSentenceCount(String(nextPreferences.generationExampleSentenceCount));
-        setGenerationCustomInstructionsDefault(
-          nextPreferences.generationCustomInstructionsDefault ?? "",
-        );
-        setEmailRemindersEnabled(nextPreferences.emailRemindersEnabled);
-        setStreakAlertsEnabled(nextPreferences.streakAlertsEnabled);
-        setPreferencesStatus({
-          type: "success",
-          message: "Preferences updated successfully.",
-        });
-        toast.success("Preferences updated");
-        router.refresh();
-      } catch (error) {
-        console.error("Failed to update preferences", error);
-        setPreferencesStatus({
-          type: "error",
-          message: "Failed to update preferences.",
-        });
-        toast.error("Failed to update preferences");
       }
     });
   };
@@ -472,39 +318,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         </TabsContent>
 
         <TabsContent value="preferences" className="mt-0">
-          <PreferencesSettingsCard
-            initialPreferences={initialPreferences}
-            manualOverrideSelection={manualOverrideSelection}
-            setManualOverrideSelection={setManualOverrideSelection}
-            newCardsPerDay={newCardsPerDay}
-            setNewCardsPerDay={setNewCardsPerDay}
-            frequencyPreference={frequencyPreference}
-            setFrequencyPreference={setFrequencyPreference}
-            studyVocabularyTypes={studyVocabularyTypes}
-            setStudyVocabularyTypes={setStudyVocabularyTypes}
-            generationPackSizeDefault={generationPackSizeDefault}
-            setGenerationPackSizeDefault={setGenerationPackSizeDefault}
-            generationCefrWindowMode={generationCefrWindowMode}
-            setGenerationCefrWindowMode={setGenerationCefrWindowMode}
-            generationKnownTermHandling={generationKnownTermHandling}
-            setGenerationKnownTermHandling={setGenerationKnownTermHandling}
-            generationAudioVoiceGenderDefault={generationAudioVoiceGenderDefault}
-            setGenerationAudioVoiceGenderDefault={setGenerationAudioVoiceGenderDefault}
-            generationExampleSentenceCount={generationExampleSentenceCount}
-            setGenerationExampleSentenceCount={setGenerationExampleSentenceCount}
-            generationCustomInstructionsDefault={generationCustomInstructionsDefault}
-            setGenerationCustomInstructionsDefault={setGenerationCustomInstructionsDefault}
-            emailRemindersEnabled={emailRemindersEnabled}
-            setEmailRemindersEnabled={setEmailRemindersEnabled}
-            streakAlertsEnabled={streakAlertsEnabled}
-            setStreakAlertsEnabled={setStreakAlertsEnabled}
-            effectiveCefrLevel={effectiveCefrLevel}
-            preferencesStatus={preferencesStatus}
-            setPreferencesStatus={setPreferencesStatus}
-            preferencesSubmitDisabled={preferencesSubmitDisabled}
-            isSavingPreferences={isSavingPreferences}
-            handlePreferencesSubmit={handlePreferencesSubmit}
-          />
+          <PreferencesSettingsCard preferences={preferences} />
         </TabsContent>
       </Tabs>
     </AppPageShell>

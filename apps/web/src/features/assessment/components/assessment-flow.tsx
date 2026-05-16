@@ -59,7 +59,7 @@ export function AssessmentFlow() {
       try {
         const response = await startAssessmentAction();
 
-        if (!response.success) {
+        if (!response.ok) {
           throw new Error(response.error ?? "Unable to start the assessment.");
         }
 
@@ -129,7 +129,7 @@ export function AssessmentFlow() {
           responseTimeMs,
         });
 
-        if (!response.success) {
+        if (!response.ok) {
           throw new Error(response.error ?? "Unable to submit answer.");
         }
 

@@ -105,7 +105,7 @@ export function normalizeSubtitleText(value: string) {
     .replace(/\[[^\]]*]/g, " ")
     .replace(/\([^)]*\)/g, " ")
     .replace(/[♪♫]+/g, " ")
-    .replace(/^[A-Z][A-Z0-9\s\-]{1,20}:\s*/, "")
+    .replace(/^[A-Z][A-Z0-9\s-]{1,20}:\s*/, "")
     .replace(/\r/g, " ")
     .replace(/\n+/g, " ")
     .replace(/\s+/g, " ")

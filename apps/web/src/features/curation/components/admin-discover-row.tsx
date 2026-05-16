@@ -76,6 +76,10 @@ export function AdminDiscoverRow({
   const action = isCurated ? refreshCuratedEntryAction : curateTmdbItemAction;
   const TypeIcon = mediaType === "tv" ? Tv : Film;
 
+  async function submit(formData: FormData) {
+    await action(formData);
+  }
+
   return (
     <div className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30">
       <div className="relative h-[54px] w-[36px] shrink-0 overflow-hidden rounded-md bg-muted ring-1 ring-border/60">
@@ -129,7 +133,7 @@ export function AdminDiscoverRow({
         </div>
       </div>
 
-      <form action={action} className="shrink-0">
+      <form action={submit} className="shrink-0">
         <input type="hidden" name="mediaType" value={mediaType} />
         <input type="hidden" name="tmdbId" value={String(result.id)} />
         <SubmitButton isCurated={isCurated} />

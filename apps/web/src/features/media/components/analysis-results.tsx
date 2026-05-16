@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   buildCefrDistributionEntries,
   GENERATION_VOCABULARY_TYPES,
-  getCefrColor,
+  getCefrColorClass,
   VOCABULARY_TYPE_LABELS,
 } from "./utils";
 
@@ -96,7 +96,7 @@ export function AnalysisResults({ snapshot }: { snapshot: MediaAnalysisSnapshot 
             {distribution.map((entry) => (
               <div key={entry.level} className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Badge className={cn("border text-xs", getCefrColor(entry.level))}>
+                  <Badge className={cn("border text-xs", getCefrColorClass(entry.level))}>
                     {entry.level}
                   </Badge>
                   <span className="text-sm font-medium">

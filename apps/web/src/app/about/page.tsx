@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { About } from "@/features/marketing/components/about";
 import { Footer } from "@/features/marketing/components/footer";
 import { MarketingNavbar } from "@/features/marketing/components/marketing-navbar";
-import { auth } from "@/lib/auth";
+import { getSessionOrNull } from "@/lib/auth-guards";
 
 export const metadata: Metadata = {
   title: "About LexiFlix | A self-funded startup for learning English from movies & TV",
@@ -30,7 +29,7 @@ export const metadata: Metadata = {
 
 export default async function AboutPage() {
   // Public marketing surface: optional session read only controls signed-in navigation.
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSessionOrNull();
   const isLoggedIn = !!session?.user;
 
   return (

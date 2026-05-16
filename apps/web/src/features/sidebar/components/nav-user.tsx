@@ -42,11 +42,11 @@ export function NavUser({
   const handleLogout = () => {
     startTransition(async () => {
       const result = await logoutAction();
-      if (result.success) {
+      if (result.ok) {
         toast.success("Logged out successfully");
         window.location.href = "/";
       } else {
-        toast.error(result.message || "Failed to log out");
+        toast.error(result.error || "Failed to log out");
       }
     });
   };

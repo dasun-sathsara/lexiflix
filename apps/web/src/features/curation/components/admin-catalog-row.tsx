@@ -4,7 +4,6 @@ import { Film, GripVertical, Loader2, MoreHorizontal, RotateCcw, Trash2, Tv } fr
 import Image from "next/image";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useState, useTransition } from "react";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,10 +37,9 @@ import {
   setCuratedEntryPublishedAction,
 } from "@/features/curation/server/actions";
 import type { CuratedCatalogEntry } from "@/features/curation/types";
+import { CEFR_LEVELS } from "@/lib/cefr";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
-
-const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
 interface AdminCatalogRowProps {
   entry: CuratedCatalogEntry;
