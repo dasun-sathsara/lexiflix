@@ -90,40 +90,105 @@ function buildPrompt(input: {
     .join("\n\n");
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await Promise.resolve(mapper(items[currentIndex], currentIndex)).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason) => ({ status: "rejected" as const, reason }),
+      );
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+
+  return results;
+}
+
+const TEXT_BATCH_SIZE = 8;
+const TEXT_CONCURRENCY = 2;
+
 export async function generateTextContent(input: {
   items: SelectedGenerationItem[];
   requestSnapshot: GenerationRequestSnapshot;
   model: string;
 }): Promise<GeneratedTextItem[]> {
-  logger.info("[content-generation:text] started", {
+  logger.info("[content-generation:text] starting batched text generation", {
     model: input.model,
-    itemCount: input.items.length,
+    totalItemCount: input.items.length,
+    batchSize: TEXT_BATCH_SIZE,
     packSize: input.requestSnapshot.packSize,
     exampleSentenceCount: input.requestSnapshot.exampleSentenceCount,
   });
 
-  const prompt = buildPrompt(input);
-  logger.info("[content-generation:text] sending Gemini request", {
-    model: input.model,
-    itemCount: input.items.length,
-    promptCharacters: prompt.length,
-  });
+  const batches: SelectedGenerationItem[][] = [];
+  for (let i = 0; i < input.items.length; i += TEXT_BATCH_SIZE) {
+    batches.push(input.items.slice(i, i + TEXT_BATCH_SIZE));
+  }
 
-  const response = await geminiClient.models.generateContent({
-    model: input.model,
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema,
+  const settledResults = await mapWithConcurrency<SelectedGenerationItem[], GeneratedTextItem[]>(
+    batches,
+    TEXT_CONCURRENCY,
+    async (batch: SelectedGenerationItem[], index: number): Promise<GeneratedTextItem[]> => {
+      const prompt = buildPrompt({
+        items: batch,
+        requestSnapshot: input.requestSnapshot,
+      });
+
+      logger.info(`[content-generation:text] sending batch ${index + 1}/${batches.length}`, {
+        model: input.model,
+        itemCount: batch.length,
+        promptCharacters: prompt.length,
+      });
+
+      const response = await geminiClient.models.generateContent({
+        model: input.model,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema,
+        },
+      });
+
+      if (!response.text) {
+        throw new Error(`Batch ${index + 1} returned empty content.`);
+      }
+
+      const parsedBatch = generatedTextBatchSchema.parse(JSON.parse(response.text)).items;
+      return parsedBatch;
     },
-  });
+  );
 
-  const parsed = generatedTextBatchSchema.parse(JSON.parse(response.text ?? "{}")).items;
-  logger.info("[content-generation:text] Gemini response parsed", {
+  const allGeneratedItems: GeneratedTextItem[] = [];
+
+  for (const [index, result] of settledResults.entries()) {
+    if (result.status === "fulfilled") {
+      allGeneratedItems.push(...result.value);
+    } else {
+      const errorMsg =
+        result.reason instanceof Error ? result.reason.message : String(result.reason);
+      logger.error("[content-generation:text] batch text generation failed", {
+        batchIndex: index,
+        error: errorMsg,
+      });
+      throw new Error(`Text content generation failed on batch ${index + 1}: ${errorMsg}`);
+    }
+  }
+
+  logger.info("[content-generation:text] completed batched content generation", {
     model: input.model,
-    itemCount: parsed.length,
-    warningCount: parsed.reduce((count, item) => count + item.warnings.length, 0),
+    totalGenerated: allGeneratedItems.length,
+    warningCount: allGeneratedItems.reduce((count, item) => count + item.warnings.length, 0),
   });
 
-  return parsed;
+  return allGeneratedItems;
 }

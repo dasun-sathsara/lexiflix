@@ -370,7 +370,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
                   <span className="italic text-foreground/70">{media.originalTitle}</span>
                 ) : null}
                 {showOriginalTitle &&
-                  (media.originalLanguage || media.originCountryCodes?.length) ? (
+                (media.originalLanguage || media.originCountryCodes?.length) ? (
                   <span className="select-none text-foreground/30">·</span>
                 ) : null}
                 {media.originalLanguage || media.originCountryCodes?.length ? (

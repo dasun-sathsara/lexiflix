@@ -41,7 +41,18 @@ export async function generateSpeechArtifacts(input: {
   }
 
   if (input.audioConfig.audioProvider === "aws-polly") {
-    return generateSpeechWithPolly(input);
+    try {
+      return await generateSpeechWithPolly(input);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error("[content-generation:audio] AWS Polly fatal integration failure", {
+        error: errorMessage,
+      });
+      return {
+        artifacts: [],
+        warnings: [`Audio generation bypassed: AWS Polly integration failure (${errorMessage})`],
+      };
+    }
   }
 
   logger.warn("[content-generation:audio] provider not implemented", {

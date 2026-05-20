@@ -11,7 +11,11 @@ export type GenerateContentPackPayload = z.infer<typeof generateContentPackPaylo
 export const generateContentPackTask = task({
   id: "generate-content-pack",
   retry: {
-    maxAttempts: 1,
+    maxAttempts: 3,
+    minTimeoutInMs: 2000,
+    maxTimeoutInMs: 15000,
+    factor: 2,
+    randomize: true,
   },
   run: async (payload: GenerateContentPackPayload) => {
     const parsed = generateContentPackPayloadSchema.parse(payload);

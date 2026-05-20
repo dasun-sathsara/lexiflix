@@ -139,6 +139,30 @@ function dedupeContexts(contexts: NlpCandidateContext[]) {
   return unique;
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await Promise.resolve(mapper(items[currentIndex])).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (reason) => ({ status: "rejected" as const, reason }),
+      );
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
+
+  return results;
+}
+
 async function getRunContext(runId: string): Promise<WorkflowRunContext> {
   const [row] = await db
     .select({
@@ -632,22 +656,45 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       warnings: [...subtitleCorpus.warnings, ...nlpResponse.warnings],
     });
 
-    const llmResponses: Array<Awaited<ReturnType<typeof analyzeChunkWithGemini>>> = [];
+    const CONCURRENCY_LIMIT = 4;
+    logger.info("[media-analysis] running concurrent Gemini phrase extraction", {
+      runId,
+      chunkCount: chunks.length,
+      concurrencyLimit: CONCURRENCY_LIMIT,
+    });
 
-    for (const chunk of chunks) {
-      llmResponses.push(
-        await analyzeChunkWithGemini({
-          chunkText: chunk.text,
-          chunkIndex: chunk.chunkIndex,
-          totalChunks: chunks.length,
-        }),
-      );
+    const settledResults = await mapWithConcurrency(chunks, CONCURRENCY_LIMIT, (chunk) =>
+      analyzeChunkWithGemini({
+        chunkText: chunk.text,
+        chunkIndex: chunk.chunkIndex,
+        totalChunks: chunks.length,
+      }),
+    );
+
+    const llmResponses: Array<Awaited<ReturnType<typeof analyzeChunkWithGemini>>> = [];
+    const chunkFailures: string[] = [];
+
+    for (const [index, result] of settledResults.entries()) {
+      if (result.status === "fulfilled") {
+        llmResponses.push(result.value);
+      } else {
+        const errorMsg =
+          result.reason instanceof Error ? result.reason.message : String(result.reason);
+        logger.error("[media-analysis:llm] chunk extraction failed", {
+          runId,
+          chunkIndex: index,
+          error: errorMsg,
+        });
+        chunkFailures.push(`Chunk ${index + 1} analysis failed: ${errorMsg}`);
+      }
     }
 
     logger.info("[media-analysis] phrase analysis completed", {
       runId,
       chunkCount: llmResponses.length,
-      warningCount: llmResponses.reduce((count, response) => count + response.warnings.length, 0),
+      warningCount:
+        llmResponses.reduce((count, response) => count + response.warnings.length, 0) +
+        chunkFailures.length,
     });
 
     await transitionRun({
@@ -659,12 +706,12 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         nlpCandidateCount: nlpResponse.candidates.length,
         llmChunkCount: llmResponses.length,
       },
-      warnings: [...subtitleCorpus.warnings, ...nlpResponse.warnings],
+      warnings: [...subtitleCorpus.warnings, ...nlpResponse.warnings, ...chunkFailures],
     });
 
     const merged = mergeAnalysisItems(nlpResponse, llmResponses);
     const summary = buildSummary(subtitleCorpus.lines, nlpResponse, merged.items);
-    const warnings = [...subtitleCorpus.warnings, ...merged.warnings];
+    const warnings = [...subtitleCorpus.warnings, ...merged.warnings, ...chunkFailures];
 
     logger.info("[media-analysis] merged analysis", {
       runId,
