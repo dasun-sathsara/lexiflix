@@ -24,7 +24,7 @@ function getOpenAIClient(): AzureOpenAI {
       apiKey: env.AZURE_AI_FOUNDRY_API_KEY,
       endpoint: env.AZURE_AI_FOUNDRY_ENDPOINT,
       apiVersion: "2024-05-01-preview",
-      deployment: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5-4-nano-deploy",
+      deployment: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
     });
   }
   return openaiClient;
@@ -84,7 +84,7 @@ async function runLiveAzureFoundryAnalysis(input: AnalyzeWithAzureFoundryInput) 
 
   const openai = getOpenAIClient();
   const response = await openai.chat.completions.create({
-    model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5-4-nano-deploy",
+    model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
     messages: [{ role: "user", content: prompt }],
     response_format: zodResponseFormat(analysisLlmResponseSchema, "analysisLlmResponse"),
   });

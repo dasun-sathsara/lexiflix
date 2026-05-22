@@ -189,7 +189,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
         ? await generateTextWithAzureFoundry({
             items: selectedItems,
             requestSnapshot: job.requestSnapshot,
-            model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.4-nano",
+            model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
           })
         : await generateTextWithGemini({
             items: selectedItems,
