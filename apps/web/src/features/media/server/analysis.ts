@@ -18,6 +18,7 @@ import {
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
+import { toUserFriendlyAnalysisError } from "@/lib/server/error-mapping";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
@@ -36,8 +37,6 @@ type ResolvedTvDetail = {
 
 type ResolvedTmdbDetail = ResolvedMovieDetail | ResolvedTvDetail;
 const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
-const PUBLIC_ANALYSIS_FAILURE_MESSAGE =
-  "Subtitle analysis could not be completed. Retry the analysis or try another title.";
 
 function parseTmdbNotFound(error: unknown) {
   return error instanceof Error && error.message.includes("TMDB Error: 404");
@@ -254,7 +253,7 @@ export async function getAnalysisSnapshotByRunId(
     stage: run.stage,
     progressMessage: run.progressMessage ?? null,
     errorCode: run.errorCode ?? null,
-    errorMessage: status === "failed" ? PUBLIC_ANALYSIS_FAILURE_MESSAGE : null,
+    errorMessage: status === "failed" ? toUserFriendlyAnalysisError(run.errorMessage) : null,
     warnings: run.warnings ?? [],
     summary: run.summary ?? null,
     items: run.status === "completed" ? await getCompletedItems(run.id) : [],

@@ -155,12 +155,10 @@ export async function recordPackGenerationJobTransition(input: {
   if (input.status === "completed" || input.status === "failed") {
     update.completedAt = now;
   }
-  if (input.errorCode) {
-    update.errorCode = input.errorCode;
-  }
-  if (input.errorMessage) {
-    update.errorMessage = input.errorMessage;
-  }
+  update.errorCode =
+    input.errorCode ?? (input.status === "failed" ? "PACK_GENERATION_FAILED" : undefined);
+  update.errorMessage =
+    input.errorMessage ?? (input.status === "failed" ? input.message : undefined);
   if (input.triggerWorkflowId) {
     update.triggerWorkflowId = input.triggerWorkflowId;
   }

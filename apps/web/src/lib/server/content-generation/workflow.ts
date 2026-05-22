@@ -6,7 +6,6 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { sendPackStatusEmail } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -437,7 +436,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
       stage: "failed",
       message,
       errorCode: "PACK_GENERATION_FAILED",
-      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
+      errorMessage: message,
       payload: { warnings },
     });
     const failedJob = await getPackGenerationJobById(jobId);

@@ -75,8 +75,6 @@ type WorkflowResult = {
 };
 
 const MAX_CONTEXTS_PER_ITEM = 5;
-const PUBLIC_ANALYSIS_FAILURE_MESSAGE =
-  "Subtitle analysis could not be completed. Retry the analysis or try another title.";
 
 function normalizeTermText(value: string) {
   return value
@@ -771,7 +769,7 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
         message,
         progressMessage: "Subtitle analysis could not be completed.",
         errorCode: "WORKFLOW_FAILED",
-        errorMessage: PUBLIC_ANALYSIS_FAILURE_MESSAGE,
+        errorMessage: message,
         completedAt: new Date(),
         payload: { error },
       });

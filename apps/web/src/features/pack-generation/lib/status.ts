@@ -130,5 +130,8 @@ export function getGenerationProgressState(generation: PackGenerationProgressVie
 }
 
 export function getGenerationStatusMessage(generation: PackGenerationProgressView) {
+  if (generation.status === "failed") {
+    return generation.errorMessage ?? PUBLIC_GENERATION_FAILURE_MESSAGE;
+  }
   return getGenerationProgressState(generation).description;
 }
