@@ -12,7 +12,10 @@ import {
   MEDIA_ANALYSIS_PIPELINE_VERSION,
 } from "@/lib/server/media-analysis/contracts";
 
-const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+const geminiClient = new GoogleGenAI({
+  vertexai: true,
+  apiKey: env.GOOGLE_CLOUD_API_KEY,
+});
 
 const analysisLlmSdkSchema: Schema = {
   type: Type.ARRAY,

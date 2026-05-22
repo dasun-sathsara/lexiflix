@@ -124,3 +124,6 @@ gha-creds-*.json
 WARP.md
 .serena
 .trigger/
+
+# CLI tools
+.antigravitycli/

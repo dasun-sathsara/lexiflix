@@ -63,16 +63,16 @@ const serverSchema = z
     R2_PUBLIC_BASE_URL: z.url(
       "R2_PUBLIC_BASE_URL must be a valid URL, e.g. https://cdn.example.com",
     ),
-    GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+    GOOGLE_CLOUD_API_KEY: z.string().min(1, "GOOGLE_CLOUD_API_KEY is required"),
     TRIGGER_SECRET_KEY: z.string().min(1, "TRIGGER_SECRET_KEY is required"),
     ANALYSIS_LLM_MODEL: z
       .string()
       .min(1, "ANALYSIS_LLM_MODEL must not be empty")
-      .default("gemini-3.1-flash-lite-preview"),
+      .default("gemini-3.1-flash-lite"),
     CONTENT_GENERATION_TEXT_MODEL: z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
-      .default("gemini-3.1-flash-lite-preview"),
+      .default("gemini-3.1-flash-lite"),
     CONTENT_GENERATION_AUDIO_PROVIDER: z.string().min(1).default("aws-polly"),
     CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
     AWS_POLLY_REGION: z.string().min(1).default("us-east-1"),

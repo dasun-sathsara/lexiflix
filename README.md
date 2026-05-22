@@ -48,7 +48,7 @@ For `apps/web`, Doppler needs to provide the required server-side envs:
 - `OPENSUBTITLES_API_KEY`
 - `OPENSUBTITLES_USERNAME`
 - `OPENSUBTITLES_PASSWORD`
-- `GEMINI_API_KEY`
+- `GOOGLE_CLOUD_API_KEY`
 - `TRIGGER_SECRET_KEY`
 - `NLP_SERVICE_BASE_URL`
 - `RESEND_API_KEY`
