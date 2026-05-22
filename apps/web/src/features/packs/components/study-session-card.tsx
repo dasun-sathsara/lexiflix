@@ -163,7 +163,7 @@ export function StudySessionCard({
               </span>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 {card.partOfSpeech ? (
-                  <Badge variant="outline" className="font-normal">
+                  <Badge variant="outline" className="font-normal capitalize">
                     {card.partOfSpeech}
                   </Badge>
                 ) : null}

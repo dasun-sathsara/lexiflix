@@ -135,7 +135,11 @@ export function PackStagingCardItem({
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg tracking-tight">{item.displayText}</span>
               <Badge variant="secondary">{formatVocabularyKindLabel(item.kind)}</Badge>
-              {item.partOfSpeech ? <Badge variant="outline">{item.partOfSpeech}</Badge> : null}
+              {item.partOfSpeech ? (
+                <Badge variant="outline" className="capitalize">
+                  {item.partOfSpeech}
+                </Badge>
+              ) : null}
               <Badge className={`border ${cefrBadgeClass(item.cefrLevel)}`}>
                 {item.cefrLevel ?? "CEFR n/a"}
               </Badge>
