@@ -99,6 +99,7 @@ async function synthesizeWithRetry(input: {
         style: input.audioConfig.audioStyle,
         text: input.request.target.script,
       }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (response.ok) {
