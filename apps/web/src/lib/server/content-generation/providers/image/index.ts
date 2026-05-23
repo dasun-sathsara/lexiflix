@@ -23,7 +23,7 @@ function createOpenAIClient(deployment: string): AzureOpenAI {
   return new AzureOpenAI({
     endpoint: env.AZURE_AI_FOUNDRY_ENDPOINT,
     apiKey: env.AZURE_AI_FOUNDRY_API_KEY,
-    apiVersion: "2025-04-01-preview",
+    apiVersion: "2024-05-01-preview",
     deployment,
   });
 }
@@ -61,7 +61,6 @@ export async function generateImageArtifacts(input: {
         prompt: item.imageBrief as string,
         n: 1,
         size: IMAGE_SIZE,
-        response_format: "b64_json",
       });
       const b64 = response.data?.[0]?.b64_json;
       if (!b64) {
