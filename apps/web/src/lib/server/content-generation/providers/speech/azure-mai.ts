@@ -1,4 +1,7 @@
 import "server-only";
+import dns from "node:dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 import { logger } from "@trigger.dev/sdk";
 import { env } from "@/lib/config/env";

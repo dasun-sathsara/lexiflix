@@ -41,6 +41,12 @@ export async function generateImageArtifacts(input: {
     (item) => item.imageEligibility.eligible && Boolean(item.imageBrief?.trim()),
   );
 
+  logger.info("[content-generation:image] started", {
+    provider: input.imageProvider,
+    totalItemCount: input.textItems.length,
+    eligibleItemCount: eligibleItems.length,
+  });
+
   if (eligibleItems.length === 0) {
     return { artifacts: [], warnings: [] };
   }
@@ -54,6 +60,15 @@ export async function generateImageArtifacts(input: {
     if (index > 0) {
       await delay(REQUEST_DELAY_MS);
     }
+
+    logger.info(
+      `[content-generation:image] generating image ${index + 1}/${eligibleItems.length}`,
+      {
+        analysisItemId: item.analysisItemId,
+        termId: item.termId,
+        brief: item.imageBrief,
+      },
+    );
 
     try {
       const response = await openai.images.generate({
