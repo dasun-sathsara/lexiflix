@@ -2,7 +2,7 @@ import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm";
 
 import type { CuratedCatalogEntry, CuratedCatalogListFilters } from "@/features/curation/lib/types";
 import { db } from "@/lib/server/db";
-import type { CuratedGenreSnapshot } from "@/lib/server/db/json-contracts";
+import type { CuratedGenreSnapshot, StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { curatedEntry } from "@/lib/server/db/schema";
 import {
   getMovieDetails,
@@ -196,6 +196,7 @@ function mapCuratedEntry(row: typeof curatedEntry.$inferSelect): CuratedCatalogE
     curatedByUserId: row.curatedByUserId ?? null,
     curatedAt: toIsoString(row.curatedAt),
     updatedAt: row.updatedAt.toISOString(),
+    level: row.level ?? null,
   };
 }
 
@@ -208,6 +209,10 @@ function buildFilters(filters: CuratedCatalogListFilters = {}) {
 
   if (typeof filters.isPublished === "boolean") {
     clauses.push(eq(curatedEntry.isPublished, filters.isPublished));
+  }
+
+  if (filters.level) {
+    clauses.push(eq(curatedEntry.level, filters.level));
   }
 
   return clauses.length > 0 ? and(...clauses) : undefined;
@@ -380,5 +385,18 @@ export async function reorderCuratedEntries(orderedIds: string[]) {
 
 export async function deleteCuratedEntryById(id: string) {
   const [row] = await db.delete(curatedEntry).where(eq(curatedEntry.id, id)).returning();
+  return row ? mapCuratedEntry(row) : null;
+}
+
+export async function setCuratedEntryLevel(id: string, level: StoredCefrLevel | null) {
+  const [row] = await db
+    .update(curatedEntry)
+    .set({
+      level,
+      updatedAt: new Date(),
+    })
+    .where(eq(curatedEntry.id, id))
+    .returning();
+
   return row ? mapCuratedEntry(row) : null;
 }

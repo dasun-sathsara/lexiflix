@@ -18,9 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
+import { getCefrProfile, shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { getDashboardView } from "@/features/dashboard/server/queries";
 import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
+import { getEffectiveCefrLevel } from "@/features/settings/components/_utils";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 import { cn } from "@/lib/utils";
@@ -98,7 +99,7 @@ function LoadRing({ value, className }: { value: number; className?: string }) {
           <span className="ml-0.5 text-lg text-muted-foreground">%</span>
         </span>
         <span className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Today's Load
+          Daily Focus Goal
         </span>
       </div>
     </div>
@@ -111,11 +112,16 @@ function LoadRing({ value, className }: { value: number; className?: string }) {
 
 export default async function DashboardPage() {
   const session = await requireSession();
-  const [showAssessmentBanner, dashboard] = await Promise.all([
+  const [showAssessmentBanner, dashboard, profile] = await Promise.all([
     shouldShowAssessmentBanner(session.user.id),
     getDashboardView({ userId: session.user.id }),
+    getCefrProfile(session.user.id),
     reconcileDueReviewNotificationForUser({ userId: session.user.id }),
   ]);
+
+  const userLevel = profile
+    ? getEffectiveCefrLevel(profile.manualOverrideLevel, profile.assessedLevel)
+    : null;
 
   const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Learner";
   const hasPacks = dashboard.recentPacks.length > 0;
@@ -144,10 +150,10 @@ export default async function DashboardPage() {
     : null;
 
   const heroDescription = hasWorkNow
-    ? `${readyNow} card${readyNow === 1 ? "" : "s"} ready. About ${
+    ? `${readyNow} vocabulary targets primed for retrieval. Approximately ${
         dashboard.stats.estimatedDueMinutes
-      } min of reviews queued${nextStepTime ? `, next step at ${nextStepTime}` : ""}.`
-    : "You're caught up for now. Come back after the next scheduled step, or learn something new.";
+      } minutes of active training queued${nextStepTime ? `, next step at ${nextStepTime}` : ""}.`
+    : "Your vocabulary vault is fully consolidated. Keep the momentum going—explore a new show or film to unlock fresh expressions.";
 
   const planItems: { label: string; value: number; tone: PlanTone }[] = [
     { label: "Due now", value: dashboard.reviewPlan.dueNow, tone: "danger" },
@@ -186,8 +192,7 @@ export default async function DashboardPage() {
                 </span>
                 {streakDays > 0 ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-700 shadow-xs dark:border-amber-500/30 dark:text-amber-300">
-                    <Flame className="size-3" />
-                    {streakDays}-day streak
+                    <Flame className="size-3" />🔥 {streakDays}-Day Momentum
                   </span>
                 ) : null}
                 <span
@@ -199,7 +204,7 @@ export default async function DashboardPage() {
                   )}
                 >
                   <span className="size-1.5 rounded-full bg-current" />
-                  {hasWorkNow ? `${readyNow} ready` : "All clear"}
+                  {hasWorkNow ? `${readyNow} targets ready` : "Vault Consolidated"}
                 </span>
               </div>
 
@@ -268,21 +273,63 @@ export default async function DashboardPage() {
                   <GraduationCap className="size-5" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-semibold">Discover Your Level</h3>
+                  <h3 className="font-semibold">Benchmark Your Fluency</h3>
                   <p className="text-sm text-muted-foreground">
-                    Take the assessment to tune future pack generation.
+                    Establish your CEFR baseline to generate perfectly calibrated cinematic
+                    vocabulary packs.
                   </p>
                 </div>
               </div>
               <Button asChild>
                 <Link href="/onboarding/assessment">
-                  Start Assessment
+                  Calibrate Level
                   <ChevronRight className="size-4" />
                 </Link>
               </Button>
             </CardContent>
           </Card>
         ) : null}
+
+        {/* Curated Picks Banner --------------------------------------------- */}
+        <Card className="relative overflow-hidden border border-primary/10 bg-gradient-to-r from-primary/3 via-card to-card py-0 shadow-sm">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div
+              className="absolute -right-12 -top-12 size-36 rounded-full blur-3xl opacity-15"
+              style={{ background: "var(--primary)" }}
+            />
+          </div>
+          <CardContent className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                <Sparkles className="size-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm sm:text-base">Cinematic Recommendations</h3>
+                  {userLevel && (
+                    <Badge
+                      variant="secondary"
+                      className="h-4 px-1.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300 border-none leading-none"
+                    >
+                      Level {userLevel}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+                  {userLevel
+                    ? `Discover premium series and films selected specifically for your CEFR level (${userLevel}). Instantly forge personalized training decks directly from scripts.`
+                    : "Discover premium series and films selected specifically for your CEFR level. Instantly forge personalized training decks directly from scripts."}
+                </p>
+              </div>
+            </div>
+            <Button asChild size="sm" className="h-8 rounded-full text-xs font-semibold shrink-0">
+              <Link href="/curated">
+                Browse Recommendations
+                <ChevronRight className="size-3.5" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Secondary stats -------------------------------------------------- */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -420,8 +467,8 @@ export default async function DashboardPage() {
               ) : (
                 <AppEmptyState
                   icon={Layers}
-                  title="No packs yet"
-                  description="Browse content to generate your first vocabulary pack."
+                  title="Your Study Library is Empty"
+                  description="Your personalized deck collection will appear here. Choose a film or series from our collection to generate your first vocabulary training pack."
                   className="border-dashed shadow-none"
                   action={
                     <Button size="sm" asChild>
@@ -478,11 +525,11 @@ export default async function DashboardPage() {
               ) : (
                 <AppEmptyState
                   icon={Play}
-                  title="No due reviews"
+                  title="All Memory Shields Intact"
                   description={
                     hasPacks
-                      ? "You're caught up. Open decks to learn new cards or wait for the next scheduled step."
-                      : "Generate a pack to start building a review queue."
+                      ? "Your active vocabulary is fully reinforced. Ready for more? Introduce new cinematic terms or explore the catalog to expand your vault."
+                      : "Your active vocabulary is fully reinforced. Generate a pack from our catalog to start building your training queue."
                   }
                   className="border-dashed shadow-none"
                   action={

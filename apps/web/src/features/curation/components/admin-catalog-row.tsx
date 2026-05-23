@@ -24,14 +24,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 import {
   deleteCuratedEntryAction,
   refreshCuratedEntryAction,
+  setCuratedEntryLevelAction,
   setCuratedEntryPublishedAction,
 } from "@/features/curation/server/actions";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
+
+const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
 interface AdminCatalogRowProps {
   entry: CuratedCatalogEntry;
@@ -75,6 +85,15 @@ export function AdminCatalogRow({ entry, onDragHandlePointerDown }: AdminCatalog
       const fd = new FormData();
       fd.set("id", entry.id);
       await deleteCuratedEntryAction(fd);
+    });
+  }
+
+  function handleLevelChange(value: string) {
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", entry.id);
+      fd.set("level", value === "none" ? "" : value);
+      await setCuratedEntryLevelAction(fd);
     });
   }
 
@@ -159,6 +178,32 @@ export function AdminCatalogRow({ entry, onDragHandlePointerDown }: AdminCatalog
             </>
           ) : null}
         </div>
+      </div>
+
+      {/* Level selection */}
+      <div className="flex items-center gap-1.5 shrink-0 mr-1">
+        <span className="text-[11px] font-semibold text-muted-foreground/80 hidden sm:inline">
+          CEFR:
+        </span>
+        <Select
+          value={entry.level ?? "none"}
+          onValueChange={handleLevelChange}
+          disabled={isPending}
+        >
+          <SelectTrigger className="h-7 w-[88px] rounded-md px-2 text-xs font-medium" size="sm">
+            <SelectValue placeholder="None" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none" className="text-xs">
+              None
+            </SelectItem>
+            {CEFR_LEVELS.map((lvl) => (
+              <SelectItem key={lvl} value={lvl} className="text-xs font-semibold">
+                {lvl}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Published toggle */}

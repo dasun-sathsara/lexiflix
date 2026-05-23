@@ -21,7 +21,7 @@ export function AssessmentFlow() {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [question, setQuestion] = useState<PublicAssessmentItem | null>(null);
   const [answeredCount, setAnsweredCount] = useState(0);
-  const [minItems, setMinItems] = useState(8);
+  const [_minItems, setMinItems] = useState(8);
   const [maxItems, setMaxItems] = useState(12);
   const [selection, setSelection] = useState<Selection>(null);
   const [result, setResult] = useState<AssessmentResult | null>(null);
@@ -150,7 +150,7 @@ export function AssessmentFlow() {
       <div className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center p-6">
         <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
-          <span>Preparing your adaptive assessment...</span>
+          <span>Preparing your vocabulary check-in...</span>
         </div>
       </div>
     );
@@ -198,13 +198,13 @@ export function AssessmentFlow() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Theta estimate
+                  Core Vocabulary Score
                 </p>
                 <p className="mt-1 text-lg font-semibold">{result.thetaMean.toFixed(2)}</p>
               </div>
               <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  95% credible interval
+                  Estimated Level Range
                 </p>
                 <p className="mt-1 text-lg font-semibold">
                   {result.thetaLow.toFixed(2)} to {result.thetaHigh.toFixed(2)}
@@ -214,12 +214,16 @@ export function AssessmentFlow() {
 
             {result.borderlineLabel ? (
               <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-100">
-                Borderline result: {result.borderlineLabel}
+                <div className="font-semibold">Bridging Level: {result.bestLevel}</div>
+                <div className="mt-1 text-xs opacity-90">
+                  You&apos;re on the cusp of {result.bestLevel}! We&apos;ll suggest key words to
+                  bridge the gap.
+                </div>
               </div>
             ) : null}
 
             <div className="space-y-3">
-              <p className="text-sm font-medium">Level probabilities</p>
+              <p className="text-sm font-medium">Your Skill Profile</p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(result.levelProbabilities).map(([level, probability]) => (
                   <Badge key={level} variant="secondary">
@@ -229,12 +233,24 @@ export function AssessmentFlow() {
               </div>
             </div>
 
-            <Button asChild className="w-full gap-2 sm:w-auto">
-              <Link href="/dashboard">
-                Continue to dashboard
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button asChild className="w-full gap-2 sm:w-auto">
+                <Link href="/dashboard">
+                  Continue to dashboard
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full gap-2 sm:w-auto border-primary/20 hover:border-primary/40 hover:bg-primary/5"
+              >
+                <Link href="/curated">
+                  Explore Curated Picks
+                  <Sparkles className="size-4 text-primary fill-current opacity-85" />
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -253,7 +269,7 @@ export function AssessmentFlow() {
           <p>
             Question {answeredCount + 1} of up to {maxItems}
           </p>
-          <p>Minimum items before early finish: {minItems}</p>
+          <p>We&apos;re adjusting questions to match your pace!</p>
         </div>
       </div>
 
@@ -267,7 +283,8 @@ export function AssessmentFlow() {
             {question.text}
           </CardTitle>
           <CardDescription>
-            Choose the best answer. If you are unsure, use the "I don&apos;t know" option.
+            Select the option that fits best. If you&apos;re not sure, select &quot;I&apos;m not
+            sure yet&quot; to help us calibrate your level.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -303,7 +320,7 @@ export function AssessmentFlow() {
             )}
             disabled={isSubmitting}
           >
-            I don&apos;t know
+            I&apos;m not sure yet
           </button>
 
           {error ? (

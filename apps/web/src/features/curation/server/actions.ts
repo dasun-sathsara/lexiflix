@@ -6,11 +6,13 @@ import {
   deleteCuratedEntryById,
   reorderCuratedEntries,
   setCuratedEntryFeaturedRank,
+  setCuratedEntryLevel,
   setCuratedEntryPublishedState,
   upsertCuratedEntryFromTmdb,
 } from "@/features/curation/server/catalog";
 import type { ActionResult } from "@/lib/action-result";
 import { requireAdmin } from "@/lib/auth-guards";
+import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 
 const tmdbMutationSchema = z.object({
   mediaType: z.enum(["movie", "tv"]),
@@ -41,6 +43,11 @@ const featuredRankSchema = z.object({
 
 const deleteSchema = z.object({
   id: z.string().min(1),
+});
+
+const levelSchema = z.object({
+  id: z.string().min(1),
+  level: z.enum(["A1", "A2", "B1", "B2", "C1", "C2", ""]),
 });
 
 function revalidateCuratedRoutes() {
@@ -99,6 +106,18 @@ export async function deleteCuratedEntryAction(formData: FormData) {
   });
 
   await deleteCuratedEntryById(parsed.id);
+  revalidateCuratedRoutes();
+}
+
+export async function setCuratedEntryLevelAction(formData: FormData) {
+  await requireAdmin();
+  const parsed = levelSchema.parse({
+    id: formData.get("id"),
+    level: formData.get("level"),
+  });
+
+  const levelVal = parsed.level === "" ? null : (parsed.level as StoredCefrLevel);
+  await setCuratedEntryLevel(parsed.id, levelVal);
   revalidateCuratedRoutes();
 }
 

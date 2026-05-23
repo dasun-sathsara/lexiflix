@@ -1,4 +1,13 @@
-import { ArrowRight, Film, Play, Sparkles, Star, Tv } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronRight,
+  Film,
+  GraduationCap,
+  Play,
+  Sparkles,
+  Star,
+  Tv,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,8 +17,13 @@ import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppStat } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { getCefrProfile } from "@/features/assessment/server/profile";
 import { listPublishedCuratedEntries } from "@/features/curation/server/catalog";
+import { getEffectiveCefrLevel } from "@/features/settings/components/_utils";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
+import { getSessionOrNull } from "@/lib/auth-guards";
+import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
 export const metadata: Metadata = {
@@ -354,8 +368,24 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
 // Page
 // ---------------------------------------------------------------------------
 
+const CEFR_LEVELS: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
 export default async function CuratedPage() {
-  const publishedEntries = await listPublishedCuratedEntries({ limit: 100 });
+  const session = await getSessionOrNull();
+  const profile = session ? await getCefrProfile(session.user.id) : null;
+  const userLevel = profile
+    ? getEffectiveCefrLevel(profile.manualOverrideLevel, profile.assessedLevel)
+    : null;
+
+  // Default to user level if available, otherwise A1
+  const activeLevel: StoredCefrLevel =
+    userLevel && CEFR_LEVELS.includes(userLevel) ? userLevel : "A1";
+
+  // Fetch all published curated entries
+  const allPublishedEntries = await listPublishedCuratedEntries({ limit: 500 });
+
+  // Filter entries to match the active level
+  const publishedEntries = allPublishedEntries.filter((e) => e.level === activeLevel);
   const [featuredEntry, ...restEntries] = publishedEntries;
 
   const movieEntries = restEntries.filter((e) => e.mediaType === "movie");
@@ -375,6 +405,7 @@ export default async function CuratedPage() {
         <section>
           <AppPageHeader
             heading="Curated Picks"
+            description={`Hand-picked recommendations suited for level ${activeLevel}`}
             stats={
               stats.total > 0 ? (
                 <>
@@ -386,6 +417,43 @@ export default async function CuratedPage() {
             }
           />
         </section>
+
+        {/* Assessment / Level Tuning Banner (shown if user hasn't assessed their level yet) */}
+        {!userLevel && (
+          <Card className="border-amber-200/70 bg-amber-500/5 py-0 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/5">
+            <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-200/70 bg-amber-500/10 text-amber-600 dark:border-amber-500/30 dark:text-amber-300">
+                  <GraduationCap className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold tracking-tight">Personalize Your Feed</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+                    We're currently showing basic{" "}
+                    <span className="font-semibold text-foreground">A1</span> recommendations. Take
+                    our language assessment or select your level manually in settings to personalize
+                    your curated feed!
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button asChild size="sm" variant="outline" className="h-8 rounded-full text-xs">
+                  <Link href="/settings?tab=account">Configure Level</Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className="h-8 rounded-full text-xs bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-500 dark:hover:bg-amber-600"
+                >
+                  <Link href="/onboarding/assessment">
+                    Take Assessment
+                    <ChevronRight className="size-3.5" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {featuredEntry ? (
           <FeaturedSpotlight
@@ -401,8 +469,8 @@ export default async function CuratedPage() {
         ) : (
           <AppEmptyState
             icon={Sparkles}
-            title="Nothing published yet"
-            description="The catalog is live but empty. An admin needs to publish entries from the curation workspace first."
+            title={`No titles in ${activeLevel} yet`}
+            description={`We haven't added any curated recommendations for the ${activeLevel} level yet. Check back soon!`}
           />
         )}
 

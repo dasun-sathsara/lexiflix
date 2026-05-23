@@ -17,23 +17,24 @@ const statusCopy: Record<
   }
 > = {
   queued: {
-    label: "Queued",
-    description: "Waiting to start.",
+    label: "Analyzing Script",
+    description: "Extracting dialogues and queuing NLP processors.",
     tone: "default",
   },
   running: {
-    label: "Generating",
-    description: "Pack generation is running.",
+    label: "Synthesizing",
+    description: "Generating contextual definitions, audio cues, and semantic illustrations.",
     tone: "default",
   },
   completed: {
-    label: "Ready",
-    description: "Generated pack is ready.",
+    label: "Synthesized",
+    description: "Your custom vocabulary pack is calibrated and ready.",
     tone: "success",
   },
   failed: {
-    label: "Needs retry",
-    description: PUBLIC_GENERATION_FAILURE_MESSAGE,
+    label: "Synthesis Interrupted",
+    description:
+      "We encountered an issue during analysis. Retry to re-run the NLP engine or tweak parameters.",
     tone: "danger",
   },
   cancelled: {
@@ -57,23 +58,23 @@ const stageCopy: Record<
     tone: "default",
   },
   selecting_terms: {
-    label: "Choosing vocabulary",
-    description: "Choosing vocabulary that matches this learner and request.",
+    label: "Contextual Filtering",
+    description: "Filtering script transcripts against your CEFR profile.",
     tone: "default",
   },
   generating_content: {
-    label: "Writing learning content",
-    description: "Creating meanings and example sentences.",
+    label: "Semantic Generation",
+    description: "Synthesizing contextual definitions and movie-accurate usage examples.",
     tone: "default",
   },
   generating_assets: {
-    label: "Creating study assets",
-    description: "Preparing optional audio and image support.",
+    label: "Asset Optimization",
+    description: "Calibrating visual aids and premium pronunciation audio.",
     tone: "default",
   },
   saving_pack: {
-    label: "Saving pack",
-    description: "Saving the generated study pack.",
+    label: "Structuring Vault",
+    description: "Finalizing database index and scheduling retrieval review intervals.",
     tone: "default",
   },
   completed: {
@@ -94,11 +95,11 @@ const valueLabels: Record<string, string> = {
   balanced: "Balanced",
   challenge_first: "Challenge first",
   common_first: "Common first",
-  downrank_known: "Downrank known",
-  exclude_known: "Exclude known",
-  include_known: "Include known",
+  downrank_known: "De-prioritize words I know",
+  exclude_known: "Skip words I already know",
+  include_known: "Include everything (even known words)",
   one_level_above: "One level above",
-  same_level: "Same level",
+  same_level: "Keep at my current level",
 };
 
 export function formatGenerationLabel(value: string) {

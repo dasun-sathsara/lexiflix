@@ -288,11 +288,11 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             Session complete
           </Badge>
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Study session saved</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Memory Vault Updated</h1>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-4">
-              <span>{state.reviewedCount} reviewed</span>
-              <span>{state.newLearnedCount} new</span>
-              <span>{state.lapseCount} lapses</span>
+              <span>{state.reviewedCount} reinforced</span>
+              <span>{state.newLearnedCount} newly acquired</span>
+              <span>{state.lapseCount} flagged for reinforcement</span>
               <span>{formatDueLabel(state.nextDueAt)}</span>
             </div>
           </div>
@@ -425,7 +425,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
               <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs tracking-wide text-muted-foreground/70">
                 <span className="inline-block size-1.5 rounded-full bg-primary/40" />
-                Tap to reveal
+                Query memory & tap to reveal
               </span>
             </div>
           </div>

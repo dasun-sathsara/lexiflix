@@ -183,7 +183,7 @@ export function PreferencesSettingsCard({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="assessed">
-                      Use assessment result
+                      Use my adaptive test result
                       {initialPreferences.assessedLevel
                         ? ` (${initialPreferences.assessedLevel})`
                         : ""}
@@ -320,7 +320,7 @@ export function PreferencesSettingsCard({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="same_level">Same level</SelectItem>
+                      <SelectItem value="same_level">Keep at my current level</SelectItem>
                       <SelectItem value="one_level_above">One level above</SelectItem>
                       <SelectItem value="all_levels_above">All levels above</SelectItem>
                     </SelectContent>
@@ -344,16 +344,18 @@ export function PreferencesSettingsCard({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="exclude_known">Exclude known</SelectItem>
-                      <SelectItem value="downrank_known">Downrank known</SelectItem>
-                      <SelectItem value="include_known">Include known</SelectItem>
+                      <SelectItem value="exclude_known">Skip words I already know</SelectItem>
+                      <SelectItem value="downrank_known">De-prioritize words I know</SelectItem>
+                      <SelectItem value="include_known">
+                        Include everything (even known words)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="frequency-preference" className={settingsLabelClass}>
-                    Frequency preference
+                    Vocabulary Selection Priority
                   </Label>
                   <Select
                     value={frequencyPreference}
