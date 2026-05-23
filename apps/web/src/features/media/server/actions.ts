@@ -268,6 +268,7 @@ export async function startPackGenerationAction(
         parsed.request.knownTermHandling ?? preferences.generationKnownTermHandling,
       audioVoiceGender:
         parsed.request.audioVoiceGender ?? preferences.generationAudioVoiceGenderDefault,
+      imageEnabled: parsed.request.imageEnabled ?? true,
       exampleSentenceCount:
         parsed.request.exampleSentenceCount ?? preferences.generationExampleSentenceCount,
       customInstructions:

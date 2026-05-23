@@ -25,6 +25,7 @@ export const generationRequestSchema = z.object({
     .enum(["exclude_known", "downrank_known", "include_known"])
     .default("exclude_known"),
   audioVoiceGender: z.enum(generationAudioVoiceGenders).default("female"),
+  imageEnabled: z.boolean().default(true),
   exampleSentenceCount: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
   customInstructions: z
     .string()

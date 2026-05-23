@@ -308,6 +308,7 @@ export async function getMediaDetailPageData(input: {
     packSize: preferences.generationPackSizeDefault,
     knownTermHandling: preferences.generationKnownTermHandling,
     audioVoiceGender: preferences.generationAudioVoiceGenderDefault,
+    imageEnabled: true,
     exampleSentenceCount: preferences.generationExampleSentenceCount,
     customInstructions: preferences.generationCustomInstructionsDefault,
   };

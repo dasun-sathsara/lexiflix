@@ -124,6 +124,7 @@ export type GenerationDialogDefaults = {
   packSize: number;
   knownTermHandling: GenerationKnownTermHandling;
   audioVoiceGender: GenerationAudioVoiceGender;
+  imageEnabled: boolean;
   exampleSentenceCount: 1 | 2 | 3;
   customInstructions: string | null;
 };

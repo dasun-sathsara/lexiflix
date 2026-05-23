@@ -289,6 +289,26 @@ export function PackGenerationPanel({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5 text-sm">
+              <Label>Image generation</Label>
+              <Select
+                value={form.imageEnabled ? "enabled" : "disabled"}
+                onValueChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    imageEnabled: value === "enabled",
+                  }))
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enabled">Generate images</SelectItem>
+                  <SelectItem value="disabled">Skip image generation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5 text-sm sm:col-span-2">
               <Label>Vocabulary types</Label>
               <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">

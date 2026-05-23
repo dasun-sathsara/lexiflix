@@ -231,13 +231,14 @@ export async function runPackGenerationWorkflow(jobId: string) {
     warnings.push(...speechResult.warnings);
 
     // Image generation is optional and currently a no-op stub — only invoke when enabled.
-    const imageResult = env.CONTENT_GENERATION_IMAGE_ENABLED
-      ? await generateImageArtifacts({
-          textItems,
-          imageEnabled: true,
-          imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
-        })
-      : { artifacts: [], warnings: [] as string[] };
+    const imageResult =
+      env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled
+        ? await generateImageArtifacts({
+            textItems,
+            imageEnabled: true,
+            imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+          })
+        : { artifacts: [], warnings: [] as string[] };
     warnings.push(...imageResult.warnings);
 
     logger.info("[content-generation] asset generation completed", {
