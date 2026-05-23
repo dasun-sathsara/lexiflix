@@ -2,6 +2,7 @@
 
 import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import {
@@ -14,7 +15,6 @@ import type {
   PackGenerationProgressActionResult,
   PackGenerationRetryActionResult,
 } from "../types";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getPackGenerationProgressView, listPackGenerationProgressForDecks } from "./queries";
 
 const jobInputSchema = z.object({

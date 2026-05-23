@@ -112,6 +112,7 @@ export const userTermStateEnum = pgEnum("user_term_state_value", [
   "unseen",
   "learning",
   "known",
+  "ignored",
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   "pack_ready",
@@ -748,6 +749,7 @@ export const userTermState = pgTable(
     lastSeenAt: timestamp("last_seen_at"),
     lastReviewedAt: timestamp("last_reviewed_at"),
     knownAt: timestamp("known_at"),
+    ignoredAt: timestamp("ignored_at"),
     notes: text("notes"),
     ...auditColumns,
   },

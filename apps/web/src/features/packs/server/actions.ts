@@ -269,7 +269,6 @@ export async function resetPackItemAction(input: {
   revalidatePackSurfaces(input.packId);
   return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
 }
-
 async function updateTermStateAndCards({
   userId,
   item,
@@ -277,7 +276,7 @@ async function updateTermStateAndCards({
 }: {
   userId: string;
   item: typeof packItem.$inferSelect;
-  nextState: "known" | "learning";
+  nextState: "known" | "learning" | "ignored";
 }) {
   const now = new Date();
   await db
@@ -291,6 +290,7 @@ async function updateTermStateAndCards({
       firstSeenAt: now,
       lastSeenAt: now,
       knownAt: nextState === "known" ? now : null,
+      ignoredAt: nextState === "ignored" ? now : null,
     })
     .onConflictDoUpdate({
       target: [userTermState.userId, userTermState.termId],
@@ -302,6 +302,8 @@ async function updateTermStateAndCards({
         lastSeenAt: now,
         knownAt:
           nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
+        ignoredAt:
+          nextState === "ignored" ? now : nextState === "learning" ? null : userTermState.ignoredAt,
         updatedAt: now,
       },
     });
@@ -329,10 +331,22 @@ async function updateTermStateAndCards({
       .update(packItem)
       .set({ state: "mastered", masteredAt: now, updatedAt: now })
       .where(inArray(packItem.id, matchingIds));
+  } else if (nextState === "ignored") {
+    await db
+      .update(packItem)
+      .set({ state: "removed", removedAt: now, removalReason: "globally_ignored", updatedAt: now })
+      .where(inArray(packItem.id, matchingIds));
   } else {
     await db
       .update(packItem)
-      .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
+      .set({
+        state: "learning",
+        masteredAt: null,
+        dueAt: now,
+        removedAt: null,
+        removalReason: null,
+        updatedAt: now,
+      })
       .where(inArray(packItem.id, matchingIds));
   }
 
@@ -348,7 +362,7 @@ async function updateTermStateAndCards({
 async function runTermAction(input: {
   packId: string;
   itemId: string;
-  nextState: "known" | "learning";
+  nextState: "known" | "learning" | "ignored";
 }): Promise<PackItemActionResult> {
   const session = await requireSession();
   const item = await requireOwnedPackItem({
@@ -391,8 +405,26 @@ export async function markTermLearningAction(input: {
   return runTermAction({ ...input, nextState: "learning" });
 }
 
+/**
+ * Ignores a specific term globally.
+ * Ignored terms will be excluded from default queues and future pack generation.
+ */
+export async function ignoreTermGloballyAction(input: {
+  packId: string;
+  itemId: string;
+}): Promise<PackItemActionResult> {
+  return runTermAction({ ...input, nextState: "ignored" });
+}
 
-
+/**
+ * Unignores a previously ignored term, returning it to learning.
+ */
+export async function unignoreTermAction(input: {
+  packId: string;
+  itemId: string;
+}): Promise<PackItemActionResult> {
+  return runTermAction({ ...input, nextState: "learning" });
+}
 /**
  * Records a user's rating for a pack item and computes its next SRS state.
  * Updates the user's daily study streak, appends a review event log, and schedules the next review.
@@ -524,6 +556,7 @@ export async function ratePackItemAction(input: {
             ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
             : shouldDemoteKnownTerm
               ? null
+              : userTermState.knownAt,
         updatedAt: reviewedAt,
       },
     });

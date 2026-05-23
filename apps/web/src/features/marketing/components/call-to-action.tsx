@@ -35,29 +35,29 @@ export function CallToActionSection() {
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Assess &amp; Align
+              Profile &amp; Align
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Complete a CEFR-aware placement check and set preferences so every pack targets the
-              skills you want to strengthen.
+              Take our adaptive CEFR placement check to establish your baseline profile, then
+              configure custom study preferences (like vocabulary kinds and daily card pacing).
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Select &amp; Curate
+              Analyze &amp; Customize
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Browse a rich catalog of movies and shows, pull in matching subtitles automatically,
-              and let LexiFlix spotlight the vocabulary that matters most.
+              Browse curated movies and TV seasons. LexiFlix fetches subtitles on-demand and runs a
+              dual NLP/LLM pipeline to isolate vocabulary, phrasal verbs, idioms, and slang.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Study &amp; Review
+              Generate &amp; Study
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Dive into AI-crafted definitions, audio, and images, then reinforce every term with
-              spaced repetition reminders that fit your pace.
+              Generate up to 100 personalized study cards with Gemini definitions, example
+              sentences, Polly audio, and SM-2 scheduled spaced repetition reviews.
             </p>
           </div>
         </div>
