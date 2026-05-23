@@ -234,7 +234,12 @@ export async function runPackGenerationWorkflow(jobId: string) {
     const imageResult =
       env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled
         ? await generateImageArtifacts({
-            textItems,
+            textItems: textItems.filter((item) => {
+              const selectedItem = selectedItems.find(
+                (s) => s.analysisItemId === item.analysisItemId,
+              );
+              return selectedItem?.kind === "word";
+            }),
             imageEnabled: true,
             imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
           })

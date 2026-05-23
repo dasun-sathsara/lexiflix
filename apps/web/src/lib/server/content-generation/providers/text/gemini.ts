@@ -74,6 +74,11 @@ function buildPrompt(input: {
     `Examples per item: ${input.requestSnapshot.exampleSentenceCount}.`,
     "Meanings must be English-only. Generate new example sentences, not copied subtitle lines.",
     "Use subtitle evidence for grounding, but do not mention internal ids.",
+    "For the imageEligibility and imageBrief fields, follow these rules strictly:",
+    "- Only mark an item as eligible (imageEligibility.eligible: true) if it is a concrete, easily-visualized noun, action, animal, object, or physical setting.",
+    "- Do NOT mark abstract words, adjectives (like 'feminine', 'justice', 'logical'), phrasal verbs, idioms, or slang as eligible (imageEligibility.eligible: false, and explain in the reason).",
+    "- If eligible is true, the imageBrief must be a clear, simple, concrete visual description (3-4 sentences) that serves as a direct vocabulary flashcard cue for a language learner. Focus on a single central subject/action in a clear setting, avoiding abstract representations, text/words/letters, or complex visual metaphors. Keep it simple and grounded.",
+    "- If eligible is false, set imageBrief to null.",
     "Return JSON only in the requested schema.",
     input.requestSnapshot.customInstructions
       ? `Custom instructions: ${input.requestSnapshot.customInstructions}`
