@@ -48,11 +48,6 @@ const analysisLlmSdkSchema: Schema = {
         nullable: true,
         description: "One concise subtitle excerpt that supports the phrase.",
       },
-      rationale: {
-        type: Type.STRING,
-        nullable: true,
-        description: "Short explanation for why the item matters to learners.",
-      },
     },
   },
 };
