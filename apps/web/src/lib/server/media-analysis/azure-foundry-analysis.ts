@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@trigger.dev/sdk";
 import { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
 
 import { env } from "@/lib/config/env";
 import {
@@ -13,6 +14,24 @@ import {
 
 // Dynamically initialized only if configured
 let openaiClient: AzureOpenAI | null = null;
+
+const cefrSchema = z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]);
+const analysisLlmKinds = ["phrasal_verb", "idiom", "slang"] as const;
+
+const openAIAnalysisLlmItemSchema = z.object({
+  kind: z.enum(analysisLlmKinds),
+  text: z.string().min(1),
+  displayText: z.string().min(1),
+  cefrLevel: cefrSchema.nullable().optional(),
+  representativeContext: z.string().min(1).nullable().optional(),
+  contexts: z.array(z.string()).default([]),
+  rationale: z.string().min(1).nullable().optional(),
+});
+
+const openAIAnalysisLlmResponseSchema = z.object({
+  items: z.array(openAIAnalysisLlmItemSchema),
+});
+
 function getOpenAIClient(): AzureOpenAI {
   if (!openaiClient) {
     if (!env.AZURE_AI_FOUNDRY_API_KEY || !env.AZURE_AI_FOUNDRY_ENDPOINT) {
@@ -86,7 +105,7 @@ async function runLiveAzureFoundryAnalysis(input: AnalyzeWithAzureFoundryInput) 
   const response = await openai.chat.completions.create({
     model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
     messages: [{ role: "user", content: prompt }],
-    response_format: zodResponseFormat(analysisLlmResponseSchema, "analysisLlmResponse"),
+    response_format: zodResponseFormat(openAIAnalysisLlmResponseSchema, "analysisLlmResponse"),
   });
 
   const text = response.choices[0]?.message?.content;
