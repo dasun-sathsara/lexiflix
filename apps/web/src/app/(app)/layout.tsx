@@ -3,6 +3,7 @@ import Link from "next/link";
 import type * as React from "react";
 import { AppPageContainer } from "@/components/common/app-page-shell";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminFloatingDebug } from "@/features/admin-tools/components/admin-floating-debug";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         ) : null}
         {children}
+        {session.user.role === "admin" ? <AdminFloatingDebug /> : null}
       </AppInset>
     </SidebarProvider>
   );
