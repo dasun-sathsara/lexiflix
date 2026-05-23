@@ -43,6 +43,34 @@ Why it exists:
 - allows generated pack content to reference assets cleanly
 - centralizes artifact access and storage metadata instead of scattering raw URLs across product tables
 
+### `curated_entry`
+
+Durable entry representing a curated movie or TV show in the editorial catalog.
+
+Why it exists:
+
+- separates editorial catalog concerns (featured status, custom display subtitles, publishing controls) from deep subtitle-analysis units (movies and seasons)
+- caches TMDB metadata snapshots locally to render curation lists without runtime TMDB API calls
+
+### Better Auth Core Tables (`user` / `session` / `account` / `verification`)
+
+Authentication and user identity record storage managed by Better Auth.
+
+Why it exists:
+
+- manages secure user registration, session tracking, OAuth provider linking, and administrative role assignment
+- anchors all user-specific profiles, preferences, packs, reviews, and learning history
+
+### CEFR Profile & Assessment Tables (`cefr_profile` / `cefr_assessment_attempt` / `cefr_assessment_response`)
+
+Durable learner proficiency assessment state.
+
+Why it exists:
+
+- calculates and persists the learner's assessed CEFR language level or manual overrides
+- logs response history and probabilities for adaptive level estimation during placement tests
+- shapes the vocabulary selection window during user-specific pack generation
+
 ## Reusable Content Analysis
 
 ### `content_analysis_run`
@@ -179,11 +207,20 @@ Why it exists:
 - lets the app dedupe reminder records instead of recreating them on every read
 - keeps read and dismissed status separate from study-card scheduling state
 
+### `user_streak`
+
+Durable snapshot of the user's consecutive study days.
+
+Why it exists:
+
+- materializes current and historical streak days based on study activity
+- keeps gamification and streak-nudges simple and fast without recalculating the entire review event log on every page render
+
 ## Architectural Reading Order
 
 When evaluating the model, read it in this order:
 
-1. `content` and `vocabulary_term` define shared identities.
+1. `content`, `curated_entry`, and `vocabulary_term` define shared identities and editorial references.
 2. `content_analysis_run`, `content_analysis_run_event`, and `content_analysis_item` define reusable title analysis.
 3. `pack_generation_job`, `pack_generation_job_event`, `pack`, `pack_item`, and `pack_item_content` define learner-specific generation.
-4. `review_event`, `user_term_state`, `user_preferences`, `user_streak`, and `notification` define ongoing learner state after generation.
+4. `review_event`, `user_term_state`, `user_preferences`, `user_streak`, `cefr_profile`, and `notification` define ongoing learner state after generation.
