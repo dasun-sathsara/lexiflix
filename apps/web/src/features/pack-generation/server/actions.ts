@@ -14,6 +14,7 @@ import type {
   PackGenerationProgressActionResult,
   PackGenerationRetryActionResult,
 } from "../types";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getPackGenerationProgressView, listPackGenerationProgressForDecks } from "./queries";
 
 const jobInputSchema = z.object({
@@ -90,7 +91,7 @@ export async function retryPackGenerationAction(
         stage: "failed",
         message: "Failed to trigger pack generation retry.",
         errorCode: "WORKFLOW_TRIGGER_FAILED",
-        errorMessage: "Failed to trigger pack generation retry.",
+        errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
         payload: {
           triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
           triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),

@@ -277,7 +277,7 @@ async function updateTermStateAndCards({
 }: {
   userId: string;
   item: typeof packItem.$inferSelect;
-  nextState: "known" | "learning" | "ignored";
+  nextState: "known" | "learning";
 }) {
   const now = new Date();
   await db
@@ -291,7 +291,6 @@ async function updateTermStateAndCards({
       firstSeenAt: now,
       lastSeenAt: now,
       knownAt: nextState === "known" ? now : null,
-      ignoredAt: nextState === "ignored" ? now : null,
     })
     .onConflictDoUpdate({
       target: [userTermState.userId, userTermState.termId],
@@ -303,7 +302,6 @@ async function updateTermStateAndCards({
         lastSeenAt: now,
         knownAt:
           nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
-        ignoredAt: nextState === "ignored" ? now : null,
         updatedAt: now,
       },
     });
@@ -331,20 +329,10 @@ async function updateTermStateAndCards({
       .update(packItem)
       .set({ state: "mastered", masteredAt: now, updatedAt: now })
       .where(inArray(packItem.id, matchingIds));
-  } else if (nextState === "learning") {
-    await db
-      .update(packItem)
-      .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
-      .where(inArray(packItem.id, matchingIds));
   } else {
     await db
       .update(packItem)
-      .set({
-        state: "removed",
-        removedAt: now,
-        removalReason: "term_ignored",
-        updatedAt: now,
-      })
+      .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
       .where(inArray(packItem.id, matchingIds));
   }
 
@@ -360,7 +348,7 @@ async function updateTermStateAndCards({
 async function runTermAction(input: {
   packId: string;
   itemId: string;
-  nextState: "known" | "learning" | "ignored";
+  nextState: "known" | "learning";
 }): Promise<PackItemActionResult> {
   const session = await requireSession();
   const item = await requireOwnedPackItem({
@@ -403,88 +391,7 @@ export async function markTermLearningAction(input: {
   return runTermAction({ ...input, nextState: "learning" });
 }
 
-/**
- * Marks a specific term as ignored globally for the user.
- * Ignored terms will be completely excluded from future pack generation.
- */
-export async function ignoreTermGloballyAction(input: {
-  packId: string;
-  itemId: string;
-}): Promise<PackItemActionResult> {
-  return runTermAction({ ...input, nextState: "ignored" });
-}
 
-/**
- * Removes a term from the user's global ignore list.
- */
-export async function unignoreTermAction(input: {
-  packId: string;
-  itemId: string;
-}): Promise<PackItemActionResult> {
-  const session = await requireSession();
-  const item = await requireOwnedPackItem({
-    packId: input.packId,
-    itemId: input.itemId,
-    userId: session.user.id,
-  });
-  if (!item) {
-    return { ok: false, error: "Card not found." };
-  }
-
-  const now = new Date();
-  await db
-    .insert(userTermState)
-    .values({
-      userId: session.user.id,
-      termId: item.termId,
-      state: "learning",
-      source: "manual",
-      lastPackItemId: item.id,
-      firstSeenAt: now,
-      lastSeenAt: now,
-    })
-    .onConflictDoUpdate({
-      target: [userTermState.userId, userTermState.termId],
-      set: {
-        state: "learning",
-        source: "manual",
-        ignoredAt: null,
-        lastPackItemId: item.id,
-        lastSeenAt: now,
-        updatedAt: now,
-      },
-    });
-
-  const ignoredRows = await db
-    .select({ id: packItem.id, firstStudiedAt: packItem.firstStudiedAt })
-    .from(packItem)
-    .innerJoin(pack, eq(pack.id, packItem.packId))
-    .where(
-      and(
-        eq(pack.userId, session.user.id),
-        eq(packItem.termId, item.termId),
-        eq(packItem.removalReason, "term_ignored"),
-      ),
-    );
-
-  const newIds = ignoredRows.filter((row) => !row.firstStudiedAt).map((row) => row.id);
-  const learningIds = ignoredRows.filter((row) => row.firstStudiedAt).map((row) => row.id);
-  if (newIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({ state: "new", removedAt: null, removalReason: null, updatedAt: now })
-      .where(inArray(packItem.id, newIds));
-  }
-  if (learningIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({ state: "learning", removedAt: null, removalReason: null, updatedAt: now })
-      .where(inArray(packItem.id, learningIds));
-  }
-
-  revalidatePackSurfaces(input.packId);
-  return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
-}
 
 /**
  * Records a user's rating for a pack item and computes its next SRS state.
@@ -617,8 +524,6 @@ export async function ratePackItemAction(input: {
             ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
             : shouldDemoteKnownTerm
               ? null
-              : userTermState.knownAt,
-        ignoredAt: null,
         updatedAt: reviewedAt,
       },
     });

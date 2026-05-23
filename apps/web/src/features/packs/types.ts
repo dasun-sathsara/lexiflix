@@ -58,7 +58,7 @@ export type PackMediaSummary = {
 export type PackCardView = {
   id: string;
   termId: string;
-  termState: "unseen" | "learning" | "known" | "ignored" | null;
+  termState: "unseen" | "learning" | "known" | null;
   displayText: string;
   kind: PackVocabularyKind;
   partOfSpeech: string | null;
