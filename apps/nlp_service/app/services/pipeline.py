@@ -64,9 +64,7 @@ class AnalysisPipeline:
         )
 
         if not word_stats:
-            warnings.append(
-                "No valid vocabulary candidates were found after filtering."
-            )
+            warnings.append("No valid vocabulary candidates were found after filtering.")
 
         logger.info("Pipeline: %d unique candidate lemmas", len(word_stats))
 
@@ -161,10 +159,7 @@ class AnalysisPipeline:
                     elif token.text[:1].isupper():
                         stats.capitalized_count += 1
 
-                    if (
-                        len(stats.contexts) < _MAX_CONTEXTS
-                        and sent_text not in stats.contexts
-                    ):
+                    if len(stats.contexts) < _MAX_CONTEXTS and sent_text not in stats.contexts:
                         stats.contexts.append(sent_text)
 
         self._apply_cefr(word_stats)
