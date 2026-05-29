@@ -67,13 +67,15 @@ export async function discoverMedia(
   type: "movie" | "tv",
   params: Record<string, string | number | boolean | undefined>,
 ) {
-  // Hard filters: English language only, min 1000 votes
+  // Hard filters: English language only, min 1000 votes, and age rating filter (PG-13 or TV-14)
   const finalParams = {
     ...params,
     language: "en-US",
     include_adult: false,
     with_original_language: "en",
     "vote_count.gte": 1000,
+    certification_country: "US",
+    "certification.lte": type === "movie" ? "PG-13" : "TV-14",
   };
 
   return fetchTMDB<TMDBResponse<TMDBResult>>(`/discover/${type}`, finalParams, {
@@ -88,12 +90,43 @@ export async function searchMedia(query: string, type: "movie" | "tv", page: num
     { tags: [`search-${type}-${query}`] },
   );
 
-  // Post-filter search results as API doesn't support these filters on search endpoints
-  // Note: This effectively reduces the page size below 20
-  // data.results = data.results.filter(
-  //   (item) => item.original_language === "en" && item.vote_count >= 1000,
-  // );
+  // Filter out non-mainstream ones first (based on what we already have in the search results)
+  const filteredResults = data.results.filter(
+    (item) => item.original_language === "en" && (item.vote_count ?? 0) >= 100,
+  );
 
+  // Fetch details for the remaining mainstream results to filter out R-rated / TV-MA / NR
+  const detailedResults = await Promise.all(
+    filteredResults.map(async (item) => {
+      try {
+        if (type === "movie") {
+          const details = await getMovieDetails(item.id);
+          const releaseDates = details.release_dates?.results || [];
+          const usRelease = releaseDates.find((r) => r.iso_3166_1 === "US");
+          const certifications = usRelease?.release_dates?.map((r) => r.certification) || [];
+          const isROrAdult = certifications.some(
+            (c) => c === "R" || c === "NC-17" || c === "NR" || c === "UR",
+          );
+          if (isROrAdult) {
+            return null; // Exclude
+          }
+        } else {
+          const details = await getTvDetails(item.id);
+          const ratings = details.content_ratings?.results || [];
+          const usRating = ratings.find((r) => r.iso_3166_1 === "US");
+          const rating = usRating?.rating;
+          if (rating === "TV-MA" || rating === "R" || rating === "NC-17") {
+            return null; // Exclude
+          }
+        }
+        return item;
+      } catch (_err) {
+        return null; // Safe default: exclude if detail fetch fails
+      }
+    }),
+  );
+
+  data.results = detailedResults.filter((item): item is TMDBResult => item !== null);
   return data;
 }
 
