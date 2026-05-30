@@ -1,5 +1,3 @@
-export { mapWithConcurrency } from "@/lib/server/utils/concurrency";
-
 import "server-only";
 
 import type {
@@ -9,7 +7,6 @@ import type {
 } from "@/lib/server/content-generation/contracts";
 
 export type SpeechSynthesisRequest = {
-  item: SelectedGenerationItem;
   target: SpeechArtifactTarget;
 };
 
@@ -22,7 +19,6 @@ export function buildSpeechRequests(input: {
 
   for (const item of input.selectedItems) {
     requests.push({
-      item,
       target: {
         kind: "term",
         analysisItemId: item.analysisItemId,
@@ -33,7 +29,6 @@ export function buildSpeechRequests(input: {
     const generated = textByItemId.get(item.analysisItemId);
     for (const [exampleIndex, example] of (generated?.exampleSentences ?? []).entries()) {
       requests.push({
-        item,
         target: {
           kind: "example_sentence",
           analysisItemId: item.analysisItemId,

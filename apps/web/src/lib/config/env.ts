@@ -80,7 +80,6 @@ const serverSchema = z
     CONTENT_GENERATION_AUDIO_PROVIDER: z
       .enum(["disabled", "aws-polly", "azure-mai"])
       .default("azure-mai"),
-    CONTENT_GENERATION_AUDIO_VOICE: z.string().min(1).default("lexiflix-v1"),
     AZURE_SPEECH_REGION: z.string().min(1).default("eastus2"),
     AZURE_SPEECH_API_KEY: z.string().min(1).optional(),
     AZURE_SPEECH_CONCURRENCY: z.coerce.number().int().positive().default(4),
@@ -92,8 +91,6 @@ const serverSchema = z
     AWS_POLLY_ACCESS_KEY_ID: z.string().min(1).optional(),
     AWS_POLLY_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     AWS_POLLY_ENGINE: z.enum(["standard", "neural"]).default("standard"),
-    AWS_POLLY_STANDARD_VOICE_ID: z.string().min(1).default("Joanna"),
-    AWS_POLLY_NEURAL_VOICE_ID: z.string().min(1).default("Matthew"),
     AWS_POLLY_CONCURRENCY: z.coerce.number().int().positive().default(5),
     AWS_POLLY_MAX_RETRIES: z.coerce.number().int().nonnegative().default(2),
     CONTENT_GENERATION_IMAGE_ENABLED: z
@@ -101,7 +98,6 @@ const serverSchema = z
       .default("false")
       .transform((value) => value === "true"),
     CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).optional(),
-    CONTENT_GENERATION_IMAGE_CONCURRENCY: z.coerce.number().int().positive().default(3),
     NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
     NLP_SERVICE_API_KEY: z.string().min(1, "NLP_SERVICE_API_KEY is required"),
     NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce

@@ -68,8 +68,6 @@ The web app also supports optional server-side tuning vars:
 - `AZURE_MAI_VOICE_STYLE`
 - `AWS_POLLY_REGION`
 - `AWS_POLLY_ENGINE`
-- `AWS_POLLY_STANDARD_VOICE_ID`
-- `AWS_POLLY_NEURAL_VOICE_ID`
 - `AWS_POLLY_CONCURRENCY`
 - `AWS_POLLY_MAX_RETRIES`
 

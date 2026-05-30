@@ -21,9 +21,9 @@ import {
 } from "@/lib/server/content-generation/jobs";
 import { generateImageArtifacts } from "@/lib/server/content-generation/providers/image";
 import { generateSpeechArtifacts } from "@/lib/server/content-generation/providers/speech";
+import { getSpeechProviderConfig } from "@/lib/server/content-generation/providers/speech/config";
 import { getSpeechArtifactTarget } from "@/lib/server/content-generation/providers/speech/helpers";
-import { generateTextContent as generateTextWithAzureFoundry } from "@/lib/server/content-generation/providers/text/azure-foundry";
-import { generateTextContent as generateTextWithGemini } from "@/lib/server/content-generation/providers/text/gemini";
+import { generateTextContent } from "@/lib/server/content-generation/providers/text";
 import { selectGenerationItems } from "@/lib/server/content-generation/selection";
 import { db } from "@/lib/server/db";
 import {
@@ -84,26 +84,6 @@ async function sendPackStatusEmailIfEnabled({
   }
 }
 
-function getAudioConfig(voiceGender?: "female" | "male") {
-  const normalizedVoiceGender = voiceGender === "male" ? "male" : "female";
-  const pollyVoiceByGender = normalizedVoiceGender === "male" ? "Matthew" : "Joanna";
-  const azureMaiVoiceByGender =
-    normalizedVoiceGender === "male" ? env.AZURE_MAI_VOICE_MALE : env.AZURE_MAI_VOICE_FEMALE;
-  const audioVoice =
-    env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
-      ? pollyVoiceByGender
-      : env.CONTENT_GENERATION_AUDIO_PROVIDER === "azure-mai"
-        ? azureMaiVoiceByGender
-        : env.CONTENT_GENERATION_AUDIO_VOICE;
-
-  return {
-    audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
-    audioVoice,
-    audioEngine: env.AWS_POLLY_ENGINE,
-    audioStyle: env.AZURE_MAI_VOICE_STYLE,
-  };
-}
-
 async function transitionPackGenerationJob(input: {
   jobId: string;
   status: "queued" | "running" | "completed" | "failed";
@@ -142,7 +122,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
     return { packId: existing?.id, warnings: [] as string[] };
   }
 
-  const audioConfig = getAudioConfig(job.requestSnapshot.audioVoiceGender);
+  const speechConfig = getSpeechProviderConfig(job.requestSnapshot.audioVoiceGender);
   const warnings: string[] = [];
 
   try {
@@ -153,10 +133,10 @@ export async function runPackGenerationWorkflow(jobId: string) {
       message: "Selecting vocabulary for this learner.",
       payload: {
         textModel: env.CONTENT_GENERATION_TEXT_MODEL,
-        audioEnabled: audioConfig.audioProvider !== "disabled",
-        audioProvider: audioConfig.audioProvider,
+        audioEnabled: speechConfig.provider !== "disabled",
+        audioProvider: speechConfig.provider,
         imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED,
-        imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+        imageModel: env.CONTENT_GENERATION_IMAGE_PROVIDER,
       },
     });
 
@@ -184,18 +164,10 @@ export async function runPackGenerationWorkflow(jobId: string) {
       payload: { selectedItemCount: selectedItems.length },
     });
 
-    const textItems =
-      env.TEXT_LLM_PROVIDER === "azure-foundry"
-        ? await generateTextWithAzureFoundry({
-            items: selectedItems,
-            requestSnapshot: job.requestSnapshot,
-            model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
-          })
-        : await generateTextWithGemini({
-            items: selectedItems,
-            requestSnapshot: job.requestSnapshot,
-            model: env.CONTENT_GENERATION_TEXT_MODEL,
-          });
+    const textItems = await generateTextContent({
+      items: selectedItems,
+      requestSnapshot: job.requestSnapshot,
+    });
     const textMap = textByAnalysisItem(textItems);
     const missingTextItems = selectedItems.filter((item) => !textMap.has(item.analysisItemId));
     if (missingTextItems.length > 0) {
@@ -226,11 +198,11 @@ export async function runPackGenerationWorkflow(jobId: string) {
     const speechResult = await generateSpeechArtifacts({
       selectedItems,
       textItems,
-      audioConfig,
+      config: speechConfig,
     });
     warnings.push(...speechResult.warnings);
 
-    // Image generation is optional and currently a no-op stub — only invoke when enabled.
+    // Image generation is optional and best-effort, so only invoke it when both settings allow it.
     const imageResult =
       env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled
         ? await generateImageArtifacts({
@@ -240,8 +212,6 @@ export async function runPackGenerationWorkflow(jobId: string) {
               );
               return selectedItem?.kind === "word";
             }),
-            imageEnabled: true,
-            imageProvider: env.CONTENT_GENERATION_IMAGE_PROVIDER,
           })
         : { artifacts: [], warnings: [] as string[] };
     warnings.push(...imageResult.warnings);
