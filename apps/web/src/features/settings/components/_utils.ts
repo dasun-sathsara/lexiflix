@@ -35,8 +35,7 @@ export const settingsCardFooterClass =
 
 export const settingsFieldClass = "flex flex-col gap-1.5";
 
-export const settingsLabelClass =
-  "text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground";
+export const settingsLabelClass = "text-sm font-medium text-foreground";
 
 export function normalizeCustomInstructions(value: string) {
   const trimmed = value.trim();
