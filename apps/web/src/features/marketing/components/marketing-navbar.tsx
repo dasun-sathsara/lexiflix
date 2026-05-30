@@ -85,7 +85,7 @@ export function MarketingNavbar({ isLoggedIn = false }: MarketingNavbarProps) {
             ) : (
               <>
                 <ElegantButton asChild size="elegant" variant="elegantSecondary">
-                  <Link href="/login">Login</Link>
+                  <Link href="/login">Sign In</Link>
                 </ElegantButton>
                 <ElegantButton asChild size="elegant" variant="elegant">
                   <Link href="/signup">Sign Up</Link>

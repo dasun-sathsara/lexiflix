@@ -259,7 +259,7 @@ export function NotificationBell() {
         </div>
 
         {/* List */}
-        <div className="max-h-[420px] overflow-y-auto p-2">
+        <div className="max-h-[420px] space-y-1 overflow-y-auto p-2">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
               <div className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">

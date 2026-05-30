@@ -207,6 +207,11 @@ export function AdminCatalogRow({ entry, onDragHandlePointerDown }: AdminCatalog
       </div>
 
       {/* Published toggle */}
+      {entry.isPublished && !entry.level ? (
+        <span className="hidden shrink-0 rounded-md border border-amber-300/70 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 sm:inline dark:border-amber-500/30 dark:text-amber-300">
+          No level
+        </span>
+      ) : null}
       <Button
         type="button"
         variant="ghost"

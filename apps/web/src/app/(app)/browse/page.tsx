@@ -45,9 +45,13 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const data = q
     ? await searchMedia(q, type, page)
     : await (async () => {
+        const sortByParam = typeof params.sort_by === "string" ? params.sort_by : undefined;
         const discoverParams: Record<string, string | number | boolean | undefined> = {
           page,
-          sort_by: typeof params.sort_by === "string" ? params.sort_by : undefined,
+          sort_by:
+            type === "tv" && sortByParam?.startsWith("primary_release_date")
+              ? sortByParam.replace("primary_release_date", "first_air_date")
+              : sortByParam,
           with_genres: typeof params.with_genres === "string" ? params.with_genres : undefined,
         };
 

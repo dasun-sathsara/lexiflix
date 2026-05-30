@@ -14,7 +14,7 @@ import Link from "next/link";
 
 import { AppPageHeader, AppSectionHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
-import { AppEmptyState, AppStat } from "@/components/common/app-surface";
+import { AppEmptyState } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import { getCefrProfile } from "@/features/assessment/server/profile";
 import { listPublishedCuratedEntries } from "@/features/curation/server/catalog";
 import { getEffectiveCefrLevel } from "@/features/settings/components/_utils";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
-import { getSessionOrNull } from "@/lib/auth-guards";
+import { requireSession } from "@/lib/auth-guards";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 
@@ -370,32 +370,40 @@ function TvShowRows({ items }: { items: Awaited<ReturnType<typeof listPublishedC
 
 const CEFR_LEVELS: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-export default async function CuratedPage() {
-  const session = await getSessionOrNull();
-  const profile = session ? await getCefrProfile(session.user.id) : null;
+export default async function CuratedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ level?: string }>;
+}) {
+  const { level: levelParam } = await searchParams;
+  const session = await requireSession();
+  const profile = await getCefrProfile(session.user.id);
   const userLevel = profile
     ? getEffectiveCefrLevel(profile.manualOverrideLevel, profile.assessedLevel)
     : null;
 
+  // ?level= overrides the learner's level so any CEFR band can be browsed.
+  const requestedLevel =
+    levelParam && CEFR_LEVELS.includes(levelParam as StoredCefrLevel)
+      ? (levelParam as StoredCefrLevel)
+      : null;
+
   // Default to user level if available, otherwise A1
   const activeLevel: StoredCefrLevel =
-    userLevel && CEFR_LEVELS.includes(userLevel) ? userLevel : "A1";
+    requestedLevel ?? (userLevel && CEFR_LEVELS.includes(userLevel) ? userLevel : "A1");
 
   // Fetch all published curated entries
   const allPublishedEntries = await listPublishedCuratedEntries({ limit: 500 });
 
-  // Filter entries to match the active level
-  const publishedEntries = allPublishedEntries.filter((e) => e.level === activeLevel);
+  // Filter entries to match the active level; unleveled entries surface as a fallback
+  // so a published title with no CEFR level is never silently hidden.
+  const publishedEntries = allPublishedEntries.filter(
+    (e) => e.level === activeLevel || e.level === null,
+  );
   const [featuredEntry, ...restEntries] = publishedEntries;
 
   const movieEntries = restEntries.filter((e) => e.mediaType === "movie");
   const tvEntries = restEntries.filter((e) => e.mediaType === "tv");
-
-  const stats = {
-    total: publishedEntries.length,
-    movies: publishedEntries.filter((e) => e.mediaType === "movie").length,
-    tv: publishedEntries.filter((e) => e.mediaType === "tv").length,
-  };
 
   return (
     <>
@@ -406,15 +414,6 @@ export default async function CuratedPage() {
           <AppPageHeader
             heading="Curated Picks"
             description={`Hand-picked recommendations suited for level ${activeLevel}`}
-            stats={
-              stats.total > 0 ? (
-                <>
-                  <AppStat icon={Sparkles} label="Titles" value={stats.total} tone="accent" />
-                  <AppStat icon={Film} label="Movies" value={stats.movies} />
-                  <AppStat icon={Tv} label="TV Shows" value={stats.tv} />
-                </>
-              ) : null
-            }
           />
         </section>
 
