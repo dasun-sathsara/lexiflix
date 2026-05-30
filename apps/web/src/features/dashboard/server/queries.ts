@@ -94,7 +94,7 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
           isNull(packItem.removedAt),
         ),
       )
-      .where(eq(pack.userId, userId))
+      .where(and(eq(pack.userId, userId), eq(pack.status, "active")))
       .orderBy(desc(pack.updatedAt)),
   ]);
   const planByPackId = new Map(studyPlan.packs.map((packPlan) => [packPlan.packId, packPlan]));
