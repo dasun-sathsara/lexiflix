@@ -130,7 +130,7 @@ export function StudySessionCard({
 
       {/* ── Card area ───────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pt-6">
-        <div className="relative h-full max-h-[42rem] w-full max-w-[48rem] sm:max-h-[45rem]">
+        <div className="relative h-full max-h-[42rem] w-full max-w-[54rem] sm:max-h-[45rem]">
           {/* Prompt side */}
           {/* biome-ignore lint/a11y/useSemanticElements: Needs to wrap nested interactive elements */}
           <div
@@ -201,7 +201,7 @@ export function StudySessionCard({
           <div
             aria-hidden={!isFlipped}
             className={cn(
-              "absolute inset-0 flex flex-col overflow-y-auto rounded-2xl border border-border/50 bg-background/95 shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out",
+              "absolute inset-0 flex flex-col rounded-2xl border border-border/50 bg-background/95 shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out",
               isFlipped ? "scale-100 opacity-100" : "pointer-events-none scale-[1.02] opacity-0",
             )}
           >
@@ -242,7 +242,7 @@ export function StudySessionCard({
             </div>
 
             {/* Answer content */}
-            <div className="flex-1 space-y-5 px-6 py-5 sm:space-y-6 sm:px-8">
+            <div className="flex-1 overflow-y-auto space-y-5 px-6 py-5 sm:space-y-6 sm:px-8">
               {/* Meaning */}
               <div>
                 <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
