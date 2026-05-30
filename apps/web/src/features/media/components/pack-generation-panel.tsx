@@ -46,6 +46,7 @@ export type PackGenerationPanelProps = {
   generationDefaults: GenerationDialogDefaults;
   isGenerating: boolean;
   onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
+  onRetryGeneration: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
@@ -58,6 +59,7 @@ export function PackGenerationPanel({
   generationDefaults,
   isGenerating,
   onStartGeneration,
+  onRetryGeneration,
   open,
   onOpenChange,
 }: PackGenerationPanelProps) {
@@ -136,6 +138,21 @@ export function PackGenerationPanel({
           <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
             {getGenerationStatusMessage(generation)}
           </div>
+        ) : null}
+        {generation?.status === "failed" ? (
+          <Button
+            className="w-full gap-2"
+            variant="default"
+            onClick={onRetryGeneration}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            Retry Generation
+          </Button>
         ) : null}
         {generation?.packHref ? (
           <Button className="w-full gap-2" asChild>
