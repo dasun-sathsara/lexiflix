@@ -103,7 +103,7 @@ async function triggerPackGenerationJob(jobId: string) {
       stage: "failed",
       message: "Failed to trigger pack generation.",
       errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
+      errorMessage: error instanceof Error ? error.message : PUBLIC_GENERATION_FAILURE_MESSAGE,
       payload: {
         triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
         triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
@@ -116,78 +116,86 @@ async function triggerPackGenerationJob(jobId: string) {
 export async function startAnalysisAction(
   input: StartAnalysisInput,
 ): Promise<StartAnalysisActionResult> {
-  await requireSession();
+  try {
+    await requireSession();
 
-  const parsed = startAnalysisInputSchema.parse(input);
-  const target = await resolveOrCreateContentTarget({
-    mediaType: parsed.mediaType,
-    tmdbId: parsed.tmdbId,
-    ...(parsed.mediaType === "tv" && parsed.seasonNumber
-      ? { seasonNumber: parsed.seasonNumber }
-      : {}),
-  });
+    const parsed = startAnalysisInputSchema.parse(input);
+    const target = await resolveOrCreateContentTarget({
+      mediaType: parsed.mediaType,
+      tmdbId: parsed.tmdbId,
+      ...(parsed.mediaType === "tv" && parsed.seasonNumber
+        ? { seasonNumber: parsed.seasonNumber }
+        : {}),
+    });
 
-  if (target.status !== "resolved") {
-    return {
-      ok: false,
-      error: "Choose a season before starting TV subtitle analysis.",
-    };
-  }
+    if (target.status !== "resolved") {
+      return {
+        ok: false,
+        error: "Choose a season before starting TV subtitle analysis.",
+      };
+    }
 
-  const existing = await getContentAnalysisRunByFingerprint(
-    target.content.id,
-    MEDIA_ANALYSIS_FINGERPRINT,
-  );
+    const existing = await getContentAnalysisRunByFingerprint(
+      target.content.id,
+      MEDIA_ANALYSIS_FINGERPRINT,
+    );
 
-  if (
-    existing?.status === "completed" ||
-    existing?.status === "queued" ||
-    existing?.status === "running"
-  ) {
-    const snapshot = await getAnalysisSnapshotByRunId(existing.id);
+    if (
+      existing?.status === "completed" ||
+      existing?.status === "queued" ||
+      existing?.status === "running"
+    ) {
+      const snapshot = await getAnalysisSnapshotByRunId(existing.id);
+      if (!snapshot) {
+        throw new Error(
+          `Content analysis run ${existing.id} disappeared before it could be returned.`,
+        );
+      }
+
+      return {
+        ok: true,
+        data: { analysis: snapshot },
+      };
+    }
+
+    let runId: string;
+    let shouldTrigger = false;
+
+    if (existing?.status === "failed") {
+      const resetRun = await resetFailedContentAnalysisRunForRetry(existing.id);
+      runId = resetRun.run.id;
+      shouldTrigger = resetRun.wasReset;
+    } else {
+      const created = await createOrReuseContentAnalysisRun({
+        contentId: target.content.id,
+        pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
+        pipelineDescriptor: { version: MEDIA_ANALYSIS_PIPELINE_VERSION },
+        queuedMessage: "Subtitle analysis queued.",
+      });
+      runId = created.run.id;
+      shouldTrigger = created.wasCreated;
+    }
+
+    if (shouldTrigger) {
+      await triggerAnalysisRun(runId);
+    }
+
+    const snapshot = await getAnalysisSnapshotByRunId(runId);
     if (!snapshot) {
-      throw new Error(
-        `Content analysis run ${existing.id} disappeared before it could be returned.`,
-      );
+      throw new Error(`Content analysis run ${runId} disappeared after being triggered.`);
     }
 
     return {
       ok: true,
       data: { analysis: snapshot },
     };
+  } catch (error) {
+    console.error("[actions:startAnalysis] Action failed", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "An unexpected service error occurred.",
+    };
   }
-
-  let runId: string;
-  let shouldTrigger = false;
-
-  if (existing?.status === "failed") {
-    const resetRun = await resetFailedContentAnalysisRunForRetry(existing.id);
-    runId = resetRun.run.id;
-    shouldTrigger = resetRun.wasReset;
-  } else {
-    const created = await createOrReuseContentAnalysisRun({
-      contentId: target.content.id,
-      pipelineFingerprint: MEDIA_ANALYSIS_FINGERPRINT,
-      pipelineDescriptor: { version: MEDIA_ANALYSIS_PIPELINE_VERSION },
-      queuedMessage: "Subtitle analysis queued.",
-    });
-    runId = created.run.id;
-    shouldTrigger = created.wasCreated;
-  }
-
-  if (shouldTrigger) {
-    await triggerAnalysisRun(runId);
-  }
-
-  const snapshot = await getAnalysisSnapshotByRunId(runId);
-  if (!snapshot) {
-    throw new Error(`Content analysis run ${runId} disappeared after being triggered.`);
-  }
-
-  return {
-    ok: true,
-    data: { analysis: snapshot },
-  };
 }
 
 export async function getAnalysisStatusAction(input: {
@@ -222,76 +230,88 @@ export async function getAnalysisStatusAction(input: {
 export async function startPackGenerationAction(
   input: StartPackGenerationInput,
 ): Promise<StartPackGenerationActionResult> {
-  const session = await requireSession();
-  const parsed = startGenerationInputSchema.parse(input);
-  const target = await resolveOrCreateContentTarget({
-    mediaType: parsed.mediaType,
-    tmdbId: parsed.tmdbId,
-    ...(parsed.mediaType === "tv" && parsed.seasonNumber
-      ? { seasonNumber: parsed.seasonNumber }
-      : {}),
-  });
+  try {
+    const session = await requireSession();
+    const parsed = startGenerationInputSchema.parse(input);
+    const target = await resolveOrCreateContentTarget({
+      mediaType: parsed.mediaType,
+      tmdbId: parsed.tmdbId,
+      ...(parsed.mediaType === "tv" && parsed.seasonNumber
+        ? { seasonNumber: parsed.seasonNumber }
+        : {}),
+    });
 
-  if (target.status !== "resolved") {
-    return { ok: false, error: "Choose a season before generating a pack." };
-  }
+    if (target.status !== "resolved") {
+      return { ok: false, error: "Choose a season before generating a pack." };
+    }
 
-  const analysisRun = await getContentAnalysisRunByFingerprint(
-    target.content.id,
-    MEDIA_ANALYSIS_FINGERPRINT,
-  );
-  if (!analysisRun || analysisRun.status !== "completed") {
+    const analysisRun = await getContentAnalysisRunByFingerprint(
+      target.content.id,
+      MEDIA_ANALYSIS_FINGERPRINT,
+    );
+    if (!analysisRun || analysisRun.status !== "completed") {
+      return {
+        ok: false,
+        error: "Reusable subtitle analysis must complete before pack generation.",
+      };
+    }
+
+    const preferences = await getSettingsPreferences(session.user.id);
+    const requestSnapshot = generationRequestSchema.parse({
+      learnerCefrLevel: parsed.request.learnerCefrLevel ?? null,
+      frequencyPreference: parsed.request.frequencyPreference ?? preferences.frequencyPreference,
+      selectedVocabularyTypes:
+        parsed.request.selectedVocabularyTypes ?? preferences.studyVocabularyTypes,
+      cefrWindowMode: parsed.request.cefrWindowMode ?? preferences.generationCefrWindowMode,
+      packSize: parsed.request.packSize ?? preferences.generationPackSizeDefault,
+      knownTermHandling:
+        parsed.request.knownTermHandling ?? preferences.generationKnownTermHandling,
+      audioVoiceGender:
+        parsed.request.audioVoiceGender ?? preferences.generationAudioVoiceGenderDefault,
+      exampleSentenceCount:
+        parsed.request.exampleSentenceCount ?? preferences.generationExampleSentenceCount,
+      customInstructions:
+        parsed.request.customInstructions ?? preferences.generationCustomInstructionsDefault,
+      forceRegenerate: parsed.request.forceRegenerate ?? false,
+    });
+
+    const idempotencyKey = computePackGenerationIdempotencyKey({
+      userId: session.user.id,
+      contentId: target.content.id,
+      analysisRunId: analysisRun.id,
+      requestSnapshot,
+    });
+
+    const { job, wasCreated } = await createOrReusePackGenerationJob({
+      userId: session.user.id,
+      contentId: target.content.id,
+      analysisRunId: analysisRun.id,
+      requestSnapshot,
+      idempotencyKey,
+    });
+
+    if (wasCreated) {
+      await triggerPackGenerationJob(job.id);
+    }
+
+    const generation = await getPackGenerationSnapshotByJobId({
+      userId: session.user.id,
+      jobId: job.id,
+    });
+
+    if (!generation) {
+      throw new Error(`Pack generation job ${job.id} disappeared after creation.`);
+    }
+
+    return { ok: true, data: { generation } };
+  } catch (error) {
+    console.error("[actions:startPackGeneration] Action failed", error);
     return {
       ok: false,
-      error: "Reusable subtitle analysis must complete before pack generation.",
+      error:
+        error instanceof Error ? error.message : "An unexpected pack generation error occurred.",
     };
   }
-
-  const preferences = await getSettingsPreferences(session.user.id);
-  const requestSnapshot = generationRequestSchema.parse({
-    learnerCefrLevel: parsed.request.learnerCefrLevel ?? null,
-    frequencyPreference: parsed.request.frequencyPreference ?? preferences.frequencyPreference,
-    selectedVocabularyTypes:
-      parsed.request.selectedVocabularyTypes ?? preferences.studyVocabularyTypes,
-    cefrWindowMode: parsed.request.cefrWindowMode ?? preferences.generationCefrWindowMode,
-    packSize: parsed.request.packSize ?? preferences.generationPackSizeDefault,
-    knownTermHandling: parsed.request.knownTermHandling ?? preferences.generationKnownTermHandling,
-    exampleSentenceCount:
-      parsed.request.exampleSentenceCount ?? preferences.generationExampleSentenceCount,
-    customInstructions:
-      parsed.request.customInstructions ?? preferences.generationCustomInstructionsDefault,
-    forceRegenerate: parsed.request.forceRegenerate ?? false,
-  });
-
-  const idempotencyKey = computePackGenerationIdempotencyKey({
-    userId: session.user.id,
-    contentId: target.content.id,
-    analysisRunId: analysisRun.id,
-    requestSnapshot,
-  });
-
-  const { job, wasCreated } = await createOrReusePackGenerationJob({
-    userId: session.user.id,
-    contentId: target.content.id,
-    analysisRunId: analysisRun.id,
-    requestSnapshot,
-    idempotencyKey,
-  });
-
-  if (wasCreated) {
-    await triggerPackGenerationJob(job.id);
-  }
-
-  const generation = await getPackGenerationSnapshotByJobId({
-    userId: session.user.id,
-    jobId: job.id,
-  });
-
-  if (!generation) {
-    throw new Error(`Pack generation job ${job.id} disappeared after creation.`);
-  }
-
-  return { ok: true, data: { generation } };
 }
 
 export async function getPackGenerationStatusAction(input: {

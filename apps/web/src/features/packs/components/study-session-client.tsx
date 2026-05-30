@@ -365,15 +365,22 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pt-6">
         <div className="relative h-full max-h-[32rem] w-full max-w-[52rem] sm:max-h-[34rem]">
           {/* Prompt side */}
-          <button
-            type="button"
+          {/* biome-ignore lint/a11y/useSemanticElements: Needs to wrap nested interactive elements */}
+          <div
+            role="button"
             onClick={revealCard}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                revealCard();
+              }
+            }}
             tabIndex={state.isFlipped ? -1 : 0}
             aria-pressed={state.isFlipped}
             aria-disabled={Boolean(state.pendingRating)}
             aria-hidden={state.isFlipped}
             className={cn(
-              "flex h-full w-full flex-col items-center justify-center rounded-2xl border border-border/50 bg-background/95 px-8 text-center shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-12",
+              "flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-2xl border border-border/50 bg-background/95 px-8 text-center shadow-lg shadow-primary/[0.04] backdrop-blur-sm transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-12",
               state.isFlipped
                 ? "pointer-events-none absolute inset-0 scale-[0.97] opacity-0"
                 : "relative scale-100 opacity-100",
@@ -399,12 +406,29 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                   </Badge>
                 ) : null}
               </div>
-              <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs tracking-wide text-muted-foreground/70">
+
+              {activeCard.audioUrl ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Play pronunciation"
+                  className="mt-2 h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    new Audio(activeCard.audioUrl ?? undefined).play();
+                  }}
+                >
+                  <Volume2 className="size-4" />
+                </Button>
+              ) : null}
+
+              <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs tracking-wide text-muted-foreground/70">
                 <span className="inline-block size-1.5 rounded-full bg-primary/40" />
                 Tap to reveal
               </span>
             </div>
-          </button>
+          </div>
 
           {/* Answer side */}
           <div

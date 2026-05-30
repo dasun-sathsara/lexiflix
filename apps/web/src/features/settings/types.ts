@@ -1,6 +1,7 @@
 import type { CefrLevel } from "@/features/assessment/lib/types";
 import type { ActionResult } from "@/lib/action-result";
 import type {
+  GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
   StoredFrequencyPreference,
@@ -17,6 +18,7 @@ export type SettingsPreferences = {
   generationPackSizeDefault: number;
   generationCefrWindowMode: GenerationCefrWindowMode;
   generationKnownTermHandling: GenerationKnownTermHandling;
+  generationAudioVoiceGenderDefault: GenerationAudioVoiceGender;
   generationExampleSentenceCount: 1 | 2 | 3;
   generationCustomInstructionsDefault: string | null;
   emailRemindersEnabled: boolean;

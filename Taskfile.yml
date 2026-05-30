@@ -57,7 +57,12 @@ tasks:
       - sh: command -v doppler >/dev/null 2>&1
         msg: "Doppler CLI is required. Install it before running this task."
     cmds:
-      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm dev
+      - |
+          CLEAN_NODE_OPTIONS="$(printf '%s' "${NODE_OPTIONS:-}" | sed -E 's/(^| )--localstorage-file(=[^ ]*)?( |$)/ /g' | xargs)"
+          LOCALSTORAGE_FILE="${PWD}/.trigger/localstorage.json"
+          mkdir -p "$(dirname "${LOCALSTORAGE_FILE}")" "${PWD}/.trigger/tmp/store"
+          FINAL_NODE_OPTIONS="$(printf '%s %s' "${CLEAN_NODE_OPTIONS}" "--localstorage-file=${LOCALSTORAGE_FILE}" | xargs)"
+          doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- env NODE_OPTIONS="${FINAL_NODE_OPTIONS}" pnpm dev
 
   web:lint:
     desc: Lint the web app with Biome
@@ -105,7 +110,12 @@ tasks:
       - sh: command -v doppler >/dev/null 2>&1
         msg: "Doppler CLI is required. Install it before running this task."
     cmds:
-      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm trigger:dev
+      - |
+          CLEAN_NODE_OPTIONS="$(printf '%s' "${NODE_OPTIONS:-}" | sed -E 's/(^| )--localstorage-file(=[^ ]*)?( |$)/ /g' | xargs)"
+          LOCALSTORAGE_FILE="${PWD}/.trigger/localstorage.json"
+          mkdir -p "$(dirname "${LOCALSTORAGE_FILE}")" "${PWD}/.trigger/tmp/store"
+          FINAL_NODE_OPTIONS="$(printf '%s %s' "${CLEAN_NODE_OPTIONS}" "--localstorage-file=${LOCALSTORAGE_FILE}" | xargs)"
+          doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- env NODE_OPTIONS="${FINAL_NODE_OPTIONS}" pnpm trigger:dev
 
   vercel:web:sync-envs:
     desc: Sync required apps/web env vars from Doppler into a Vercel environment

@@ -75,7 +75,7 @@ jobs:
           env_vars: |
             NLP_API_KEY=${{ secrets.NLP_SERVICE_API_KEY }}
             NLP_LOG_LEVEL=info
-          cpu: 4
+          cpu: 8
           memory: 8Gi
           timeout: 600s
           flags: '--allow-unauthenticated --port=8000'

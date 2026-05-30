@@ -2,7 +2,6 @@
 
 import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import {
@@ -57,57 +56,66 @@ const retryInputSchema = z.object({
 export async function retryPackGenerationAction(
   input: z.input<typeof retryInputSchema>,
 ): Promise<PackGenerationRetryActionResult> {
-  const session = await requireSession();
-  const parsed = retryInputSchema.parse(input);
-
-  const generation = await getPackGenerationProgressView({
-    userId: session.user.id,
-    jobId: parsed.jobId,
-  });
-
-  if (!generation) {
-    return { ok: false, error: "Generation job was not found." };
-  }
-
-  if (generation.status !== "failed") {
-    return { ok: false, error: "This generation job is not in a failed state." };
-  }
-
-  const reset = await resetFailedPackGenerationJobForRetry(parsed.jobId);
-
-  if (!reset.wasReset) {
-    return { ok: false, error: "Failed to reset the generation job for retry." };
-  }
-
   try {
-    await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", {
+    const session = await requireSession();
+    const parsed = retryInputSchema.parse(input);
+
+    const generation = await getPackGenerationProgressView({
+      userId: session.user.id,
       jobId: parsed.jobId,
     });
+
+    if (!generation) {
+      return { ok: false, error: "Generation job was not found." };
+    }
+
+    if (generation.status !== "failed") {
+      return { ok: false, error: "This generation job is not in a failed state." };
+    }
+
+    const reset = await resetFailedPackGenerationJobForRetry(parsed.jobId);
+
+    if (!reset.wasReset) {
+      return { ok: false, error: "Failed to reset the generation job for retry." };
+    }
+
+    try {
+      await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", {
+        jobId: parsed.jobId,
+      });
+    } catch (error) {
+      await recordPackGenerationJobTransition({
+        jobId: parsed.jobId,
+        status: "failed",
+        stage: "failed",
+        message: "Failed to trigger pack generation retry.",
+        errorCode: "WORKFLOW_TRIGGER_FAILED",
+        errorMessage: "Failed to trigger pack generation retry.",
+        payload: {
+          triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
+          triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
+        },
+      });
+      throw error;
+    }
+
+    const updated = await getPackGenerationProgressView({
+      userId: session.user.id,
+      jobId: parsed.jobId,
+      includeEvents: true,
+    });
+
+    if (!updated) {
+      return { ok: false, error: "Generation job disappeared after retry was queued." };
+    }
+
+    return { ok: true, data: { generation: updated } };
   } catch (error) {
-    await recordPackGenerationJobTransition({
-      jobId: parsed.jobId,
-      status: "failed",
-      stage: "failed",
-      message: "Failed to trigger pack generation retry.",
-      errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
-      payload: {
-        triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
-        triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
-      },
-    });
-    throw error;
+    console.error("[actions:retryPackGeneration] failed", error);
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "An unexpected retry dispatch failure occurred.",
+    };
   }
-
-  const updated = await getPackGenerationProgressView({
-    userId: session.user.id,
-    jobId: parsed.jobId,
-    includeEvents: true,
-  });
-
-  if (!updated) {
-    return { ok: false, error: "Generation job disappeared after retry was queued." };
-  }
-
-  return { ok: true, data: { generation: updated } };
 }

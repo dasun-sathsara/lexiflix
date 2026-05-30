@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Loader2, Plus, RotateCcw, Tv } from "lucide-react";
+import { Check, Film, Loader2, Plus, RotateCcw, Tv } from "lucide-react";
 import Image from "next/image";
 import { useFormStatus } from "react-dom";
 
@@ -39,9 +39,9 @@ function SubmitButton({ isCurated }: { isCurated: boolean }) {
       size="sm"
       disabled={pending}
       className={cn(
-        "gap-1.5 text-xs",
+        "h-7 gap-1.5 px-2 text-xs",
         !isCurated &&
-          "border-indigo-200/60 text-indigo-600 hover:bg-indigo-50/60 hover:text-indigo-700 dark:border-indigo-800/50 dark:text-indigo-400 dark:hover:bg-indigo-950/50",
+          "border-primary/25 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary",
       )}
     >
       {pending ? (
@@ -74,54 +74,62 @@ export function AdminDiscoverRow({
     .filter((name): name is string => Boolean(name));
 
   const action = isCurated ? refreshCuratedEntryAction : curateTmdbItemAction;
+  const TypeIcon = mediaType === "tv" ? Tv : Film;
 
   return (
-    <div className="group flex items-center gap-4 rounded-[calc(var(--radius)+2px)] p-3 transition-all hover:bg-muted/40">
-      {/* Poster thumbnail */}
-      <div className="relative h-16 w-[42px] shrink-0 overflow-hidden rounded-md bg-muted ring-1 ring-border/50">
+    <div className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30">
+      <div className="relative h-[54px] w-[36px] shrink-0 overflow-hidden rounded-md bg-muted ring-1 ring-border/60">
         {posterUrl ? (
-          <Image src={posterUrl} alt={title} fill className="object-cover" sizes="42px" />
+          <Image src={posterUrl} alt={title} fill className="object-cover" sizes="36px" />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground/50">
-            {mediaType === "tv" ? <Tv className="size-4" /> : <Film className="size-4" />}
+            <TypeIcon className="size-4" />
           </div>
         )}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium tracking-tight text-foreground">{title}</p>
-          {isCurated && (
-            <span className="inline-flex shrink-0 items-center rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-sm font-semibold tracking-tight">{title}</p>
+          {isCurated ? (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded border border-emerald-200/60 bg-emerald-500/10 px-1 py-0 text-[10px] font-medium text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300">
+              <Check className="size-2.5" />
               In catalog
             </span>
-          )}
+          ) : null}
         </div>
-
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {year && <span className="font-medium text-foreground/80">{year}</span>}
-          {result.original_language && (
-            <span className="uppercase">{result.original_language}</span>
-          )}
-          <span className="flex items-center gap-1">
-            <span className="text-amber-500">★</span> {result.vote_average.toFixed(1)}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <TypeIcon className="size-3" />
+            {mediaType === "tv" ? "TV" : "Movie"}
           </span>
-          {genreNames.length > 0 && (
-            <div className="flex items-center gap-1.5 border-l border-border/50 pl-2 ml-1">
-              {genreNames.map((name) => (
-                <span key={name}>{name}</span>
-              ))}
-            </div>
-          )}
+          {year ? (
+            <>
+              <span className="text-border">·</span>
+              <span className="tabular-nums">{year}</span>
+            </>
+          ) : null}
+          <span className="text-border">·</span>
+          <span className="inline-flex items-center gap-0.5 tabular-nums">
+            <span className="text-amber-500">★</span>
+            {result.vote_average.toFixed(1)}
+          </span>
+          {result.original_language ? (
+            <>
+              <span className="text-border">·</span>
+              <span className="uppercase">{result.original_language}</span>
+            </>
+          ) : null}
+          {genreNames.length > 0 ? (
+            <>
+              <span className="text-border">·</span>
+              <span className="truncate">{genreNames.join(", ")}</span>
+            </>
+          ) : null}
         </div>
       </div>
 
-      {/* Action form */}
-      <form
-        action={action}
-        className="shrink-0 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 lg:opacity-100"
-      >
+      <form action={action} className="shrink-0">
         <input type="hidden" name="mediaType" value={mediaType} />
         <input type="hidden" name="tmdbId" value={String(result.id)} />
         <SubmitButton isCurated={isCurated} />

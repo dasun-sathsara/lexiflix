@@ -254,6 +254,9 @@ export const userPreferences = pgTable("user_preferences", {
   generationKnownTermHandling: text("generation_known_term_handling")
     .default("exclude_known")
     .notNull(),
+  generationAudioVoiceGenderDefault: text("generation_audio_voice_gender_default")
+    .default("female")
+    .notNull(),
   generationExampleSentenceCount: integer("generation_example_sentence_count").default(1).notNull(),
   generationCustomInstructionsDefault: text("generation_custom_instructions_default"),
   emailRemindersEnabled: boolean("email_reminders_enabled").default(true).notNull(),

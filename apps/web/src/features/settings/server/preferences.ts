@@ -8,6 +8,7 @@ import {
 } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import type {
+  GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
   StoredFrequencyPreference,
@@ -23,6 +24,7 @@ const DEFAULT_STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = [...vocabularyKin
 const DEFAULT_GENERATION_PACK_SIZE = 20;
 const DEFAULT_GENERATION_CEFR_WINDOW_MODE: GenerationCefrWindowMode = "same_level";
 const DEFAULT_GENERATION_KNOWN_TERM_HANDLING: GenerationKnownTermHandling = "exclude_known";
+const DEFAULT_GENERATION_AUDIO_VOICE_GENDER: GenerationAudioVoiceGender = "female";
 const DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT: 1 | 2 | 3 = 1;
 const DEFAULT_GENERATION_CUSTOM_INSTRUCTIONS = null;
 const DEFAULT_EMAIL_REMINDERS_ENABLED = true;
@@ -39,6 +41,11 @@ export const GENERATION_KNOWN_TERM_HANDLINGS = [
   "downrank_known",
   "include_known",
 ] as const satisfies readonly GenerationKnownTermHandling[];
+
+export const GENERATION_AUDIO_VOICE_GENDERS = [
+  "female",
+  "male",
+] as const satisfies readonly GenerationAudioVoiceGender[];
 
 export const FREQUENCY_PREFERENCES = [
   "balanced",
@@ -90,6 +97,10 @@ function isKnownTermHandling(
   return GENERATION_KNOWN_TERM_HANDLINGS.includes(value as GenerationKnownTermHandling);
 }
 
+function isAudioVoiceGender(value: string | null | undefined): value is GenerationAudioVoiceGender {
+  return GENERATION_AUDIO_VOICE_GENDERS.includes(value as GenerationAudioVoiceGender);
+}
+
 function normalizeVocabularyTypes(values: string[] | null | undefined): StoredVocabularyKind[] {
   const normalized = Array.from(new Set((values ?? []).filter(isVocabularyKind)));
   return normalized.length > 0 ? normalized : DEFAULT_STUDY_VOCABULARY_TYPES;
@@ -138,6 +149,7 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
         generationPackSizeDefault: userPreferences.generationPackSizeDefault,
         generationCefrWindowMode: userPreferences.generationCefrWindowMode,
         generationKnownTermHandling: userPreferences.generationKnownTermHandling,
+        generationAudioVoiceGenderDefault: userPreferences.generationAudioVoiceGenderDefault,
         generationExampleSentenceCount: userPreferences.generationExampleSentenceCount,
         generationCustomInstructionsDefault: userPreferences.generationCustomInstructionsDefault,
         emailRemindersEnabled: userPreferences.emailRemindersEnabled,
@@ -167,6 +179,11 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
     generationKnownTermHandling: isKnownTermHandling(preferences?.generationKnownTermHandling)
       ? preferences.generationKnownTermHandling
       : DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
+    generationAudioVoiceGenderDefault: isAudioVoiceGender(
+      preferences?.generationAudioVoiceGenderDefault,
+    )
+      ? preferences.generationAudioVoiceGenderDefault
+      : DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
     generationExampleSentenceCount: normalizeExampleSentenceCount(
       preferences?.generationExampleSentenceCount,
     ),
@@ -187,6 +204,7 @@ export const settingsPreferenceDefaults = {
   generationPackSizeDefault: DEFAULT_GENERATION_PACK_SIZE,
   generationCefrWindowMode: DEFAULT_GENERATION_CEFR_WINDOW_MODE,
   generationKnownTermHandling: DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
+  generationAudioVoiceGenderDefault: DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
   generationExampleSentenceCount: DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT,
   generationCustomInstructionsDefault: DEFAULT_GENERATION_CUSTOM_INSTRUCTIONS,
   emailRemindersEnabled: DEFAULT_EMAIL_REMINDERS_ENABLED,

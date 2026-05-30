@@ -92,6 +92,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   const [generationKnownTermHandling, setGenerationKnownTermHandling] = useState(
     preferences.generationKnownTermHandling,
   );
+  const [generationAudioVoiceGenderDefault, setGenerationAudioVoiceGenderDefault] = useState(
+    preferences.generationAudioVoiceGenderDefault,
+  );
   const [generationExampleSentenceCount, setGenerationExampleSentenceCount] = useState(
     String(preferences.generationExampleSentenceCount),
   );
@@ -169,6 +172,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     parsedGenerationPackSize !== initialPreferences.generationPackSizeDefault ||
     generationCefrWindowMode !== initialPreferences.generationCefrWindowMode ||
     generationKnownTermHandling !== initialPreferences.generationKnownTermHandling ||
+    generationAudioVoiceGenderDefault !== initialPreferences.generationAudioVoiceGenderDefault ||
     parsedGenerationExampleSentenceCount !== initialPreferences.generationExampleSentenceCount ||
     normalizedCustomInstructions !== initialPreferences.generationCustomInstructionsDefault ||
     emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
@@ -277,6 +281,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
           generationPackSizeDefault: parsedGenerationPackSize,
           generationCefrWindowMode,
           generationKnownTermHandling,
+          generationAudioVoiceGenderDefault,
           generationExampleSentenceCount: parsedGenerationExampleSentenceCount as 1 | 2 | 3,
           generationCustomInstructionsDefault: normalizedCustomInstructions,
           emailRemindersEnabled,
@@ -298,6 +303,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
         setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
         setGenerationCefrWindowMode(nextPreferences.generationCefrWindowMode);
         setGenerationKnownTermHandling(nextPreferences.generationKnownTermHandling);
+        setGenerationAudioVoiceGenderDefault(nextPreferences.generationAudioVoiceGenderDefault);
         setGenerationExampleSentenceCount(String(nextPreferences.generationExampleSentenceCount));
         setGenerationCustomInstructionsDefault(
           nextPreferences.generationCustomInstructionsDefault ?? "",
@@ -488,6 +494,8 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
             setGenerationCefrWindowMode={setGenerationCefrWindowMode}
             generationKnownTermHandling={generationKnownTermHandling}
             setGenerationKnownTermHandling={setGenerationKnownTermHandling}
+            generationAudioVoiceGenderDefault={generationAudioVoiceGenderDefault}
+            setGenerationAudioVoiceGenderDefault={setGenerationAudioVoiceGenderDefault}
             generationExampleSentenceCount={generationExampleSentenceCount}
             setGenerationExampleSentenceCount={setGenerationExampleSentenceCount}
             generationCustomInstructionsDefault={generationCustomInstructionsDefault}

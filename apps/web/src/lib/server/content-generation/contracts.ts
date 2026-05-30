@@ -6,6 +6,7 @@ export const CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH = 1200;
 
 export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export const vocabularyKinds = ["word", "phrasal_verb", "idiom", "slang"] as const;
+export const generationAudioVoiceGenders = ["female", "male"] as const;
 
 export const generationRequestSchema = z.object({
   learnerCefrLevel: z.enum(cefrLevels).nullable(),
@@ -21,6 +22,7 @@ export const generationRequestSchema = z.object({
   knownTermHandling: z
     .enum(["exclude_known", "downrank_known", "include_known"])
     .default("exclude_known"),
+  audioVoiceGender: z.enum(generationAudioVoiceGenders).default("female"),
   exampleSentenceCount: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
   customInstructions: z
     .string()

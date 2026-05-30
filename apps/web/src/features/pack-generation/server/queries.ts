@@ -2,13 +2,11 @@ import "server-only";
 
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { buildContentMediaHref } from "@/features/media/lib/content-media";
-import {
-  getGenerationStageCopy,
-  PUBLIC_GENERATION_FAILURE_MESSAGE,
-} from "@/features/pack-generation/lib/status";
+import { getGenerationStageCopy } from "@/features/pack-generation/lib/status";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { content, pack, packGenerationJob, packGenerationJobEvent } from "@/lib/server/db/schema";
+import { toUserFriendlyGenerationError } from "@/lib/server/error-mapping";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import type {
   PackGenerationProgressEvent,
@@ -38,6 +36,7 @@ function requestSummary(
     cefrWindowMode: request.cefrWindowMode,
     packSize: request.packSize,
     knownTermHandling: request.knownTermHandling,
+    audioVoiceGender: request.audioVoiceGender,
     exampleSentenceCount: request.exampleSentenceCount,
     hasCustomInstructions: Boolean(request.customInstructions),
     forceRegenerate: request.forceRegenerate,
@@ -63,7 +62,7 @@ function mapEvent(row: typeof packGenerationJobEvent.$inferSelect): PackGenerati
     stage: row.stage,
     message:
       row.stage === "failed"
-        ? PUBLIC_GENERATION_FAILURE_MESSAGE
+        ? toUserFriendlyGenerationError(row.message)
         : getGenerationStageCopy(row.stage).description,
     createdAt: row.createdAt.toISOString(),
   };
@@ -97,10 +96,13 @@ async function mapJobView({
     stage: job.stage,
     progressMessage:
       job.status === "failed"
-        ? PUBLIC_GENERATION_FAILURE_MESSAGE
+        ? toUserFriendlyGenerationError(job.errorMessage ?? job.progressMessage)
         : (job.progressMessage ?? getGenerationStageCopy(job.stage).description),
     errorCode: job.errorCode,
-    errorMessage: job.status === "failed" ? PUBLIC_GENERATION_FAILURE_MESSAGE : null,
+    errorMessage:
+      job.status === "failed"
+        ? toUserFriendlyGenerationError(job.errorMessage ?? job.progressMessage)
+        : null,
     warnings,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),

@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true,
   },
+  serverExternalPackages: ["@trigger.dev/sdk"],
   images: {
     remotePatterns: [
       {

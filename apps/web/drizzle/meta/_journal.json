@@ -64,6 +64,20 @@
       "when": 1777299972043,
       "tag": "0008_wonderful_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778300000000,
+      "tag": "0009_soft_stick",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778301300000,
+      "tag": "0010_blue_lifeboat",
+      "breakpoints": true
     }
   ]
 }

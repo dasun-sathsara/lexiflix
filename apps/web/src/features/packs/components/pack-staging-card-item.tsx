@@ -1,4 +1,14 @@
-import { BookOpen, Check, Clock, Eye, RotateCcw, Sparkles, Trash2, Volume2 } from "lucide-react";
+import {
+  Ban,
+  BookOpen,
+  Check,
+  Clock,
+  Eye,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+  Volume2,
+} from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -132,10 +142,20 @@ export function PackStagingCardItem({
                 {label(item.state)}
               </Badge>
               {item.audioUrl ? (
-                <Badge variant="outline" className="gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-5 gap-1 rounded-full px-2 py-0 text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    new Audio(item.audioUrl ?? undefined).play();
+                  }}
+                  aria-label={`Play audio for ${item.displayText}`}
+                >
                   <Volume2 className="size-3" />
                   Audio
-                </Badge>
+                </Button>
               ) : null}
             </div>
 
@@ -171,18 +191,20 @@ export function PackStagingCardItem({
                 </Tooltip>
               ) : null}
               {item.state === "removed" ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-foreground"
-                  disabled={pendingAction}
-                  onClick={() => onRunItemAction(onRestore)}
-                  aria-label={`Restore ${item.displayText}`}
-                  title="Restore card"
-                >
-                  <RotateCcw className="size-4" />
-                  <span className="sr-only">Restore {item.displayText}</span>
-                </Button>
+                item.termState !== "ignored" ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    disabled={pendingAction}
+                    onClick={() => onRunItemAction(onRestore)}
+                    aria-label={`Restore ${item.displayText}`}
+                    title="Restore card"
+                  >
+                    <RotateCcw className="size-4" />
+                    <span className="sr-only">Restore {item.displayText}</span>
+                  </Button>
+                ) : null
               ) : (
                 <Button
                   variant="ghost"
@@ -225,24 +247,35 @@ export function PackStagingCardItem({
                   </Button>
                 </>
               ) : null}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground hover:text-destructive"
-                disabled={pendingAction}
-                onClick={() => onRunItemAction(onIgnore)}
-                aria-label={
-                  item.state === "removed"
-                    ? `Unignore ${item.displayText}`
-                    : `Ignore ${item.displayText}`
-                }
-                title={item.state === "removed" ? "Unignore term" : "Ignore term"}
-              >
-                <Trash2 className="size-4" />
-                <span className="sr-only">
-                  {item.state === "removed" ? "Unignore" : "Ignore"} {item.displayText}
-                </span>
-              </Button>
+              {item.state === "removed" ? (
+                item.termState === "ignored" ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    disabled={pendingAction}
+                    onClick={() => onRunItemAction(onIgnore)}
+                    aria-label={`Unignore ${item.displayText}`}
+                    title="Unignore term"
+                  >
+                    <Ban className="size-4" />
+                    <span className="sr-only">Unignore {item.displayText}</span>
+                  </Button>
+                ) : null
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 text-muted-foreground hover:text-destructive"
+                  disabled={pendingAction}
+                  onClick={() => onRunItemAction(onIgnore)}
+                  aria-label={`Ignore ${item.displayText}`}
+                  title="Ignore term"
+                >
+                  <Ban className="size-4" />
+                  <span className="sr-only">Ignore {item.displayText}</span>
+                </Button>
+              )}
               {item.state !== "removed" ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

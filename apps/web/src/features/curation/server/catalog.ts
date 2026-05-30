@@ -360,6 +360,24 @@ export async function setCuratedEntryFeaturedRank(id: string, featuredRank: numb
   return row ? mapCuratedEntry(row) : null;
 }
 
+export async function reorderCuratedEntries(orderedIds: string[]) {
+  if (orderedIds.length === 0) {
+    return;
+  }
+
+  const now = new Date();
+
+  // neon-http driver doesn't support transactions, so batch updates sequentially.
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    const id = orderedIds[index];
+    if (!id) continue;
+    await db
+      .update(curatedEntry)
+      .set({ featuredRank: index + 1, updatedAt: now })
+      .where(eq(curatedEntry.id, id));
+  }
+}
+
 export async function deleteCuratedEntryById(id: string) {
   const [row] = await db.delete(curatedEntry).where(eq(curatedEntry.id, id)).returning();
   return row ? mapCuratedEntry(row) : null;

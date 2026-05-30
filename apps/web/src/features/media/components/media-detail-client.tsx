@@ -5,18 +5,20 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Film,
+  Globe,
   Loader2,
   Sparkles,
   Star,
   Tv,
   XCircle,
 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { MediaPosterBanner } from "@/components/common/media-poster-banner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getCountryName, getLanguageName } from "@/features/media/lib/locale-display";
 import {
   getAnalysisStatusAction,
   getPackGenerationStatusAction,
@@ -36,7 +39,7 @@ import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/m
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
-import { ANALYSIS_PIPELINE_STEPS, formatRuntime, getCefrColor } from "./_utils";
+import { ANALYSIS_PIPELINE_STEPS, formatRuntime } from "./_utils";
 import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
 
@@ -46,6 +49,39 @@ import { AnalysisSidebar } from "./analysis-sidebar";
 export type MediaDetailClientProps = {
   pageData: MediaDetailPageData;
 };
+
+function isGenerationActive(
+  generation: MediaDetailPageData["generation"],
+): generation is NonNullable<MediaDetailPageData["generation"]> {
+  return generation?.status === "queued" || generation?.status === "running";
+}
+
+function mergeGenerationSnapshot(
+  current: MediaDetailPageData["generation"],
+  incoming: MediaDetailPageData["generation"],
+) {
+  if (!incoming) {
+    return current;
+  }
+  if (!current) {
+    return incoming;
+  }
+  if (current.jobId === incoming.jobId) {
+    return incoming;
+  }
+
+  const currentUpdatedAt = Date.parse(current.updatedAt);
+  const incomingUpdatedAt = Date.parse(incoming.updatedAt);
+  if (Number.isFinite(currentUpdatedAt) && Number.isFinite(incomingUpdatedAt)) {
+    return incomingUpdatedAt >= currentUpdatedAt ? incoming : current;
+  }
+
+  if (isGenerationActive(current) && !isGenerationActive(incoming)) {
+    return current;
+  }
+
+  return incoming;
+}
 
 /**
  * Main client component for the media detail page. Orchestrates polling,
@@ -61,12 +97,19 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   const [generationDialogOpen, setGenerationDialogOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
   const [isGenerationPending, startGenerationTransition] = React.useTransition();
+  const mediaTargetKey = `${media.mediaType}:${media.tmdbId}:${media.selectedSeasonNumber ?? "all"}`;
+  const previousMediaTargetKeyRef = React.useRef(mediaTargetKey);
 
   React.useEffect(() => {
+    const targetChanged = previousMediaTargetKeyRef.current !== mediaTargetKey;
+    previousMediaTargetKeyRef.current = mediaTargetKey;
+
     setAnalysis(pageData.analysis);
-    setGeneration(pageData.generation);
+    setGeneration((current) =>
+      targetChanged ? pageData.generation : mergeGenerationSnapshot(current, pageData.generation),
+    );
     setActionMessage(null);
-  }, [pageData.analysis, pageData.generation]);
+  }, [mediaTargetKey, pageData.analysis, pageData.generation]);
 
   React.useEffect(() => {
     const hasValidRunId = Boolean(analysis.runId);
@@ -182,130 +225,186 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
   ) => {
     setActionMessage(null);
     startGenerationTransition(async () => {
-      const result = await startPackGenerationAction({
-        tmdbId: media.tmdbId,
-        mediaType: media.mediaType,
-        seasonNumber: media.selectedSeasonNumber,
-        request,
-      });
-      if (result.ok) {
-        setGeneration(result.data.generation);
-        return;
+      try {
+        const result = await startPackGenerationAction({
+          tmdbId: media.tmdbId,
+          mediaType: media.mediaType,
+          seasonNumber: media.selectedSeasonNumber,
+          request,
+        });
+        if (result.ok) {
+          setGeneration(result.data.generation);
+          return;
+        }
+        setActionMessage(result.error);
+      } catch (error) {
+        setActionMessage(error instanceof Error ? error.message : "Failed to start generation.");
       }
-      setActionMessage(result.error);
     });
   };
 
   const backdropUrl = buildTmdbImageUrl(media.backdropPath, TMDB_IMAGE_SIZES.backdrop.lg);
 
+  const showOriginalTitle = Boolean(media.originalTitle) && media.originalTitle !== media.title;
+  const hasSubMeta =
+    showOriginalTitle ||
+    Boolean(media.originalLanguage) ||
+    Boolean(media.originCountryCodes?.length);
+
   return (
     <AppPageShell>
-      <Card className="relative min-h-[280px] overflow-hidden border-indigo-200/60 dark:border-indigo-500/20 sm:min-h-[320px]">
-        {backdropUrl ? (
-          <div className="absolute inset-0">
-            <Image
-              src={backdropUrl}
-              alt={`${media.title} backdrop`}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/70 to-background/95" />
-          </div>
-        ) : null}
+      <MediaPosterBanner
+        backdropUrl={backdropUrl}
+        backdropAlt={`${media.title} backdrop`}
+        actions={
+          <div className="flex flex-col items-end gap-3">
+            {typeof media.voteAverage === "number" ? (
+              <div className="flex items-center gap-2 rounded-xl border border-foreground/10 bg-white/70 px-3 py-2 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-background/60">
+                <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-lg font-semibold tabular-nums text-foreground">
+                    {media.voteAverage.toFixed(1)}
+                    <span className="ml-1 text-xs font-normal text-foreground/50">/10</span>
+                  </span>
+                  {typeof media.voteCount === "number" ? (
+                    <span className="text-[10px] uppercase tracking-wide text-foreground/55">
+                      {media.voteCount.toLocaleString()} votes
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
-        <CardContent className="relative p-4 sm:p-6">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+            {media.imdbId ? (
+              <a
+                href={`https://www.imdb.com/title/${media.imdbId}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-foreground/15 bg-white/70 px-2.5 py-1 text-xs font-medium text-foreground/75 shadow-sm backdrop-blur-md transition-colors hover:bg-white/90 hover:text-foreground dark:border-white/10 dark:bg-background/60 dark:hover:bg-background/80"
+              >
+                View on IMDb
+                <ExternalLink className="size-3 opacity-60" />
+              </a>
+            ) : null}
+
+            {media.mediaType === "tv" && media.availableSeasonCount ? (
+              <Select
+                value={media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined}
+                onValueChange={handleSeasonChange}
+              >
+                <SelectTrigger
+                  size="sm"
+                  className="h-8 w-[168px] border-foreground/15 bg-white/80 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60"
+                >
+                  <SelectValue placeholder="Choose a season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: media.availableSeasonCount }, (_, index) => index + 1).map(
+                    (seasonNumber) => (
+                      <SelectItem key={seasonNumber} value={String(seasonNumber)}>
+                        Season {seasonNumber}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            ) : null}
+          </div>
+        }
+        badges={
+          <>
+            <Badge
+              variant="secondary"
+              className="border border-indigo-300/60 bg-white/85 text-indigo-700 shadow-sm backdrop-blur-md dark:border-indigo-400/30 dark:bg-indigo-950/60 dark:text-indigo-200"
+            >
+              {media.mediaType === "movie" ? (
+                <Film className="mr-1 size-3.5" />
+              ) : (
+                <Tv className="mr-1 size-3.5" />
+              )}
+              {media.mediaType === "movie" ? "Movie" : "TV Show"}
+            </Badge>
+
+            {media.contentCertification ? (
               <Badge
                 variant="secondary"
-                className="border border-indigo-200/60 bg-white/60 text-indigo-700 backdrop-blur-sm dark:border-indigo-500/20 dark:bg-indigo-950/30 dark:text-indigo-200"
+                className="border border-foreground/15 bg-white/85 text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/70"
               >
-                {media.mediaType === "movie" ? (
-                  <Film className="mr-1 size-3.5" />
-                ) : (
-                  <Tv className="mr-1 size-3.5" />
-                )}
-                {media.mediaType === "movie" ? "Movie" : "TV Show"}
+                {media.contentCertification}
               </Badge>
-              {media.selectedSeasonNumber ? (
-                <Badge variant="secondary">Season {media.selectedSeasonNumber}</Badge>
-              ) : null}
-              {analysis.summary?.averageCefrLevel ? (
-                <Badge className={cn("border", getCefrColor(analysis.summary.averageCefrLevel))}>
-                  {analysis.summary.averageCefrLevel}
-                </Badge>
-              ) : null}
-            </div>
+            ) : null}
 
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{media.title}</h1>
-
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                {media.releaseYear ? (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="size-4" />
-                    {media.releaseYear}
-                  </span>
+            {analysis.summary?.averageCefrLevel ? (
+              <Badge
+                variant="secondary"
+                className="border border-foreground/15 bg-white/85 text-foreground shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/70"
+              >
+                {analysis.summary.averageCefrLevel}
+              </Badge>
+            ) : null}
+          </>
+        }
+        title={media.title}
+        meta={
+          <>
+            {media.releaseYear ? (
+              <span className="flex items-center gap-1">
+                <Calendar className="size-4" />
+                {media.releaseYear}
+              </span>
+            ) : null}
+            {formatRuntime(media.runtimeMinutes) ? (
+              <span className="flex items-center gap-1">
+                <Clock className="size-4" />
+                {formatRuntime(media.runtimeMinutes)}
+              </span>
+            ) : null}
+          </>
+        }
+      >
+        {media.genres.length > 0 || hasSubMeta ? (
+          <div className="flex flex-col gap-2">
+            {hasSubMeta ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-foreground/55">
+                {showOriginalTitle ? (
+                  <span className="italic text-foreground/70">{media.originalTitle}</span>
                 ) : null}
-                {formatRuntime(media.runtimeMinutes) ? (
-                  <span className="flex items-center gap-1">
-                    <Clock className="size-4" />
-                    {formatRuntime(media.runtimeMinutes)}
-                  </span>
+                {showOriginalTitle &&
+                (media.originalLanguage || media.originCountryCodes?.length) ? (
+                  <span className="select-none text-foreground/30">·</span>
                 ) : null}
-                {typeof media.voteAverage === "number" ? (
-                  <span className="flex items-center gap-1.5">
-                    <Star className="size-4 fill-yellow-400 text-yellow-400" />
-                    {media.voteAverage.toFixed(1)}
-                    {typeof media.voteCount === "number" ? (
-                      <span className="text-xs">({media.voteCount.toLocaleString()} votes)</span>
+                {media.originalLanguage || media.originCountryCodes?.length ? (
+                  <span className="flex items-center gap-1">
+                    <Globe className="size-3 shrink-0 text-foreground/40" />
+                    {media.originalLanguage ? (
+                      <span>{getLanguageName(media.originalLanguage)}</span>
+                    ) : null}
+                    {media.originalLanguage && media.originCountryCodes?.length ? (
+                      <span className="text-foreground/30">·</span>
+                    ) : null}
+                    {media.originCountryCodes?.length ? (
+                      <span>{media.originCountryCodes.map(getCountryName).join(", ")}</span>
                     ) : null}
                   </span>
                 ) : null}
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {media.genres.map((genre) => (
-                <Badge
-                  key={genre}
-                  variant="secondary"
-                  className="border border-muted-foreground/20 bg-muted/50"
-                >
-                  {genre}
-                </Badge>
-              ))}
-            </div>
-
-            {media.mediaType === "tv" && media.availableSeasonCount ? (
-              <div className="max-w-xs">
-                <Select
-                  value={
-                    media.selectedSeasonNumber ? String(media.selectedSeasonNumber) : undefined
-                  }
-                  onValueChange={handleSeasonChange}
-                >
-                  <SelectTrigger className="w-full bg-background/80 backdrop-blur-sm">
-                    <SelectValue placeholder="Choose a season" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from(
-                      { length: media.availableSeasonCount },
-                      (_, index) => index + 1,
-                    ).map((seasonNumber) => (
-                      <SelectItem key={seasonNumber} value={String(seasonNumber)}>
-                        Season {seasonNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            ) : null}
+            {media.genres.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {media.genres.map((genre) => (
+                  <Badge
+                    key={genre}
+                    variant="secondary"
+                    className="border border-foreground/15 bg-white/80 text-foreground/85 shadow-sm backdrop-blur-md dark:border-white/15 dark:bg-background/60 dark:text-foreground/90"
+                  >
+                    {genre}
+                  </Badge>
+                ))}
               </div>
             ) : null}
           </div>
-        </CardContent>
-      </Card>
+        ) : null}
+      </MediaPosterBanner>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
@@ -403,7 +502,8 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
               </CardHeader>
               <CardContent>
                 <div className="rounded-xl border border-rose-200/60 bg-rose-500/10 p-4 text-sm text-rose-700 dark:border-rose-500/20 dark:text-rose-300">
-                  Subtitle analysis could not be completed. Retry the analysis or try another title.
+                  {analysis.errorMessage ??
+                    "Subtitle analysis could not be completed. Retry the analysis or try another title."}
                 </div>
               </CardContent>
             </Card>

@@ -6,7 +6,6 @@ import {
   createPackFailedNotification,
   createPackReadyNotification,
 } from "@/features/notifications/server/queries";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { sendPackStatusEmail } from "@/lib/email";
 import { env } from "@/lib/env";
@@ -83,12 +82,12 @@ async function sendPackStatusEmailIfEnabled({
   }
 }
 
-function getAudioConfig() {
+function getAudioConfig(voiceGender?: "female" | "male") {
+  const normalizedVoiceGender = voiceGender === "male" ? "male" : "female";
+  const pollyVoiceByGender = normalizedVoiceGender === "male" ? "Matthew" : "Joanna";
   const audioVoice =
     env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
-      ? env.AWS_POLLY_ENGINE === "neural"
-        ? env.AWS_POLLY_NEURAL_VOICE_ID
-        : env.AWS_POLLY_STANDARD_VOICE_ID
+      ? pollyVoiceByGender
       : env.CONTENT_GENERATION_AUDIO_VOICE;
 
   return {
@@ -125,7 +124,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
     throw new Error(`Pack generation job ${jobId} was not found.`);
   }
 
-  const audioConfig = getAudioConfig();
+  const audioConfig = getAudioConfig(job.requestSnapshot.audioVoiceGender);
   const warnings: string[] = [];
 
   try {
@@ -437,7 +436,7 @@ export async function runPackGenerationWorkflow(jobId: string) {
       stage: "failed",
       message,
       errorCode: "PACK_GENERATION_FAILED",
-      errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
+      errorMessage: message,
       payload: { warnings },
     });
     const failedJob = await getPackGenerationJobById(jobId);

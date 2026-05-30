@@ -1,6 +1,7 @@
 import type { ActionResult } from "@/lib/action-result";
 import type { ContentGenerationStage } from "@/lib/server/content-generation/contracts";
 import type {
+  GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
   StoredCefrLevel,
@@ -25,6 +26,7 @@ export type PackGenerationRequestSummary = {
   cefrWindowMode: GenerationCefrWindowMode;
   packSize: number;
   knownTermHandling: GenerationKnownTermHandling;
+  audioVoiceGender: GenerationAudioVoiceGender;
   exampleSentenceCount: 1 | 2 | 3;
   hasCustomInstructions: boolean;
   forceRegenerate: boolean;

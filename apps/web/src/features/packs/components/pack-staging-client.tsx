@@ -74,6 +74,10 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
   const [isSelectionMode, setIsSelectionMode] = React.useState(false);
   const [pendingAction, startAction] = React.useTransition();
 
+  React.useEffect(() => {
+    setCards(pack.cards);
+  }, [pack.cards]);
+
   const stats = React.useMemo(
     () =>
       cards.reduce(

@@ -18,6 +18,7 @@ import {
 import { getSettingsPreferences } from "@/features/settings/server/preferences";
 import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
+import { toUserFriendlyAnalysisError } from "@/lib/server/error-mapping";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
 import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
@@ -36,8 +37,6 @@ type ResolvedTvDetail = {
 
 type ResolvedTmdbDetail = ResolvedMovieDetail | ResolvedTvDetail;
 const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
-const PUBLIC_ANALYSIS_FAILURE_MESSAGE =
-  "Subtitle analysis could not be completed. Retry the analysis or try another title.";
 
 function parseTmdbNotFound(error: unknown) {
   return error instanceof Error && error.message.includes("TMDB Error: 404");
@@ -86,6 +85,24 @@ async function resolveTmdbDetail(
   notFound();
 }
 
+function extractMovieCertification(detail: TMDBMovieDetails): string | null {
+  const results = detail.release_dates?.results;
+  if (!results?.length) return null;
+
+  const usEntry = results.find((entry) => entry.iso_3166_1 === "US");
+  if (usEntry) {
+    const usCert = usEntry.release_dates.find((rd) => rd.certification.length > 0);
+    if (usCert) return usCert.certification;
+  }
+
+  for (const entry of results) {
+    const cert = entry.release_dates.find((rd) => rd.certification.length > 0);
+    if (cert) return cert.certification;
+  }
+
+  return null;
+}
+
 function mapMovieToView(detail: TMDBMovieDetails): MediaDetailView {
   return {
     tmdbId: detail.id,
@@ -102,7 +119,26 @@ function mapMovieToView(detail: TMDBMovieDetails): MediaDetailView {
     backdropPath: detail.backdrop_path,
     selectedSeasonNumber: null,
     availableSeasonCount: null,
+    originalLanguage: detail.original_language ?? null,
+    originalTitle: detail.original_title ?? null,
+    originCountryCodes: null,
+    contentCertification: extractMovieCertification(detail),
+    imdbId: detail.imdb_id ?? null,
   };
+}
+
+function extractTvCertification(detail: TMDBTvDetails): string | null {
+  const results = detail.content_ratings?.results;
+  if (!results?.length) return null;
+
+  const usEntry = results.find((entry) => entry.iso_3166_1 === "US");
+  if (usEntry?.rating) return usEntry.rating;
+
+  for (const entry of results) {
+    if (entry.rating) return entry.rating;
+  }
+
+  return null;
 }
 
 function mapTvToView(detail: TMDBTvDetails, selectedSeasonNumber: number | null): MediaDetailView {
@@ -123,6 +159,11 @@ function mapTvToView(detail: TMDBTvDetails, selectedSeasonNumber: number | null)
     backdropPath: detail.backdrop_path,
     selectedSeasonNumber,
     availableSeasonCount: detail.number_of_seasons ?? null,
+    originalLanguage: detail.original_language ?? null,
+    originalTitle: detail.original_name ?? null,
+    originCountryCodes: detail.origin_country?.length ? detail.origin_country : null,
+    contentCertification: extractTvCertification(detail),
+    imdbId: detail.external_ids?.imdb_id ?? null,
   };
 }
 
@@ -212,7 +253,7 @@ export async function getAnalysisSnapshotByRunId(
     stage: run.stage,
     progressMessage: run.progressMessage ?? null,
     errorCode: run.errorCode ?? null,
-    errorMessage: status === "failed" ? PUBLIC_ANALYSIS_FAILURE_MESSAGE : null,
+    errorMessage: status === "failed" ? toUserFriendlyAnalysisError(run.errorMessage) : null,
     warnings: run.warnings ?? [],
     summary: run.summary ?? null,
     items: run.status === "completed" ? await getCompletedItems(run.id) : [],
@@ -268,6 +309,7 @@ export async function getMediaDetailPageData(input: {
     cefrWindowMode: preferences.generationCefrWindowMode,
     packSize: preferences.generationPackSizeDefault,
     knownTermHandling: preferences.generationKnownTermHandling,
+    audioVoiceGender: preferences.generationAudioVoiceGenderDefault,
     exampleSentenceCount: preferences.generationExampleSentenceCount,
     customInstructions: preferences.generationCustomInstructionsDefault,
   };

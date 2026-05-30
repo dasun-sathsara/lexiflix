@@ -1,16 +1,16 @@
-import { Layers, LayoutGrid } from "lucide-react";
+import { GripVertical, Layers, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { AppEmptyState } from "@/components/common/app-surface";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CuratedAdminCatalogFilter } from "@/features/curation/lib/admin-query";
 import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 
 import { FiltersSkeleton } from "./_utils";
 import { AdminCatalogFilters } from "./admin-catalog-filters";
-import { AdminCatalogRow } from "./admin-catalog-row";
+import { AdminCatalogList } from "./admin-catalog-list";
 
 export type AdminCatalogViewProps = {
   catalogFilter: CuratedAdminCatalogFilter;
@@ -20,9 +20,6 @@ export type AdminCatalogViewProps = {
   discoverHref: string;
 };
 
-/**
- * Renders the catalog view for admins to manage existing curated entries.
- */
 export function AdminCatalogView({
   catalogFilter,
   catalogCounts,
@@ -30,21 +27,36 @@ export function AdminCatalogView({
   allEntriesCount,
   discoverHref,
 }: AdminCatalogViewProps) {
+  const isFiltered = catalogFilter.mediaType !== "all" || catalogFilter.status !== "all";
+  const draggable = !isFiltered && catalogEntries.length > 1;
+
+  const subtitle = draggable ? (
+    <span className="inline-flex items-center gap-1.5">
+      <GripVertical className="size-3 opacity-60" />
+      Drag to reorder
+    </span>
+  ) : isFiltered ? (
+    "Clear filters to enable reordering"
+  ) : (
+    `${catalogEntries.length} entries`
+  );
+
   return (
-    <div className="flex flex-col gap-4 pt-2">
+    <div className="flex flex-col gap-4">
       <Suspense fallback={<FiltersSkeleton />}>
         <AdminCatalogFilters filter={catalogFilter} counts={catalogCounts} />
       </Suspense>
 
       {catalogEntries.length > 0 ? (
-        <Card className="gap-0 rounded-[calc(var(--radius)+2px)] border bg-card/60 py-0 shadow-sm">
-          <CardHeader className="gap-1.5 border-b py-3.5">
-            <CardTitle className="text-base font-semibold">Catalog entries</CardTitle>
+        <Card className="gap-0 py-0 shadow-sm">
+          <CardHeader className="border-b py-3.5">
+            <div className="flex items-center justify-between gap-4">
+              <CardTitle className="text-base">Catalog entries</CardTitle>
+              <CardDescription className="text-xs">{subtitle}</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 py-3.5">
-            {catalogEntries.map((entry) => (
-              <AdminCatalogRow key={entry.id} entry={entry} />
-            ))}
+          <CardContent className="p-0">
+            <AdminCatalogList entries={catalogEntries} draggable={draggable} />
           </CardContent>
         </Card>
       ) : allEntriesCount === 0 ? (
@@ -53,9 +65,9 @@ export function AdminCatalogView({
           title="No titles in the catalog yet"
           description="Switch to Discover & Add to find titles on TMDB and add them to the catalog."
           action={
-            <Button asChild variant="outline" className="rounded-xl px-4">
+            <Button asChild variant="outline" size="sm">
               <Link href={discoverHref}>
-                <LayoutGrid data-icon="inline-start" />
+                <LayoutGrid className="size-4" />
                 Go to Discover & Add
               </Link>
             </Button>
