@@ -8,7 +8,7 @@ import type {
   GeneratedTextItem,
 } from "@/lib/server/content-generation/contracts";
 
-const IMAGE_SIZE = "1024x1024" as const;
+const IMAGE_SIZE = "1792x1024" as const;
 const REQUEST_DELAY_MS = 10_000;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

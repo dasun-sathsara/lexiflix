@@ -130,7 +130,7 @@ export function StudySessionCard({
 
       {/* ── Card area ───────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pt-6">
-        <div className="relative h-full max-h-[42rem] w-full max-w-[60rem] sm:max-h-[45rem]">
+        <div className="relative h-full max-h-[42rem] w-full max-w-[62rem] sm:max-h-[45rem]">
           {/* Prompt side */}
           {/* biome-ignore lint/a11y/useSemanticElements: Needs to wrap nested interactive elements */}
           <div
@@ -300,12 +300,12 @@ export function StudySessionCard({
                     Visual cue
                   </div>
                   <div className="flex justify-center">
-                    <div className="relative aspect-square w-full max-w-[360px] overflow-hidden rounded-xl bg-muted">
+                    <div className="relative aspect-[1792/1024] w-full max-w-[520px] overflow-hidden rounded-xl bg-muted">
                       <Image
                         src={card.imageUrl}
                         alt={`Generated image for ${card.displayText}`}
                         fill
-                        sizes="(max-width: 768px) 100vw, 360px"
+                        sizes="(max-width: 768px) 100vw, 520px"
                         className="object-cover"
                         unoptimized
                       />
