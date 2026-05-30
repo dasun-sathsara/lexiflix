@@ -20,7 +20,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
-import { clampToInt, formatDueLabel } from "./_utils";
+import { clampToInt, formatDueLabel, formatElapsed } from "./_utils";
 
 const modeLabels: Record<StudySessionView["mode"], string> = {
   due: "Due reviews",
@@ -158,6 +158,7 @@ function isEditableTarget(target: EventTarget | null) {
 export function StudySessionClient({ session }: { session: StudySessionView }) {
   const [state, dispatch] = React.useReducer(studySessionReducer, session, getInitialState);
   const cardStartedAtRef = React.useRef(Date.now());
+  const sessionStartedAtRef = React.useRef(Date.now());
   const submissionLockedRef = React.useRef(false);
   const { setOpen } = useSidebar();
 
@@ -168,6 +169,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
   React.useEffect(() => {
     submissionLockedRef.current = false;
     cardStartedAtRef.current = Date.now();
+    sessionStartedAtRef.current = Date.now();
     dispatch({ type: "reset", session });
   }, [session]);
 
@@ -288,16 +290,19 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             Session complete
           </Badge>
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Study session saved</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Memory Vault Updated</h1>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-4">
-              <span>{state.reviewedCount} reviewed</span>
-              <span>{state.newLearnedCount} new</span>
-              <span>{state.lapseCount} lapses</span>
+              <span>{state.reviewedCount} reinforced</span>
+              <span>{state.newLearnedCount} newly acquired</span>
+              <span>{state.lapseCount} flagged for reinforcement</span>
               <span>{formatDueLabel(state.nextDueAt)}</span>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Time spent: {formatElapsed(Date.now() - sessionStartedAtRef.current)}
+            </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {session.mode === "due" && session.newCardsRemainingToday > 0 ? (
+            {session.mode === "due" && state.newLearnedCount < session.newCardsRemainingToday ? (
               <Button asChild>
                 <Link href={`/study/${session.packId}?mode=new`}>Continue with new cards</Link>
               </Button>
@@ -425,7 +430,7 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
 
               <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-3.5 py-1.5 text-xs tracking-wide text-muted-foreground/70">
                 <span className="inline-block size-1.5 rounded-full bg-primary/40" />
-                Tap to reveal
+                Query memory & tap to reveal
               </span>
             </div>
           </div>
@@ -569,7 +574,10 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                   aria-label={`${copy}. ${hint}. Keyboard shortcut ${index + 1}.`}
                   tabIndex={state.isFlipped ? 0 : -1}
                 >
-                  <span className="text-sm">
+                  <span className="flex items-center gap-1.5 text-sm">
+                    <kbd className="hidden rounded border border-current/30 px-1 text-[10px] font-semibold leading-none opacity-70 sm:inline-block">
+                      {index + 1}
+                    </kbd>
                     {state.pendingRating === rating ? "Saving..." : copy}
                   </span>
                   <span className="shrink-0 rounded-md bg-black/[0.06] px-2 py-0.5 text-[11px] tabular-nums dark:bg-white/[0.08]">

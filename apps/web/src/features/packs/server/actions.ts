@@ -171,11 +171,15 @@ export async function resetPackProgressAction(input: {
       easeFactor: 2.5,
       firstStudiedAt: null,
       masteredAt: null,
-      removedAt: null,
-      removalReason: null,
       updatedAt: now,
     })
-    .where(eq(packItem.packId, input.packId));
+    .where(
+      and(
+        eq(packItem.packId, input.packId),
+        ne(packItem.state, "removed"),
+        isNull(packItem.removedAt),
+      ),
+    );
 
   const activeCount = await countActiveItems(input.packId);
   await db
@@ -211,6 +215,7 @@ export async function restorePackItemAction(input: {
     .update(packItem)
     .set({
       state: item.firstStudiedAt ? "learning" : "new",
+      dueAt: now,
       removedAt: null,
       removalReason: null,
       updatedAt: now,
@@ -269,7 +274,6 @@ export async function resetPackItemAction(input: {
   revalidatePackSurfaces(input.packId);
   return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
 }
-
 async function updateTermStateAndCards({
   userId,
   item,
@@ -303,7 +307,8 @@ async function updateTermStateAndCards({
         lastSeenAt: now,
         knownAt:
           nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
-        ignoredAt: nextState === "ignored" ? now : null,
+        ignoredAt:
+          nextState === "ignored" ? now : nextState === "learning" ? null : userTermState.ignoredAt,
         updatedAt: now,
       },
     });
@@ -331,18 +336,20 @@ async function updateTermStateAndCards({
       .update(packItem)
       .set({ state: "mastered", masteredAt: now, updatedAt: now })
       .where(inArray(packItem.id, matchingIds));
-  } else if (nextState === "learning") {
+  } else if (nextState === "ignored") {
     await db
       .update(packItem)
-      .set({ state: "learning", masteredAt: null, dueAt: now, updatedAt: now })
+      .set({ state: "removed", removedAt: now, removalReason: "globally_ignored", updatedAt: now })
       .where(inArray(packItem.id, matchingIds));
   } else {
     await db
       .update(packItem)
       .set({
-        state: "removed",
-        removedAt: now,
-        removalReason: "term_ignored",
+        state: "learning",
+        masteredAt: null,
+        dueAt: now,
+        removedAt: null,
+        removalReason: null,
         updatedAt: now,
       })
       .where(inArray(packItem.id, matchingIds));
@@ -404,8 +411,8 @@ export async function markTermLearningAction(input: {
 }
 
 /**
- * Marks a specific term as ignored globally for the user.
- * Ignored terms will be completely excluded from future pack generation.
+ * Ignores a specific term globally.
+ * Ignored terms will be excluded from default queues and future pack generation.
  */
 export async function ignoreTermGloballyAction(input: {
   packId: string;
@@ -415,77 +422,14 @@ export async function ignoreTermGloballyAction(input: {
 }
 
 /**
- * Removes a term from the user's global ignore list.
+ * Unignores a previously ignored term, returning it to learning.
  */
 export async function unignoreTermAction(input: {
   packId: string;
   itemId: string;
 }): Promise<PackItemActionResult> {
-  const session = await requireSession();
-  const item = await requireOwnedPackItem({
-    packId: input.packId,
-    itemId: input.itemId,
-    userId: session.user.id,
-  });
-  if (!item) {
-    return { ok: false, error: "Card not found." };
-  }
-
-  const now = new Date();
-  await db
-    .insert(userTermState)
-    .values({
-      userId: session.user.id,
-      termId: item.termId,
-      state: "learning",
-      source: "manual",
-      lastPackItemId: item.id,
-      firstSeenAt: now,
-      lastSeenAt: now,
-    })
-    .onConflictDoUpdate({
-      target: [userTermState.userId, userTermState.termId],
-      set: {
-        state: "learning",
-        source: "manual",
-        ignoredAt: null,
-        lastPackItemId: item.id,
-        lastSeenAt: now,
-        updatedAt: now,
-      },
-    });
-
-  const ignoredRows = await db
-    .select({ id: packItem.id, firstStudiedAt: packItem.firstStudiedAt })
-    .from(packItem)
-    .innerJoin(pack, eq(pack.id, packItem.packId))
-    .where(
-      and(
-        eq(pack.userId, session.user.id),
-        eq(packItem.termId, item.termId),
-        eq(packItem.removalReason, "term_ignored"),
-      ),
-    );
-
-  const newIds = ignoredRows.filter((row) => !row.firstStudiedAt).map((row) => row.id);
-  const learningIds = ignoredRows.filter((row) => row.firstStudiedAt).map((row) => row.id);
-  if (newIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({ state: "new", removedAt: null, removalReason: null, updatedAt: now })
-      .where(inArray(packItem.id, newIds));
-  }
-  if (learningIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({ state: "learning", removedAt: null, removalReason: null, updatedAt: now })
-      .where(inArray(packItem.id, learningIds));
-  }
-
-  revalidatePackSurfaces(input.packId);
-  return { ok: true, activeCount: await countActiveItems(input.packId), itemId: item.id };
+  return runTermAction({ ...input, nextState: "learning" });
 }
-
 /**
  * Records a user's rating for a pack item and computes its next SRS state.
  * Updates the user's daily study streak, appends a review event log, and schedules the next review.
@@ -618,7 +562,6 @@ export async function ratePackItemAction(input: {
             : shouldDemoteKnownTerm
               ? null
               : userTermState.knownAt,
-        ignoredAt: null,
         updatedAt: reviewedAt,
       },
     });

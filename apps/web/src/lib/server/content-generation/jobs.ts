@@ -17,7 +17,19 @@ export function computePackGenerationIdempotencyKey(input: {
     return `${input.userId}:${input.contentId}:${crypto.randomUUID()}`;
   }
 
-  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}`;
+  const snap = input.requestSnapshot;
+  const sig = [
+    snap.learnerCefrLevel ?? "auto",
+    snap.frequencyPreference,
+    [...snap.selectedVocabularyTypes].sort().join(","),
+    snap.cefrWindowMode,
+    snap.packSize,
+    snap.knownTermHandling,
+    snap.exampleSentenceCount,
+    snap.audioVoiceGender,
+  ].join("|");
+
+  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}:${input.analysisRunId}:${sig}`;
 }
 
 export async function createOrReusePackGenerationJob(input: {

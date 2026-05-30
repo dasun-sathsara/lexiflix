@@ -3,6 +3,8 @@ import Link from "next/link";
 import type * as React from "react";
 import { AppPageContainer } from "@/components/common/app-page-shell";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AdminFloatingDebug } from "@/features/admin-tools/components/admin-floating-debug";
+import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 
@@ -11,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
   const session = await requireSession();
+  const studyPlan = await getStudyPlanForUser({ userId: session.user.id });
 
   const needsEmailVerification =
     "emailVerified" in session.user &&
@@ -26,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar user={user} />
+      <AppSidebar user={user} dueCount={studyPlan.dueNow} />
       <AppInset>
         {needsEmailVerification ? (
           <div className="border-b border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
@@ -44,6 +47,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         ) : null}
         {children}
+        {session.user.role === "admin" && process.env.NODE_ENV === "development" ? (
+          <AdminFloatingDebug />
+        ) : null}
       </AppInset>
     </SidebarProvider>
   );

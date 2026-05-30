@@ -18,22 +18,22 @@ const statusCopy: Record<
 > = {
   queued: {
     label: "Queued",
-    description: "Waiting to start.",
+    description: "Waiting for generation to start.",
     tone: "default",
   },
   running: {
     label: "Generating",
-    description: "Pack generation is running.",
+    description: "Creating definitions, examples, audio, and images.",
     tone: "default",
   },
   completed: {
     label: "Ready",
-    description: "Generated pack is ready.",
+    description: "Your study pack is ready.",
     tone: "success",
   },
   failed: {
-    label: "Needs retry",
-    description: PUBLIC_GENERATION_FAILURE_MESSAGE,
+    label: "Generation Failed",
+    description: "Something went wrong. Retry generation or adjust the request and try again.",
     tone: "danger",
   },
   cancelled: {
@@ -57,23 +57,23 @@ const stageCopy: Record<
     tone: "default",
   },
   selecting_terms: {
-    label: "Choosing vocabulary",
-    description: "Choosing vocabulary that matches this learner and request.",
+    label: "Selecting Vocabulary",
+    description: "Choosing terms that match your CEFR level and preferences.",
     tone: "default",
   },
   generating_content: {
-    label: "Writing learning content",
-    description: "Creating meanings and example sentences.",
+    label: "Writing Definitions",
+    description: "Generating meanings and example sentences.",
     tone: "default",
   },
   generating_assets: {
-    label: "Creating study assets",
-    description: "Preparing optional audio and image support.",
+    label: "Creating Audio & Images",
+    description: "Generating pronunciation audio and optional images.",
     tone: "default",
   },
   saving_pack: {
-    label: "Saving pack",
-    description: "Saving the generated study pack.",
+    label: "Saving Pack",
+    description: "Finalizing your pack and scheduling reviews.",
     tone: "default",
   },
   completed: {
@@ -94,11 +94,11 @@ const valueLabels: Record<string, string> = {
   balanced: "Balanced",
   challenge_first: "Challenge first",
   common_first: "Common first",
-  downrank_known: "Downrank known",
-  exclude_known: "Exclude known",
-  include_known: "Include known",
+  downrank_known: "De-prioritize words I know",
+  exclude_known: "Skip words I already know",
+  include_known: "Include everything (even known words)",
   one_level_above: "One level above",
-  same_level: "Same level",
+  same_level: "Keep at my current level",
 };
 
 export function formatGenerationLabel(value: string) {

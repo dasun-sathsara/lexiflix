@@ -2,7 +2,7 @@
 
 LexiFlix is a demo web application for vocabulary learning through movies and TV. The core idea is simple: instead of forcing learners to pause constantly during playback, the app prepares a study pack in advance by analyzing subtitle content and extracting useful vocabulary, phrases, and idioms before the user watches.
 
-This repository is intentionally optimized for fast iteration rather than production-grade infrastructure. The product lives in the Next.js web app, long-running generation flows are intended to run through Trigger.dev, and a separate Python NLP service will handle the heavier subtitle analysis work.
+This repository is intentionally optimized for fast iteration rather than production-grade infrastructure. The product lives in the Next.js web app, long-running generation flows run through Trigger.dev, and a separate Python NLP service handles the heavier subtitle analysis work.
 
 ## Current Architecture
 
@@ -15,7 +15,7 @@ The detailed architectural rationale lives in [docs/architecture.md](/Users/paba
 The repository currently has two main application surfaces:
 
 - `apps/web` contains the Next.js application, UI, route handlers, auth, and database integration.
-- `apps/nlp_service` contains the Python NLP service that will eventually provide subtitle analysis to the workflow layer.
+- `apps/nlp_service` contains the Python NLP service that provides subtitle analysis to the workflow layer.
 
 There are also older and experimental scripts under `apps/scripts`. Those are useful reference material and pipeline experiments, but they are not the main product surface.
 
@@ -48,7 +48,7 @@ For `apps/web`, Doppler needs to provide the required server-side envs:
 - `OPENSUBTITLES_API_KEY`
 - `OPENSUBTITLES_USERNAME`
 - `OPENSUBTITLES_PASSWORD`
-- `GEMINI_API_KEY`
+- `GOOGLE_CLOUD_API_KEY`
 - `TRIGGER_SECRET_KEY`
 - `NLP_SERVICE_BASE_URL`
 - `RESEND_API_KEY`
@@ -92,9 +92,9 @@ In normal day-to-day work, prefer the root `task` commands so the Doppler-backed
 
 ## NLP Service
 
-The Python NLP service lives in `apps/nlp_service`. It is currently a scaffold, not a finished service. Its intended role is narrow: accept subtitle-related input, run Python-native NLP analysis, and return structured vocabulary candidates to the workflow layer. It is not intended to become a second application backend or a separate orchestration platform.
+The Python NLP service lives in `apps/nlp_service`. Its role is narrow: accept subtitle-related input, run Python-native NLP analysis, and return structured vocabulary candidates to the workflow layer. It is not intended to become a second application backend or a separate orchestration platform.
 
-The service currently uses Python 3.13 and is set up around spaCy, transformers, and supporting NLP packages. As the service matures, it will likely expose FastAPI endpoints and be deployed as a container to a VPS.
+The service uses Python 3.13 and is a FastAPI application. It is containerized and deployed to Google Cloud Run.
 
 ## Deployment Direction
 
@@ -102,7 +102,7 @@ The current deployment direction is:
 
 - `apps/web` on Vercel
 - workflow orchestration through Trigger.dev Cloud
-- `apps/nlp_service` deployed as a container on an already rented VPS
+- `apps/nlp_service` deployed as a container to Google Cloud Run
 - Neon for Postgres
 - Cloudflare R2 for artifact storage
 

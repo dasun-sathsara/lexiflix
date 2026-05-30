@@ -26,6 +26,7 @@ export type AnalysisSidebarProps = {
   generationDefaults: GenerationDialogDefaults;
   isGenerating: boolean;
   onStartGeneration: (request: GenerationDialogDefaults & { forceRegenerate?: boolean }) => void;
+  onRetryGeneration: () => void;
   generationDialogOpen: boolean;
   onOpenGenerationChange: (open: boolean) => void;
 };
@@ -45,6 +46,7 @@ export function AnalysisSidebar({
   generationDefaults,
   isGenerating,
   onStartGeneration,
+  onRetryGeneration,
   generationDialogOpen,
   onOpenGenerationChange,
 }: AnalysisSidebarProps) {
@@ -157,6 +159,7 @@ export function AnalysisSidebar({
           generationDefaults={generationDefaults}
           isGenerating={isGenerating}
           onStartGeneration={onStartGeneration}
+          onRetryGeneration={onRetryGeneration}
           open={generationDialogOpen}
           onOpenChange={onOpenGenerationChange}
         />

@@ -19,5 +19,5 @@ export async function shouldShowAssessmentBanner(userId: string) {
     return true;
   }
 
-  return !profile.assessedLevel || Boolean(profile.manualOverrideLevel);
+  return !profile.assessedLevel;
 }

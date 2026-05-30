@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
 type Status = "loading" | "success" | "error";
@@ -16,6 +17,8 @@ export function VerifyEmailForm() {
 
   const [status, setStatus] = useState<Status>("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
 
   const verifyEmail = useCallback(
     async (token: string) => {
@@ -65,8 +68,21 @@ export function VerifyEmailForm() {
     verifyEmail(token);
   }, [searchParams, verifyEmail]);
 
-  const handleResendEmail = () => {
-    router.push("/auth");
+  const handleResendEmail = async () => {
+    if (!resendEmail.trim() || resendState === "sending") {
+      return;
+    }
+    setResendState("sending");
+    const { error } = await authClient.sendVerificationEmail({
+      email: resendEmail.trim(),
+      callbackURL: "/dashboard",
+    });
+    if (error) {
+      setResendState("idle");
+      setErrorMessage(error.message || "Could not resend the verification email.");
+      return;
+    }
+    setResendState("sent");
   };
 
   return (
@@ -134,13 +150,28 @@ export function VerifyEmailForm() {
             </div>
 
             <div className="space-y-2 pt-2">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={resendEmail}
+                onChange={(event) => setResendEmail(event.target.value)}
+                disabled={resendState === "sending"}
+                className="h-11"
+              />
               <Button
                 type="button"
                 onClick={handleResendEmail}
+                disabled={!resendEmail.trim() || resendState === "sending"}
                 className="flex w-full h-11 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-sm shadow-emerald-500/30 hover:from-emerald-500 hover:to-emerald-500"
               >
-                <Mail className="size-4" />
-                <span>Resend verification email</span>
+                {resendState === "sending" ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Mail className="size-4" />
+                )}
+                <span>
+                  {resendState === "sent" ? "Verification email sent" : "Resend verification email"}
+                </span>
               </Button>
 
               <Button

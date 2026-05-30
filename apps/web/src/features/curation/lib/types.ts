@@ -3,6 +3,7 @@ import type {
   CuratedGenreSnapshot,
   CuratedMediaType,
   CuratedSourceProvider,
+  StoredCefrLevel,
 } from "@/lib/server/db/json-contracts";
 
 export type { CuratedCurationScope, CuratedGenreSnapshot, CuratedMediaType, CuratedSourceProvider };
@@ -43,10 +44,12 @@ export interface CuratedCatalogEntry extends CuratedItemSnapshot {
   curatedByUserId: string | null;
   curatedAt: string | null;
   updatedAt: string;
+  level: StoredCefrLevel | null;
 }
 
 export type CuratedCatalogListFilters = {
   mediaType?: CuratedMediaType;
   isPublished?: boolean;
   limit?: number;
+  level?: StoredCefrLevel;
 };

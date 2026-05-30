@@ -147,18 +147,18 @@ export function getChallengeSignal(
 
   if (!learnerLevel) {
     return {
-      label: "Analysis complete, learner level unavailable",
+      label: "Ready to Explore",
       detail: contentLevel
-        ? `Average extracted level: ${contentLevel}`
-        : "Set a CEFR level to compare fit.",
+        ? `This title averages ${contentLevel} difficulty. Set your level to check your fit.`
+        : "Set your CEFR level in settings to compare content fit.",
       toneClass: "border-muted-foreground/20 bg-muted/50 text-muted-foreground",
     };
   }
 
   if (!contentLevel) {
     return {
-      label: "Analysis complete, content level unavailable",
-      detail: `Your current CEFR level: ${learnerLevel}`,
+      label: "Ready to Explore",
+      detail: `Your current CEFR level is ${learnerLevel}. Ready to generate packs.`,
       toneClass: "border-muted-foreground/20 bg-muted/50 text-muted-foreground",
     };
   }
@@ -169,8 +169,8 @@ export function getChallengeSignal(
   const isGoodFit = challengeDelta <= 0;
   if (isGoodFit) {
     return {
-      label: "Good fit",
-      detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+      label: "Perfect Match",
+      detail: `Fits your ${learnerLevel} profile (Title average: ${contentLevel}). Great for reinforcing your current vocabulary.`,
       toneClass:
         "border-emerald-200/60 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300",
     };
@@ -179,16 +179,16 @@ export function getChallengeSignal(
   const isSlightlyChallenging = challengeDelta === 1;
   if (isSlightlyChallenging) {
     return {
-      label: "Slightly challenging",
-      detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+      label: "Comfortable Stretch",
+      detail: `Averages ${contentLevel} (your level: ${learnerLevel}). A healthy challenge to level up your vocabulary.`,
       toneClass:
         "border-amber-200/60 bg-amber-500/10 text-amber-700 dark:border-amber-500/20 dark:text-amber-300",
     };
   }
 
   return {
-    label: "Stretch title",
-    detail: `Average ${contentLevel} vs your ${learnerLevel}`,
+    label: "Challenging Stretch",
+    detail: `Averages ${contentLevel} (your level: ${learnerLevel}). Expect a high density of unfamiliar words and phrases.`,
     toneClass:
       "border-rose-200/60 bg-rose-500/10 text-rose-700 dark:border-rose-500/20 dark:text-rose-300",
   };

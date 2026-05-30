@@ -97,7 +97,15 @@ const adminItems: NavItem[] = [
 ];
 
 // Clean navigation menu component with proper active states
-function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
+function NavMenu({
+  items,
+  label,
+  dueCount = 0,
+}: {
+  items: NavItem[];
+  label?: string;
+  dueCount?: number;
+}) {
   const pathname = usePathname();
 
   return (
@@ -106,6 +114,7 @@ function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
       <SidebarMenu>
         {items.map((item) => {
           const isActive = pathname === item.url || pathname.startsWith(`${item.url}/`);
+          const badge = item.url === "/decks" && dueCount > 0 ? String(dueCount) : item.badge;
 
           return (
             <SidebarMenuItem key={item.title}>
@@ -115,7 +124,7 @@ function NavMenu({ items, label }: { items: NavItem[]; label?: string }) {
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>
-              {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+              {badge && <SidebarMenuBadge>{badge}</SidebarMenuBadge>}
             </SidebarMenuItem>
           );
         })}
@@ -131,9 +140,10 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     avatar?: string;
     role: "learner" | "admin";
   };
+  dueCount?: number;
 }
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, dueCount = 0, ...props }: AppSidebarProps) {
   const isAdmin = user.role === "admin";
 
   return (
@@ -175,7 +185,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMenu items={platformItems} label="Platform" />
+        <NavMenu items={platformItems} label="Platform" dueCount={dueCount} />
         {isAdmin ? <NavMenu items={adminItems} label="Admin" /> : null}
         <NavMenu items={generalItems} label="General" />
       </SidebarContent>

@@ -49,13 +49,16 @@ export function DeleteAccountCard({
   return (
     <Card id="danger" className={`${settingsCardClass} border-destructive/40 bg-destructive/5`}>
       <CardHeader className={settingsCardHeaderClass}>
-        <CardTitle>Delete account</CardTitle>
-        <CardDescription>Permanent account removal.</CardDescription>
+        <CardTitle>Delete Account</CardTitle>
+        <CardDescription>Permanently delete your profile and all learning data.</CardDescription>
       </CardHeader>
       <CardContent
         className={`${settingsCardContentClass} space-y-2 text-sm text-muted-foreground`}
       >
-        <p>Deletes packs, progress, and billing records immediately.</p>
+        <p>
+          This will permanently erase your personalized learning packs, study progress, history, and
+          billing records. This cannot be undone.
+        </p>
       </CardContent>
       <CardFooter className={settingsCardFooterClass}>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -98,8 +101,8 @@ export function DeleteAccountCard({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action is permanent. All packs, analytics, and billing records disappear
-                immediately.
+                This will permanently erase your personalized learning packs, study progress,
+                history, and billing records. This cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -109,7 +112,7 @@ export function DeleteAccountCard({
                 onClick={handleDeleteAccount}
                 disabled={isDeletingAccount}
               >
-                Delete anyway
+                Yes, delete my account
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

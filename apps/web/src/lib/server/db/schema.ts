@@ -355,6 +355,7 @@ export const curatedEntry = pgTable(
     curatedByUserId: text("curated_by_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
+    level: cefrLevelEnum("level"),
     curatedAt: timestamp("curated_at"),
     lastTmdbSyncedAt: timestamp("last_tmdb_synced_at"),
     ...auditColumns,

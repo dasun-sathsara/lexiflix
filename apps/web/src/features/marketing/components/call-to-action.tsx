@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { LayoutTextFlip } from "@/components/common/layout-text-flip";
 import { ElegantButton } from "@/components/ui/button";
 
@@ -27,43 +28,47 @@ export function CallToActionSection() {
             duration={2000}
           />
           <p className="max-w-3xl text-balance font-medium text-base text-muted-foreground sm:text-lg">
-            LexiFlix walks you from level check to active recall: choose a title, let our subtitle
-            analysis surface the vocabulary you'll encounter, and master it before the opening
-            credits roll.
+            Pick a title, see the vocabulary you'll hear, and master it before the opening credits
+            roll.
           </p>
         </motion.div>
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Assess &amp; Align
+              Profile &amp; Align
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Complete a CEFR-aware placement check and set preferences so every pack targets the
-              skills you want to strengthen.
+              Take a quick CEFR placement check, then set your study preferences and daily pace.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Select &amp; Curate
+              Analyze &amp; Customize
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Browse a rich catalog of movies and shows, pull in matching subtitles automatically,
-              and let LexiFlix spotlight the vocabulary that matters most.
+              Browse movies and TV seasons. LexiFlix analyzes the subtitles to surface words,
+              phrasal verbs, idioms, and slang.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
             <h4 className="text-sm font-semibold uppercase  text-indigo-500 font-ubuntu-mono dark:text-indigo-300">
-              Study &amp; Review
+              Generate &amp; Study
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Dive into AI-crafted definitions, audio, and images, then reinforce every term with
-              spaced repetition reminders that fit your pace.
+              Get up to 100 cards with Gemini definitions, example sentences, Polly audio, and
+              spaced-repetition reviews.
             </p>
           </div>
         </div>
-        <ElegantButton size="elegantLg" className="text-base font-medium cursor-pointer">
-          <span>See LexiFlix in Action</span>
-          <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+        <ElegantButton
+          size="elegantLg"
+          className="group text-base font-medium cursor-pointer"
+          asChild
+        >
+          <Link href="/auth">
+            <span>See LexiFlix in Action</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
         </ElegantButton>
       </div>
     </section>

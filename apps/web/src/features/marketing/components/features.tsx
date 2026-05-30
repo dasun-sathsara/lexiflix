@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 
 const features = [
   {
-    title: "Level-Aware Onboarding",
+    title: "Adaptive CEFR Profiling",
     description:
-      "Sign up, take a CEFR placement check, and let LexiFlix tailor every recommendation to your goals before you ever press play.",
+      "Complete our adaptive placement assessment to calibrate your baseline CEFR level (A1–C2), or customize your target level with direct manual overrides.",
     Icon: ListChecks,
     eyebrow: "Start with clarity",
     containerClassName: "col-span-1 lg:col-span-2 min-h-[340px]",
@@ -22,15 +22,15 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Placement check calibrates vocabulary packs to your level",
-      "Preferences steer focus areas and pacing",
-      "Progress snapshots keep improvement visible across sessions",
+      "Placement check dynamically calculates language proficiency",
+      "Targeted vocabulary goals steer pacing settings (new cards per day)",
+      "Manual level adjustments keep recommendations under your control",
     ],
   },
   {
-    title: "Intelligent Subtitle Analysis",
+    title: "Dual-Pipeline Subtitle Analysis",
     description:
-      "LexiFlix pulls in subtitles automatically and highlights the vocabulary you are most likely to hear in context before the episode begins.",
+      "Fetch subtitles on-demand from OpenSubtitles for any movie or TV season. Subtitles are parsed transiently and run through our specialized dual-pipeline analysis.",
     Icon: Clapperboard,
     eyebrow: "Curate the content",
     containerClassName: "col-span-1 min-h-[320px]",
@@ -44,15 +44,15 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Automatic subtitle imports stay synced with your chosen titles",
-      "Key phrases are graded to match your confidence level",
-      "Idioms and cultural references are surfaced before you watch",
+      "FastAPI NLP pipeline calibrates word count, lemmas, and parts of speech",
+      "Gemini LLM pipeline extracts and grades phrasal verbs, idioms, and slang",
+      "Interactive title overview lists difficulty metrics and term distributions",
     ],
   },
   {
-    title: "AI Study Packs",
+    title: "Personalized AI Study Packs",
     description:
-      "Review curated vocabulary with AI-generated definitions, natural pronunciation, and contextual imagery all in one place.",
+      "Generate custom study packs (up to 100 items) shaped by your vocabulary preferences, CEFR window options, known-term handling, and custom instructions.",
     Icon: Headphones,
     eyebrow: "Make it stick",
     containerClassName: "col-span-1 min-h-[320px]",
@@ -66,14 +66,15 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "AI writes plain-language definitions and examples",
-      "Natural pronunciation guides help you hear every nuance",
+      "Gemini writes plain-English definitions and fresh example sentences",
+      "AWS Polly generates natural-sounding pronunciation audio guides",
+      "Best-effort contextual images created for eligible nouns and terms",
     ],
   },
   {
-    title: "Spaced Repetition",
+    title: "Coherent Spaced Repetition",
     description:
-      "Active recall sessions, adaptive scheduling, and gentle nudges help the vocabulary stay fresh long after the credits roll.",
+      "Reinforce learning with a legacy SM-2 baseline scheduler featuring four rating grades. Term mastery and ignore states propagate globally across all your packs.",
     Icon: Repeat,
     eyebrow: "Remember more",
     containerClassName: "col-span-1 md:col-span-1 lg:col-span-2 min-h-[280px]",
@@ -88,9 +89,9 @@ const features = [
     },
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
-      "Adaptive spaced repetition responds to your recall ratings",
-      "Daily streaks and goals keep motivation visible",
-      "Notifications highlight when reviews are ready",
+      "Sub-day learning and relearning steps ensure rapid term retention",
+      "Global Known and Ignored states prevent duplicate study across movies",
+      "App-day streak calculations and in-app due reminders keep you on track",
     ],
   },
 ];
@@ -105,8 +106,7 @@ export function FeaturesSection() {
             Everything you need to turn screen time into study time
           </h2>
           <p className="mt-4 text-balance text-base text-muted-foreground sm:text-lg">
-            Learn faster with rich context, beautiful visuals, and smart repetition that reinforces
-            what you love to watch.
+            Rich context, clear visuals, and smart repetition for the shows you already love.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

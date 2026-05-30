@@ -19,6 +19,9 @@ function AvatarImage({ className, ...props }: React.ComponentProps<typeof Avatar
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
+      // Google avatar CDN (lh3.googleusercontent.com) returns 429 when a
+      // referrer header is sent, causing photos to intermittently fail to load.
+      referrerPolicy="no-referrer"
       className={cn("aspect-square size-full", className)}
       {...props}
     />

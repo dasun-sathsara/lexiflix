@@ -11,22 +11,22 @@ const faqs = [
   {
     question: "How does LexiFlix personalize my study plan?",
     answer:
-      "LexiFlix starts with a CEFR placement check and your stated goals. Every pack is filtered through your level, recent performance, and saved preferences so you always review material that matches your next step forward.",
+      "Start with a quick CEFR placement check (A1–C2) or set your level manually. When you generate a pack, you can tune target vocabulary types, the CEFR range, how known terms are handled, and custom instructions.",
   },
   {
-    question: "How do movies and subtitles get into LexiFlix?",
+    question: "How do movies and subtitles get analyzed in LexiFlix?",
     answer:
-      "Search for a title, confirm the right release, and LexiFlix automatically pulls the matching subtitles before turning them into your study pack.",
+      "If a title isn't already analyzed, LexiFlix fetches its subtitles on demand without storing them. The text is parsed for word difficulty and parts of speech, then scanned for phrasal verbs, idioms, and slang.",
   },
   {
-    question: "What is included in a study pack?",
+    question: "What is included in a generated study pack?",
     answer:
-      "Each pack bundles curated vocabulary with CEFR tags, AI-authored definitions and examples, natural-sounding pronunciation audio, and contextual imagery so you can learn the dialogue in advance.",
+      "Up to 100 vocabulary cards, each with a plain-English definition, fresh example sentences, natural pronunciation audio, and—where it helps—a contextual image.",
   },
   {
-    question: "How does LexiFlix protect my progress?",
+    question: "How does my study progress sync across titles?",
     answer:
-      "Your streaks, packs, and roles stay synced to your LexiFlix account with role-based safeguards. Reviews and reminders follow you across devices so you can pick up right where you left off.",
+      "Reviews use spaced repetition with four grades (Again, Hard, Good, Easy). Marking a term Known or Ignored applies everywhere, so your progress stays consistent across packs.",
   },
 ];
 
@@ -48,8 +48,7 @@ export function FAQSection() {
               Everything you're curious about, answered in two taps
             </h2>
             <p className="text-balance text-base text-muted-foreground sm:text-lg">
-              Our learners ask smart questions. We built a compact, tappable FAQ so you get to the
-              good stuff quickly—no endless scrolling.
+              A compact, tappable FAQ that gets you to the answers fast.
             </p>
             <div className="flex flex-wrap gap-2 text-xs font-medium uppercase  text-muted-foreground font-ubuntu-mono">
               <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200/50 bg-white/65 px-4 py-1.5 dark:border-indigo-900/50 dark:bg-slate-950/60">
@@ -80,8 +79,7 @@ export function FAQSection() {
                 Quick answers whenever you need them
               </CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
-                Tap to expand a question—each one keeps your place so you can skim without losing
-                focus.
+                Tap any question to expand it—your place stays put.
               </CardDescription>
             </CardHeader>
             <CardContent className="relative px-0 pb-1">

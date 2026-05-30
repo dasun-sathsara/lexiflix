@@ -73,10 +73,8 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
         toast.error(result.message);
       }
     } else {
-      toast.success("Welcome back! Redirecting to your dashboard...");
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
+      toast.success("Welcome back!");
+      router.push("/dashboard");
     }
   };
 

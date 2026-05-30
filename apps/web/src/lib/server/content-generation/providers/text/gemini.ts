@@ -10,7 +10,10 @@ import type {
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
 
-const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+const geminiClient = new GoogleGenAI({
+  vertexai: true,
+  apiKey: env.GOOGLE_CLOUD_API_KEY,
+});
 
 const generatedTextItemSchema = z.object({
   analysisItemId: z.string(),

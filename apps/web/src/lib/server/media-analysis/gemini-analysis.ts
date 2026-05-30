@@ -12,7 +12,10 @@ import {
   MEDIA_ANALYSIS_PIPELINE_VERSION,
 } from "@/lib/server/media-analysis/contracts";
 
-const geminiClient = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+const geminiClient = new GoogleGenAI({
+  vertexai: true,
+  apiKey: env.GOOGLE_CLOUD_API_KEY,
+});
 
 const analysisLlmSdkSchema: Schema = {
   type: Type.ARRAY,
@@ -44,11 +47,6 @@ const analysisLlmSdkSchema: Schema = {
         type: Type.STRING,
         nullable: true,
         description: "One concise subtitle excerpt that supports the phrase.",
-      },
-      rationale: {
-        type: Type.STRING,
-        nullable: true,
-        description: "Short explanation for why the item matters to learners.",
       },
     },
   },

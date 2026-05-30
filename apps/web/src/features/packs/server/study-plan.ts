@@ -225,12 +225,13 @@ export function buildStudyQueue({
       : activeCards;
   }
 
-  const queue =
+  const queue = (
     mode === "new"
       ? activeCards.filter((card) => card.state === "new").slice(0, Math.max(0, newCardLimit))
-      : activeCards.filter((card) => card.state === "due");
+      : activeCards.filter((card) => card.state === "due")
+  ).filter((card) => card.termState !== "known" && card.termState !== "ignored");
 
   return requestedCard && !queue.some((card) => card.id === requestedCard.id)
     ? [requestedCard, ...queue]
-    : queue.filter((card) => card.termState !== "known" && card.termState !== "ignored");
+    : queue;
 }
