@@ -56,9 +56,14 @@ async function requireOwnedPackItem({
   return rows[0]?.item ?? null;
 }
 
-function revalidatePackSurfaces(packId: string) {
+function revalidatePackSurfaces(packId: string, options?: { includeStudyRoute?: boolean }) {
   revalidatePath(`/pack/${packId}`);
-  revalidatePath(`/study/${packId}`);
+  // The study route hosts a live, client-stateful session. Revalidating it
+  // mid-session rebuilds the card queue and resets in-progress UI (e.g. the
+  // progress bar), so callers that run during an active session opt out.
+  if (options?.includeStudyRoute ?? true) {
+    revalidatePath(`/study/${packId}`);
+  }
   revalidatePath("/decks");
   revalidatePath("/dashboard");
 }
@@ -635,7 +640,7 @@ export async function ratePackItemAction(input: {
     .filter((value): value is Date => Boolean(value))
     .sort((a, b) => a.getTime() - b.getTime())[0];
 
-  revalidatePackSurfaces(input.packId);
+  revalidatePackSurfaces(input.packId, { includeStudyRoute: false });
 
   return {
     ok: true,
