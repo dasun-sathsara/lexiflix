@@ -53,7 +53,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     async sendResetPassword({ user, token }) {
-      const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${token}`;
+      const resetUrl = `${baseURL}/auth/reset-password?token=${token}`;
 
       await sendPasswordResetEmail({
         email: user.email,
@@ -67,7 +67,7 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     sendVerificationOnSignUp: true,
     async sendVerificationEmail({ user, token }) {
-      const verificationUrl = `${env.NEXT_PUBLIC_APP_URL}/auth/verify-email?token=${token}`;
+      const verificationUrl = `${baseURL}/auth/verify-email?token=${token}`;
 
       await sendEmailVerificationEmail({
         email: user.email,
