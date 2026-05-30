@@ -52,7 +52,7 @@ const features = [
   {
     title: "Personalized AI Study Packs",
     description:
-      "Generate custom study packs (up to 100 items) shaped by your vocabulary preferences, CEFR window options, known-term handling, and custom instructions.",
+      "Generate custom study packs shaped by your vocabulary preferences, CEFR window options, known-term handling, and custom instructions.",
     Icon: Headphones,
     eyebrow: "Make it stick",
     containerClassName: "col-span-1 min-h-[320px]",

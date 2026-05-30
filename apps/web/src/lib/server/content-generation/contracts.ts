@@ -18,7 +18,7 @@ export const generationRequestSchema = z.object({
   cefrWindowMode: z
     .enum(["same_level", "one_level_above", "all_levels_above"])
     .default("same_level"),
-  packSize: z.number().int().positive().max(100).default(20),
+  packSize: z.number().int().positive().default(20),
   knownTermHandling: z
     .enum(["exclude_known", "downrank_known", "include_known"])
     .default("exclude_known"),

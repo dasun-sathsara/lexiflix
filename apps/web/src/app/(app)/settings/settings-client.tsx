@@ -185,11 +185,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
       parsedNewCardsPerDay >= 1 &&
       parsedNewCardsPerDay <= 100
     ) ||
-    !(
-      Number.isInteger(parsedGenerationPackSize) &&
-      parsedGenerationPackSize >= 1 &&
-      parsedGenerationPackSize <= 100
-    ) ||
+    !(Number.isInteger(parsedGenerationPackSize) && parsedGenerationPackSize >= 1) ||
     !(parsedGenerationExampleSentenceCount >= 1 && parsedGenerationExampleSentenceCount <= 3) ||
     generationCustomInstructionsDefault.trim().length > 1200 ||
     studyVocabularyTypes.length === 0 ||
@@ -411,9 +407,7 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
   return (
     <AppPageShell>
       <AppPageHeader
-        eyebrow={
-          <span className="text-xs font-semibold tracking-wide text-primary">Settings</span>
-        }
+        eyebrow={<span className="text-xs font-semibold tracking-wide text-primary">Settings</span>}
         heading="User settings"
         description="Manage how you show up in shared sessions and keep your LexiFlix account safeguarded."
       />

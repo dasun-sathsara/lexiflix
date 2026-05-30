@@ -21,7 +21,7 @@ const faqs = [
   {
     question: "What is included in a generated study pack?",
     answer:
-      "Up to 100 vocabulary cards, each with a plain-English definition, fresh example sentences, natural pronunciation audio, and—where it helps—a contextual image.",
+      "A study pack of vocabulary cards, each with a plain-English definition, fresh example sentences, natural pronunciation audio, and—where it helps—a contextual image.",
   },
   {
     question: "How does my study progress sync across titles?",

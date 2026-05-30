@@ -55,7 +55,7 @@ export function CallToActionSection() {
               Generate &amp; Study
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Get up to 100 cards with Gemini definitions, example sentences, Polly audio, and
+              Get a full deck of cards with Gemini definitions, example sentences, Polly audio, and
               spaced-repetition reviews.
             </p>
           </div>

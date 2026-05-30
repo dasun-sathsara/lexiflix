@@ -130,9 +130,7 @@ export function PreferencesSettingsCard({
 
   const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
   const generationPackSizeIsValid =
-    Number.isInteger(parsedGenerationPackSize) &&
-    parsedGenerationPackSize >= 1 &&
-    parsedGenerationPackSize <= 100;
+    Number.isInteger(parsedGenerationPackSize) && parsedGenerationPackSize >= 1;
 
   const customInstructionsIsValid =
     generationCustomInstructionsDefault.trim().length <= CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH;
@@ -267,7 +265,6 @@ export function PreferencesSettingsCard({
                     id="generation-pack-size"
                     type="number"
                     min={1}
-                    max={100}
                     value={generationPackSizeDefault}
                     onChange={(event) => {
                       setGenerationPackSizeDefault(event.target.value);
@@ -275,9 +272,7 @@ export function PreferencesSettingsCard({
                     }}
                   />
                   {!generationPackSizeIsValid ? (
-                    <p className="text-xs text-destructive">
-                      Enter a whole number between 1 and 100.
-                    </p>
+                    <p className="text-xs text-destructive">Enter a whole number of 1 or more.</p>
                   ) : null}
                 </div>
 
