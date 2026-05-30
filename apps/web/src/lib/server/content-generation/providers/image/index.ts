@@ -20,6 +20,14 @@ function getImageGenerationConfig(): ImageGenerationProviderConfig {
 export async function generateImageArtifacts(input: {
   textItems: GeneratedTextItem[];
 }): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
+  const eligibleItems = input.textItems.filter(
+    (item) => item.imageEligibility.eligible && Boolean(item.imageBrief?.trim()),
+  );
+
+  if (eligibleItems.length === 0) {
+    return { artifacts: [], warnings: [] };
+  }
+
   const config = getImageGenerationConfig();
 
   try {

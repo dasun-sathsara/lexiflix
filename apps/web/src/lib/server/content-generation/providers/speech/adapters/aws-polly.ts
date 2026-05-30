@@ -62,12 +62,12 @@ async function synthesizeWithRetry(input: {
   client: PollyClient;
   target: SpeechArtifactTarget;
   config: AwsPollyConfig;
-}) {
+}): Promise<{ bytes: Uint8Array; requestCharacters?: number }> {
   let attempt = 0;
 
   while (true) {
     try {
-      return await input.client.send(
+      const response = await input.client.send(
         new SynthesizeSpeechCommand({
           Text: input.target.script,
           VoiceId: input.config.voice as VoiceId,
@@ -76,6 +76,11 @@ async function synthesizeWithRetry(input: {
           TextType: "text",
         }),
       );
+      const bytes = await audioStreamToBytes(response.AudioStream);
+      return {
+        bytes,
+        requestCharacters: response.RequestCharacters,
+      };
     } catch (error) {
       if (attempt >= env.AWS_POLLY_MAX_RETRIES || !isPollyRetryable(error)) {
         throw error;
@@ -95,13 +100,13 @@ export function createAwsPollySpeechAdapter(config: AwsPollyConfig): SpeechSynth
     voice: config.voice,
     concurrency: env.AWS_POLLY_CONCURRENCY,
     async synthesize(target) {
-      const response = await synthesizeWithRetry({ client, target, config });
+      const result = await synthesizeWithRetry({ client, target, config });
 
       return {
-        bytes: await audioStreamToBytes(response.AudioStream),
+        bytes: result.bytes,
         mimeType: "audio/mpeg",
         extension: "mp3",
-        requestCharacters: response.RequestCharacters,
+        requestCharacters: result.requestCharacters,
         metadata: {
           provider: "aws-polly",
           voice: config.voice,

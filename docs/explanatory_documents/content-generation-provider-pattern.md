@@ -37,15 +37,15 @@ LexiFlix uses a modality-specific application-service Facade, provider Strategy 
 
 These terms overlap, but each describes a different responsibility.
 
-| Term | Meaning in this codebase | Main benefit |
-| --- | --- | --- |
-| Facade | The stable function imported by the workflow, such as `generateTextContent` | Callers do not know which provider is active |
-| Application service | Shared LexiFlix behavior such as prompting, batching, validation, warning policy, and artifact assembly | Business behavior has one implementation |
-| Port | The TypeScript contract that describes what LexiFlix needs from a provider | Core code depends on a small internal contract rather than an SDK |
-| Adapter | Code that translates the internal port into Gemini, Azure, or AWS calls | Vendor details stay isolated |
-| Strategy | The interchangeable adapter selected for one execution | Providers can be swapped without changing orchestration |
-| Factory | The exhaustive `switch` that constructs the selected strategy | Selection is centralized and checked by TypeScript |
-| Composition boundary | The location where validated environment configuration becomes typed provider configuration | Configuration knowledge does not spread through the workflow |
+| Term                 | Meaning in this codebase                                                                                | Main benefit                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Facade               | The stable function imported by the workflow, such as `generateTextContent`                             | Callers do not know which provider is active                      |
+| Application service  | Shared LexiFlix behavior such as prompting, batching, validation, warning policy, and artifact assembly | Business behavior has one implementation                          |
+| Port                 | The TypeScript contract that describes what LexiFlix needs from a provider                              | Core code depends on a small internal contract rather than an SDK |
+| Adapter              | Code that translates the internal port into Gemini, Azure, or AWS calls                                 | Vendor details stay isolated                                      |
+| Strategy             | The interchangeable adapter selected for one execution                                                  | Providers can be swapped without changing orchestration           |
+| Factory              | The exhaustive `switch` that constructs the selected strategy                                           | Selection is centralized and checked by TypeScript                |
+| Composition boundary | The location where validated environment configuration becomes typed provider configuration             | Configuration knowledge does not spread through the workflow      |
 
 This is a lightweight form of Ports and Adapters, also called Hexagonal Architecture. There is no dependency-injection container, class hierarchy, abstract base class, or runtime plugin system. Plain TypeScript types and functions are enough.
 
@@ -116,13 +116,13 @@ This is called composition because separate pieces are assembled here. Environme
 ```ts
 export type TextGenerationProviderConfig =
   | {
-      provider: "gemini";
-      model: string;
-    }
+    provider: "gemini";
+    model: string;
+  }
   | {
-      provider: "azure-foundry";
-      model: string;
-    };
+    provider: "azure-foundry";
+    model: string;
+  };
 
 export type TextGenerationAdapter = {
   provider: TextGenerationProviderConfig["provider"];
@@ -162,7 +162,10 @@ The `assertNever` branch protects future changes. If a third provider is added t
 `providers/text/service.ts` owns the behavior that must remain identical regardless of vendor:
 
 ```ts
-const settledResults = await mapWithConcurrency<SelectedGenerationItem[], GeneratedTextItem[]>(
+const settledResults = await mapWithConcurrency<
+  SelectedGenerationItem[],
+  GeneratedTextItem[]
+>(
   batches,
   TEXT_CONCURRENCY,
   async (batch, index) => {
@@ -219,7 +222,10 @@ The Azure adapter implements the same port through a different SDK:
 const response = await getOpenAIClient().chat.completions.create({
   model: request.model,
   messages: [{ role: "user", content: request.prompt }],
-  response_format: zodResponseFormat(generatedTextBatchSchema, "generatedTextBatch"),
+  response_format: zodResponseFormat(
+    generatedTextBatchSchema,
+    "generatedTextBatch",
+  ),
 });
 ```
 
@@ -236,18 +242,18 @@ Speech uses the same architecture but has a different port because it produces b
 ```ts
 export type SpeechProviderConfig =
   | {
-      provider: "disabled";
-    }
+    provider: "disabled";
+  }
   | {
-      provider: "aws-polly";
-      voice: string;
-      engine: "standard" | "neural";
-    }
+    provider: "aws-polly";
+    voice: string;
+    engine: "standard" | "neural";
+  }
   | {
-      provider: "azure-mai";
-      voice: string;
-      style: string;
-    };
+    provider: "azure-mai";
+    voice: string;
+    style: string;
+  };
 ```
 
 The disabled configuration has no fake voice. Polly requires an engine and cannot contain an Azure style. Azure requires a style and cannot contain a Polly engine. This property is often summarized as making invalid states unrepresentable.
