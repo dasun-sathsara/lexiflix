@@ -2,6 +2,7 @@
 
 import { CheckCircle2, GraduationCap, Loader2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { Controller } from "react-hook-form";
 
 import { AppPanel } from "@/components/common/app-surface";
 import { Badge } from "@/components/ui/badge";
@@ -27,8 +28,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
-import type { ManualOverrideSelection, SettingsPreferences } from "@/features/settings/types";
+import { CEFR_LEVELS } from "@/features/assessment/types";
+import type { SettingsPreferences } from "@/features/settings/types";
 import { usePreferencesForm } from "./use-preferences-form";
 import {
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
@@ -49,49 +50,28 @@ type PreferencesSettingsCardProps = {
 /**
  * Preferences settings card — groups CEFR level override, daily card cap,
  * content generation defaults, notification toggles, and vocabulary-type
- * selection into a single submit-scoped form.
+ * selection into a single submit-scoped form using react-hook-form.
  */
 export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCardProps) {
   const {
+    form,
     initialPreferences,
-    manualOverrideSelection,
-    setManualOverrideSelection,
-    newCardsPerDay,
-    setNewCardsPerDay,
-    frequencyPreference,
-    setFrequencyPreference,
-    studyVocabularyTypes,
-    generationPackSizeDefault,
-    setGenerationPackSizeDefault,
-    generationCefrWindowMode,
-    setGenerationCefrWindowMode,
-    generationKnownTermHandling,
-    setGenerationKnownTermHandling,
-    generationAudioVoiceGenderDefault,
-    setGenerationAudioVoiceGenderDefault,
-    generationExampleSentenceCount,
-    setGenerationExampleSentenceCount,
-    generationCustomInstructionsDefault,
-    setGenerationCustomInstructionsDefault,
-    emailRemindersEnabled,
-    setEmailRemindersEnabled,
-    streakAlertsEnabled,
-    setStreakAlertsEnabled,
     effectiveCefrLevel,
     preferencesStatus,
     setPreferencesStatus,
-    preferencesSubmitDisabled,
     isSavingPreferences,
-    handlePreferencesSubmit,
-    newCardsPerDayIsValid,
-    generationPackSizeIsValid,
-    customInstructionsIsValid,
-    vocabularyTypesAreValid,
+    handleSubmit,
+    isDirty,
+    errors,
     toggleVocabularyType,
   } = usePreferencesForm(preferences);
 
+  const { control, register, watch } = form;
+  const customInstructions = watch("generationCustomInstructionsDefault") ?? "";
+  const studyVocabularyTypes = watch("studyVocabularyTypes");
+
   return (
-    <form onSubmit={handlePreferencesSubmit}>
+    <form onSubmit={handleSubmit}>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card id="preferences" className={settingsCardClass}>
           <CardHeader className={settingsCardHeaderClass}>
@@ -104,32 +84,36 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                 <Label htmlFor="current-cefr-level" className={settingsLabelClass}>
                   Current CEFR level
                 </Label>
-                <Select
-                  value={manualOverrideSelection}
-                  onValueChange={(value) => {
-                    if (value === "assessed" || CEFR_LEVELS.includes(value as CefrLevel)) {
-                      setManualOverrideSelection(value as ManualOverrideSelection);
-                    }
-                    setPreferencesStatus(null);
-                  }}
-                >
-                  <SelectTrigger id="current-cefr-level" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="assessed">
-                      Use my adaptive test result
-                      {initialPreferences.assessedLevel
-                        ? ` (${initialPreferences.assessedLevel})`
-                        : ""}
-                    </SelectItem>
-                    {CEFR_LEVELS.map((level) => (
-                      <SelectItem key={level} value={level}>
-                        {level}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="manualOverrideSelection"
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        setPreferencesStatus(null);
+                      }}
+                    >
+                      <SelectTrigger id="current-cefr-level" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="assessed">
+                          Use my adaptive test result
+                          {initialPreferences.assessedLevel
+                            ? ` (${initialPreferences.assessedLevel})`
+                            : ""}
+                        </SelectItem>
+                        {CEFR_LEVELS.map((level) => (
+                          <SelectItem key={level} value={level}>
+                            {level}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
                 <p className="text-xs text-muted-foreground">
                   Effective level:{" "}
                   {effectiveCefrLevel ? (
@@ -167,20 +151,19 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                 type="number"
                 min={1}
                 max={100}
-                value={newCardsPerDay}
-                onChange={(event) => {
-                  setNewCardsPerDay(event.target.value);
-                  setPreferencesStatus(null);
-                }}
                 placeholder="20"
+                {...register("newCardsPerDay", {
+                  valueAsNumber: true,
+                  onChange: () => setPreferencesStatus(null),
+                })}
               />
               <p className="text-xs text-muted-foreground">
                 Controls how many new cards can be introduced each app day. Due reviews are not
                 capped.
               </p>
-              {!newCardsPerDayIsValid ? (
-                <p className="text-xs text-destructive">Enter a whole number between 1 and 100.</p>
-              ) : null}
+              {errors.newCardsPerDay && (
+                <p className="text-xs text-destructive">{errors.newCardsPerDay.message}</p>
+              )}
             </div>
 
             <Separator />
@@ -202,132 +185,157 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                     id="generation-pack-size"
                     type="number"
                     min={1}
-                    value={generationPackSizeDefault}
-                    onChange={(event) => {
-                      setGenerationPackSizeDefault(event.target.value);
-                      setPreferencesStatus(null);
-                    }}
+                    {...register("generationPackSizeDefault", {
+                      valueAsNumber: true,
+                      onChange: () => setPreferencesStatus(null),
+                    })}
                   />
-                  {!generationPackSizeIsValid ? (
-                    <p className="text-xs text-destructive">Enter a whole number of 1 or more.</p>
-                  ) : null}
+                  {errors.generationPackSizeDefault && (
+                    <p className="text-xs text-destructive">
+                      {errors.generationPackSizeDefault.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="generation-example-count" className={settingsLabelClass}>
                     Example sentences
                   </Label>
-                  <Select
-                    value={generationExampleSentenceCount}
-                    onValueChange={(value) => {
-                      setGenerationExampleSentenceCount(value);
-                      setPreferencesStatus(null);
-                    }}
-                  >
-                    <SelectTrigger id="generation-example-count" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 sentence</SelectItem>
-                      <SelectItem value="2">2 sentences</SelectItem>
-                      <SelectItem value="3">3 sentences</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="generationExampleSentenceCount"
+                    render={({ field }) => (
+                      <Select
+                        value={String(field.value)}
+                        onValueChange={(val) => {
+                          field.onChange(Number(val));
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="generation-example-count" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 sentence</SelectItem>
+                          <SelectItem value="2">2 sentences</SelectItem>
+                          <SelectItem value="3">3 sentences</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="generation-cefr-window" className={settingsLabelClass}>
                     CEFR window
                   </Label>
-                  <Select
-                    value={generationCefrWindowMode}
-                    onValueChange={(value) => {
-                      setGenerationCefrWindowMode(
-                        value as SettingsPreferences["generationCefrWindowMode"],
-                      );
-                      setPreferencesStatus(null);
-                    }}
-                  >
-                    <SelectTrigger id="generation-cefr-window" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="same_level">Keep at my current level</SelectItem>
-                      <SelectItem value="one_level_above">One level above</SelectItem>
-                      <SelectItem value="all_levels_above">All levels above</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="generationCefrWindowMode"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="generation-cefr-window" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="same_level">Keep at my current level</SelectItem>
+                          <SelectItem value="one_level_above">One level above</SelectItem>
+                          <SelectItem value="all_levels_above">All levels above</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="generation-known-terms" className={settingsLabelClass}>
                     Known terms
                   </Label>
-                  <Select
-                    value={generationKnownTermHandling}
-                    onValueChange={(value) => {
-                      setGenerationKnownTermHandling(
-                        value as SettingsPreferences["generationKnownTermHandling"],
-                      );
-                      setPreferencesStatus(null);
-                    }}
-                  >
-                    <SelectTrigger id="generation-known-terms" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="exclude_known">Skip words I already know</SelectItem>
-                      <SelectItem value="downrank_known">De-prioritize words I know</SelectItem>
-                      <SelectItem value="include_known">
-                        Include everything (even known words)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="generationKnownTermHandling"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="generation-known-terms" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="exclude_known">Skip words I already know</SelectItem>
+                          <SelectItem value="downrank_known">De-prioritize words I know</SelectItem>
+                          <SelectItem value="include_known">
+                            Include everything (even known words)
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="frequency-preference" className={settingsLabelClass}>
                     Vocabulary Selection Priority
                   </Label>
-                  <Select
-                    value={frequencyPreference}
-                    onValueChange={(value) => {
-                      setFrequencyPreference(value as SettingsPreferences["frequencyPreference"]);
-                      setPreferencesStatus(null);
-                    }}
-                  >
-                    <SelectTrigger id="frequency-preference" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="balanced">Balanced</SelectItem>
-                      <SelectItem value="common_first">Common first</SelectItem>
-                      <SelectItem value="challenge_first">Challenge first</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="frequencyPreference"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="frequency-preference" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="balanced">Balanced</SelectItem>
+                          <SelectItem value="common_first">Common first</SelectItem>
+                          <SelectItem value="challenge_first">Challenge first</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className={settingsFieldClass}>
                   <Label htmlFor="generation-audio-voice-gender" className={settingsLabelClass}>
                     Audio voice
                   </Label>
-                  <Select
-                    value={generationAudioVoiceGenderDefault}
-                    onValueChange={(value) => {
-                      setGenerationAudioVoiceGenderDefault(
-                        value as SettingsPreferences["generationAudioVoiceGenderDefault"],
-                      );
-                      setPreferencesStatus(null);
-                    }}
-                  >
-                    <SelectTrigger id="generation-audio-voice-gender" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    control={control}
+                    name="generationAudioVoiceGenderDefault"
+                    render={({ field }) => (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setPreferencesStatus(null);
+                        }}
+                      >
+                        <SelectTrigger id="generation-audio-voice-gender" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="male">Male</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className={settingsFieldClass}>
@@ -350,9 +358,11 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                       </label>
                     ))}
                   </div>
-                  {!vocabularyTypesAreValid ? (
-                    <p className="text-xs text-destructive">Select at least one vocabulary type.</p>
-                  ) : null}
+                  {errors.studyVocabularyTypes && (
+                    <p className="text-xs text-destructive">
+                      {errors.studyVocabularyTypes.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -362,24 +372,21 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                 </Label>
                 <Textarea
                   id="generation-custom-instructions"
-                  value={generationCustomInstructionsDefault}
                   maxLength={CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH}
-                  onChange={(event) => {
-                    setGenerationCustomInstructionsDefault(event.target.value);
-                    setPreferencesStatus(null);
-                  }}
                   placeholder="Optional guidance copied into each new generation request."
+                  {...register("generationCustomInstructionsDefault", {
+                    onChange: () => setPreferencesStatus(null),
+                  })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {generationCustomInstructionsDefault.trim().length}/
-                  {CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH} characters
+                  {customInstructions.trim().length}/{CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH}{" "}
+                  characters
                 </p>
-                {!customInstructionsIsValid ? (
+                {errors.generationCustomInstructionsDefault && (
                   <p className="text-xs text-destructive">
-                    Custom instructions must stay under {CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH}{" "}
-                    characters.
+                    {errors.generationCustomInstructionsDefault.message}
                   </p>
-                ) : null}
+                )}
               </div>
             </div>
 
@@ -413,13 +420,19 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                 <p className="text-sm font-medium">Email reminders</p>
                 <p className="text-sm text-muted-foreground">Reminder email for waiting queues.</p>
               </div>
-              <Switch
-                checked={emailRemindersEnabled}
-                onCheckedChange={(checked) => {
-                  setEmailRemindersEnabled(checked);
-                  setPreferencesStatus(null);
-                }}
-                aria-label="Toggle email reminders"
+              <Controller
+                control={control}
+                name="emailRemindersEnabled"
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      setPreferencesStatus(null);
+                    }}
+                    aria-label="Toggle email reminders"
+                  />
+                )}
               />
             </AppPanel>
 
@@ -430,13 +443,19 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                   Alert before the current streak lapses.
                 </p>
               </div>
-              <Switch
-                checked={streakAlertsEnabled}
-                onCheckedChange={(checked) => {
-                  setStreakAlertsEnabled(checked);
-                  setPreferencesStatus(null);
-                }}
-                aria-label="Toggle streak alerts"
+              <Controller
+                control={control}
+                name="streakAlertsEnabled"
+                render={({ field }) => (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      setPreferencesStatus(null);
+                    }}
+                    aria-label="Toggle streak alerts"
+                  />
+                )}
               />
             </AppPanel>
           </CardContent>
@@ -461,7 +480,7 @@ export function PreferencesSettingsCard({ preferences }: PreferencesSettingsCard
                 </>
               ) : null}
             </div>
-            <Button type="submit" disabled={preferencesSubmitDisabled}>
+            <Button type="submit" disabled={isSavingPreferences || !isDirty}>
               {isSavingPreferences ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />

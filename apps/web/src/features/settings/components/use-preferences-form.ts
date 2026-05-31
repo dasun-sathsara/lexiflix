@@ -1,107 +1,56 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { CefrLevel } from "@/features/assessment/types";
-import { updateSettingsPreferencesAction } from "@/features/settings/server/actions";
-import type {
-  ManualOverrideSelection,
-  SettingsPreferences,
-  StatusState,
-} from "@/features/settings/types";
-import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 import {
-  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  getEffectiveCefrLevel,
-  normalizeCustomInstructions,
-} from "./utils";
+  type PreferencesSettingsInput,
+  preferencesSettingsSchema,
+} from "@/features/settings/schemas";
+import { updateSettingsPreferencesAction } from "@/features/settings/server/actions";
+import type { SettingsPreferences, StatusState } from "@/features/settings/types";
+import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import { getEffectiveCefrLevel, normalizeCustomInstructions } from "./utils";
 
 export function usePreferencesForm(preferences: SettingsPreferences) {
   const router = useRouter();
-
   const [preferencesStatus, setPreferencesStatus] = useState<StatusState>(null);
   const [initialPreferences, setInitialPreferences] = useState(preferences);
-  const [manualOverrideSelection, setManualOverrideSelection] = useState<ManualOverrideSelection>(
-    preferences.manualOverrideLevel ?? "assessed",
-  );
-  const [newCardsPerDay, setNewCardsPerDay] = useState(String(preferences.newCardsPerDay));
-  const [frequencyPreference, setFrequencyPreference] = useState(preferences.frequencyPreference);
-  const [studyVocabularyTypes, setStudyVocabularyTypes] = useState(
-    preferences.studyVocabularyTypes,
-  );
-  const [generationPackSizeDefault, setGenerationPackSizeDefault] = useState(
-    String(preferences.generationPackSizeDefault),
-  );
-  const [generationCefrWindowMode, setGenerationCefrWindowMode] = useState(
-    preferences.generationCefrWindowMode,
-  );
-  const [generationKnownTermHandling, setGenerationKnownTermHandling] = useState(
-    preferences.generationKnownTermHandling,
-  );
-  const [generationAudioVoiceGenderDefault, setGenerationAudioVoiceGenderDefault] = useState(
-    preferences.generationAudioVoiceGenderDefault,
-  );
-  const [generationExampleSentenceCount, setGenerationExampleSentenceCount] = useState(
-    String(preferences.generationExampleSentenceCount),
-  );
-  const [generationCustomInstructionsDefault, setGenerationCustomInstructionsDefault] = useState(
-    preferences.generationCustomInstructionsDefault ?? "",
-  );
-  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(
-    preferences.emailRemindersEnabled,
-  );
-  const [streakAlertsEnabled, setStreakAlertsEnabled] = useState(preferences.streakAlertsEnabled);
-
   const [isSavingPreferences, startSavingPreferences] = useTransition();
 
-  const parsedNewCardsPerDay = Number.parseInt(newCardsPerDay, 10);
-  const newCardsPerDayIsValid =
-    Number.isInteger(parsedNewCardsPerDay) &&
-    parsedNewCardsPerDay >= 1 &&
-    parsedNewCardsPerDay <= 100;
+  const form = useForm<PreferencesSettingsInput>({
+    resolver: zodResolver(preferencesSettingsSchema),
+    defaultValues: {
+      manualOverrideSelection: preferences.manualOverrideLevel ?? "assessed",
+      newCardsPerDay: preferences.newCardsPerDay,
+      frequencyPreference: preferences.frequencyPreference,
+      studyVocabularyTypes: preferences.studyVocabularyTypes,
+      generationPackSizeDefault: preferences.generationPackSizeDefault,
+      generationCefrWindowMode: preferences.generationCefrWindowMode,
+      generationKnownTermHandling: preferences.generationKnownTermHandling,
+      generationAudioVoiceGenderDefault: preferences.generationAudioVoiceGenderDefault,
+      generationExampleSentenceCount: preferences.generationExampleSentenceCount,
+      generationCustomInstructionsDefault: preferences.generationCustomInstructionsDefault ?? "",
+      emailRemindersEnabled: preferences.emailRemindersEnabled,
+      streakAlertsEnabled: preferences.streakAlertsEnabled,
+    },
+  });
 
-  const parsedGenerationPackSize = Number.parseInt(generationPackSizeDefault, 10);
-  const generationPackSizeIsValid =
-    Number.isInteger(parsedGenerationPackSize) && parsedGenerationPackSize >= 1;
+  const {
+    watch,
+    setValue,
+    reset,
+    handleSubmit,
+    formState: { isDirty, errors },
+  } = form;
 
-  const customInstructionsIsValid =
-    generationCustomInstructionsDefault.trim().length <= CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH;
-
-  const vocabularyTypesAreValid = studyVocabularyTypes.length > 0;
-
-  const parsedGenerationExampleSentenceCount = Number.parseInt(generationExampleSentenceCount, 10);
-
-  const normalizedCustomInstructions = normalizeCustomInstructions(
-    generationCustomInstructionsDefault,
-  );
+  const manualOverrideSelection = watch("manualOverrideSelection");
+  const studyVocabularyTypes = watch("studyVocabularyTypes");
 
   const manualOverrideLevel: CefrLevel | null =
-    manualOverrideSelection === "assessed" ? null : manualOverrideSelection;
-
-  const preferencesChanged =
-    manualOverrideLevel !== initialPreferences.manualOverrideLevel ||
-    parsedNewCardsPerDay !== initialPreferences.newCardsPerDay ||
-    frequencyPreference !== initialPreferences.frequencyPreference ||
-    [...studyVocabularyTypes].sort().join("|") !==
-      [...initialPreferences.studyVocabularyTypes].sort().join("|") ||
-    parsedGenerationPackSize !== initialPreferences.generationPackSizeDefault ||
-    generationCefrWindowMode !== initialPreferences.generationCefrWindowMode ||
-    generationKnownTermHandling !== initialPreferences.generationKnownTermHandling ||
-    generationAudioVoiceGenderDefault !== initialPreferences.generationAudioVoiceGenderDefault ||
-    parsedGenerationExampleSentenceCount !== initialPreferences.generationExampleSentenceCount ||
-    normalizedCustomInstructions !== initialPreferences.generationCustomInstructionsDefault ||
-    emailRemindersEnabled !== initialPreferences.emailRemindersEnabled ||
-    streakAlertsEnabled !== initialPreferences.streakAlertsEnabled;
-
-  const preferencesSubmitDisabled =
-    isSavingPreferences ||
-    !newCardsPerDayIsValid ||
-    !generationPackSizeIsValid ||
-    !(parsedGenerationExampleSentenceCount >= 1 && parsedGenerationExampleSentenceCount <= 3) ||
-    !customInstructionsIsValid ||
-    !vocabularyTypesAreValid ||
-    !preferencesChanged;
+    manualOverrideSelection === "assessed" ? null : (manualOverrideSelection as CefrLevel);
 
   const effectiveCefrLevel = getEffectiveCefrLevel(
     manualOverrideLevel,
@@ -110,42 +59,50 @@ export function usePreferencesForm(preferences: SettingsPreferences) {
 
   const toggleVocabularyType = (kind: StoredVocabularyKind, checked: boolean) => {
     if (checked) {
-      setStudyVocabularyTypes(
-        studyVocabularyTypes.includes(kind)
-          ? studyVocabularyTypes
-          : [...studyVocabularyTypes, kind],
-      );
+      if (!studyVocabularyTypes.includes(kind)) {
+        setValue("studyVocabularyTypes", [...studyVocabularyTypes, kind], {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
     } else {
-      const next = studyVocabularyTypes.filter((value) => value !== kind);
+      const next = studyVocabularyTypes.filter((v: StoredVocabularyKind) => v !== kind);
       if (next.length > 0) {
-        setStudyVocabularyTypes(next);
+        setValue("studyVocabularyTypes", next, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
       }
     }
     setPreferencesStatus(null);
   };
 
-  const handlePreferencesSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (preferencesSubmitDisabled) {
-      return;
-    }
-
+  const onSubmit = (data: PreferencesSettingsInput) => {
+    setPreferencesStatus(null);
     startSavingPreferences(async () => {
       try {
+        const manualOverrideLevel =
+          data.manualOverrideSelection === "assessed"
+            ? null
+            : (data.manualOverrideSelection as CefrLevel);
+
+        const normalizedCustomInstructions = normalizeCustomInstructions(
+          data.generationCustomInstructionsDefault,
+        );
+
         const result = await updateSettingsPreferencesAction({
           manualOverrideLevel,
-          newCardsPerDay: parsedNewCardsPerDay,
-          frequencyPreference,
-          studyVocabularyTypes,
-          generationPackSizeDefault: parsedGenerationPackSize,
-          generationCefrWindowMode,
-          generationKnownTermHandling,
-          generationAudioVoiceGenderDefault,
-          generationExampleSentenceCount: parsedGenerationExampleSentenceCount as 1 | 2 | 3,
+          newCardsPerDay: data.newCardsPerDay,
+          frequencyPreference: data.frequencyPreference,
+          studyVocabularyTypes: data.studyVocabularyTypes,
+          generationPackSizeDefault: data.generationPackSizeDefault,
+          generationCefrWindowMode: data.generationCefrWindowMode,
+          generationKnownTermHandling: data.generationKnownTermHandling,
+          generationAudioVoiceGenderDefault: data.generationAudioVoiceGenderDefault,
+          generationExampleSentenceCount: data.generationExampleSentenceCount as 1 | 2 | 3,
           generationCustomInstructionsDefault: normalizedCustomInstructions,
-          emailRemindersEnabled,
-          streakAlertsEnabled,
+          emailRemindersEnabled: data.emailRemindersEnabled,
+          streakAlertsEnabled: data.streakAlertsEnabled,
         });
 
         if (!result.ok) {
@@ -154,22 +111,23 @@ export function usePreferencesForm(preferences: SettingsPreferences) {
           return;
         }
 
-        const nextPreferences = result.data.preferences;
-        setInitialPreferences(nextPreferences);
-        setManualOverrideSelection(nextPreferences.manualOverrideLevel ?? "assessed");
-        setNewCardsPerDay(String(nextPreferences.newCardsPerDay));
-        setFrequencyPreference(nextPreferences.frequencyPreference);
-        setStudyVocabularyTypes(nextPreferences.studyVocabularyTypes);
-        setGenerationPackSizeDefault(String(nextPreferences.generationPackSizeDefault));
-        setGenerationCefrWindowMode(nextPreferences.generationCefrWindowMode);
-        setGenerationKnownTermHandling(nextPreferences.generationKnownTermHandling);
-        setGenerationAudioVoiceGenderDefault(nextPreferences.generationAudioVoiceGenderDefault);
-        setGenerationExampleSentenceCount(String(nextPreferences.generationExampleSentenceCount));
-        setGenerationCustomInstructionsDefault(
-          nextPreferences.generationCustomInstructionsDefault ?? "",
-        );
-        setEmailRemindersEnabled(nextPreferences.emailRemindersEnabled);
-        setStreakAlertsEnabled(nextPreferences.streakAlertsEnabled);
+        const next = result.data.preferences;
+        setInitialPreferences(next);
+        reset({
+          manualOverrideSelection: next.manualOverrideLevel ?? "assessed",
+          newCardsPerDay: next.newCardsPerDay,
+          frequencyPreference: next.frequencyPreference,
+          studyVocabularyTypes: next.studyVocabularyTypes,
+          generationPackSizeDefault: next.generationPackSizeDefault,
+          generationCefrWindowMode: next.generationCefrWindowMode,
+          generationKnownTermHandling: next.generationKnownTermHandling,
+          generationAudioVoiceGenderDefault: next.generationAudioVoiceGenderDefault,
+          generationExampleSentenceCount: next.generationExampleSentenceCount,
+          generationCustomInstructionsDefault: next.generationCustomInstructionsDefault ?? "",
+          emailRemindersEnabled: next.emailRemindersEnabled,
+          streakAlertsEnabled: next.streakAlertsEnabled,
+        });
+
         setPreferencesStatus({
           type: "success",
           message: "Preferences updated successfully.",
@@ -188,41 +146,15 @@ export function usePreferencesForm(preferences: SettingsPreferences) {
   };
 
   return {
+    form,
     initialPreferences,
-    manualOverrideSelection,
-    setManualOverrideSelection,
-    newCardsPerDay,
-    setNewCardsPerDay,
-    frequencyPreference,
-    setFrequencyPreference,
-    studyVocabularyTypes,
-    setStudyVocabularyTypes,
-    generationPackSizeDefault,
-    setGenerationPackSizeDefault,
-    generationCefrWindowMode,
-    setGenerationCefrWindowMode,
-    generationKnownTermHandling,
-    setGenerationKnownTermHandling,
-    generationAudioVoiceGenderDefault,
-    setGenerationAudioVoiceGenderDefault,
-    generationExampleSentenceCount,
-    setGenerationExampleSentenceCount,
-    generationCustomInstructionsDefault,
-    setGenerationCustomInstructionsDefault,
-    emailRemindersEnabled,
-    setEmailRemindersEnabled,
-    streakAlertsEnabled,
-    setStreakAlertsEnabled,
     effectiveCefrLevel,
     preferencesStatus,
     setPreferencesStatus,
-    preferencesSubmitDisabled,
     isSavingPreferences,
-    handlePreferencesSubmit,
-    newCardsPerDayIsValid,
-    generationPackSizeIsValid,
-    customInstructionsIsValid,
-    vocabularyTypesAreValid,
+    handleSubmit: handleSubmit(onSubmit),
+    isDirty,
+    errors,
     toggleVocabularyType,
   };
 }
