@@ -203,8 +203,9 @@ export async function runPackGenerationWorkflow(jobId: string) {
     warnings.push(...speechResult.warnings);
 
     // Image generation is optional and best-effort, so only invoke it when both settings allow it.
+    const imageEnabled = job.requestSnapshot.imageEnabled !== false;
     const imageResult =
-      env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled
+      env.CONTENT_GENERATION_IMAGE_ENABLED && imageEnabled
         ? await generateImageArtifacts({
             textItems: textItems.filter((item) => {
               const selectedItem = selectedItems.find(

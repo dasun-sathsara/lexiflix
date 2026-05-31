@@ -20,6 +20,8 @@ export default defineConfig({
       syncEnvVars(async (_ctx) => {
         const varsToSync = [
           "DATABASE_URL",
+          "RESEND_API_KEY",
+          "NEXT_PUBLIC_APP_URL",
           "GOOGLE_CLOUD_API_KEY",
           "OPENSUBTITLES_API_KEY",
           "OPENSUBTITLES_USERNAME",
