@@ -130,7 +130,12 @@ export function StudySessionCard({
 
       {/* ── Card area ───────────────────────────────────────── */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pt-6">
-        <div className="relative h-full max-h-[42rem] w-full max-w-[62rem] sm:max-h-[45rem]">
+        <div
+          className={cn(
+            "relative h-full w-full max-w-[62rem]",
+            card.imageUrl ? "max-h-[42rem] sm:max-h-[45rem]" : "max-h-[34rem] sm:max-h-[36rem]",
+          )}
+        >
           {/* Prompt side */}
           {/* biome-ignore lint/a11y/useSemanticElements: Needs to wrap nested interactive elements */}
           <div
