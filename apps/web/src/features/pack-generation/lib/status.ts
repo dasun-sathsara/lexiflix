@@ -17,24 +17,23 @@ const statusCopy: Record<
   }
 > = {
   queued: {
-    label: "Analyzing Script",
-    description: "Extracting dialogues and queuing NLP processors.",
+    label: "Queued",
+    description: "Waiting for generation to start.",
     tone: "default",
   },
   running: {
-    label: "Synthesizing",
-    description: "Generating contextual definitions, audio cues, and semantic illustrations.",
+    label: "Generating",
+    description: "Creating definitions, examples, audio, and images.",
     tone: "default",
   },
   completed: {
-    label: "Synthesized",
-    description: "Your custom vocabulary pack is calibrated and ready.",
+    label: "Ready",
+    description: "Your study pack is ready.",
     tone: "success",
   },
   failed: {
-    label: "Synthesis Interrupted",
-    description:
-      "We encountered an issue during analysis. Retry to re-run the NLP engine or tweak parameters.",
+    label: "Generation Failed",
+    description: "Something went wrong. Retry generation or adjust the request and try again.",
     tone: "danger",
   },
   cancelled: {
@@ -58,23 +57,23 @@ const stageCopy: Record<
     tone: "default",
   },
   selecting_terms: {
-    label: "Contextual Filtering",
-    description: "Filtering script transcripts against your CEFR profile.",
+    label: "Selecting Vocabulary",
+    description: "Choosing terms that match your CEFR level and preferences.",
     tone: "default",
   },
   generating_content: {
-    label: "Semantic Generation",
-    description: "Synthesizing contextual definitions and movie-accurate usage examples.",
+    label: "Writing Definitions",
+    description: "Generating meanings and example sentences.",
     tone: "default",
   },
   generating_assets: {
-    label: "Asset Optimization",
-    description: "Calibrating visual aids and premium pronunciation audio.",
+    label: "Creating Audio & Images",
+    description: "Generating pronunciation audio and optional images.",
     tone: "default",
   },
   saving_pack: {
-    label: "Structuring Vault",
-    description: "Finalizing database index and scheduling retrieval review intervals.",
+    label: "Saving Pack",
+    description: "Finalizing your pack and scheduling reviews.",
     tone: "default",
   },
   completed: {

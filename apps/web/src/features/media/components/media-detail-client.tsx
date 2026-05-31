@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { MediaPosterBanner } from "@/components/common/media-poster-banner";
@@ -36,6 +37,7 @@ import {
   startPackGenerationAction,
 } from "@/features/media/server/actions";
 import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/media/types";
+import { retryPackGenerationAction } from "@/features/pack-generation/server/actions";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 
@@ -177,6 +179,9 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
       }
       if (result.ok) {
         setGeneration(result.data.generation);
+        if (result.data.generation.status === "completed") {
+          toast.success("Your study pack is ready!");
+        }
       } else {
         setActionMessage(result.error);
       }
@@ -240,6 +245,22 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
       } catch (error) {
         setActionMessage(error instanceof Error ? error.message : "Failed to start generation.");
       }
+    });
+  };
+
+  const handleRetryGeneration = () => {
+    const jobId = generation?.jobId;
+    if (!jobId) {
+      return;
+    }
+    setActionMessage(null);
+    startGenerationTransition(async () => {
+      const result = await retryPackGenerationAction({ jobId });
+      if (result.ok) {
+        setGeneration(result.data.generation);
+        return;
+      }
+      setActionMessage(result.error);
     });
   };
 
@@ -536,6 +557,7 @@ export function MediaDetailClient({ pageData }: MediaDetailClientProps) {
           generationDefaults={pageData.generationDefaults}
           isGenerating={isGenerationPending}
           onStartGeneration={handleStartGeneration}
+          onRetryGeneration={handleRetryGeneration}
           onOpenGenerationChange={setGenerationDialogOpen}
           generationDialogOpen={generationDialogOpen}
         />
