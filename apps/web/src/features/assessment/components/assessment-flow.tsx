@@ -17,6 +17,24 @@ import { cn } from "@/lib/utils";
 
 type Selection = number | "idk" | null;
 
+const CEFR_DESCRIPTIONS: Record<string, string> = {
+  A1: "Beginner — everyday basics",
+  A2: "Elementary — familiar topics",
+  B1: "Intermediate — independent user",
+  B2: "Upper-intermediate — confident user",
+  C1: "Advanced — fluent and flexible",
+  C2: "Mastery — near-native command",
+};
+
+const CEFR_VOCABULARY_ESTIMATE: Record<string, string> = {
+  A1: "500",
+  A2: "1,000",
+  B1: "2,000",
+  B2: "4,000",
+  C1: "8,000",
+  C2: "16,000",
+};
+
 export function AssessmentFlow() {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [question, setQuestion] = useState<PublicAssessmentItem | null>(null);
@@ -198,16 +216,16 @@ export function AssessmentFlow() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Core Vocabulary Score
+                  What this means
                 </p>
-                <p className="mt-1 text-lg font-semibold">{result.thetaMean.toFixed(2)}</p>
+                <p className="mt-1 text-lg font-semibold">{CEFR_DESCRIPTIONS[result.bestLevel]}</p>
               </div>
               <div className="rounded-xl border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Estimated Level Range
+                  Estimated vocabulary
                 </p>
                 <p className="mt-1 text-lg font-semibold">
-                  {result.thetaLow.toFixed(2)} to {result.thetaHigh.toFixed(2)}
+                  ~{CEFR_VOCABULARY_ESTIMATE[result.bestLevel]} word families
                 </p>
               </div>
             </div>

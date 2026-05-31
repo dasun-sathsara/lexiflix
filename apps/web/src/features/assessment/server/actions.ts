@@ -42,6 +42,16 @@ export async function startAssessmentAction(): Promise<StartAssessmentActionResu
   const { state, firstItem } = initializeAssessmentState();
   const attemptId = crypto.randomUUID();
 
+  // Clear any prior unfinished attempt so refreshing the page doesn't orphan it.
+  await db
+    .delete(cefrAssessmentAttempt)
+    .where(
+      and(
+        eq(cefrAssessmentAttempt.userId, session.user.id),
+        eq(cefrAssessmentAttempt.status, "in_progress"),
+      ),
+    );
+
   await db.insert(cefrAssessmentAttempt).values({
     id: attemptId,
     userId: session.user.id,
