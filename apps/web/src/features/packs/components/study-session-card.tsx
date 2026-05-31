@@ -302,6 +302,7 @@ export function StudySessionCard({
                   <div className="flex justify-center">
                     <div className="relative aspect-[1792/1024] w-full max-w-[520px] overflow-hidden rounded-xl bg-muted">
                       <Image
+                        key={card.id}
                         src={card.imageUrl}
                         alt={`Generated image for ${card.displayText}`}
                         fill
