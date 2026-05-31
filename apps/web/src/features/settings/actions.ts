@@ -43,7 +43,7 @@ const updateSettingsPreferencesSchema = z.object({
   newCardsPerDay: z.number().int().min(1).max(100),
   frequencyPreference: z.enum(FREQUENCY_PREFERENCES),
   studyVocabularyTypes: z.array(z.enum(STUDY_VOCABULARY_TYPES)).min(1),
-  generationPackSizeDefault: z.number().int().min(1).max(100),
+  generationPackSizeDefault: z.number().int().min(1),
   generationCefrWindowMode: z.enum(GENERATION_CEFR_WINDOW_MODES),
   generationKnownTermHandling: z.enum(GENERATION_KNOWN_TERM_HANDLINGS),
   generationAudioVoiceGenderDefault: z.enum(GENERATION_AUDIO_VOICE_GENDERS),

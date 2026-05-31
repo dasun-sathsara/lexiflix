@@ -166,19 +166,36 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
     setOpen(false);
   }, [setOpen]);
 
+  // Rating a card triggers a Server Action, which always re-renders this route
+  // and hands us a freshly-built `session` whose queue no longer contains the
+  // rated card. Reading that live prop would reset the count on every rating.
+  // We pin the queue snapshot for the lifetime of a session identity
+  // (pack + mode) and progress purely through local state instead.
+  const sessionKey = `${session.packId}:${session.mode}`;
+  const snapshotRef = React.useRef({ key: sessionKey, cards: session.cards });
+  if (snapshotRef.current.key !== sessionKey) {
+    snapshotRef.current = { key: sessionKey, cards: session.cards };
+  }
+  const cards = snapshotRef.current.cards;
+
+  const lastSessionKeyRef = React.useRef<string | null>(null);
   React.useEffect(() => {
+    if (lastSessionKeyRef.current === sessionKey) {
+      return;
+    }
+    lastSessionKeyRef.current = sessionKey;
     submissionLockedRef.current = false;
     cardStartedAtRef.current = Date.now();
     sessionStartedAtRef.current = Date.now();
     dispatch({ type: "reset", session });
-  }, [session]);
+  }, [sessionKey, session]);
 
-  const hasCards = session.cards.length > 0;
-  const card = state.cardIndex < session.cards.length ? session.cards[state.cardIndex] : null;
-  const isComplete = hasCards && state.cardIndex >= session.cards.length;
+  const hasCards = cards.length > 0;
+  const card = state.cardIndex < cards.length ? cards[state.cardIndex] : null;
+  const isComplete = hasCards && state.cardIndex >= cards.length;
   const isPreviewMode = session.mode === "preview";
-  const displayIndex = Math.min(state.cardIndex + 1, session.cards.length);
-  const progressPct = clampToInt((displayIndex / Math.max(1, session.cards.length)) * 100);
+  const displayIndex = Math.min(state.cardIndex + 1, cards.length);
+  const progressPct = clampToInt((displayIndex / Math.max(1, cards.length)) * 100);
 
   const revealCard = React.useCallback(() => {
     dispatch({ type: "reveal" });
@@ -354,13 +371,13 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
             variant="secondary"
             className="hidden border-primary/15 bg-primary/8 font-semibold tabular-nums text-primary sm:inline-flex"
           >
-            {displayIndex} / {session.cards.length}
+            {displayIndex} / {cards.length}
           </Badge>
           <Badge
             variant="secondary"
             className="border-primary/15 bg-primary/8 font-semibold tabular-nums text-primary sm:hidden"
           >
-            {displayIndex}/{session.cards.length}
+            {displayIndex}/{cards.length}
           </Badge>
         </div>
         <Progress value={progressPct} className="h-[3px] rounded-none bg-muted/50" />
