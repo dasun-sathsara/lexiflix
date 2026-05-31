@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Clock, Library, RotateCcw } from "lucide-react";
 import Link from "next/link";
 
 import { SoftGradientBackground } from "@/components/common/soft-gradient-background";
@@ -32,34 +33,89 @@ export function StudySessionComplete({
 }: StudySessionCompleteProps) {
   return (
     <SoftGradientBackground className="relative z-0 h-dvh w-full overflow-hidden">
-      <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-center justify-center gap-5 px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))] text-center">
-        <Badge variant="secondary" className="border-primary/20 bg-primary/10 text-primary">
-          Session complete
-        </Badge>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Memory Vault Updated</h1>
-          <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-4">
-            <span>{reviewedCount} reinforced</span>
-            <span>{newLearnedCount} newly acquired</span>
-            <span>{lapseCount} flagged for reinforcement</span>
-            <span>{formatDueLabel(nextDueAt)}</span>
+      <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center justify-center px-6 py-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <div className="w-full text-center space-y-8">
+          {/* Header */}
+          <div className="space-y-3">
+            <Badge
+              variant="secondary"
+              className="border-primary/15 bg-primary/8 text-primary font-medium tracking-wide"
+            >
+              Memory Vault Updated
+            </Badge>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Session Complete
+            </h1>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Time spent: {formatElapsed(elapsedTimeMs)}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {mode === "due" && newLearnedCount < newCardsRemainingToday ? (
-            <Button asChild>
-              <Link href={`/study/${packId}?mode=new`}>Continue with new cards</Link>
+
+          {/* Minimalist Stats Row */}
+          <div className="grid grid-cols-4 divide-x divide-border border-y border-border/80 py-6 text-center">
+            <div>
+              <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {reviewedCount}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1.5 font-semibold tracking-wider uppercase text-[10px]">
+                Reinforced
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {newLearnedCount}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1.5 font-semibold tracking-wider uppercase text-[10px]">
+                Acquired
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {lapseCount}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1.5 font-semibold tracking-wider uppercase text-[10px]">
+                Flagged
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {formatElapsed(elapsedTimeMs)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1.5 font-semibold tracking-wider uppercase text-[10px]">
+                Time
+              </div>
+            </div>
+          </div>
+
+          {/* Next Due Schedule Banner */}
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Clock className="size-4 shrink-0 text-muted-foreground/60" />
+            <span className="font-medium">{formatDueLabel(nextDueAt)}</span>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+            {mode === "due" && newLearnedCount < newCardsRemainingToday ? (
+              <Button asChild className="h-10 px-5 shadow-sm">
+                <Link
+                  href={`/study/${packId}?mode=new`}
+                  className="flex items-center justify-center gap-1.5"
+                >
+                  Continue with new cards
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" className="h-10 px-5">
+              <Link href={`/pack/${packId}`} className="flex items-center justify-center gap-1.5">
+                <RotateCcw className="size-3.5" />
+                Back to pack
+              </Link>
             </Button>
-          ) : null}
-          <Button asChild>
-            <Link href={`/pack/${packId}`}>Back to pack</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/decks">Decks</Link>
-          </Button>
+            <Button asChild variant="outline" className="h-10 px-5">
+              <Link href="/decks" className="flex items-center justify-center gap-1.5">
+                <Library className="size-3.5" />
+                Decks
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </SoftGradientBackground>
