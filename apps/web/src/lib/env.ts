@@ -137,7 +137,30 @@ const clientEnv = Object.freeze(parsedClient.data);
 
 let serverEnv: z.infer<typeof serverSchema>;
 if (isServer) {
-  const parsedServer = serverSchema.safeParse(process.env);
+  const isNextJs = process.env.NEXT_RUNTIME !== undefined || process.env.NEXT_PHASE !== undefined;
+  const isVercel = process.env.VERCEL !== undefined;
+  const requireNextJsSecrets = isNextJs || isVercel;
+
+  const envToParse = { ...process.env };
+  if (!requireNextJsSecrets) {
+    const nextJsSecrets = [
+      "AUTH_SECRET",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "OPENSUBTITLES_API_KEY",
+      "OPENSUBTITLES_USERNAME",
+      "OPENSUBTITLES_PASSWORD",
+      "RESEND_API_KEY",
+      "TMDB_API_KEY",
+    ];
+    for (const key of nextJsSecrets) {
+      if (!envToParse[key]) {
+        envToParse[key] = "trigger-placeholder";
+      }
+    }
+  }
+
+  const parsedServer = serverSchema.safeParse(envToParse);
   if (!parsedServer.success) {
     throw createEnvValidationError("server", parsedServer.error);
   }
