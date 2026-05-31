@@ -21,6 +21,10 @@ export default defineConfig({
         const varsToSync = [
           "DATABASE_URL",
           "GOOGLE_CLOUD_API_KEY",
+          "OPENSUBTITLES_API_KEY",
+          "OPENSUBTITLES_USERNAME",
+          "OPENSUBTITLES_PASSWORD",
+          "TMDB_API_KEY",
           "NLP_SERVICE_BASE_URL",
           "NLP_SERVICE_API_KEY",
           "R2_ACCESS_KEY_ID",
