@@ -3,8 +3,8 @@ version: "3"
 vars:
   WEB_DIR: apps/web
   NLP_DIR: apps/nlp_service
-  DOPPLER_PROJECT: '{{default "lexiflix_web" .DOPPLER_PROJECT}}'
-  DOPPLER_CONFIG: '{{default "dev" .DOPPLER_CONFIG}}'
+  DEFAULT_DOPPLER_PROJECT: lexiflix_web
+  DEFAULT_DOPPLER_CONFIG: dev
 
 tasks:
   nlp:dev:
@@ -50,6 +50,9 @@ tasks:
   web:dev:
     desc: Run the Next.js web app locally
     dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default .DEFAULT_DOPPLER_CONFIG}}'
     env:
       DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
       DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
@@ -79,6 +82,9 @@ tasks:
   web:typecheck:
     desc: Typecheck the web app
     dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default .DEFAULT_DOPPLER_CONFIG}}'
     env:
       DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
       DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
@@ -91,6 +97,9 @@ tasks:
   web:build:
     desc: Build the web app
     dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default .DEFAULT_DOPPLER_CONFIG}}'
     env:
       DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
       DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
@@ -103,6 +112,9 @@ tasks:
   web:trigger:dev:
     desc: Run the Trigger.dev worker for the web app locally
     dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default .DEFAULT_DOPPLER_CONFIG}}'
     env:
       DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
       DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
@@ -117,12 +129,35 @@ tasks:
           FINAL_NODE_OPTIONS="$(printf '%s %s' "${CLEAN_NODE_OPTIONS}" "--localstorage-file=${LOCALSTORAGE_FILE}" | xargs)"
           doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- env NODE_OPTIONS="${FINAL_NODE_OPTIONS}" pnpm trigger:dev
 
+  web:trigger:deploy:
+    desc: Deploy Trigger.dev tasks using environment variables from Doppler
+    dir: "{{.WEB_DIR}}"
+    vars:
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default .DEFAULT_DOPPLER_CONFIG}}'
+    env:
+      DOPPLER_PROJECT: "{{.DOPPLER_PROJECT}}"
+      DOPPLER_CONFIG: "{{.DOPPLER_CONFIG}}"
+    preconditions:
+      - sh: command -v doppler >/dev/null 2>&1
+        msg: "Doppler CLI is required. Install it before running this task."
+    cmds:
+      - doppler run --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" -- pnpm trigger:deploy
+
+  web:trigger:deploy:prod:
+    desc: Deploy Trigger.dev tasks for production environment using prd Doppler config
+    cmds:
+      - task: web:trigger:deploy
+        vars:
+          DOPPLER_PROJECT: "lexiflix_web"
+          DOPPLER_CONFIG: "prd"
+
   vercel:web:sync-envs:
     desc: Sync required apps/web env vars from Doppler into a Vercel environment
     dir: "{{.WEB_DIR}}"
     vars:
-      DOPPLER_PROJECT: '{{default "lexiflix_web" .DOPPLER_PROJECT}}'
-      DOPPLER_CONFIG: '{{default "prd" .DOPPLER_CONFIG}}'
+      DOPPLER_PROJECT: '{{.DOPPLER_PROJECT | default .DEFAULT_DOPPLER_PROJECT}}'
+      DOPPLER_CONFIG: '{{.DOPPLER_CONFIG | default "prd"}}'
       VERCEL_ENV: '{{default "preview" .VERCEL_ENV}}'
       VERCEL_GIT_BRANCH: '{{default "dev" .VERCEL_GIT_BRANCH}}'
     preconditions:
@@ -138,7 +173,10 @@ tasks:
       - |
           set -euo pipefail
 
-          for key in $(doppler secrets --only-names --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" --json | jq -r 'keys[]'); do
+          echo "Fetching secrets from Doppler..."
+          secrets_json="$(doppler secrets --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}" --json)"
+
+          for key in $(echo "${secrets_json}" | jq -r 'keys[]'); do
             case "${key}" in
               DOPPLER_CONFIG|DOPPLER_ENVIRONMENT|DOPPLER_PROJECT)
                 continue
@@ -146,14 +184,14 @@ tasks:
             esac
 
             echo "Syncing ${key} -> {{.VERCEL_ENV}}"
-            value="$(doppler secrets get "${key}" --plain --project "{{.DOPPLER_PROJECT}}" --config "{{.DOPPLER_CONFIG}}")"
+            value="$(echo "${secrets_json}" | jq -r --arg k "${key}" '.[$k].computed')"
             cmd=(vercel env add "${key}" "{{.VERCEL_ENV}}")
             if [ "{{.VERCEL_ENV}}" = "preview" ]; then
               cmd+=("{{.VERCEL_GIT_BRANCH}}")
             fi
             cmd+=(--value "${value}" --force --yes --non-interactive)
 
-            if ! "${cmd[@]}"; then
+            if ! "${cmd[@]}" < /dev/null; then
               echo "Failed syncing ${key} to Vercel environment '{{.VERCEL_ENV}}'."
               exit 1
             fi
