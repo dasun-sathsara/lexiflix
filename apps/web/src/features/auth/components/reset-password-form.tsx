@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { passwordSchema } from "@/features/auth/schemas";
 import { authClient } from "@/lib/auth-client";
 
 export function ResetPasswordForm() {
@@ -58,9 +59,10 @@ export function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 8) {
+    const passwordCheck = passwordSchema.safeParse(password);
+    if (!passwordCheck.success) {
       setStatus("error");
-      setErrorMessage("Password must be at least 8 characters long.");
+      setErrorMessage(passwordCheck.error.issues[0]?.message ?? "Password is too weak.");
       return;
     }
 

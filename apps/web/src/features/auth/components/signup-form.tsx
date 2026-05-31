@@ -70,10 +70,8 @@ export function SignupForm() {
         toast.error(result.message);
       }
     } else {
-      toast.success("Account created successfully! Redirecting to your dashboard...");
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
+      toast.success("Account created! Check your inbox to verify your email.");
+      router.push("/dashboard");
     }
   };
 
