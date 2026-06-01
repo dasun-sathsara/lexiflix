@@ -298,7 +298,7 @@ export async function getDeckSummariesForUser({
       packItem,
       and(eq(packItem.packId, pack.id), ne(packItem.state, "removed"), isNull(packItem.removedAt)),
     )
-    .where(eq(pack.userId, userId))
+    .where(and(eq(pack.userId, userId), eq(pack.status, "active")))
     .orderBy(desc(pack.updatedAt), asc(packItem.sortOrder));
 
   const grouped = new Map<

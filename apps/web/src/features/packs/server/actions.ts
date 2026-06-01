@@ -171,11 +171,15 @@ export async function resetPackProgressAction(input: {
       easeFactor: 2.5,
       firstStudiedAt: null,
       masteredAt: null,
-      removedAt: null,
-      removalReason: null,
       updatedAt: now,
     })
-    .where(eq(packItem.packId, input.packId));
+    .where(
+      and(
+        eq(packItem.packId, input.packId),
+        ne(packItem.state, "removed"),
+        isNull(packItem.removedAt),
+      ),
+    );
 
   const activeCount = await countActiveItems(input.packId);
   await db
@@ -211,6 +215,7 @@ export async function restorePackItemAction(input: {
     .update(packItem)
     .set({
       state: item.firstStudiedAt ? "learning" : "new",
+      dueAt: now,
       removedAt: null,
       removalReason: null,
       updatedAt: now,

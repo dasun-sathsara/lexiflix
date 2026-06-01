@@ -147,8 +147,8 @@ export function PackStagingSidebar({
               <AlertDialogHeader>
                 <AlertDialogTitle>Reset this pack?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This restores removed cards and resets all cards to new. Review history is not
-                  deleted.
+                  This resets all active cards to new. Removed cards and review history are not
+                  affected.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
