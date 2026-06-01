@@ -85,7 +85,7 @@ function CardCountPill({
 function DeckRow({ deck }: { deck: DeckSummary }) {
   const cardsToStudy = deck.studyPlan.dueCount + deck.studyPlan.newAvailableToday;
   const readyCards = cardsToStudy;
-  const todaysTotal = Math.max(readyCards, deck.studyPlan.newTotal);
+  const todaysTotal = Math.max(readyCards, deck.studyPlan.newAvailableToday);
   const completedToday = Math.max(0, todaysTotal - readyCards);
   const todayProgressPct = todaysTotal > 0 ? clampToInt((completedToday / todaysTotal) * 100) : 100;
   const hasCardsToStudy = cardsToStudy > 0;
