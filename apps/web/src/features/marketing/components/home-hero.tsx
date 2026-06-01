@@ -7,11 +7,11 @@ export function HomeHero() {
     <ShapeHero
       title1="Prepare for English Mastery with"
       title2="Movies & TV"
-      description="LexiFlix builds level-aware vocabulary packs from the subtitles of the stories you plan to watch, so you walk into every episode confident, prepared, and ready to retain more."
+      description="LexiFlix turns subtitles into level-aware vocabulary packs, so you learn the words before you watch."
       cta={
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <ElegantButton size="elegantLg" className="text-base font-medium">
-            Get Started Free
+          <ElegantButton size="elegantLg" className="text-base font-medium" asChild>
+            <Link href="/auth">Get Started Free</Link>
           </ElegantButton>
           <ElegantButton
             size="elegantLg"

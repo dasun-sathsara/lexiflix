@@ -50,7 +50,7 @@ const features = [
     ],
   },
   {
-    title: "Personalized AI Study Decks",
+    title: "Personalized AI Study Packs",
     description:
       "Generate custom study packs (up to 100 items) shaped by your vocabulary preferences, CEFR window options, known-term handling, and custom instructions.",
     Icon: Headphones,
@@ -74,7 +74,7 @@ const features = [
   {
     title: "Coherent Spaced Repetition",
     description:
-      "Reinforce learning with a legacy SM-2 baseline scheduler featuring four rating grades. Term mastery and ignore states propagate globally across all title decks.",
+      "Reinforce learning with a legacy SM-2 baseline scheduler featuring four rating grades. Term mastery and ignore states propagate globally across all your packs.",
     Icon: Repeat,
     eyebrow: "Remember more",
     containerClassName: "col-span-1 md:col-span-1 lg:col-span-2 min-h-[280px]",
@@ -106,8 +106,7 @@ export function FeaturesSection() {
             Everything you need to turn screen time into study time
           </h2>
           <p className="mt-4 text-balance text-base text-muted-foreground sm:text-lg">
-            Learn faster with rich context, beautiful visuals, and smart repetition that reinforces
-            what you love to watch.
+            Rich context, clear visuals, and smart repetition for the shows you already love.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

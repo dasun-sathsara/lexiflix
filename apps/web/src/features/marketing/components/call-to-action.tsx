@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { LayoutTextFlip } from "@/components/common/layout-text-flip";
 import { ElegantButton } from "@/components/ui/button";
 
@@ -27,9 +28,8 @@ export function CallToActionSection() {
             duration={2000}
           />
           <p className="max-w-3xl text-balance font-medium text-base text-muted-foreground sm:text-lg">
-            LexiFlix walks you from level check to active recall: choose a title, let our subtitle
-            analysis surface the vocabulary you'll encounter, and master it before the opening
-            credits roll.
+            Pick a title, see the vocabulary you'll hear, and master it before the opening credits
+            roll.
           </p>
         </motion.div>
         <div className="grid w-full gap-4 text-left sm:grid-cols-3">
@@ -38,8 +38,7 @@ export function CallToActionSection() {
               Profile &amp; Align
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Take our adaptive CEFR placement check to establish your baseline profile, then
-              configure custom study preferences (like vocabulary kinds and daily card pacing).
+              Take a quick CEFR placement check, then set your study preferences and daily pace.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
@@ -47,8 +46,8 @@ export function CallToActionSection() {
               Analyze &amp; Customize
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Browse curated movies and TV seasons. LexiFlix fetches subtitles on-demand and runs a
-              dual NLP/LLM pipeline to isolate vocabulary, phrasal verbs, idioms, and slang.
+              Browse movies and TV seasons. LexiFlix analyzes the subtitles to surface words,
+              phrasal verbs, idioms, and slang.
             </p>
           </div>
           <div className="rounded-2xl border border-indigo-100/60 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-indigo-900/50 dark:bg-slate-950/40">
@@ -56,14 +55,20 @@ export function CallToActionSection() {
               Generate &amp; Study
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Generate up to 100 personalized study cards with Gemini definitions, example
-              sentences, Polly audio, and SM-2 scheduled spaced repetition reviews.
+              Get up to 100 cards with Gemini definitions, example sentences, Polly audio, and
+              spaced-repetition reviews.
             </p>
           </div>
         </div>
-        <ElegantButton size="elegantLg" className="text-base font-medium cursor-pointer">
-          <span>See LexiFlix in Action</span>
-          <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+        <ElegantButton
+          size="elegantLg"
+          className="group text-base font-medium cursor-pointer"
+          asChild
+        >
+          <Link href="/auth">
+            <span>See LexiFlix in Action</span>
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
         </ElegantButton>
       </div>
     </section>
