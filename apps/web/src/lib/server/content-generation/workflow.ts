@@ -60,7 +60,7 @@ async function sendPackStatusEmailIfEnabled({
 
     if (!userRow || !preferences.emailRemindersEnabled) return;
 
-    const baseUrl = env.NEXT_PUBLIC_APP_URL;
+    const baseUrl = env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const actionUrl =
       status === "completed" && packId
         ? `${baseUrl}/pack/${packId}`
@@ -122,6 +122,17 @@ export async function runPackGenerationWorkflow(jobId: string) {
   const job = await getPackGenerationJobById(jobId);
   if (!job) {
     throw new Error(`Pack generation job ${jobId} was not found.`);
+  }
+
+  if (job.status === "completed") {
+    const existing = await db.query.pack.findFirst({
+      where: eq(pack.sourceJobId, job.id),
+    });
+    logger.info("[content-generation] job already completed; skipping", {
+      jobId,
+      packId: existing?.id,
+    });
+    return { packId: existing?.id, warnings: [] as string[] };
   }
 
   const audioConfig = getAudioConfig(job.requestSnapshot.audioVoiceGender);

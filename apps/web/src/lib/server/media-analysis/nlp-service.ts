@@ -13,12 +13,14 @@ import { createTimeoutSignal, readJsonSafely } from "@/lib/server/request-utils"
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
+  timeoutMs: number,
   retries = 3,
   backoffMs = 1500,
 ): Promise<Response> {
   for (let attempt = 1; attempt <= retries; attempt++) {
+    const { signal, clear } = createTimeoutSignal(timeoutMs);
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, { ...options, signal });
 
       if (response.ok) {
         return response;
@@ -32,6 +34,8 @@ async function fetchWithRetry(
       if (attempt === retries) {
         throw error;
       }
+    } finally {
+      clear();
     }
 
     const jitter = Math.random() * 300;
@@ -50,7 +54,6 @@ async function fetchWithRetry(
 
 export async function analyzeWithNlpService(input: NlpAnalysisRequest) {
   const payload = nlpAnalysisRequestSchema.parse(input);
-  const { signal, clear } = createTimeoutSignal(env.NLP_SERVICE_REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetchWithRetry(
@@ -63,9 +66,9 @@ export async function analyzeWithNlpService(input: NlpAnalysisRequest) {
           Authorization: `Bearer ${env.NLP_SERVICE_API_KEY}`,
         },
         body: JSON.stringify(payload),
-        signal,
         cache: "no-store",
       },
+      env.NLP_SERVICE_REQUEST_TIMEOUT_MS,
     );
     const raw = await readJsonSafely(response);
 
@@ -87,7 +90,5 @@ export async function analyzeWithNlpService(input: NlpAnalysisRequest) {
     throw new Error(
       error instanceof Error ? error.message : "NLP service request could not be completed.",
     );
-  } finally {
-    clear();
   }
 }
