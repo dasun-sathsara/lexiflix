@@ -59,6 +59,10 @@ For `apps/web`, Doppler needs to provide the required server-side envs:
 - `R2_PUBLIC_BASE_URL`
 - `TMDB_API_KEY`
 
+Azure Speech credentials are required when `CONTENT_GENERATION_AUDIO_PROVIDER=azure-mai`:
+
+- `AZURE_SPEECH_API_KEY`
+
 AWS Polly credentials are required only when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`:
 
 - `AWS_POLLY_ACCESS_KEY_ID`
@@ -69,6 +73,12 @@ Optional tuning variables supported by the web app are:
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`
+- `AZURE_SPEECH_REGION`
+- `AZURE_SPEECH_CONCURRENCY`
+- `AZURE_SPEECH_MAX_RETRIES`
+- `AZURE_MAI_VOICE_MALE`
+- `AZURE_MAI_VOICE_FEMALE`
+- `AZURE_MAI_VOICE_STYLE`
 
 If you need different values, override them at command time.
 

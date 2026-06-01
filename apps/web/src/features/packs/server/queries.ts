@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, isNull, ne, or } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { buildContentMediaHref } from "@/features/media/lib/content-media";
 import type {
@@ -174,6 +174,9 @@ async function getPackCards(packId: string, userId: string): Promise<PackCardVie
           masteredAt: toIso(item.masteredAt),
           ratingPreviews: { again: "", hard: "", good: "", easy: "" },
           audioUrl: artifactUrl(audioArtifactId),
+          exampleSentenceAudioUrls: (itemContent.exampleSentenceAudioArtifactIds ?? []).map(
+            artifactUrl,
+          ),
           imageUrl: artifactUrl(imageArtifactId),
         },
         now,
@@ -387,6 +390,7 @@ export async function getOwnedArtifactObject({
       or(
         eq(packItemContent.audioArtifactId, artifactObject.id),
         eq(packItemContent.imageArtifactId, artifactObject.id),
+        sql`${packItemContent.exampleSentenceAudioArtifactIds} @> jsonb_build_array(${artifactObject.id})`,
       ),
     )
     .innerJoin(packItem, eq(packItem.id, packItemContent.packItemId))

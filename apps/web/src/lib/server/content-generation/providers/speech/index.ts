@@ -7,11 +7,13 @@ import type {
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
 import { generateSpeechWithPolly } from "@/lib/server/content-generation/providers/speech/aws-polly";
+import { generateSpeechWithAzureMai } from "@/lib/server/content-generation/providers/speech/azure-mai";
 
 type AudioConfig = {
   audioProvider: string;
   audioVoice: string;
-  audioEngine: "standard" | "neural";
+  audioEngine?: "standard" | "neural";
+  audioStyle: string;
 };
 
 export async function generateSpeechArtifacts(input: {
@@ -42,7 +44,13 @@ export async function generateSpeechArtifacts(input: {
 
   if (input.audioConfig.audioProvider === "aws-polly") {
     try {
-      return await generateSpeechWithPolly(input);
+      return await generateSpeechWithPolly({
+        ...input,
+        audioConfig: {
+          audioVoice: input.audioConfig.audioVoice,
+          audioEngine: input.audioConfig.audioEngine ?? "standard",
+        },
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error("[content-generation:audio] AWS Polly fatal integration failure", {
@@ -51,6 +59,21 @@ export async function generateSpeechArtifacts(input: {
       return {
         artifacts: [],
         warnings: [`Audio generation bypassed: AWS Polly integration failure (${errorMessage})`],
+      };
+    }
+  }
+
+  if (input.audioConfig.audioProvider === "azure-mai") {
+    try {
+      return await generateSpeechWithAzureMai(input);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error("[content-generation:audio] Azure MAI fatal integration failure", {
+        error: errorMessage,
+      });
+      return {
+        artifacts: [],
+        warnings: [`Audio generation bypassed: Azure MAI integration failure (${errorMessage})`],
       };
     }
   }

@@ -519,14 +519,32 @@ export function StudySessionClient({ session }: { session: StudySessionView }) {
                     {activeCard.exampleSentences.length === 1 ? "Example" : "Examples"}
                   </div>
                   <div className="space-y-2.5">
-                    {activeCard.exampleSentences.map((example) => (
+                    {activeCard.exampleSentences.map((example, index) => (
                       <div
                         key={example}
-                        className="rounded-lg border-l-2 border-primary/20 bg-muted/30 py-2.5 pl-4 pr-3"
+                        className="flex items-start gap-2 rounded-lg border-l-2 border-primary/20 bg-muted/30 py-2.5 pl-4 pr-3"
                       >
-                        <p className="text-sm italic leading-relaxed text-foreground/70">
+                        <p className="min-w-0 flex-1 text-sm italic leading-relaxed text-foreground/70">
                           &ldquo;{example}&rdquo;
                         </p>
+                        {activeCard.exampleSentenceAudioUrls[index] ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Play example sentence"
+                            className="size-7 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                            tabIndex={state.isFlipped ? 0 : -1}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              new Audio(
+                                activeCard.exampleSentenceAudioUrls[index] ?? undefined,
+                              ).play();
+                            }}
+                          >
+                            <Volume2 className="size-3.5" />
+                          </Button>
+                        ) : null}
                       </div>
                     ))}
                   </div>

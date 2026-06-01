@@ -117,7 +117,7 @@ Minimal operational role for demo support only.
 7. In V1, the system shall generate newly written example sentences rather than reusing subtitle excerpts.
 8. In V1, the default example count shall be one per item, with request-time configuration allowed up to three.
 9. The system shall generate pronunciation audio for pack items.
-10. In V1, pronunciation audio shall read only the vocabulary item itself.
+10. In V1, pronunciation audio shall cover both the vocabulary item and generated example sentences.
 11. Audio generation shall be treated as best-effort in V1 and missing audio shall result in warnings rather than total pack failure.
 12. The system may generate contextual imagery when that feature is enabled.
 13. In V1, contextual imagery shall remain env-gated rather than learner-configurable by default.
