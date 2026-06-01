@@ -5,12 +5,13 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { CefrLevel } from "@/features/assessment/types";
+import { updateSettingsPreferencesAction } from "@/features/settings/server/actions";
 import {
   type PreferencesSettingsInput,
   preferencesSettingsSchema,
-} from "@/features/settings/schemas";
-import { updateSettingsPreferencesAction } from "@/features/settings/server/actions";
-import type { SettingsPreferences, StatusState } from "@/features/settings/types";
+  type SettingsPreferences,
+  type StatusState,
+} from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 import { getEffectiveCefrLevel, normalizeCustomInstructions } from "./utils";
 

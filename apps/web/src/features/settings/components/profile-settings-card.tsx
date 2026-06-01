@@ -19,9 +19,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { type ProfileSettingsInput, profileSettingsSchema } from "@/features/settings/schemas";
 import { updateProfileAction } from "@/features/settings/server/actions";
-import type { StatusState } from "@/features/settings/types";
+import {
+  type ProfileSettingsInput,
+  profileSettingsSchema,
+  type StatusState,
+} from "@/features/settings/types";
 import {
   getInitials,
   settingsCardClass,
