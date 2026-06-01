@@ -67,7 +67,7 @@ const features = [
     overlayClassName: "bg-transparent backdrop-blur-[2px]",
     bullets: [
       "Gemini writes plain-English definitions and fresh example sentences",
-      "AWS Polly generates natural-sounding pronunciation audio guides",
+      "Azure MAI Voice generates pronunciation and example-sentence audio",
       "Best-effort contextual images created for eligible nouns and terms",
     ],
   },

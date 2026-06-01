@@ -79,6 +79,7 @@ export type PackCardView = {
   masteredAt: string | null;
   ratingPreviews: Record<PackReviewRating, string>;
   audioUrl: string | null;
+  exampleSentenceAudioUrls: (string | null)[];
   imageUrl: string | null;
 };
 

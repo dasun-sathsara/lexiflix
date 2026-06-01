@@ -55,8 +55,8 @@ export function CallToActionSection() {
               Generate &amp; Study
             </h4>
             <p className="mt-3 text-sm text-muted-foreground font-normal">
-              Get a full deck of cards with Gemini definitions, example sentences, Polly audio, and
-              spaced-repetition reviews.
+              Get a full deck of cards with Gemini definitions, example sentences, Azure MAI audio,
+              and spaced-repetition reviews.
             </p>
           </div>
         </div>
