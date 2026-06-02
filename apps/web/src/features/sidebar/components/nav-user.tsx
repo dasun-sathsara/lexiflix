@@ -23,6 +23,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { logoutAction } from "@/features/auth/server/actions";
+import { getInitials } from "@/lib/primitives/strings";
 import { cn } from "@/lib/ui/cn";
 
 export function NavUser({
@@ -51,13 +52,7 @@ export function NavUser({
     });
   };
 
-  // Generate initials from name
-  const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = getInitials(user.name);
 
   const avatarClassName = cn("size-8", isAdmin && "ring-2 ring-amber-400/70 ring-offset-2");
 

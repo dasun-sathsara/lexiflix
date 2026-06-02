@@ -132,68 +132,55 @@ function normalizeCustomInstructions(value: string | null | undefined) {
 }
 
 export async function getSettingsPreferences(userId: string): Promise<SettingsPreferences> {
-  const [profile, preferences] = await Promise.all([
-    db
-      .select({
-        assessedLevel: cefrProfile.assessedLevel,
-        manualOverrideLevel: cefrProfile.manualOverrideLevel,
-      })
-      .from(cefrProfile)
-      .where(eq(cefrProfile.userId, userId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
-    db
-      .select({
-        studyLanguageCode: userPreferences.studyLanguageCode,
-        newCardsPerDay: userPreferences.newCardsPerDay,
-        frequencyPreference: userPreferences.frequencyPreference,
-        studyVocabularyTypes: userPreferences.studyVocabularyTypes,
-        generationPackSizeDefault: userPreferences.generationPackSizeDefault,
-        generationCefrWindowMode: userPreferences.generationCefrWindowMode,
-        generationKnownTermHandling: userPreferences.generationKnownTermHandling,
-        generationAudioVoiceGenderDefault: userPreferences.generationAudioVoiceGenderDefault,
-        generationExampleSentenceCount: userPreferences.generationExampleSentenceCount,
-        generationCustomInstructionsDefault: userPreferences.generationCustomInstructionsDefault,
-        emailRemindersEnabled: userPreferences.emailRemindersEnabled,
-        streakAlertsEnabled: userPreferences.streakAlertsEnabled,
-      })
-      .from(userPreferences)
-      .where(eq(userPreferences.userId, userId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
-  ]);
+  const [row] = await db
+    .select({
+      assessedLevel: cefrProfile.assessedLevel,
+      manualOverrideLevel: cefrProfile.manualOverrideLevel,
+      studyLanguageCode: userPreferences.studyLanguageCode,
+      newCardsPerDay: userPreferences.newCardsPerDay,
+      frequencyPreference: userPreferences.frequencyPreference,
+      studyVocabularyTypes: userPreferences.studyVocabularyTypes,
+      generationPackSizeDefault: userPreferences.generationPackSizeDefault,
+      generationCefrWindowMode: userPreferences.generationCefrWindowMode,
+      generationKnownTermHandling: userPreferences.generationKnownTermHandling,
+      generationAudioVoiceGenderDefault: userPreferences.generationAudioVoiceGenderDefault,
+      generationExampleSentenceCount: userPreferences.generationExampleSentenceCount,
+      generationCustomInstructionsDefault: userPreferences.generationCustomInstructionsDefault,
+      emailRemindersEnabled: userPreferences.emailRemindersEnabled,
+      streakAlertsEnabled: userPreferences.streakAlertsEnabled,
+    })
+    .from(userPreferences)
+    .leftJoin(cefrProfile, eq(cefrProfile.userId, userPreferences.userId))
+    .where(eq(userPreferences.userId, userId))
+    .limit(1);
 
   return {
-    assessedLevel: toCefrLevel(profile?.assessedLevel),
-    manualOverrideLevel: toCefrLevel(profile?.manualOverrideLevel),
-    targetLanguage: studyLanguageLabel(
-      preferences?.studyLanguageCode ?? DEFAULT_STUDY_LANGUAGE_CODE,
-    ),
-    newCardsPerDay: preferences?.newCardsPerDay ?? DEFAULT_NEW_CARDS_PER_DAY,
-    frequencyPreference: isFrequencyPreference(preferences?.frequencyPreference)
-      ? preferences.frequencyPreference
+    assessedLevel: toCefrLevel(row?.assessedLevel),
+    manualOverrideLevel: toCefrLevel(row?.manualOverrideLevel),
+    targetLanguage: studyLanguageLabel(row?.studyLanguageCode ?? DEFAULT_STUDY_LANGUAGE_CODE),
+    newCardsPerDay: row?.newCardsPerDay ?? DEFAULT_NEW_CARDS_PER_DAY,
+    frequencyPreference: isFrequencyPreference(row?.frequencyPreference)
+      ? row.frequencyPreference
       : DEFAULT_FREQUENCY_PREFERENCE,
-    studyVocabularyTypes: normalizeVocabularyTypes(preferences?.studyVocabularyTypes),
-    generationPackSizeDefault: normalizePackSize(preferences?.generationPackSizeDefault),
-    generationCefrWindowMode: isCefrWindowMode(preferences?.generationCefrWindowMode)
-      ? preferences.generationCefrWindowMode
+    studyVocabularyTypes: normalizeVocabularyTypes(row?.studyVocabularyTypes),
+    generationPackSizeDefault: normalizePackSize(row?.generationPackSizeDefault),
+    generationCefrWindowMode: isCefrWindowMode(row?.generationCefrWindowMode)
+      ? row.generationCefrWindowMode
       : DEFAULT_GENERATION_CEFR_WINDOW_MODE,
-    generationKnownTermHandling: isKnownTermHandling(preferences?.generationKnownTermHandling)
-      ? preferences.generationKnownTermHandling
+    generationKnownTermHandling: isKnownTermHandling(row?.generationKnownTermHandling)
+      ? row.generationKnownTermHandling
       : DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
-    generationAudioVoiceGenderDefault: isAudioVoiceGender(
-      preferences?.generationAudioVoiceGenderDefault,
-    )
-      ? preferences.generationAudioVoiceGenderDefault
+    generationAudioVoiceGenderDefault: isAudioVoiceGender(row?.generationAudioVoiceGenderDefault)
+      ? row.generationAudioVoiceGenderDefault
       : DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
     generationExampleSentenceCount: normalizeExampleSentenceCount(
-      preferences?.generationExampleSentenceCount,
+      row?.generationExampleSentenceCount,
     ),
     generationCustomInstructionsDefault: normalizeCustomInstructions(
-      preferences?.generationCustomInstructionsDefault,
+      row?.generationCustomInstructionsDefault,
     ),
-    emailRemindersEnabled: preferences?.emailRemindersEnabled ?? DEFAULT_EMAIL_REMINDERS_ENABLED,
-    streakAlertsEnabled: preferences?.streakAlertsEnabled ?? DEFAULT_STREAK_ALERTS_ENABLED,
+    emailRemindersEnabled: row?.emailRemindersEnabled ?? DEFAULT_EMAIL_REMINDERS_ENABLED,
+    streakAlertsEnabled: row?.streakAlertsEnabled ?? DEFAULT_STREAK_ALERTS_ENABLED,
   };
 }
 

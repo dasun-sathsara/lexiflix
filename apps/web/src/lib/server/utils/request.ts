@@ -12,13 +12,3 @@ export async function readJsonSafely(response: Response): Promise<unknown> {
     return text;
   }
 }
-
-export function createTimeoutSignal(timeoutMs: number) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  return {
-    signal: controller.signal,
-    clear: () => clearTimeout(timeout),
-  };
-}

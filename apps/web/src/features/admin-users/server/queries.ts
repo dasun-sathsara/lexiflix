@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SQL } from "drizzle-orm";
-import { and, count, desc, eq, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type {
   AdminUserRow,
   AdminUsersQueryState,
@@ -11,19 +11,12 @@ import { ADMIN_USERS_PAGE_SIZE } from "@/features/admin-users/utils";
 import { db } from "@/lib/server/db";
 import { packGenerationJob, session, user } from "@/lib/server/db/schema";
 
-function escapeLikePattern(value: string) {
-  return value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
-}
-
 function buildUserFilter(queryState: AdminUsersQueryState): SQL | undefined {
   const conditions: SQL[] = [];
 
   if (queryState.query) {
-    const pattern = `%${escapeLikePattern(queryState.query)}%`;
-    const searchCondition = or(
-      sql`${user.name} ILIKE ${pattern} ESCAPE '\\'`,
-      sql`${user.email} ILIKE ${pattern} ESCAPE '\\'`,
-    );
+    const pattern = `%${queryState.query}%`;
+    const searchCondition = or(ilike(user.name, pattern), ilike(user.email, pattern));
     if (searchCondition) conditions.push(searchCondition);
   }
 

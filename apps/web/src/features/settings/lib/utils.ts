@@ -6,6 +6,7 @@ export {
   VOCABULARY_KIND_LABELS as vocabularyTypeLabels,
   VOCABULARY_KINDS as STUDY_VOCABULARY_TYPES,
 } from "@/lib/domain/vocabulary";
+export { getInitials } from "@/lib/primitives/strings";
 
 export function toSettingsTab(value: string | null): SettingsTab {
   return value === "preferences" ? "preferences" : "account";
@@ -41,18 +42,4 @@ export function getEffectiveCefrLevel(
   assessedLevel: CefrLevel | null,
 ): CefrLevel | null {
   return manualOverrideLevel ?? assessedLevel;
-}
-
-/**
- * Derive display initials from a name string (first letters of each word).
- */
-export function getInitials(name: string): string {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map((part) => part[0]?.toUpperCase() ?? "")
-      .join("")
-      .slice(0, 2) || "LX"
-  );
 }

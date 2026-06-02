@@ -1,7 +1,7 @@
 import "server-only";
 
 import { env } from "@/lib/config/env";
-import { createTimeoutSignal, readJsonSafely } from "@/lib/server/utils/request";
+import { readJsonSafely } from "@/lib/server/utils/request";
 
 export type OpenSubtitlesSearchCriteria = {
   type?: "movie" | "episode";
@@ -76,7 +76,6 @@ async function openSubtitlesFetch(
   init: RequestInit = {},
   options: { requireAuth?: boolean } = {},
 ) {
-  const { signal, clear } = createTimeoutSignal(env.OPENSUBTITLES_REQUEST_TIMEOUT_MS);
   const headers = new Headers(init.headers);
   headers.set("Api-Key", env.OPENSUBTITLES_API_KEY);
   headers.set("User-Agent", "LexiFlix v1.0.0");
@@ -93,7 +92,7 @@ async function openSubtitlesFetch(
     return await fetch(`${env.OPENSUBTITLES_API_BASE_URL}${path}`, {
       ...init,
       headers,
-      signal,
+      signal: AbortSignal.timeout(env.OPENSUBTITLES_REQUEST_TIMEOUT_MS),
       cache: "no-store",
     });
   } catch (error) {
@@ -104,8 +103,6 @@ async function openSubtitlesFetch(
     throw new Error(
       error instanceof Error ? error.message : "OpenSubtitles request could not be completed.",
     );
-  } finally {
-    clear();
   }
 }
 
@@ -315,12 +312,11 @@ export async function getOpenSubtitlesDownloadLink(fileId: number) {
 
 export async function downloadSubtitleFile(fileId: number): Promise<DownloadedSubtitle> {
   const { link, fileName } = await getOpenSubtitlesDownloadLink(fileId);
-  const { signal, clear } = createTimeoutSignal(env.OPENSUBTITLES_REQUEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(link, {
       method: "GET",
-      signal,
+      signal: AbortSignal.timeout(env.OPENSUBTITLES_REQUEST_TIMEOUT_MS),
       cache: "no-store",
     });
 
@@ -344,7 +340,5 @@ export async function downloadSubtitleFile(fileId: number): Promise<DownloadedSu
         ? error.message
         : "OpenSubtitles subtitle download could not be completed.",
     );
-  } finally {
-    clear();
   }
 }

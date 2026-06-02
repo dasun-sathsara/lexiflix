@@ -1,3 +1,5 @@
+import { Search } from "lucide-react";
+import { AppEmptyState } from "@/components/common/app-surface";
 import type { TMDBResult } from "@/lib/integrations/tmdb/contracts";
 import { MediaCard } from "./media-card";
 
@@ -9,9 +11,11 @@ interface MediaGridProps {
 export function MediaGrid({ results, genreMap }: MediaGridProps) {
   if (!results?.length) {
     return (
-      <div className="flex min-h-72 items-center justify-center rounded-[calc(var(--radius)+2px)] border border-dashed bg-card/70 px-6 text-center text-sm text-muted-foreground">
-        No results found.
-      </div>
+      <AppEmptyState
+        icon={Search}
+        title="No titles found"
+        description="Try adjusting your search query or selecting a different genre."
+      />
     );
   }
 

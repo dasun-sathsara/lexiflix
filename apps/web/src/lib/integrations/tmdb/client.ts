@@ -30,16 +30,17 @@ async function fetchTMDB<T>(
   params: Record<string, string | number | boolean | undefined> = {},
   options: FetchOptions = {},
 ): Promise<T> {
-  const url = new URL(`${BASE_URL}${endpoint}`);
-  url.searchParams.append("api_key", env.TMDB_API_KEY);
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.append(key, String(value));
-    }
+  const searchParams = new URLSearchParams({
+    api_key: env.TMDB_API_KEY,
   });
 
-  const res = await fetch(url.toString(), {
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.append(key, String(value));
+    }
+  }
+
+  const res = await fetch(`${BASE_URL}${endpoint}?${searchParams.toString()}`, {
     next: {
       tags: options.tags,
       revalidate: options.revalidate ?? 3600, // Default 1 hour cache

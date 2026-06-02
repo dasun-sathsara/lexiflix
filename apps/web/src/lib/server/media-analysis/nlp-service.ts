@@ -8,7 +8,7 @@ import {
   nlpAnalysisRequestSchema,
   nlpAnalysisResponseSchema,
 } from "@/lib/server/media-analysis/contracts";
-import { createTimeoutSignal, readJsonSafely } from "@/lib/server/utils/request";
+import { readJsonSafely } from "@/lib/server/utils/request";
 
 async function fetchWithRetry(
   url: string,
@@ -18,9 +18,8 @@ async function fetchWithRetry(
   backoffMs = 1500,
 ): Promise<Response> {
   for (let attempt = 1; attempt <= retries; attempt++) {
-    const { signal, clear } = createTimeoutSignal(timeoutMs);
     try {
-      const response = await fetch(url, { ...options, signal });
+      const response = await fetch(url, { ...options, signal: AbortSignal.timeout(timeoutMs) });
 
       if (response.ok) {
         return response;
@@ -34,8 +33,6 @@ async function fetchWithRetry(
       if (attempt === retries) {
         throw error;
       }
-    } finally {
-      clear();
     }
 
     const jitter = Math.random() * 300;
