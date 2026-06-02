@@ -29,7 +29,6 @@ import {
   buildPlainTextCorpus,
   buildSubtitleChunks,
   buildSubtitleCorpus,
-  normalizeSubtitleText,
   type SubtitleLine,
 } from "@/lib/server/media-analysis/subtitle-processing";
 import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
@@ -111,11 +110,11 @@ function averageCefrLevel(levels: number[]) {
 
 function normalizeContextEntry(context: unknown): string | null {
   if (typeof context === "string") {
-    return normalizeSubtitleText(context) || null;
+    return context.trim() || null;
   }
   if (context && typeof context === "object" && "text" in context) {
     const text = (context as { text: unknown }).text;
-    return typeof text === "string" ? normalizeSubtitleText(text) || null : null;
+    return typeof text === "string" ? text.trim() || null : null;
   }
   return null;
 }
@@ -599,8 +598,8 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
 
     const nlpResponse = await analyzeWithNlpService({
       job_id: runId,
-      content: plainTextCorpus,
-      content_type: "plain_text",
+      content: subtitleCorpus.rawSrtText,
+      content_type: "srt",
       pipeline_version: MEDIA_ANALYSIS_PIPELINE_VERSION,
       options: {
         include_propn: false,

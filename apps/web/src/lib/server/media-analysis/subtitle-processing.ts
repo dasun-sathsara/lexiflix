@@ -25,6 +25,7 @@ export type SubtitleChunk = {
 
 export type SubtitleCorpus = {
   lines: SubtitleLine[];
+  rawSrtText: string;
   warnings: string[];
   sourceCount: number;
 };
@@ -45,73 +46,6 @@ const MAX_SUBTITLE_SEARCH_PAGES = 3;
 const MAX_CHUNK_DURATION_SECONDS = 1_800;
 const MAX_CHUNK_CHARACTERS = 30_000;
 
-export function decodeHtmlEntities(value: string) {
-  return value
-    .replaceAll("&nbsp;", " ")
-    .replaceAll("&amp;", "&")
-    .replaceAll("&quot;", '"')
-    .replaceAll("&#39;", "'")
-    .replaceAll("&lt;", "<")
-    .replaceAll("&gt;", ">");
-}
-
-const METADATA_PREFIXES = [
-  "caption by",
-  "captions by",
-  "downloaded from",
-  "encoded by",
-  "resync by",
-  "resynced by",
-  "rip by",
-  "subscene",
-  "subtitle by",
-  "subtitles by",
-  "synced by",
-  "thanks to ",
-  "translated by",
-  "www.",
-] as const;
-
-const METADATA_SNIPPETS = [
-  "opensubtitles",
-  "subscene",
-  "tvsubtitles",
-  "yify",
-  "yts",
-  "http://",
-  "https://",
-] as const;
-
-/** True for credit / release lines that must not reach NLP. */
-export function isSubtitleMetadataLine(text: string) {
-  const normalized = text.toLowerCase().trim();
-  if (!normalized) {
-    return true;
-  }
-  if (METADATA_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
-    return true;
-  }
-  return METADATA_SNIPPETS.some((snippet) => normalized.includes(snippet));
-}
-
-/**
- * Full subtitle line cleaning for the media-analysis path.
- * Production NLP calls send `plain_text` after this — NLP does not re-clean.
- */
-export function normalizeSubtitleText(value: string) {
-  return decodeHtmlEntities(value)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\{[^}]*\}/g, " ")
-    .replace(/\[[^\]]*]/g, " ")
-    .replace(/\([^)]*\)/g, " ")
-    .replace(/[♪♫]+/g, " ")
-    .replace(/^[A-Z][A-Z0-9\s-]{1,20}:\s*/, "")
-    .replace(/\r/g, " ")
-    .replace(/\n+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 export function sortSubtitleCandidates(
   left: OpenSubtitlesSubtitleResult,
   right: OpenSubtitlesSubtitleResult,
@@ -123,86 +57,63 @@ export function sortSubtitleCandidates(
     return left.hearingImpaired ? 1 : -1;
   }
 
-  if (leftScore !== rightScore) {
-    return rightScore - leftScore;
-  }
-
-  return left.fileId - right.fileId;
+  return rightScore - leftScore;
 }
 
 export async function searchMovieSubtitle(content: SubtitleContentContext) {
-  const tmdbId = content.tmdbMovieId;
-  if (!tmdbId) {
-    throw new Error(`Movie content ${content.id} is missing tmdbMovieId.`);
+  if (!content.tmdbMovieId) {
+    return null;
   }
-
-  const resultSets = await Promise.all([
-    searchOpenSubtitles({
-      type: "movie",
-      tmdbId,
-      languages: "en",
-      hearingImpaired: "exclude",
-      foreignPartsOnly: "exclude",
-    }),
-    searchOpenSubtitles({
-      type: "movie",
-      tmdbId,
-      languages: "en",
-    }),
-  ]);
-
-  const candidates = resultSets.flat().sort(sortSubtitleCandidates);
-  return candidates[0] ?? null;
-}
-
-export async function searchSeasonSubtitles(content: SubtitleContentContext) {
-  const tmdbShowId = content.tmdbShowId;
-  const seasonNumber = content.tmdbSeasonNumber;
-
-  if (!tmdbShowId || !seasonNumber) {
-    throw new Error(`Season content ${content.id} is missing tmdbShowId or tmdbSeasonNumber.`);
-  }
-
-  const results: OpenSubtitlesSubtitleResult[] = [];
 
   for (let page = 1; page <= MAX_SUBTITLE_SEARCH_PAGES; page += 1) {
-    const pageResults = await searchOpenSubtitles({
-      type: "episode",
-      tmdbId: tmdbShowId,
-      seasonNumber,
-      languages: "en",
-      hearingImpaired: "exclude",
-      foreignPartsOnly: "exclude",
+    const results = await searchOpenSubtitles({
+      tmdbId: content.tmdbMovieId,
+      type: "movie",
       page,
     });
 
-    results.push(...pageResults);
-
-    if (pageResults.length === 0) {
+    if (results.length === 0) {
       break;
+    }
+
+    const sorted = [...results].sort(sortSubtitleCandidates);
+    if (sorted[0]) {
+      return sorted[0];
     }
   }
 
-  if (results.length === 0) {
-    const fallbackResults = await searchOpenSubtitles({
-      type: "episode",
-      tmdbId: tmdbShowId,
-      seasonNumber,
-      languages: "en",
-    });
+  return null;
+}
 
-    results.push(...fallbackResults);
+export async function searchSeasonSubtitles(content: SubtitleContentContext) {
+  if (!content.tmdbShowId || !content.tmdbSeasonNumber) {
+    return [];
   }
 
   const byEpisode = new Map<number, OpenSubtitlesSubtitleResult>();
 
-  for (const candidate of results.sort(sortSubtitleCandidates)) {
-    if (!candidate.episodeNumber || candidate.episodeNumber <= 0) {
-      continue;
+  for (let page = 1; page <= MAX_SUBTITLE_SEARCH_PAGES; page += 1) {
+    const results = await searchOpenSubtitles({
+      tmdbId: content.tmdbShowId,
+      seasonNumber: content.tmdbSeasonNumber,
+      type: "episode",
+      page,
+    });
+
+    if (results.length === 0) {
+      break;
     }
 
-    if (!byEpisode.has(candidate.episodeNumber)) {
-      byEpisode.set(candidate.episodeNumber, candidate);
+    for (const result of results) {
+      const episodeNumber = result.episodeNumber;
+      if (!episodeNumber) {
+        continue;
+      }
+
+      const existing = byEpisode.get(episodeNumber);
+      if (!existing || sortSubtitleCandidates(result, existing) < 0) {
+        byEpisode.set(episodeNumber, result);
+      }
     }
   }
 
@@ -216,8 +127,8 @@ export function parseDownloadedSubtitle(sourceLabel: string, subtitleText: strin
   const lines: SubtitleLine[] = [];
 
   for (const line of parsed) {
-    const normalized = normalizeSubtitleText(line.text);
-    if (!normalized || isSubtitleMetadataLine(normalized)) {
+    const text = line.text.trim();
+    if (!text) {
       continue;
     }
 
@@ -225,7 +136,7 @@ export function parseDownloadedSubtitle(sourceLabel: string, subtitleText: strin
       sourceLabel,
       startSeconds: line.startSeconds,
       endSeconds: line.endSeconds,
-      text: normalized,
+      text,
     });
   }
 
@@ -261,6 +172,7 @@ export async function buildSubtitleCorpus(
 
     return {
       lines,
+      rawSrtText: downloaded.subtitleText,
       warnings,
       sourceCount: 1,
     };
@@ -272,6 +184,7 @@ export async function buildSubtitleCorpus(
   }
 
   const lines: SubtitleLine[] = [];
+  const rawSrtParts: string[] = [];
 
   for (const candidate of candidates) {
     const downloaded = await downloadSubtitleFile(candidate.fileId);
@@ -281,6 +194,7 @@ export async function buildSubtitleCorpus(
     );
 
     lines.push(...episodeLines);
+    rawSrtParts.push(downloaded.subtitleText);
 
     if (candidate.hearingImpaired) {
       warnings.push(
@@ -304,6 +218,7 @@ export async function buildSubtitleCorpus(
 
   return {
     lines,
+    rawSrtText: rawSrtParts.join("\n\n"),
     warnings,
     sourceCount: candidates.length,
   };
