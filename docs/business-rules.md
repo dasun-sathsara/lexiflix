@@ -46,7 +46,7 @@
 - The Content Generation Pipeline starts only after a user explicitly requests pack generation and confirms their generation preferences.
 - In V1, generation preferences come from a dialog-driven request snapshot rather than from hidden defaults alone.
 - That request may control vocabulary kinds, CEFR selection mode, pack size, known-term handling, example count, and custom instructions.
-- The server-side hard cap for `packSize` is `100` in V1.
+- There is no server-side hard cap for `packSize`; it must be a positive integer (minimum `1`).
 - Pack generation reads from stored reusable analysis instead of repeating subtitle fetch, NLP analysis, or phrase-classification LLM work.
 
 - The learner-facing curated catalog at `/curated` is a signed-in surface.

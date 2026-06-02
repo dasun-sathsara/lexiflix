@@ -241,12 +241,11 @@ export function PackGenerationPanel({
                 className="h-9"
                 type="number"
                 min={1}
-                max={100}
                 value={form.packSize}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    packSize: Math.min(100, Math.max(1, Number(event.target.value) || 1)),
+                    packSize: Math.max(1, Number(event.target.value) || 1),
                   }))
                 }
               />

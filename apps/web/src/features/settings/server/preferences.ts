@@ -117,7 +117,7 @@ function normalizePackSize(value: number | null | undefined) {
     return DEFAULT_GENERATION_PACK_SIZE;
   }
 
-  return Math.min(100, Math.max(1, value ?? DEFAULT_GENERATION_PACK_SIZE));
+  return Math.max(1, value ?? DEFAULT_GENERATION_PACK_SIZE);
 }
 
 function normalizeCustomInstructions(value: string | null | undefined) {

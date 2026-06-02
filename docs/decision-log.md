@@ -102,9 +102,9 @@
 
 ### Pack size cap
 
-- Decision: the server-side hard cap for `packSize` is `100` in V1.
-- Reasoning: this keeps prompt size, asset fan-out, and wall-clock latency within a manageable range for the demo without making packs trivially small.
-- Consequence: the backend must enforce the cap regardless of any client-side dialog controls.
+- Decision: `packSize` has no server-side hard cap; it must be a positive integer (minimum `1`).
+- Reasoning: the earlier `100` cap was removed by request; pack size is now bounded only by available candidate terms.
+- Consequence: the backend validates `packSize` as a positive integer and selection naturally truncates to the number of available candidates.
 
 ### CEFR selection modes
 
