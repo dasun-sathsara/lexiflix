@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import type { CefrLevel } from "@/features/assessment/types";
+import { getEffectiveCefrLevel, normalizeCustomInstructions } from "@/features/settings/lib/utils";
 import { updateSettingsPreferencesAction } from "@/features/settings/server/actions";
 import {
   type PreferencesSettingsInput,
@@ -13,7 +14,6 @@ import {
   type StatusState,
 } from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
-import { getEffectiveCefrLevel, normalizeCustomInstructions } from "../lib/utils";
 
 export function usePreferencesForm(preferences: SettingsPreferences) {
   const router = useRouter();
