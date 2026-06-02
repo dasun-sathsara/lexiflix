@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { CuratedAdminCatalogFilter, CuratedCatalogEntry } from "@/features/curation/types";
 import { AdminCatalogFilters } from "./admin-catalog-filters";
 import { AdminCatalogList } from "./admin-catalog-list";
-import { FiltersSkeleton } from "./utils";
+import { FiltersSkeleton } from "./curation-pagination";
 
 export type AdminCatalogViewProps = {
   catalogFilter: CuratedAdminCatalogFilter;

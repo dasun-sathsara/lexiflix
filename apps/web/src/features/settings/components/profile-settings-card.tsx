@@ -33,7 +33,7 @@ import {
   settingsCardHeaderClass,
   settingsFieldClass,
   settingsLabelClass,
-} from "./utils";
+} from "../lib/utils";
 
 type ProfileSettingsCardProps = {
   user: {

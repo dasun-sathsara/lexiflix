@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { StudySessionView } from "@/features/packs/types";
 
-import { formatDueLabel, formatElapsed } from "./utils";
+import { formatDueLabel, formatElapsed } from "../lib/utils";
 
 interface StudySessionCompleteProps {
   reviewedCount: number;

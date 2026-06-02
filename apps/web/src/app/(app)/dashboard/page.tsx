@@ -3,7 +3,7 @@ import { DashboardContent } from "@/features/dashboard/components/dashboard-cont
 import { buildDashboardViewModel } from "@/features/dashboard/lib/view-model";
 import { getDashboardView } from "@/features/dashboard/server/queries";
 import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
-import { getEffectiveCefrLevel } from "@/features/settings/components/utils";
+import { getEffectiveCefrLevel } from "@/features/settings/lib/utils";
 import { requireSession } from "@/lib/auth/guards";
 
 export default async function DashboardPage() {

@@ -29,10 +29,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PackCardView } from "@/features/packs/types";
 import type { ActionResult } from "@/lib/contracts/action-result";
+import { getCefrColorClass as cefrBadgeClass } from "@/lib/domain/cefr";
 import { formatVocabularyKindLabel } from "@/lib/domain/vocabulary";
 import { cn } from "@/lib/ui/cn";
-
-import { cefrBadgeClass } from "./utils";
 
 export type PackStagingCardItemProps = {
   item: PackCardView;

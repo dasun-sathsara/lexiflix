@@ -3,7 +3,7 @@ import { getCefrProfile } from "@/features/assessment/server/queries";
 import { CuratedContent } from "@/features/curation/components/curated-content";
 import { partitionCuratedEntries, resolveActiveLevel } from "@/features/curation/lib/curated-feed";
 import { listPublishedCuratedEntries } from "@/features/curation/server/queries";
-import { getEffectiveCefrLevel } from "@/features/settings/components/utils";
+import { getEffectiveCefrLevel } from "@/features/settings/lib/utils";
 import { requireSession } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {

@@ -39,7 +39,7 @@ import {
 } from "@/features/pack-generation/utils";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "./utils";
+import { GENERATION_VOCABULARY_TYPES, VOCABULARY_TYPE_LABELS } from "../lib/utils";
 
 export type PackGenerationPanelProps = {
   generation: PackGenerationSnapshot | null;

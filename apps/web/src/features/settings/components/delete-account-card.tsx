@@ -28,7 +28,7 @@ import {
   settingsCardContentClass,
   settingsCardFooterClass,
   settingsCardHeaderClass,
-} from "./utils";
+} from "../lib/utils";
 
 type DeleteAccountCardProps = {
   deleteStatus: StatusState;

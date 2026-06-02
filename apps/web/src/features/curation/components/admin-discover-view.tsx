@@ -7,7 +7,7 @@ import type { AnnotatedTMDBResult, CuratedAdminQueryState } from "@/features/cur
 import type { Genre } from "@/lib/integrations/tmdb/contracts";
 import { AdminDiscoverControls } from "./admin-curated-controls";
 import { AdminDiscoverRow } from "./admin-discover-row";
-import { ControlsSkeleton, PaginationRow } from "./utils";
+import { ControlsSkeleton, PaginationRow } from "./curation-pagination";
 
 export type AdminDiscoverViewProps = {
   queryState: CuratedAdminQueryState;

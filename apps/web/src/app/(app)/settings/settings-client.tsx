@@ -11,7 +11,7 @@ import { DeleteAccountCard } from "@/features/settings/components/delete-account
 import { PasswordSettingsCard } from "@/features/settings/components/password-settings-card";
 import { PreferencesSettingsCard } from "@/features/settings/components/preferences-settings-card";
 import { ProfileSettingsCard } from "@/features/settings/components/profile-settings-card";
-import { toSettingsTab } from "@/features/settings/components/utils";
+import { toSettingsTab } from "@/features/settings/lib/utils";
 import { deleteAccountAction } from "@/features/settings/server/actions";
 import type { SettingsPreferences, SettingsTab, StatusState } from "@/features/settings/types";
 

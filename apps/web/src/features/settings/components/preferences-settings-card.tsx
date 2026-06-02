@@ -30,7 +30,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CEFR_LEVELS } from "@/features/assessment/types";
 import type { SettingsPreferences } from "@/features/settings/types";
-import { usePreferencesForm } from "./use-preferences-form";
 import {
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
   STUDY_VOCABULARY_TYPES,
@@ -41,7 +40,8 @@ import {
   settingsFieldClass,
   settingsLabelClass,
   vocabularyTypeLabels,
-} from "./utils";
+} from "../lib/utils";
+import { usePreferencesForm } from "./use-preferences-form";
 
 type PreferencesSettingsCardProps = {
   preferences: SettingsPreferences;

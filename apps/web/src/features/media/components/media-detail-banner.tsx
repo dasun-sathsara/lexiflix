@@ -14,7 +14,7 @@ import {
 import type { MediaDetailPageData } from "@/features/media/types";
 import { getCountryName, getLanguageName } from "@/features/media/utils";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
-import { formatRuntime } from "./utils";
+import { formatRuntime } from "../lib/utils";
 
 export interface MediaDetailBannerProps {
   media: MediaDetailPageData["media"];

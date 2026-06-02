@@ -5,9 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CardCountPill } from "@/features/packs/components/card-count-pill";
-import { clampToInt } from "@/features/packs/components/utils";
 import { formatRelativeTime } from "@/features/packs/lib/format";
 import type { DeckSummary } from "@/features/packs/types";
+import { clampToInt } from "@/lib/primitives/numbers";
 import { cn } from "@/lib/ui/cn";
 
 interface DeckRowProps {

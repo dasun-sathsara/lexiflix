@@ -3,8 +3,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { buildPageUrl } from "../lib/utils";
 
-export { buildPageUrl };
-
 /** Skeleton placeholder for the admin discovery controls card. */
 export function ControlsSkeleton() {
   return (

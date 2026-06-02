@@ -10,8 +10,8 @@ import type {
   PackGenerationSnapshot,
 } from "@/features/media/types";
 import { cn } from "@/lib/ui/cn";
+import { getCefrColorClass, getChallengeSignal } from "../lib/utils";
 import { PackGenerationPanel } from "./pack-generation-panel";
-import { getCefrColorClass, getChallengeSignal } from "./utils";
 
 /** Props for the analysis sidebar on the media detail page. */
 export type AnalysisSidebarProps = {

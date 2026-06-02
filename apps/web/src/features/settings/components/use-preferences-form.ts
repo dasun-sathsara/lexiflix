@@ -13,7 +13,7 @@ import {
   type StatusState,
 } from "@/features/settings/types";
 import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
-import { getEffectiveCefrLevel, normalizeCustomInstructions } from "./utils";
+import { getEffectiveCefrLevel, normalizeCustomInstructions } from "../lib/utils";
 
 export function usePreferencesForm(preferences: SettingsPreferences) {
   const router = useRouter();

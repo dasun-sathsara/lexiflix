@@ -10,11 +10,10 @@ import type {
   PackReviewRating,
   StudySessionView,
 } from "@/features/packs/types";
-
+import { clampToInt } from "@/lib/primitives/numbers";
 import { StudySessionCard } from "./study-session-card";
 import { StudySessionComplete } from "./study-session-complete";
 import { StudySessionEmpty } from "./study-session-empty";
-import { clampToInt } from "./utils";
 
 const ratingByKey: Record<string, PackReviewRating> = {
   "1": "again",

@@ -30,7 +30,7 @@ import {
   settingsCardHeaderClass,
   settingsFieldClass,
   settingsLabelClass,
-} from "./utils";
+} from "../lib/utils";
 
 /**
  * Password settings card — handles credential updates via react-hook-form.
