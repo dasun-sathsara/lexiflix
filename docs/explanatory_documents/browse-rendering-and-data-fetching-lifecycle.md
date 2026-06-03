@@ -13,7 +13,7 @@ The `/browse` route allows users to explore movies and TV shows, filtering by se
 | **Page Route (`page.tsx`)** | Async Server Component | Server-side request orchestration & RSC payload generation. |
 | **Server Queries (`queries.ts`)** | `server-only` Data Module | Upstream API integration, parameter parsing & parallel queries. |
 | **Interactive Controls (`browse-controls.tsx`)** | Client Component (`"use client"`) | Local input state, 500ms debouncing, URL parameter mutation. |
-| **Grid & Cards (`media-grid.tsx`)** | Server/Client Presentation | Rendering media posters, difficulty signals, and navigation links. |
+| **Grid & Cards (`media-grid.tsx`)** | Server/Client Presentation | Rendering media posters, release dates, ratings, and navigation links. |
 | **State Authority** | Browser URL (`URLSearchParams`) | Single Source of Truth (SSOT) for all search/filter states. |
 
 ---
@@ -22,28 +22,24 @@ The `/browse` route allows users to explore movies and TV shows, filtering by se
 
 LexiFlix uses a **Hybrid Server-First React Server Component (RSC)** strategy for the `/browse` page. The page is executed on the server per request (or revalidated dynamically), producing a light initial HTML shell alongside an RSC payload stream.
 
-```
-                    INITIAL LOAD & HYDRATION LIFECYCLE
-                    
-Browser               Next.js Server (Node.js)             TMDB API
-   │                             │                            │
-   │─── HTTP GET /browse ───────>│                            │
-   │                             │─── getSessionOrNull() ────>│
-   │                             │─── Promise.all([           │
-   │                             │      getGenres("movie"),   │
-   │                             │      getGenres("tv")       │
-   │                             │    ]) ────────────────────>│
-   │                             │<── Genre Payloads ─────────│
-   │                             │                            │
-   │                             │─── discoverMedia() ───────>│
-   │                             │<── Media Items ────────────│
-   │                             │                            │
-   │                             │ (Render HTML + RSC Payload)│
-   │<── HTML + RSC Payload ──────│                            │
-   │    (Instant First Paint)    │                            │
-   │                             │                            │
-   │ (Hydrate BrowseControls)    │                            │
-   │ Interactive UI Ready        │                            │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Browser
+    participant Server as Next.js Server (Node.js)
+    participant TMDB as TMDB API
+
+    Browser->>Server: GET /browse
+    Server->>Server: getSessionOrNull()
+    Server->>TMDB: Promise.all([getGenres("movie"), getGenres("tv")])
+    TMDB-->>Server: Return Genre Payloads
+    Server->>TMDB: discoverMedia() / searchMedia()
+    TMDB-->>Server: Return Media Results
+    Server->>Server: Render HTML + Serialize RSC Payload
+    Server-->>Browser: Stream HTML + RSC Payload
+    Note over Browser: Instant First Paint
+    Browser->>Browser: Hydrate Client Components (BrowseControls)
+    Note over Browser: Interactive UI Ready
 ```
 
 ### 1.1 Server Component Execution (`page.tsx`)
@@ -152,6 +148,19 @@ export async function getBrowseView({ searchParams }: GetBrowseViewParams): Prom
           }
         }
 
+        const dateKeys = [
+          "primary_release_date.gte",
+          "primary_release_date.lte",
+          "first_air_date.gte",
+          "first_air_date.lte",
+        ] as const;
+
+        dateKeys.forEach((k) => {
+          if (typeof searchParams[k] === "string") {
+            discoverParams[k] = searchParams[k] as string;
+          }
+        });
+
         return discoverMedia(type, discoverParams);
       })();
 
@@ -179,25 +188,23 @@ export async function getBrowseView({ searchParams }: GetBrowseViewParams): Prom
 
 When a user types into the search input or modifies a filter dropdown, the page executes a **Soft RSC Navigation Flow**.
 
-```
-                DEBOUCED SEARCH & DOM RECONCILIATION
-                
-User              BrowseControls (Client)      Next.js Router           Server Component
- │                          │                        │                          │
- │─ Types "Inception" ─────>│                        │                          │
- │                          │ (setState: "Inception")│                          │
- │                          │ (Start 500ms Timer)    │                          │
- │                          │                        │                          │
- │                          │ ── Timer Elapses ────> │                          │
- │                          │                        │── GET /browse?q=Inception>│
- │                          │                        │   (RSC Fetch Header)     │
- │                          │                        │                          │── getBrowseView({ q: "Inception" })
- │                          │                        │                          │<── New RSC Payload Stream
- │                          │                        │<── RSC Stream ───────────│
- │                          │                        │                          │
- │                          │<── Reconcile DOM ──────│                          │
- │                          │    (Keep Input Focus)  │                          │
- │                          │    (Update MediaGrid)  │                          │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Controls as BrowseControls (Client Component)
+    participant Router as Next.js Router
+    participant Server as Server Component (page.tsx)
+
+    User->>Controls: Type "Inception"
+    Controls->>Controls: setSearchTerm("Inception") & Start 500ms Timer
+    Note over Controls: Timer Elapses
+    Controls->>Router: startTransition(() => router.push("/browse?q=Inception"))
+    Router->>Server: GET /browse?q=Inception (RSC Fetch Header)
+    Server->>Server: Execute getBrowseView({ q: "Inception" })
+    Server-->>Router: Stream Updated RSC Payload
+    Router-->>Controls: Reconcile React DOM
+    Note over Controls: Preserves Input Focus & Active Tab
 ```
 
 ### 2.1 Debounced Search State (`browse-controls.tsx`)
@@ -246,18 +253,18 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
   }, [searchTerm, pathname, router, searchParams]);
 ```
 
-### 2.2 Client Hooks Deep-Dive (`useTransition`, `useOptimistic`, `useSearchParams`)
+### 2.2 Client Hooks Deep-Dive (`useTransition`, `useSearchParams`, `usePathname`, `useRouter`)
 
 Modern Next.js 15 & React 19 client components rely on specific client hooks to decouple UI responsiveness from asynchronous network & server transitions:
 
 #### 1. `useTransition` (React 19)
 `useTransition` allows marking state updates or client router navigations as **non-blocking concurrent transitions**.
 
-* **Why it matters:** Without `useTransition()`, calling `router.push()` or executing an async Server Action freezes the client UI until the server responds. With `useTransition()`, React keeps the current UI fully interactive (allowing typing, clicks, and tab switching) while fetching the new RSC payload stream in the background.
-* **Pending Indicator:** `useTransition` exposes `[isPending, startTransition]`. In `BrowseControls`, `isPending` can be passed to visual spinners or progress indicators while navigation completes.
+* **Why it matters:** Without `useTransition()`, calling `router.push()` freezes the client UI until the server responds. With `useTransition()`, React keeps the current UI fully interactive (allowing typing, clicks, and tab switching) while fetching the new RSC payload stream in the background.
+* **Non-blocking State:** In `BrowseControls`, `const [, startTransition] = useTransition()` wraps `router.push()` calls inside filter change events:
 
 ```tsx
-const [isPending, startTransition] = useTransition();
+const [, startTransition] = useTransition();
 
 // Inside filter change handler:
 startTransition(() => {
@@ -265,30 +272,7 @@ startTransition(() => {
 });
 ```
 
-#### 2. `useOptimistic` (React 19)
-For mutations triggered from cards (such as bookmarking a movie or toggling curated status), `useOptimistic` allows rendering the expected success state **immediately** before the Server Action network round-trip completes.
-
-* **Fallback behavior:** If the server action succeeds, the server revalidates and sends back fresh state. If the server action throws or returns `{ ok: false }`, React automatically reverts the optimistic state back to the original value without manual error recovery code.
-
-```tsx
-// Example optimistic toggle hook
-const [optimisticCurated, setOptimisticCurated] = useOptimistic(
-  isCurated,
-  (current, nextState: boolean) => nextState
-);
-
-const handleToggle = () => {
-  startTransition(async () => {
-    setOptimisticCurated(!isCurated); // Immediate UI update
-    const result = await curateTmdbItemAction(formData);
-    if (!result.ok) {
-      toast.error(result.error); // Reverts automatically on error
-    }
-  });
-};
-```
-
-#### 3. `useSearchParams`, `usePathname`, `useRouter` (Next.js Navigation)
+#### 2. `useSearchParams`, `usePathname`, `useRouter` (Next.js Navigation)
 * `useSearchParams()` provides a read-only reactive view of the current URL query parameters.
 * `usePathname()` provides the active path string (`/browse`).
 * `router.push()` / `router.replace()` imperatively modifies the browser URL history. Combined with `URLSearchParams`, this maintains the browser URL as the Single Source of Truth for all filters.
@@ -297,21 +281,15 @@ const handleToggle = () => {
 
 ## 3. Data Fetching & Caching Mechanisms
 
-```
-                  UPSTREAM DATA FETCHING & CACHING ARCHITECTURE
-
-Server Query (queries.ts)         fetchTMDB<T> (client.ts)           Next.js Data Cache / TMDB API
-        │                                    │                                    │
-        │─── fetchTMDB("/discover/movie") ──>│                                    │
-        │                                    │─── Check Next.js Data Cache ──────>│
-        │                                    │                                    │
-        │                                    │    [ Cache Hit (age < 3600s) ]     │
-        │                                    │<── Return Cached JSON ─────────────│
-        │                                    │                                    │
-        │                                    │    [ Cache Miss / Expired ]        │
-        │                                    │─── HTTP GET api.themoviedb.org ───>│
-        │                                    │<── Fresh JSON Payload ─────────────│
-        │<── Parsed Data Object ─────────────│                                    │
+```mermaid
+flowchart TD
+    A[Server Query: queries.ts] --> B[fetchTMDB in client.ts]
+    B --> C{Check Next.js Data Cache}
+    C -- "Cache Hit age < 3600s" --> D[Return Cached JSON Payload]
+    C -- "Cache Miss or Expired" --> E[HTTP GET api.themoviedb.org]
+    E --> F[Store JSON in Next.js Cache]
+    F --> D
+    D --> G[Return Parsed Data Object]
 ```
 
 ### 3.1 Server-Only Enforcement
@@ -353,12 +331,9 @@ async function fetchTMDB<T>(
   }
 
   const res = await fetch(`${BASE_URL}${endpoint}?${searchParams.toString()}`, {
-    headers: {
-      Accept: "application/json",
-    },
     next: {
       tags: options.tags,
-      revalidate: options.revalidate ?? 3600, // Cache for 1 hour by default
+      revalidate: options.revalidate ?? 3600, // Default 1 hour cache
     },
   });
 
@@ -377,27 +352,21 @@ async function fetchTMDB<T>(
 
 ## 4. Mutation Lifecycle & Revalidation
 
-When users interact with media cards (such as curating a item from discovery or generating a study pack), mutations execute via **Next.js Server Actions**.
+When users interact with media cards or catalog items (such as curating an entry from discovery), mutations execute via **Next.js Server Actions**.
 
-```
-                       MUTATION & REVALIDATION LIFECYCLE
-                       
-Client Component (UI)        Server Action ("use server")        Database / Server Cache
-        │                                 │                                 │
-        │─── Exec (FormData / JSON) ─────>│                                 │
-        │                                 │─── DB Insert / Update ─────────>│
-        │                                 │<── Updated Record ──────────────│
-        │                                 │                                 │
-        │                                 │─── revalidatePath("/browse") ──>│
-        │                                 │    (Invalidates Server Cache)   │
-        │                                 │                                 │
-        │<── ActionResult { ok: true } ───│                                 │
-        │                                 │                                 │
-        │ (router.refresh())              │                                 │
-        │ Refetch RSC Stream ────────────>│                                 │
-        │<── Fresh Component Stream ──────│                                 │
-        │                                 │                                 │
-        │ Reconcile UI with fresh state   │                                 │
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Client as Client Component (UI)
+    participant Action as Server Action ("use server")
+    participant DB as Database / Server Cache
+
+    Client->>Action: Execute Action (FormData / JSON)
+    Action->>DB: DB Insert / Update
+    DB-->>Action: Return Updated Record
+    Action->>DB: revalidateCuratedRoutes() (Invalidates Server Data Cache)
+    Action-->>Client: Return ActionResult { ok: true, data: undefined }
+    Client->>Client: Reconcile UI with Fresh Database State
 ```
 
 ### 4.1 Discriminated ActionResult Contract & Server Actions
@@ -406,21 +375,32 @@ In LexiFlix, all Server Actions return a discriminated union `ActionResult<T>` d
 
 ```ts
 // apps/web/src/lib/contracts/action-result.ts
-export type ActionResult<T = void> =
+export type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 ```
 
-Mutations (such as curating a TMDB item) execute Server Actions that parse FormData with Zod and invalidate cached paths:
+Mutations (such as curating a TMDB item) execute Server Actions that parse FormData with Zod and invalidate cached paths via helper functions:
 
 ```ts
 // apps/web/src/features/curation/server/actions.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/guards";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import { upsertCuratedEntryFromTmdb } from "@/features/curation/server/queries";
+
+const tmdbMutationSchema = z.object({
+  mediaType: z.enum(["movie", "tv"]),
+  tmdbId: z.coerce.number().int().positive(),
+});
+
+function revalidateCuratedRoutes() {
+  revalidatePath("/admin/curated");
+  revalidatePath("/curated");
+}
 
 export async function curateTmdbItemAction(formData: FormData): Promise<ActionResult> {
   const session = await requireAdmin();
@@ -430,39 +410,49 @@ export async function curateTmdbItemAction(formData: FormData): Promise<ActionRe
   });
 
   await upsertCuratedEntryFromTmdb(parsed.mediaType, parsed.tmdbId, session.user.id);
-
-  revalidatePath("/admin/curated");
-  revalidatePath("/curated");
-  revalidatePath("/browse");
-
+  revalidateCuratedRoutes();
   return { ok: true, data: undefined };
 }
 ```
 
-### 4.2 Client Mutation Handling & Cache Invalidation
+### 4.2 Client Mutation Handling & Form Actions
 
-On the client side, components trigger Server Actions within a transition:
+On the client side, components trigger Server Actions directly via HTML form actions combined with `useFormStatus`:
 
 ```tsx
-const [isPending, startTransition] = useTransition();
+// Example from admin-discover-row.tsx
+function SubmitButton({ isCurated }: { isCurated: boolean }) {
+  const { pending } = useFormStatus();
 
-const handleCurate = (formData: FormData) => {
-  startTransition(async () => {
-    const result = await curateTmdbItemAction(formData);
+  return (
+    <Button
+      type="submit"
+      variant={isCurated ? "ghost" : "outline"}
+      size="sm"
+      disabled={pending}
+    >
+      {pending ? <Loader2 className="size-3.5 animate-spin" /> : "Curate"}
+    </Button>
+  );
+}
 
-    if (result.ok) {
-      toast.success("Item added to curated catalog.");
-      router.refresh(); // Refetches fresh RSC payload for current route
-    } else {
-      toast.error(result.error);
-    }
-  });
-};
+export function AdminDiscoverRow({ result, mediaType, isCurated }: AdminDiscoverRowProps) {
+  const submit = isCurated ? refreshCuratedEntryAction : curateTmdbItemAction;
+
+  return (
+    <div className="group flex items-center gap-3 px-4 py-2.5">
+      <form action={submit} className="shrink-0">
+        <input type="hidden" name="mediaType" value={mediaType} />
+        <input type="hidden" name="tmdbId" value={String(result.id)} />
+        <SubmitButton isCurated={isCurated} />
+      </form>
+    </div>
+  );
+}
 ```
 
-1. **`revalidatePath("/browse")`:** Instructs the Next.js server data cache to purge cached payloads for `/browse`.
-2. **`router.refresh()`:** Initiates a soft RSC refetch for the active route.
-3. **DOM Update:** React receives the fresh Server Component payload and updates the UI (e.g., showing updated curation badges) without unmounting active client states.
+1. **`revalidateCuratedRoutes()`:** Instructs the Next.js server data cache to purge cached payloads for `/curated` and `/admin/curated`.
+2. **Form Action Processing:** Next.js handles server execution seamlessly and re-renders affected client views with updated state post-mutation.
 
 ---
 
