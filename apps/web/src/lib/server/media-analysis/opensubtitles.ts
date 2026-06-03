@@ -79,6 +79,8 @@ async function openSubtitlesFetch(
   const { signal, clear } = createTimeoutSignal(env.OPENSUBTITLES_REQUEST_TIMEOUT_MS);
   const headers = new Headers(init.headers);
   headers.set("Api-Key", env.OPENSUBTITLES_API_KEY);
+  headers.set("User-Agent", "LexiFlix v1.0.0");
+  headers.set("X-User-Agent", "LexiFlix v1.0.0");
   headers.set("Content-Type", "application/json");
   headers.set("Accept", "application/json");
 

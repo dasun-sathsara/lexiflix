@@ -23,7 +23,6 @@ export function Footer() {
           <a href="mailto:admin@lexiflix.app" className="hover:text-foreground">
             admin@lexiflix.app
           </a>
-
         </div>
       </div>
     </footer>
