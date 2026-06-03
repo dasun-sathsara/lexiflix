@@ -16,7 +16,7 @@ import type {
   StoredFrequencyPreference,
   StoredVocabularyKind,
 } from "@/lib/server/db/json-contracts";
-import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
+import { cefrProfile, user, userPreferences } from "@/lib/server/db/schema";
 
 const DEFAULT_STUDY_LANGUAGE_CODE = "en";
 const DEFAULT_TARGET_LANGUAGE = "English";
@@ -149,9 +149,10 @@ export async function getSettingsPreferences(userId: string): Promise<SettingsPr
       emailRemindersEnabled: userPreferences.emailRemindersEnabled,
       streakAlertsEnabled: userPreferences.streakAlertsEnabled,
     })
-    .from(userPreferences)
-    .leftJoin(cefrProfile, eq(cefrProfile.userId, userPreferences.userId))
-    .where(eq(userPreferences.userId, userId))
+    .from(user)
+    .leftJoin(userPreferences, eq(userPreferences.userId, user.id))
+    .leftJoin(cefrProfile, eq(cefrProfile.userId, user.id))
+    .where(eq(user.id, userId))
     .limit(1);
 
   return {

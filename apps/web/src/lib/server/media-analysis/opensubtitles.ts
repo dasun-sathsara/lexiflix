@@ -96,7 +96,7 @@ async function openSubtitlesFetch(
       cache: "no-store",
     });
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
       throw new Error("OpenSubtitles request timed out.");
     }
 
@@ -331,7 +331,7 @@ export async function downloadSubtitleFile(fileId: number): Promise<DownloadedSu
       subtitleText: await response.text(),
     };
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
       throw new Error("OpenSubtitles subtitle download timed out.");
     }
 
