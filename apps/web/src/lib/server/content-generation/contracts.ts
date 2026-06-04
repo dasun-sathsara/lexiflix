@@ -1,32 +1,49 @@
 import { z } from "zod";
-import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/content-generation/constants";
+import {
+  CONTENT_GENERATION_PIPELINE_VERSION,
+  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
+  CEFR_LEVELS as cefrLevels,
+  DEFAULT_FREQUENCY_PREFERENCE,
+  DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
+  DEFAULT_GENERATION_CEFR_WINDOW_MODE,
+  DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT,
+  DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
+  DEFAULT_GENERATION_PACK_SIZE,
+  FREQUENCY_PREFERENCES,
+  GENERATION_CEFR_WINDOW_MODES,
+  GENERATION_KNOWN_TERM_HANDLINGS,
+  GENERATION_AUDIO_VOICE_GENDERS as generationAudioVoiceGenders,
+  VOCABULARY_KINDS as vocabularyKinds,
+} from "@/lib/constants";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-export { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH };
-
-export const CONTENT_GENERATION_PIPELINE_VERSION = "content-generation-v2";
-
-export const cefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
-export const vocabularyKinds = ["word", "phrasal_verb", "idiom", "slang"] as const;
-export const generationAudioVoiceGenders = ["female", "male"] as const;
+export {
+  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
+  CONTENT_GENERATION_PIPELINE_VERSION,
+  cefrLevels,
+  vocabularyKinds,
+  generationAudioVoiceGenders,
+};
 
 export const generationRequestSchema = z.object({
   learnerCefrLevel: z.enum(cefrLevels).nullable(),
-  frequencyPreference: z.enum(["balanced", "common_first", "challenge_first"]).default("balanced"),
+  frequencyPreference: z.enum(FREQUENCY_PREFERENCES).default(DEFAULT_FREQUENCY_PREFERENCE),
   selectedVocabularyTypes: z
     .array(z.enum(vocabularyKinds))
     .min(1)
     .default([...vocabularyKinds]),
-  cefrWindowMode: z
-    .enum(["same_level", "one_level_above", "all_levels_above"])
-    .default("same_level"),
-  packSize: z.number().int().positive().default(20),
+  cefrWindowMode: z.enum(GENERATION_CEFR_WINDOW_MODES).default(DEFAULT_GENERATION_CEFR_WINDOW_MODE),
+  packSize: z.number().int().positive().default(DEFAULT_GENERATION_PACK_SIZE),
   knownTermHandling: z
-    .enum(["exclude_known", "downrank_known", "include_known"])
-    .default("exclude_known"),
-  audioVoiceGender: z.enum(generationAudioVoiceGenders).default("female"),
+    .enum(GENERATION_KNOWN_TERM_HANDLINGS)
+    .default(DEFAULT_GENERATION_KNOWN_TERM_HANDLING),
+  audioVoiceGender: z
+    .enum(generationAudioVoiceGenders)
+    .default(DEFAULT_GENERATION_AUDIO_VOICE_GENDER),
   imageEnabled: z.boolean().default(true),
-  exampleSentenceCount: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
+  exampleSentenceCount: z
+    .union([z.literal(1), z.literal(2), z.literal(3)])
+    .default(DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT),
   customInstructions: z
     .string()
     .trim()

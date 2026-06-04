@@ -1,15 +1,6 @@
-import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
+import { CEFR_LEVELS, type CefrLevel } from "@/lib/constants";
 
-export const CEFR_LEVELS: readonly StoredCefrLevel[] = [
-  "A1",
-  "A2",
-  "B1",
-  "B2",
-  "C1",
-  "C2",
-] as const;
-
-export type CefrLevel = (typeof CEFR_LEVELS)[number];
+export { CEFR_LEVELS, type CefrLevel };
 
 /**
  * Maps a CEFR level string to its corresponding UI color classes.

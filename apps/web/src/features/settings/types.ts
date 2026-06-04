@@ -1,9 +1,16 @@
 import { z } from "zod";
 
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
-import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/content-generation/constants";
+import {
+  CEFR_LEVELS,
+  type CefrLevel,
+  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
+  FREQUENCY_PREFERENCES,
+  GENERATION_AUDIO_VOICE_GENDERS,
+  GENERATION_CEFR_WINDOW_MODES,
+  GENERATION_KNOWN_TERM_HANDLINGS,
+  STUDY_VOCABULARY_TYPES,
+} from "@/lib/constants";
 import type { ActionResult } from "@/lib/contracts/action-result";
-import { VOCABULARY_KINDS } from "@/lib/domain/vocabulary";
 import type {
   GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
@@ -12,23 +19,13 @@ import type {
   StoredVocabularyKind,
 } from "@/lib/server/db/json-contracts";
 
-export const FREQUENCY_PREFERENCES = ["balanced", "common_first", "challenge_first"] as const;
-
-export const GENERATION_CEFR_WINDOW_MODES = [
-  "same_level",
-  "one_level_above",
-  "all_levels_above",
-] as const;
-
-export const GENERATION_KNOWN_TERM_HANDLINGS = [
-  "exclude_known",
-  "downrank_known",
-  "include_known",
-] as const;
-
-export const GENERATION_AUDIO_VOICE_GENDERS = ["female", "male"] as const;
-
-export const STUDY_VOCABULARY_TYPES = VOCABULARY_KINDS;
+export {
+  FREQUENCY_PREFERENCES,
+  GENERATION_CEFR_WINDOW_MODES,
+  GENERATION_KNOWN_TERM_HANDLINGS,
+  GENERATION_AUDIO_VOICE_GENDERS,
+  STUDY_VOCABULARY_TYPES,
+};
 
 export const passwordSettingsSchema = z
   .object({

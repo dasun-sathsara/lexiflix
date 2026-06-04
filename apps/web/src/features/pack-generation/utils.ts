@@ -1,12 +1,12 @@
 import type { PackGenerationProgressView } from "@/features/pack-generation/types";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/lib/constants";
 import { VOCABULARY_KIND_LABELS } from "@/lib/domain/vocabulary";
 import type { ContentGenerationStage } from "@/lib/server/content-generation/contracts";
 
 type GenerationStatus = PackGenerationProgressView["status"];
 type GenerationTone = "default" | "success" | "danger" | "muted";
 
-export const PUBLIC_GENERATION_FAILURE_MESSAGE =
-  "Pack generation could not be completed. Retry generation or adjust the request and try again.";
+export { PUBLIC_GENERATION_FAILURE_MESSAGE };
 
 const statusCopy: Record<
   GenerationStatus,

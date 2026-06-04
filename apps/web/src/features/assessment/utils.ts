@@ -1,4 +1,9 @@
 import { ITEM_BANK } from "@/features/assessment/data/item-bank";
+import {
+  ASSESSMENT_LIMITS,
+  FAST_RESPONSE_EXTRA_ITEMS,
+  FAST_RESPONSE_THRESHOLD_MS,
+} from "@/lib/constants";
 import { CEFR_LEVELS } from "@/lib/domain/cefr";
 import type {
   AssessmentItem,
@@ -17,13 +22,7 @@ const THETA_STEP = 0.05;
 const PRIOR_MEAN = 0;
 const PRIOR_SD = 1;
 
-export const ASSESSMENT_LIMITS = {
-  minItems: 8,
-  maxItems: 12,
-} as const;
-
-const FAST_RESPONSE_THRESHOLD_MS = 600;
-const FAST_RESPONSE_EXTRA_ITEMS = 2;
+export { ASSESSMENT_LIMITS };
 
 const CEFR_BAND_CUTS = {
   A1: { low: Number.NEGATIVE_INFINITY, high: -1.5 },

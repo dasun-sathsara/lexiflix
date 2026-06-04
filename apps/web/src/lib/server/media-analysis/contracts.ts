@@ -1,8 +1,9 @@
 import "server-only";
 
 import { z } from "zod";
+import { MEDIA_ANALYSIS_PIPELINE_VERSION, CEFR_LEVELS as storedCefrLevels } from "@/lib/constants";
 
-export const storedCefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+export { storedCefrLevels };
 export const analysisLlmKinds = ["phrasal_verb", "idiom", "slang"] as const;
 export const contentAnalysisRunStatuses = ["queued", "running", "completed", "failed"] as const;
 export const contentAnalysisStages = [
@@ -20,7 +21,7 @@ export type AnalysisLlmKind = (typeof analysisLlmKinds)[number];
 export type ContentAnalysisRunStatus = (typeof contentAnalysisRunStatuses)[number];
 export type ContentAnalysisStage = (typeof contentAnalysisStages)[number];
 
-export const MEDIA_ANALYSIS_PIPELINE_VERSION = "media-analysis-v1";
+export { MEDIA_ANALYSIS_PIPELINE_VERSION };
 
 const cefrSchema = z.enum(storedCefrLevels);
 

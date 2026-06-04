@@ -1,6 +1,7 @@
 import "server-only";
 
 import { env } from "@/lib/config/env";
+import { OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS } from "@/lib/constants";
 import { readJsonSafely } from "@/lib/server/utils/request";
 
 export type OpenSubtitlesSearchCriteria = {
@@ -46,8 +47,6 @@ type OpenSubtitlesDownloadResponse = {
 let cachedToken: string | null = null;
 let pendingAuthPromise: Promise<string> | null = null;
 let lastAuthAttemptAt = 0;
-
-const OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS = 1_100;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -2,12 +2,30 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { CEFR_LEVELS, type CefrLevel } from "@/features/assessment/types";
 import type { SettingsPreferences } from "@/features/settings/types";
 import {
+  CEFR_LEVELS,
+  type CefrLevel,
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  vocabularyKinds,
-} from "@/lib/server/content-generation/contracts";
+  DEFAULT_EMAIL_REMINDERS_ENABLED,
+  DEFAULT_FREQUENCY_PREFERENCE,
+  DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
+  DEFAULT_GENERATION_CEFR_WINDOW_MODE,
+  DEFAULT_GENERATION_CUSTOM_INSTRUCTIONS,
+  DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT,
+  DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
+  DEFAULT_GENERATION_PACK_SIZE,
+  DEFAULT_NEW_CARDS_PER_DAY,
+  DEFAULT_STREAK_ALERTS_ENABLED,
+  DEFAULT_STUDY_LANGUAGE_CODE,
+  DEFAULT_STUDY_VOCABULARY_TYPES,
+  DEFAULT_TARGET_LANGUAGE,
+  FREQUENCY_PREFERENCES,
+  GENERATION_AUDIO_VOICE_GENDERS,
+  GENERATION_CEFR_WINDOW_MODES,
+  GENERATION_KNOWN_TERM_HANDLINGS,
+  STUDY_VOCABULARY_TYPES,
+} from "@/lib/constants";
 import { db } from "@/lib/server/db";
 import type {
   GenerationAudioVoiceGender,
@@ -18,46 +36,13 @@ import type {
 } from "@/lib/server/db/json-contracts";
 import { cefrProfile, user, userPreferences } from "@/lib/server/db/schema";
 
-const DEFAULT_STUDY_LANGUAGE_CODE = "en";
-const DEFAULT_TARGET_LANGUAGE = "English";
-const DEFAULT_NEW_CARDS_PER_DAY = 20;
-const DEFAULT_FREQUENCY_PREFERENCE: StoredFrequencyPreference = "balanced";
-const DEFAULT_STUDY_VOCABULARY_TYPES: StoredVocabularyKind[] = [...vocabularyKinds];
-const DEFAULT_GENERATION_PACK_SIZE = 20;
-const DEFAULT_GENERATION_CEFR_WINDOW_MODE: GenerationCefrWindowMode = "same_level";
-const DEFAULT_GENERATION_KNOWN_TERM_HANDLING: GenerationKnownTermHandling = "exclude_known";
-const DEFAULT_GENERATION_AUDIO_VOICE_GENDER: GenerationAudioVoiceGender = "female";
-const DEFAULT_GENERATION_EXAMPLE_SENTENCE_COUNT: 1 | 2 | 3 = 1;
-const DEFAULT_GENERATION_CUSTOM_INSTRUCTIONS = null;
-const DEFAULT_EMAIL_REMINDERS_ENABLED = true;
-const DEFAULT_STREAK_ALERTS_ENABLED = true;
-
-export const GENERATION_CEFR_WINDOW_MODES = [
-  "same_level",
-  "one_level_above",
-  "all_levels_above",
-] as const satisfies readonly GenerationCefrWindowMode[];
-
-export const GENERATION_KNOWN_TERM_HANDLINGS = [
-  "exclude_known",
-  "downrank_known",
-  "include_known",
-] as const satisfies readonly GenerationKnownTermHandling[];
-
-export const GENERATION_AUDIO_VOICE_GENDERS = [
-  "female",
-  "male",
-] as const satisfies readonly GenerationAudioVoiceGender[];
-
-export const FREQUENCY_PREFERENCES = [
-  "balanced",
-  "common_first",
-  "challenge_first",
-] as const satisfies readonly StoredFrequencyPreference[];
-
-export const STUDY_VOCABULARY_TYPES = [
-  ...vocabularyKinds,
-] as const satisfies readonly StoredVocabularyKind[];
+export {
+  FREQUENCY_PREFERENCES,
+  GENERATION_AUDIO_VOICE_GENDERS,
+  GENERATION_CEFR_WINDOW_MODES,
+  GENERATION_KNOWN_TERM_HANDLINGS,
+  STUDY_VOCABULARY_TYPES,
+};
 
 const STUDY_LANGUAGE_LABELS: Record<string, string> = {
   en: "English",
@@ -105,7 +90,7 @@ function isAudioVoiceGender(value: string | null | undefined): value is Generati
 
 function normalizeVocabularyTypes(values: string[] | null | undefined): StoredVocabularyKind[] {
   const normalized = Array.from(new Set((values ?? []).filter(isVocabularyKind)));
-  return normalized.length > 0 ? normalized : DEFAULT_STUDY_VOCABULARY_TYPES;
+  return normalized.length > 0 ? normalized : [...DEFAULT_STUDY_VOCABULARY_TYPES];
 }
 
 function normalizeExampleSentenceCount(value: number | null | undefined): 1 | 2 | 3 {

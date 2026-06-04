@@ -16,6 +16,7 @@ import {
   getPackGenerationProgressView,
 } from "@/features/pack-generation/server/queries";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
+import { MEDIA_ANALYSIS_FINGERPRINT } from "@/lib/constants";
 import type {
   TMDBMediaType,
   TMDBMovieDetails,
@@ -27,7 +28,6 @@ import { db } from "@/lib/server/db";
 import { contentAnalysisItem, contentAnalysisRun, vocabularyTerm } from "@/lib/server/db/schema";
 import { toUserFriendlyAnalysisError } from "@/lib/server/errors";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
-import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import { getContentAnalysisRunByFingerprint } from "@/lib/server/media-analysis/runs";
 
 type ResolvedMovieDetail = {
@@ -41,7 +41,6 @@ type ResolvedTvDetail = {
 };
 
 type ResolvedTmdbDetail = ResolvedMovieDetail | ResolvedTvDetail;
-const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 
 function parseTmdbNotFound(error: unknown) {
   return error instanceof Error && error.message.includes("TMDB Error: 404");

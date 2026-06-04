@@ -7,14 +7,13 @@ import {
 } from "@aws-sdk/client-s3";
 
 import { env } from "@/lib/config/env";
+import { MAX_AVATAR_SIZE_BYTES } from "@/lib/constants";
 
 const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
   ["image/webp", "webp"],
 ]);
-
-const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB ceiling for profile photos
 
 function ensureServerOnly() {
   if (typeof window !== "undefined") {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
+import { TEXT_BATCH_SIZE, TEXT_CONCURRENCY } from "@/lib/constants";
 import type {
   GeneratedTextItem,
   GenerationRequestSnapshot,
@@ -13,9 +14,6 @@ import type {
 import { buildTextGenerationPrompt } from "@/lib/server/content-generation/providers/text/prompt";
 import { generatedTextBatchSchema } from "@/lib/server/content-generation/providers/text/schema";
 import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
-
-const TEXT_BATCH_SIZE = 8;
-const TEXT_CONCURRENCY = 2;
 
 export async function generateTextContentWithAdapter(input: {
   items: SelectedGenerationItem[];

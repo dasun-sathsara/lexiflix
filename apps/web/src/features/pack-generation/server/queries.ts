@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { buildContentMediaHref } from "@/features/media/utils";
 import { getGenerationStageCopy } from "@/features/pack-generation/utils";
+import { RECENT_VISIBLE_JOB_LIMIT } from "@/lib/constants";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
@@ -14,8 +15,6 @@ import type {
   PackGenerationProgressView,
   PackGenerationRequestSummary,
 } from "../types";
-
-const RECENT_VISIBLE_JOB_LIMIT = 8;
 
 function contentSubtitle(row: typeof content.$inferSelect) {
   return row.kind === "season" && row.tmdbSeasonNumber ? `Season ${row.tmdbSeasonNumber}` : null;

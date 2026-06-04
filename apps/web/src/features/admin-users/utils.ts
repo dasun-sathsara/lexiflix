@@ -1,6 +1,5 @@
 import type { AdminUserStatus, AdminUsersQueryState } from "@/features/admin-users/types";
-
-const PAGE_SIZE = 20;
+import { ADMIN_USERS_PAGE_SIZE } from "@/lib/constants";
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -36,4 +35,4 @@ export function buildAdminUsersHref(
   return query ? `/admin/users?${query}` : "/admin/users";
 }
 
-export const ADMIN_USERS_PAGE_SIZE = PAGE_SIZE;
+export { ADMIN_USERS_PAGE_SIZE };

@@ -1,26 +1,9 @@
 import "server-only";
 
 import type { PackCardState, PackReviewRating } from "@/features/packs/types";
+import { DAY_MS, MINUTE_MS, SRS_CONFIG } from "@/lib/constants";
 
-const MINUTE_MS = 60 * 1000;
-const DAY_MS = 24 * 60 * MINUTE_MS;
-
-/**
- * Represents the configuration parameters for the Spaced Repetition System.
- */
-export const SRS_CONFIG = {
-  firstLearningStepMs: MINUTE_MS,
-  secondLearningStepMs: 10 * MINUTE_MS,
-  graduatingIntervalDays: 1,
-  easyIntervalDays: 4,
-  startingEaseFactor: 2.5,
-  minimumEaseFactor: 1.3,
-  hardIntervalMultiplier: 1.2,
-  easyBonus: 1.3,
-  maximumIntervalDays: 36_500,
-  masteryRepetitionThreshold: 5,
-  masteryIntervalThresholdDays: 21,
-} as const;
+export { SRS_CONFIG };
 
 /**
  * Allowed states for a card in the active SRS lifecycle.

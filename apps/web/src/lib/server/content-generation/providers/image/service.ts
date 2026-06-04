@@ -1,6 +1,7 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
+import { IMAGE_REQUEST_DELAY_MS } from "@/lib/constants";
 import type {
   GeneratedBinaryArtifact,
   GeneratedTextItem,
@@ -10,7 +11,6 @@ import type {
   ImageGenerationProviderConfig,
 } from "@/lib/server/content-generation/providers/image/port";
 
-const REQUEST_DELAY_MS = 10_000;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function generateImageArtifactsWithAdapter(input: {
@@ -34,7 +34,7 @@ export async function generateImageArtifactsWithAdapter(input: {
 
   for (const [index, item] of eligibleItems.entries()) {
     if (index > 0) {
-      await delay(REQUEST_DELAY_MS);
+      await delay(IMAGE_REQUEST_DELAY_MS);
     }
 
     logger.info(

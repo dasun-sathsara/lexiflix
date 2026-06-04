@@ -19,6 +19,7 @@ import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/ut
 import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { requireSession } from "@/lib/auth/guards";
 import { env } from "@/lib/config/env";
+import { MEDIA_ANALYSIS_FINGERPRINT, MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/constants";
 import { generationRequestSchema } from "@/lib/server/content-generation/contracts";
 import {
   computePackGenerationIdempotencyKey,
@@ -26,7 +27,6 @@ import {
   recordPackGenerationJobTransition,
 } from "@/lib/server/content-generation/jobs";
 import { resolveOrCreateContentTarget } from "@/lib/server/media-analysis/content-targets";
-import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/server/media-analysis/contracts";
 import {
   createOrReuseContentAnalysisRun,
   getContentAnalysisRunByFingerprint,
@@ -66,8 +66,6 @@ const startGenerationInputSchema = startAnalysisInputSchema.and(
 const generationStatusInputSchema = z.object({
   jobId: z.string().min(1),
 });
-
-const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 
 async function triggerAnalysisRun(runId: string) {
   try {

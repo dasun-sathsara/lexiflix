@@ -1,20 +1,6 @@
-export const IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+import { TMDB_IMAGE_BASE_URL as IMAGE_BASE_URL, TMDB_IMAGE_SIZES } from "@/lib/constants";
 
-export const TMDB_IMAGE_SIZES = {
-  poster: {
-    sm: "/w342",
-    md: "/w500",
-    lg: "/w780",
-    original: "/original",
-  },
-  backdrop: {
-    sm: "/w300",
-    md: "/w780",
-    lg: "/w1280",
-    original: "/original",
-  },
-} as const;
-
+export { IMAGE_BASE_URL, TMDB_IMAGE_SIZES };
 export function buildTmdbImageUrl(path: string | null | undefined, size: string) {
   return path ? `${IMAGE_BASE_URL}${size}${path}` : null;
 }

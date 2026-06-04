@@ -1,7 +1,6 @@
 import "server-only";
 
-const APP_TIME_ZONE = "Asia/Colombo";
-const APP_TIME_ZONE_OFFSET_MINUTES = 5 * 60 + 30;
+import { APP_TIME_ZONE, APP_TIME_ZONE_OFFSET_MINUTES } from "@/lib/constants";
 
 export function getAppDateKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
