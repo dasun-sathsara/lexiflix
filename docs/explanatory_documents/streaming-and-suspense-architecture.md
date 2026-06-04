@@ -10,9 +10,9 @@ To understand React Suspense and streaming SSR, we must first examine how HTTP n
 
 ---
 
-### 1.1 HTTP/1.1 & HTTP/2 Chunked Transfer Encoding (`Transfer-Encoding: chunked`)
+### 1.1 HTTP Streaming Protocols (`Transfer-Encoding: chunked` vs HTTP/2 DATA Frames)
 
-In traditional HTTP responses, the server must calculate and include a `Content-Length` header indicating the exact byte size of the payload:
+In traditional HTTP/1.1 responses, the server must calculate and include a `Content-Length` header indicating the exact byte size of the payload:
 
 ```http
 HTTP/1.1 200 OK
@@ -22,7 +22,8 @@ Content-Length: 45210
 
 To include `Content-Length`, the server **must finish generating the entire response payload in memory before sending the first byte to the network socket**.
 
-**Chunked Transfer Encoding** (`Transfer-Encoding: chunked`) removes the `Content-Length` requirement. It allows a persistent TCP connection to send dynamically generated data in a series of self-delimiting hex-formatted chunks:
+#### HTTP/1.1 Chunked Transfer Encoding
+HTTP/1.1 introduced **Chunked Transfer Encoding** (`Transfer-Encoding: chunked`), which removes the `Content-Length` requirement. It allows a persistent TCP connection to send dynamically generated data in a series of self-delimiting hex-formatted chunks:
 
 ```http
 HTTP/1.1 200 OK
@@ -40,6 +41,9 @@ Transfer-Encoding: chunked
 2. **Chunk Emission:** As async operations (database queries, microservice RPCs) resolve on the server, additional HTML subtrees are flushed down the open socket.
 3. **Termination Chunk (`0\r\n\r\n`):** A zero-length chunk signals the end of the stream without closing the TCP connection.
 
+#### HTTP/2 Binary DATA Frames
+In HTTP/2, `Transfer-Encoding` is explicitly forbidden. Instead, HTTP/2 natively handles streaming via multiplexed **DATA frames** over a single TCP connection. The server streams HTML chunks wrapped in HTTP/2 DATA frames without requiring pre-declared content lengths, enabling identical progressive streaming behavior with lower protocol overhead.
+
 ---
 
 ### 1.2 Browser HTML Engine & Speculative Pre-parsing
@@ -48,7 +52,7 @@ Modern browser rendering engines (Blink in Chromium, Gecko in Firefox, WebKit in
 
 1. **Byte Stream Tokenization:** The browser tokenizes arriving HTML bytes into DOM nodes (`<div>`, `<script>`, `<link>`) immediately without waiting for `EOF`.
 2. **Speculative Pre-parser:** A background thread scans ahead in the byte stream for external resources (`<link rel="stylesheet">`, `<script src="...">`, `<img src="...">`) and triggers parallel network fetches long before the main DOM tree parser reaches those tags.
-3. **Progressive Layout & Paint:** The browser constructs partial DOM and CSSOM trees, enabling First Contentful Paint (FCP) while remaining chunks are still transit on the network.
+3. **Progressive Layout & Paint:** The browser constructs partial DOM and CSSOM trees, enabling First Contentful Paint (FCP) while remaining chunks are still in transit on the network.
 
 ---
 
@@ -179,25 +183,30 @@ In `apps/web/src/app/(app)/browse/loading.tsx`:
 
 ```tsx
 // apps/web/src/app/(app)/browse/loading.tsx
-import { AppPageShell } from "@/components/common/app-page-header";
+import { AppPageShell } from "@/components/common/app-page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BrowseLoading() {
   return (
     <AppPageShell className="gap-8">
-      {/* Zone A Controls Skeleton */}
+      {/* Zone A Loading */}
       <div className="space-y-2">
         <Skeleton className="h-10 w-48" />
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Skeleton className="h-10 w-full md:w-64" />
           <Skeleton className="h-10 w-full md:w-72" />
         </div>
+        <div className="flex gap-4">
+          <Skeleton className="h-10 w-40" />
+          <Skeleton className="h-10 w-40" />
+          <Skeleton className="h-10 w-40" />
+        </div>
       </div>
 
-      {/* Zone B Media Grid Skeleton */}
+      {/* Zone B Loading */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {Array.from({ length: 10 }).map((_, index) => (
-          <div key={`browse-loading-${index}`} className="space-y-3">
+        {Array.from({ length: 10 }, (_, index) => `browse-loading-${index}`).map((key) => (
+          <div key={key} className="space-y-3">
             <Skeleton className="aspect-[2/3] w-full rounded-xl" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-3/4" />
@@ -235,23 +244,28 @@ export function AdminCatalogView({
   allEntriesCount,
   discoverHref,
 }: AdminCatalogViewProps) {
+  const isFiltered = catalogFilter.mediaType !== "all" || catalogFilter.status !== "all";
+  const draggable = !isFiltered && catalogEntries.length > 1;
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Granular Suspense Boundary wrapping search filters */}
       <Suspense fallback={<FiltersSkeleton />}>
-        <AdminCatalogFilters
-          currentFilter={catalogFilter}
-          counts={catalogCounts}
-          allEntriesCount={allEntriesCount}
-        />
+        <AdminCatalogFilters filter={catalogFilter} counts={catalogCounts} />
       </Suspense>
 
       {catalogEntries.length > 0 ? (
-        <AdminCatalogList entries={catalogEntries} />
-      ) : (
-        <Card className="rounded-[calc(var(--radius)+2px)] border bg-card/60 shadow-xs">
-          {/* ... Empty State ... */}
+        <Card className="gap-0 py-0 shadow-sm">
+          <CardHeader className="border-b py-3.5">
+            <CardTitle className="text-base">Catalog entries</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <AdminCatalogList entries={catalogEntries} draggable={draggable} />
+          </CardContent>
         </Card>
+      ) : (
+        /* ... Empty State ... */
+        null
       )}
     </div>
   );
@@ -268,24 +282,46 @@ In `apps/web/src/features/auth/components/auth-split-layout.tsx`:
 
 ```tsx
 // apps/web/src/features/auth/components/auth-split-layout.tsx
-export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
-  return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="flex items-center justify-center p-8">
-        {/* Suspense boundary prevents useSearchParams() bailout during build */}
-        <Suspense fallback={<AuthTabsSkeleton />}>
+export function AuthSplitLayout({
+  badgeText,
+  title,
+  description,
+  benefits,
+  color = "indigo",
+  useSuspense = false,
+  children,
+}: AuthSplitLayoutProps) {
+  if (useSuspense) {
+    return (
+      <Suspense fallback={<AuthSplitLayoutFallback color={color} />}>
+        <AuthSplitLayoutContent
+          badgeText={badgeText}
+          title={title}
+          description={description}
+          benefits={benefits}
+          color={color}
+        >
           {children}
-        </Suspense>
-      </div>
-      <div className="hidden lg:block relative bg-muted">
-        {/* Brand visual panel */}
-      </div>
-    </div>
+        </AuthSplitLayoutContent>
+      </Suspense>
+    );
+  }
+
+  return (
+    <AuthSplitLayoutContent
+      badgeText={badgeText}
+      title={title}
+      description={description}
+      benefits={benefits}
+      color={color}
+    >
+      {children}
+    </AuthSplitLayoutContent>
   );
 }
 ```
 
-* **Build Safety:** Wrapping `<AuthTabs />` (which consumes `useSearchParams()`) in `<Suspense>` ensures Next.js can statically pre-render the surrounding authentication layout during build time without throwing static generation bailout errors.
+* **Build Safety:** When `useSuspense` is set to `true`, wrapping `<AuthSplitLayoutContent>` (which contains forms that call `useSearchParams()`) in `<Suspense>` ensures Next.js can statically pre-render the surrounding authentication layout during build time without throwing static generation bailout errors.
 
 ---
 
