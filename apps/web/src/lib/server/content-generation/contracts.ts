@@ -1,8 +1,9 @@
+import "server-only";
+
 import { z } from "zod";
 import {
-  CONTENT_GENERATION_PIPELINE_VERSION,
+  CEFR_LEVELS,
   CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  CEFR_LEVELS as cefrLevels,
   DEFAULT_FREQUENCY_PREFERENCE,
   DEFAULT_GENERATION_AUDIO_VOICE_GENDER,
   DEFAULT_GENERATION_CEFR_WINDOW_MODE,
@@ -10,35 +11,42 @@ import {
   DEFAULT_GENERATION_KNOWN_TERM_HANDLING,
   DEFAULT_GENERATION_PACK_SIZE,
   FREQUENCY_PREFERENCES,
+  GENERATION_AUDIO_VOICE_GENDERS,
   GENERATION_CEFR_WINDOW_MODES,
   GENERATION_KNOWN_TERM_HANDLINGS,
-  GENERATION_AUDIO_VOICE_GENDERS as generationAudioVoiceGenders,
-  VOCABULARY_KINDS as vocabularyKinds,
+  VOCABULARY_KINDS,
 } from "@/lib/constants";
 import type { StoredCefrLevel, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
 
-export {
-  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  CONTENT_GENERATION_PIPELINE_VERSION,
-  cefrLevels,
-  vocabularyKinds,
-  generationAudioVoiceGenders,
-};
+export const PACK_GENERATION_STATUSES = ["queued", "running", "completed", "failed"] as const;
+
+export const CONTENT_GENERATION_STAGES = [
+  "queued",
+  "selecting_terms",
+  "generating_content",
+  "generating_assets",
+  "saving_pack",
+  "completed",
+  "failed",
+] as const;
+
+export type PackGenerationStatus = (typeof PACK_GENERATION_STATUSES)[number];
+export type ContentGenerationStage = (typeof CONTENT_GENERATION_STAGES)[number];
 
 export const generationRequestSchema = z.object({
-  learnerCefrLevel: z.enum(cefrLevels).nullable(),
+  learnerCefrLevel: z.enum(CEFR_LEVELS).nullable(),
   frequencyPreference: z.enum(FREQUENCY_PREFERENCES).default(DEFAULT_FREQUENCY_PREFERENCE),
   selectedVocabularyTypes: z
-    .array(z.enum(vocabularyKinds))
+    .array(z.enum(VOCABULARY_KINDS))
     .min(1)
-    .default([...vocabularyKinds]),
+    .default([...VOCABULARY_KINDS]),
   cefrWindowMode: z.enum(GENERATION_CEFR_WINDOW_MODES).default(DEFAULT_GENERATION_CEFR_WINDOW_MODE),
   packSize: z.number().int().positive().default(DEFAULT_GENERATION_PACK_SIZE),
   knownTermHandling: z
     .enum(GENERATION_KNOWN_TERM_HANDLINGS)
     .default(DEFAULT_GENERATION_KNOWN_TERM_HANDLING),
   audioVoiceGender: z
-    .enum(generationAudioVoiceGenders)
+    .enum(GENERATION_AUDIO_VOICE_GENDERS)
     .default(DEFAULT_GENERATION_AUDIO_VOICE_GENDER),
   imageEnabled: z.boolean().default(true),
   exampleSentenceCount: z
@@ -56,14 +64,6 @@ export const generationRequestSchema = z.object({
 
 export type GenerationRequestInput = z.input<typeof generationRequestSchema>;
 export type GenerationRequestSnapshot = z.output<typeof generationRequestSchema>;
-export type ContentGenerationStage =
-  | "queued"
-  | "selecting_terms"
-  | "generating_content"
-  | "generating_assets"
-  | "saving_pack"
-  | "completed"
-  | "failed";
 
 export type SelectedGenerationItem = {
   analysisItemId: string;
@@ -112,3 +112,8 @@ export type SpeechArtifactTarget =
       exampleIndex: number;
       script: string;
     };
+
+/** A synthesized artifact that still knows which pack item and script produced it. */
+export type GeneratedSpeechArtifact = GeneratedBinaryArtifact & {
+  target: SpeechArtifactTarget;
+};

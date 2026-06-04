@@ -1,28 +1,36 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { logger } from "@trigger.dev/sdk";
-import { env } from "@/lib/config/env";
-import { buildPublicUrl } from "@/lib/integrations/storage/r2";
-import type { GeneratedBinaryArtifact } from "@/lib/server/content-generation/contracts";
+import { eq } from "drizzle-orm";
+import { deleteObjectByKey, putObject } from "@/lib/integrations/storage/r2";
+import type {
+  GeneratedBinaryArtifact,
+  GeneratedSpeechArtifact,
+} from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { artifactObject } from "@/lib/server/db/schema";
 
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-  },
-});
+type ArtifactKind = "audio" | "image";
 
-export async function persistGeneratedArtifact(input: {
+/**
+ * Artifact ids resolved per pack item, plus the storage handles needed to roll the
+ * upload back if the pack write fails afterwards.
+ */
+export type GeneratedArtifactIndex = {
+  termAudioArtifactIdByItemId: Map<string, string>;
+  exampleAudioArtifactIdsByItemId: Map<string, Array<string | null>>;
+  imageArtifactIdByItemId: Map<string, string>;
+  uploadedObjectKeys: string[];
+  uploadedArtifactIds: string[];
+  warnings: string[];
+};
+
+async function persistArtifact(input: {
   userId: string;
   contentId: string;
   jobId: string;
-  kind: "audio" | "image";
+  kind: ArtifactKind;
   artifact: GeneratedBinaryArtifact;
 }) {
   const checksumSha256 = createHash("sha256").update(input.artifact.bytes).digest("hex");
@@ -32,21 +40,16 @@ export async function persistGeneratedArtifact(input: {
     jobId: input.jobId,
     kind: input.kind,
     itemKey: input.artifact.itemKey,
-    bucketName: env.R2_BUCKET_NAME,
     objectKey,
     mimeType: input.artifact.mimeType,
     byteLength: input.artifact.bytes.byteLength,
   });
 
-  await r2Client.send(
-    new PutObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
-      Key: objectKey,
-      Body: input.artifact.bytes,
-      ContentType: input.artifact.mimeType,
-      CacheControl: "private, max-age=31536000, immutable",
-    }),
-  );
+  const uploaded = await putObject({
+    key: objectKey,
+    body: input.artifact.bytes,
+    contentType: input.artifact.mimeType,
+  });
 
   const [row] = await db
     .insert(artifactObject)
@@ -55,9 +58,9 @@ export async function persistGeneratedArtifact(input: {
       kind: input.kind,
       access: "private",
       provider: "r2",
-      bucketName: env.R2_BUCKET_NAME,
-      objectKey,
-      publicUrl: buildPublicUrl(objectKey),
+      bucketName: uploaded.bucketName,
+      objectKey: uploaded.key,
+      publicUrl: uploaded.url,
       mimeType: input.artifact.mimeType,
       byteSize: input.artifact.bytes.byteLength,
       checksumSha256,
@@ -74,8 +77,90 @@ export async function persistGeneratedArtifact(input: {
     artifactId: row.id,
     kind: input.kind,
     itemKey: input.artifact.itemKey,
-    objectKey,
+    objectKey: row.objectKey,
   });
 
   return row;
+}
+
+/**
+ * Uploads every generated artifact and indexes the resulting ids by pack item.
+ * Individual failures degrade to warnings so a pack can still be saved without assets.
+ */
+export async function persistGeneratedArtifacts(input: {
+  userId: string;
+  contentId: string;
+  jobId: string;
+  speechArtifacts: GeneratedSpeechArtifact[];
+  imageArtifacts: GeneratedBinaryArtifact[];
+}): Promise<GeneratedArtifactIndex> {
+  const index: GeneratedArtifactIndex = {
+    termAudioArtifactIdByItemId: new Map(),
+    exampleAudioArtifactIdsByItemId: new Map(),
+    imageArtifactIdByItemId: new Map(),
+    uploadedObjectKeys: [],
+    uploadedArtifactIds: [],
+    warnings: [],
+  };
+
+  const persist = async (kind: ArtifactKind, artifact: GeneratedBinaryArtifact) => {
+    try {
+      const row = await persistArtifact({
+        userId: input.userId,
+        contentId: input.contentId,
+        jobId: input.jobId,
+        kind,
+        artifact,
+      });
+      index.uploadedObjectKeys.push(row.objectKey);
+      index.uploadedArtifactIds.push(row.id);
+      return row.id;
+    } catch (error) {
+      logger.error(`[content-generation:artifact] failed to persist ${kind} artifact`, {
+        jobId: input.jobId,
+        itemKey: artifact.itemKey,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      index.warnings.push(
+        error instanceof Error ? error.message : `Failed to persist ${kind} artifact.`,
+      );
+      return null;
+    }
+  };
+
+  for (const artifact of input.speechArtifacts) {
+    const artifactId = await persist("audio", artifact);
+    if (!artifactId) {
+      continue;
+    }
+
+    const { target } = artifact;
+    if (target.kind === "example_sentence") {
+      const examples = index.exampleAudioArtifactIdsByItemId.get(target.analysisItemId) ?? [];
+      examples[target.exampleIndex] = artifactId;
+      index.exampleAudioArtifactIdsByItemId.set(target.analysisItemId, examples);
+      continue;
+    }
+
+    index.termAudioArtifactIdByItemId.set(target.analysisItemId, artifactId);
+  }
+
+  for (const artifact of input.imageArtifacts) {
+    const artifactId = await persist("image", artifact);
+    if (artifactId) {
+      index.imageArtifactIdByItemId.set(artifact.itemKey, artifactId);
+    }
+  }
+
+  return index;
+}
+
+/** Best-effort cleanup used when pack persistence fails after artifacts were uploaded. */
+export async function discardPersistedArtifacts(index: GeneratedArtifactIndex) {
+  await Promise.allSettled(index.uploadedObjectKeys.map((key) => deleteObjectByKey(key)));
+  await Promise.allSettled(
+    index.uploadedArtifactIds.map((id) =>
+      db.delete(artifactObject).where(eq(artifactObject.id, id)),
+    ),
+  );
 }

@@ -17,6 +17,7 @@ export function createImageGenerationAdapter(
     case "azure-foundry":
       return createAzureFoundryImageAdapter(config);
     default:
+      // Single-member config union: narrow on the discriminant so the guard type-checks.
       return assertNever(config.provider);
   }
 }

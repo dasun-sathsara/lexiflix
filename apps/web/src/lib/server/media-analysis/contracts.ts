@@ -1,12 +1,10 @@
 import "server-only";
 
 import { z } from "zod";
-import { MEDIA_ANALYSIS_PIPELINE_VERSION, CEFR_LEVELS as storedCefrLevels } from "@/lib/constants";
 
-export { storedCefrLevels };
-export const analysisLlmKinds = ["phrasal_verb", "idiom", "slang"] as const;
-export const contentAnalysisRunStatuses = ["queued", "running", "completed", "failed"] as const;
-export const contentAnalysisStages = [
+export const CONTENT_ANALYSIS_RUN_STATUSES = ["queued", "running", "completed", "failed"] as const;
+
+export const CONTENT_ANALYSIS_STAGES = [
   "queued",
   "fetching_subtitles",
   "running_nlp",
@@ -17,19 +15,8 @@ export const contentAnalysisStages = [
   "failed",
 ] as const;
 
-export type AnalysisLlmKind = (typeof analysisLlmKinds)[number];
-export type ContentAnalysisRunStatus = (typeof contentAnalysisRunStatuses)[number];
-export type ContentAnalysisStage = (typeof contentAnalysisStages)[number];
-
-export { MEDIA_ANALYSIS_PIPELINE_VERSION };
-
-const cefrSchema = z.enum(storedCefrLevels);
-
-export const nlpAnalysisOptionsSchema = z.object({
-  include_propn: z.boolean().default(false),
-  dedup_lines: z.boolean().default(true),
-  batch_size: z.number().int().min(1).max(10_000).default(200),
-});
+export type ContentAnalysisRunStatus = (typeof CONTENT_ANALYSIS_RUN_STATUSES)[number];
+export type ContentAnalysisStage = (typeof CONTENT_ANALYSIS_STAGES)[number];
 
 export const resolveContentTargetInputSchema = z.object({
   mediaType: z.enum(["movie", "tv"]),
@@ -39,8 +26,9 @@ export const resolveContentTargetInputSchema = z.object({
 
 export const contentAnalysisTransitionSchema = z.object({
   runId: z.string().min(1),
-  status: z.enum(contentAnalysisRunStatuses),
-  stage: z.enum(contentAnalysisStages),
+  /** Derived from `stage` when omitted. */
+  status: z.enum(CONTENT_ANALYSIS_RUN_STATUSES).optional(),
+  stage: z.enum(CONTENT_ANALYSIS_STAGES),
   message: z.string().min(1),
   payload: z.record(z.string(), z.unknown()).optional(),
   progressMessage: z.string().min(1).nullable().optional(),
@@ -51,82 +39,5 @@ export const contentAnalysisTransitionSchema = z.object({
   warnings: z.array(z.string()).nullable().optional(),
 });
 
-export const nlpAnalysisRequestSchema = z.object({
-  job_id: z.string().min(1).nullable().optional(),
-  content: z.string().min(1),
-  content_type: z.enum(["srt", "plain_text"]).default("srt"),
-  pipeline_version: z.string().min(1).nullable().optional(),
-  options: nlpAnalysisOptionsSchema.default(() => ({
-    include_propn: false,
-    dedup_lines: true,
-    batch_size: 200,
-  })),
-});
-
-/** Accept new `string[]` contexts and legacy `{ text }[]` rows for rebuild windows. */
-const contextListSchema = z
-  .array(z.union([z.string(), z.object({ text: z.string() })]))
-  .default([])
-  .transform((items) =>
-    items
-      .map((item) => (typeof item === "string" ? item : item.text))
-      .map((text) => text.trim())
-      .filter(Boolean),
-  );
-
-export const nlpVocabularyCandidateSchema = z.object({
-  text: z.string().min(1),
-  lemma: z.string().min(1),
-  type: z.string().min(1),
-  cefr_level: cefrSchema.nullable().optional(),
-  count: z.number().int().min(1),
-  contexts: contextListSchema,
-});
-
-export const nlpAnalysisMetadataSchema = z.object({
-  job_id: z.string().min(1).nullable().optional(),
-  total_lines: z.number().int().min(0),
-  total_characters: z.number().int().min(0),
-  unique_candidates: z.number().int().min(0),
-  spacy_model: z.string().min(1),
-  pipeline_version: z.string().min(1).nullable().optional(),
-});
-
-export const nlpAnalysisResponseSchema = z.object({
-  metadata: nlpAnalysisMetadataSchema,
-  candidates: z.array(nlpVocabularyCandidateSchema),
-  warnings: z.array(z.string()).default([]),
-});
-
-export const analysisLlmItemSchema = z.object({
-  kind: z.enum(analysisLlmKinds),
-  text: z.string().min(1),
-  displayText: z.string().min(1),
-  cefrLevel: cefrSchema.nullable().optional(),
-  representativeContext: z.string().min(1).nullable().optional(),
-  contexts: contextListSchema,
-  rationale: z.string().min(1).nullable().optional(),
-});
-
-export const analysisLlmResponseSchema = z.object({
-  items: z.array(analysisLlmItemSchema),
-});
-
-export type NlpAnalysisRequest = z.infer<typeof nlpAnalysisRequestSchema>;
-export type NlpAnalysisResponse = z.infer<typeof nlpAnalysisResponseSchema>;
-export type AnalysisLlmItem = z.infer<typeof analysisLlmItemSchema>;
-export type AnalysisLlmResponse = z.infer<typeof analysisLlmResponseSchema>;
 export type ResolveContentTargetInput = z.infer<typeof resolveContentTargetInputSchema>;
 export type ContentAnalysisTransitionInput = z.infer<typeof contentAnalysisTransitionSchema>;
-
-const CEFR_TO_NUMERIC: Record<string, number> = {
-  A1: 1,
-  A2: 2,
-  B1: 3,
-  B2: 4,
-  C1: 5,
-  C2: 6,
-};
-
-export const cefrNumericFromLevel = (level: string | null | undefined) =>
-  CEFR_TO_NUMERIC[level ?? ""] ?? null;

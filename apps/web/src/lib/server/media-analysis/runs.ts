@@ -4,27 +4,24 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/server/db";
 import { contentAnalysisRun, contentAnalysisRunEvent } from "@/lib/server/db/schema";
 import {
+  type ContentAnalysisRunStatus,
+  type ContentAnalysisStage,
   type ContentAnalysisTransitionInput,
   contentAnalysisTransitionSchema,
 } from "@/lib/server/media-analysis/contracts";
 
-type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;
+export type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;
 
-type MediaAnalysisPipelineDescriptor = {
-  version: string;
-};
+function statusForStage(stage: ContentAnalysisStage): ContentAnalysisRunStatus {
+  if (stage === "queued") {
+    return "queued";
+  }
+  if (stage === "completed" || stage === "failed") {
+    return stage;
+  }
 
-type CreateOrReuseContentAnalysisRunInput = {
-  contentId: string;
-  pipelineFingerprint: string;
-  pipelineDescriptor: MediaAnalysisPipelineDescriptor;
-  queuedMessage?: string;
-};
-
-type CreateOrReuseContentAnalysisRunResult = {
-  run: ContentAnalysisRunRow;
-  wasCreated: boolean;
-};
+  return "running";
+}
 
 async function getContentAnalysisRunById(runId: string) {
   const [row] = await db
@@ -32,6 +29,7 @@ async function getContentAnalysisRunById(runId: string) {
     .from(contentAnalysisRun)
     .where(eq(contentAnalysisRun.id, runId))
     .limit(1);
+
   return row ?? null;
 }
 
@@ -53,18 +51,18 @@ export async function getContentAnalysisRunByFingerprint(
   return row ?? null;
 }
 
-export async function createOrReuseContentAnalysisRun(
-  input: CreateOrReuseContentAnalysisRunInput,
-): Promise<CreateOrReuseContentAnalysisRunResult> {
+export async function createOrReuseContentAnalysisRun(input: {
+  contentId: string;
+  pipelineFingerprint: string;
+  pipelineDescriptor: { version: string };
+  queuedMessage?: string;
+}): Promise<{ run: ContentAnalysisRunRow; wasCreated: boolean }> {
   const existing = await getContentAnalysisRunByFingerprint(
     input.contentId,
     input.pipelineFingerprint,
   );
   if (existing) {
-    return {
-      run: existing,
-      wasCreated: false,
-    };
+    return { run: existing, wasCreated: false };
   }
 
   const queuedMessage = input.queuedMessage ?? "Analysis queued.";
@@ -92,10 +90,7 @@ export async function createOrReuseContentAnalysisRun(
       message: queuedMessage,
     });
 
-    return {
-      run: inserted,
-      wasCreated: true,
-    };
+    return { run: inserted, wasCreated: true };
   }
 
   const collided = await getContentAnalysisRunByFingerprint(
@@ -106,23 +101,23 @@ export async function createOrReuseContentAnalysisRun(
     throw new Error("Failed to resolve content analysis run after insert collision.");
   }
 
-  return {
-    run: collided,
-    wasCreated: false,
-  };
+  return { run: collided, wasCreated: false };
 }
 
+/** Records a stage transition and its run event. Status is derived from stage when omitted. */
 export async function recordContentAnalysisRunTransition(input: ContentAnalysisTransitionInput) {
   const parsed = contentAnalysisTransitionSchema.parse(input);
+  const status = parsed.status ?? statusForStage(parsed.stage);
+  const hasFailed = status === "failed";
 
   const [updated] = await db
     .update(contentAnalysisRun)
     .set({
-      status: parsed.status,
+      status,
       stage: parsed.stage,
       progressMessage: parsed.progressMessage ?? parsed.message,
-      errorCode: parsed.errorCode ?? (parsed.status === "failed" ? "WORKFLOW_FAILED" : null),
-      errorMessage: parsed.errorMessage ?? (parsed.status === "failed" ? parsed.message : null),
+      errorCode: parsed.errorCode ?? (hasFailed ? "WORKFLOW_FAILED" : null),
+      errorMessage: parsed.errorMessage ?? (hasFailed ? parsed.message : null),
       startedAt: parsed.startedAt,
       completedAt: parsed.completedAt,
       warnings: parsed.warnings ?? undefined,
@@ -155,10 +150,7 @@ export async function resetFailedContentAnalysisRunForRetry(
   }
 
   if (existing.status !== "failed") {
-    return {
-      run: existing,
-      wasReset: false,
-    };
+    return { run: existing, wasReset: false };
   }
 
   const [updated] = await db
@@ -182,13 +174,8 @@ export async function resetFailedContentAnalysisRunForRetry(
     runId,
     stage: "queued",
     message: retryMessage,
-    payload: {
-      retry: true,
-    },
+    payload: { retry: true },
   });
 
-  return {
-    run: updated,
-    wasReset: true,
-  };
+  return { run: updated, wasReset: true };
 }

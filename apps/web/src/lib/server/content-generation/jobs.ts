@@ -1,11 +1,17 @@
 import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
-import type { GenerationRequestSnapshot } from "@/lib/server/content-generation/contracts";
-import { CONTENT_GENERATION_PIPELINE_VERSION } from "@/lib/server/content-generation/contracts";
+import { CONTENT_GENERATION_PIPELINE_VERSION } from "@/lib/constants";
+import type {
+  ContentGenerationStage,
+  GenerationRequestSnapshot,
+  PackGenerationStatus,
+} from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import type { WorkflowEventPayload } from "@/lib/server/db/json-contracts";
 import { packGenerationJob, packGenerationJobEvent, user } from "@/lib/server/db/schema";
+
+export type PackGenerationJobRow = typeof packGenerationJob.$inferSelect;
 
 export function computePackGenerationIdempotencyKey(input: {
   userId: string;
@@ -17,19 +23,51 @@ export function computePackGenerationIdempotencyKey(input: {
     return `${input.userId}:${input.contentId}:${crypto.randomUUID()}`;
   }
 
-  const snap = input.requestSnapshot;
-  const sig = [
-    snap.learnerCefrLevel ?? "auto",
-    snap.frequencyPreference,
-    [...snap.selectedVocabularyTypes].sort().join(","),
-    snap.cefrWindowMode,
-    snap.packSize,
-    snap.knownTermHandling,
-    snap.exampleSentenceCount,
-    snap.audioVoiceGender,
+  const snapshot = input.requestSnapshot;
+  const signature = [
+    snapshot.learnerCefrLevel ?? "auto",
+    snapshot.frequencyPreference,
+    [...snapshot.selectedVocabularyTypes].sort().join(","),
+    snapshot.cefrWindowMode,
+    snapshot.packSize,
+    snapshot.knownTermHandling,
+    snapshot.exampleSentenceCount,
+    snapshot.audioVoiceGender,
   ].join("|");
 
-  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}:${input.analysisRunId}:${sig}`;
+  return `${input.userId}:${input.contentId}:${CONTENT_GENERATION_PIPELINE_VERSION}:${input.analysisRunId}:${signature}`;
+}
+
+async function getJobByIdempotencyKey(userId: string, idempotencyKey: string) {
+  return db.query.packGenerationJob.findFirst({
+    where: and(
+      eq(packGenerationJob.userId, userId),
+      eq(packGenerationJob.idempotencyKey, idempotencyKey),
+    ),
+  });
+}
+
+async function getGenerationQuota(userId: string) {
+  const [quota] = await db
+    .select({
+      generationLimit: user.generationLimit,
+      generationsUsed: user.generationUsageCount,
+    })
+    .from(user)
+    .where(eq(user.id, userId));
+
+  return quota ?? null;
+}
+
+function hasExhaustedGenerationQuota(quota: {
+  generationLimit: number | null;
+  generationsUsed: number;
+}) {
+  return quota.generationLimit !== null && quota.generationsUsed >= quota.generationLimit;
+}
+
+function generationQuotaError(limit: number) {
+  return new Error(`You have reached your lifetime generation limit of ${limit.toLocaleString()}.`);
 }
 
 export async function createOrReusePackGenerationJob(input: {
@@ -39,47 +77,27 @@ export async function createOrReusePackGenerationJob(input: {
   requestSnapshot: GenerationRequestSnapshot;
   idempotencyKey: string;
 }) {
-  const existing = await db.query.packGenerationJob.findFirst({
-    where: and(
-      eq(packGenerationJob.userId, input.userId),
-      eq(packGenerationJob.idempotencyKey, input.idempotencyKey),
-    ),
-  });
-
+  const existing = await getJobByIdempotencyKey(input.userId, input.idempotencyKey);
   if (existing) {
     return { job: existing, wasCreated: false };
   }
 
-  const [quota] = await db
-    .select({
-      generationLimit: user.generationLimit,
-      generationsUsed: user.generationUsageCount,
-    })
-    .from(user)
-    .where(eq(user.id, input.userId));
-
+  const quota = await getGenerationQuota(input.userId);
   if (!quota) {
     throw new Error("User account was not found.");
   }
 
-  if (quota.generationLimit !== null && quota.generationsUsed >= quota.generationLimit) {
-    const reused = await db.query.packGenerationJob.findFirst({
-      where: and(
-        eq(packGenerationJob.userId, input.userId),
-        eq(packGenerationJob.idempotencyKey, input.idempotencyKey),
-      ),
-    });
-
+  if (hasExhaustedGenerationQuota(quota) && quota.generationLimit !== null) {
+    // A concurrent request may have consumed the last slot and created this exact job.
+    const reused = await getJobByIdempotencyKey(input.userId, input.idempotencyKey);
     if (reused) {
       return { job: reused, wasCreated: false };
     }
 
-    throw new Error(
-      `You have reached your lifetime generation limit of ${quota.generationLimit.toLocaleString()}.`,
-    );
+    throw generationQuotaError(quota.generationLimit);
   }
 
-  let job: typeof packGenerationJob.$inferSelect | undefined;
+  let job: PackGenerationJobRow | undefined;
 
   try {
     [job] = await db
@@ -98,40 +116,26 @@ export async function createOrReusePackGenerationJob(input: {
       })
       .returning();
   } catch (error) {
-    const [latestQuota] = await db
-      .select({
-        generationLimit: user.generationLimit,
-        generationsUsed: user.generationUsageCount,
-      })
-      .from(user)
-      .where(eq(user.id, input.userId));
-
+    // A database-side quota trigger can reject the insert; re-check before surfacing the raw error.
+    const latestQuota = await getGenerationQuota(input.userId);
     if (
-      latestQuota?.generationLimit !== null &&
-      latestQuota?.generationLimit !== undefined &&
-      latestQuota.generationsUsed >= latestQuota.generationLimit
+      latestQuota &&
+      latestQuota.generationLimit !== null &&
+      hasExhaustedGenerationQuota(latestQuota)
     ) {
-      throw new Error(
-        `You have reached your lifetime generation limit of ${latestQuota.generationLimit.toLocaleString()}.`,
-      );
+      throw generationQuotaError(latestQuota.generationLimit);
     }
 
     throw error;
   }
 
   if (!job) {
-    const reused = await db.query.packGenerationJob.findFirst({
-      where: and(
-        eq(packGenerationJob.userId, input.userId),
-        eq(packGenerationJob.idempotencyKey, input.idempotencyKey),
-      ),
-    });
-
-    if (reused) {
-      return { job: reused, wasCreated: false };
+    const reused = await getJobByIdempotencyKey(input.userId, input.idempotencyKey);
+    if (!reused) {
+      throw new Error("Failed to create pack generation job.");
     }
 
-    throw new Error("Failed to create pack generation job.");
+    return { job: reused, wasCreated: false };
   }
 
   await recordPackGenerationJobTransition({
@@ -195,9 +199,7 @@ export async function resetFailedPackGenerationJobForRetry(
     jobId,
     stage: "queued",
     message: retryMessage,
-    payload: {
-      retry: true,
-    },
+    payload: { retry: true },
   });
 
   return { job: updated, wasReset: true };
@@ -205,15 +207,8 @@ export async function resetFailedPackGenerationJobForRetry(
 
 export async function recordPackGenerationJobTransition(input: {
   jobId: string;
-  status: "queued" | "running" | "completed" | "failed";
-  stage:
-    | "queued"
-    | "selecting_terms"
-    | "generating_content"
-    | "generating_assets"
-    | "saving_pack"
-    | "completed"
-    | "failed";
+  status: PackGenerationStatus;
+  stage: ContentGenerationStage;
   message: string;
   payload?: WorkflowEventPayload;
   errorCode?: string;
@@ -221,23 +216,22 @@ export async function recordPackGenerationJobTransition(input: {
   triggerWorkflowId?: string;
 }) {
   const now = new Date();
+  const hasFailed = input.status === "failed";
   const update: Partial<typeof packGenerationJob.$inferInsert> = {
     status: input.status,
     stage: input.stage,
     progressMessage: input.message,
     updatedAt: now,
+    errorCode: input.errorCode ?? (hasFailed ? "PACK_GENERATION_FAILED" : undefined),
+    errorMessage: input.errorMessage ?? (hasFailed ? input.message : undefined),
   };
 
   if (input.status === "running") {
     update.startedAt = now;
   }
-  if (input.status === "completed" || input.status === "failed") {
+  if (input.status === "completed" || hasFailed) {
     update.completedAt = now;
   }
-  update.errorCode =
-    input.errorCode ?? (input.status === "failed" ? "PACK_GENERATION_FAILED" : undefined);
-  update.errorMessage =
-    input.errorMessage ?? (input.status === "failed" ? input.message : undefined);
   if (input.triggerWorkflowId) {
     update.triggerWorkflowId = input.triggerWorkflowId;
   }

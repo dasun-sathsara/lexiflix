@@ -92,6 +92,29 @@ export async function uploadUserAvatar({ userId, file }: { userId: string; file:
   };
 }
 
+export async function putObject(input: {
+  key: string;
+  body: Uint8Array | Buffer;
+  contentType: string;
+  cacheControl?: string;
+}) {
+  await r2Client.send(
+    new PutObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: input.key,
+      Body: input.body,
+      ContentType: input.contentType,
+      CacheControl: input.cacheControl ?? "private, max-age=31536000, immutable",
+    }),
+  );
+
+  return {
+    bucketName: env.R2_BUCKET_NAME,
+    key: input.key,
+    url: buildPublicUrl(input.key),
+  };
+}
+
 export async function deleteObjectByKey(key: string) {
   await r2Client.send(
     new DeleteObjectCommand({

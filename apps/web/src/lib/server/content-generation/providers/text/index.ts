@@ -1,6 +1,7 @@
 import "server-only";
 
 import { env } from "@/lib/config/env";
+import { DEFAULT_AZURE_FOUNDRY_TEXT_MODEL } from "@/lib/constants";
 import type {
   GenerationRequestSnapshot,
   SelectedGenerationItem,
@@ -19,7 +20,7 @@ function getTextGenerationConfig(): TextGenerationProviderConfig {
     case "azure-foundry":
       return {
         provider: "azure-foundry",
-        model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.6-luna",
+        model: env.AZURE_AI_FOUNDRY_MODEL ?? DEFAULT_AZURE_FOUNDRY_TEXT_MODEL,
       };
   }
 }

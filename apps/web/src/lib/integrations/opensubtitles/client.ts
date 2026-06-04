@@ -2,57 +2,31 @@ import "server-only";
 
 import { env } from "@/lib/config/env";
 import { OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS } from "@/lib/constants";
+import type {
+  DownloadedSubtitle,
+  OpenSubtitlesDownloadLink,
+  OpenSubtitlesDownloadPayload,
+  OpenSubtitlesLoginPayload,
+  OpenSubtitlesSearchCriteria,
+  OpenSubtitlesSearchPayload,
+  OpenSubtitlesSubtitleResult,
+} from "@/lib/integrations/opensubtitles/contracts";
+import { delay } from "@/lib/server/utils/async";
 import { readJsonSafely } from "@/lib/server/utils/request";
 
-export type OpenSubtitlesSearchCriteria = {
-  type?: "movie" | "episode";
-  tmdbId?: number;
-  query?: string;
-  seasonNumber?: number;
-  episodeNumber?: number;
-  languages?: string;
-  hearingImpaired?: "include" | "exclude" | "only";
-  foreignPartsOnly?: "include" | "exclude" | "only";
-  page?: number;
-};
+export type {
+  DownloadedSubtitle,
+  OpenSubtitlesSearchCriteria,
+  OpenSubtitlesSubtitleResult,
+} from "@/lib/integrations/opensubtitles/contracts";
 
-export type OpenSubtitlesSubtitleResult = {
-  subtitleId: string | null;
-  fileId: number;
-  fileName: string | null;
-  language: string | null;
-  release: string | null;
-  downloadCount: number | null;
-  hearingImpaired: boolean | null;
-  seasonNumber: number | null;
-  episodeNumber: number | null;
-};
-
-export type DownloadedSubtitle = {
-  fileId: number;
-  fileName: string | null;
-  downloadLink: string;
-  subtitleText: string;
-};
-
-type OpenSubtitlesLoginResponse = {
-  token: string;
-};
-
-type OpenSubtitlesDownloadResponse = {
-  link: string;
-  file_name?: string;
-};
+const USER_AGENT = "LexiFlix v1.0.0";
 
 let cachedToken: string | null = null;
 let pendingAuthPromise: Promise<string> | null = null;
 let lastAuthAttemptAt = 0;
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function summarizeOpenSubtitlesPayload(payload: unknown) {
+function summarizePayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
     return payload;
   }
@@ -77,14 +51,13 @@ async function openSubtitlesFetch(
 ) {
   const headers = new Headers(init.headers);
   headers.set("Api-Key", env.OPENSUBTITLES_API_KEY);
-  headers.set("User-Agent", "LexiFlix v1.0.0");
-  headers.set("X-User-Agent", "LexiFlix v1.0.0");
+  headers.set("User-Agent", USER_AGENT);
+  headers.set("X-User-Agent", USER_AGENT);
   headers.set("Content-Type", "application/json");
   headers.set("Accept", "application/json");
 
   if (options.requireAuth !== false) {
-    const token = await authenticateOpenSubtitles();
-    headers.set("Authorization", `Bearer ${token}`);
+    headers.set("Authorization", `Bearer ${await authenticate()}`);
   }
 
   try {
@@ -105,7 +78,7 @@ async function openSubtitlesFetch(
   }
 }
 
-async function authenticateOpenSubtitles(forceRefresh: boolean = false) {
+async function authenticate(forceRefresh: boolean = false) {
   if (cachedToken && !forceRefresh) {
     return cachedToken;
   }
@@ -114,7 +87,7 @@ async function authenticateOpenSubtitles(forceRefresh: boolean = false) {
     return pendingAuthPromise;
   }
 
-  pendingAuthPromise = performOpenSubtitlesLogin();
+  pendingAuthPromise = login();
 
   try {
     return await pendingAuthPromise;
@@ -123,10 +96,10 @@ async function authenticateOpenSubtitles(forceRefresh: boolean = false) {
   }
 }
 
-async function performOpenSubtitlesLogin() {
+async function login() {
   const elapsedSinceLastAttempt = Date.now() - lastAuthAttemptAt;
   if (elapsedSinceLastAttempt < OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS) {
-    await sleep(OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS - elapsedSinceLastAttempt);
+    await delay(OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS - elapsedSinceLastAttempt);
   }
 
   lastAuthAttemptAt = Date.now();
@@ -143,7 +116,7 @@ async function performOpenSubtitlesLogin() {
     { requireAuth: false },
   );
   const payload = (await readJsonSafely(response)) as
-    | Partial<OpenSubtitlesLoginResponse>
+    | Partial<OpenSubtitlesLoginPayload>
     | string
     | null;
 
@@ -153,17 +126,15 @@ async function performOpenSubtitlesLogin() {
     typeof payload !== "object" ||
     typeof payload.token !== "string"
   ) {
-    const diagnostic = {
+    console.error("[opensubtitles] authentication failed", {
       status: response.status,
       statusText: response.statusText,
       apiBaseUrl: env.OPENSUBTITLES_API_BASE_URL,
       hasApiKey: Boolean(env.OPENSUBTITLES_API_KEY),
       hasUsername: Boolean(env.OPENSUBTITLES_USERNAME),
       hasPassword: Boolean(env.OPENSUBTITLES_PASSWORD),
-      payload: summarizeOpenSubtitlesPayload(payload),
-    };
-
-    console.error("[media-analysis] OpenSubtitles authentication failed", diagnostic);
+      payload: summarizePayload(payload),
+    });
 
     throw new Error("Failed to authenticate with OpenSubtitles.");
   }
@@ -172,23 +143,21 @@ async function performOpenSubtitlesLogin() {
   return cachedToken;
 }
 
-function applySearchCriteria(params: URLSearchParams, criteria: OpenSubtitlesSearchCriteria) {
+function buildSearchParams(criteria: OpenSubtitlesSearchCriteria) {
+  const params = new URLSearchParams();
+
   if (criteria.type) {
     params.set("type", criteria.type);
   }
-
   if (criteria.tmdbId !== undefined) {
     params.set("tmdb_id", String(criteria.tmdbId));
   }
-
   if (criteria.query) {
     params.set("query", criteria.query);
   }
-
   if (criteria.seasonNumber !== undefined) {
     params.set("season_number", String(criteria.seasonNumber));
   }
-
   if (criteria.episodeNumber !== undefined) {
     params.set("episode_number", String(criteria.episodeNumber));
   }
@@ -197,79 +166,38 @@ function applySearchCriteria(params: URLSearchParams, criteria: OpenSubtitlesSea
   params.set("order_by", "download_count");
   params.set("order_direction", "desc");
 
-  if (criteria.hearingImpaired === "only") {
-    params.set("hearing_impaired", "only");
-  } else if (criteria.hearingImpaired === "exclude") {
-    params.set("hearing_impaired", "exclude");
+  if (criteria.hearingImpaired === "only" || criteria.hearingImpaired === "exclude") {
+    params.set("hearing_impaired", criteria.hearingImpaired);
   }
-
-  if (criteria.foreignPartsOnly === "only") {
-    params.set("foreign_parts_only", "only");
-  } else if (criteria.foreignPartsOnly === "exclude") {
-    params.set("foreign_parts_only", "exclude");
+  if (criteria.foreignPartsOnly === "only" || criteria.foreignPartsOnly === "exclude") {
+    params.set("foreign_parts_only", criteria.foreignPartsOnly);
   }
-
   if (criteria.page !== undefined) {
     params.set("page", String(criteria.page));
   }
+
+  return params;
 }
 
-export async function searchOpenSubtitles(criteria: OpenSubtitlesSearchCriteria) {
-  const params = new URLSearchParams();
-  applySearchCriteria(params, criteria);
-
-  const response = await openSubtitlesFetch(`/subtitles?${params.toString()}`);
-  const payload = (await readJsonSafely(response)) as
-    | {
-        data?: Array<{
-          id?: string | number;
-          attributes?: {
-            language?: string;
-            release?: string;
-            download_count?: number;
-            hearing_impaired?: boolean | null;
-            files?: Array<{ file_id?: number; file_name?: string }>;
-            feature_details?: {
-              season_number?: number | null;
-              episode_number?: number | null;
-            };
-          };
-        }>;
-      }
-    | string
-    | null;
-
-  if (response.status === 401) {
-    cachedToken = null;
-  }
-
-  if (!response.ok || !payload || typeof payload !== "object") {
-    throw new Error("Failed to search OpenSubtitles subtitles.");
-  }
-
+function toSubtitleResults(payload: OpenSubtitlesSearchPayload): OpenSubtitlesSubtitleResult[] {
   const results: OpenSubtitlesSubtitleResult[] = [];
 
   for (const item of payload.data ?? []) {
     const attributes = item.attributes ?? {};
     const files = Array.isArray(attributes.files) ? attributes.files : [];
 
-    for (const rawFile of files) {
-      if (!rawFile || typeof rawFile !== "object") {
+    for (const file of files) {
+      if (!file || typeof file !== "object") {
         throw new Error("Invalid OpenSubtitles file payload.");
       }
-      const rawFileRecord = rawFile as Record<string, unknown>;
-      if (typeof rawFileRecord.file_id !== "number") {
+      if (typeof file.file_id !== "number") {
         throw new Error("OpenSubtitles file payload is missing file_id.");
       }
-      const file = {
-        fileId: rawFileRecord.file_id,
-        fileName: typeof rawFileRecord.file_name === "string" ? rawFileRecord.file_name : null,
-      };
 
       results.push({
         subtitleId: item.id !== undefined ? String(item.id) : null,
-        fileId: file.fileId,
-        fileName: file.fileName,
+        fileId: file.file_id,
+        fileName: typeof file.file_name === "string" ? file.file_name : null,
         language: typeof attributes.language === "string" ? attributes.language : null,
         release: typeof attributes.release === "string" ? attributes.release : null,
         downloadCount:
@@ -291,12 +219,29 @@ export async function searchOpenSubtitles(criteria: OpenSubtitlesSearchCriteria)
   return results;
 }
 
-export async function getOpenSubtitlesDownloadLink(fileId: number) {
+export async function searchOpenSubtitles(criteria: OpenSubtitlesSearchCriteria) {
+  const response = await openSubtitlesFetch(`/subtitles?${buildSearchParams(criteria).toString()}`);
+  const payload = (await readJsonSafely(response)) as OpenSubtitlesSearchPayload | string | null;
+
+  if (response.status === 401) {
+    cachedToken = null;
+  }
+
+  if (!response.ok || !payload || typeof payload !== "object") {
+    throw new Error("Failed to search OpenSubtitles subtitles.");
+  }
+
+  return toSubtitleResults(payload);
+}
+
+export async function getOpenSubtitlesDownloadLink(
+  fileId: number,
+): Promise<OpenSubtitlesDownloadLink> {
   const response = await openSubtitlesFetch("/download", {
     method: "POST",
     body: JSON.stringify({ file_id: fileId }),
   });
-  const payload = (await readJsonSafely(response)) as OpenSubtitlesDownloadResponse | string | null;
+  const payload = (await readJsonSafely(response)) as OpenSubtitlesDownloadPayload | string | null;
 
   if (!response.ok || !payload || typeof payload !== "object" || typeof payload.link !== "string") {
     throw new Error("Failed to request an OpenSubtitles download link.");

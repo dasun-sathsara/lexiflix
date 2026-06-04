@@ -21,9 +21,9 @@ import type {
 } from "@/features/settings/types";
 import { requireSession } from "@/lib/auth/guards";
 import { auth } from "@/lib/auth/server";
+import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/integrations/storage/r2";
-import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/server/content-generation/contracts";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
 

@@ -3,11 +3,11 @@ import "server-only";
 import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { env } from "@/lib/config/env";
 import type { SpeechArtifactTarget } from "@/lib/server/content-generation/contracts";
-import { delay } from "@/lib/server/content-generation/providers/speech/helpers";
 import type {
   ActiveSpeechProviderConfig,
   SpeechSynthesisAdapter,
 } from "@/lib/server/content-generation/providers/speech/port";
+import { delay } from "@/lib/server/utils/async";
 
 type AwsPollyConfig = Extract<ActiveSpeechProviderConfig, { provider: "aws-polly" }>;
 

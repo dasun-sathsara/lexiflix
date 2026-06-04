@@ -28,6 +28,13 @@ export const VOCABULARY_KINDS = [
   "slang",
 ] as const satisfies readonly StoredVocabularyKind[];
 
+/** Multi-word kinds owned by the analysis LLM; single words come from the NLP service. */
+export const PHRASE_VOCABULARY_KINDS = [
+  "phrasal_verb",
+  "idiom",
+  "slang",
+] as const satisfies readonly StoredVocabularyKind[];
+
 export const VOCABULARY_KIND_LABELS: Record<StoredVocabularyKind, string> = {
   word: "Words",
   phrasal_verb: "Phrasal verbs",
@@ -46,6 +53,10 @@ export const RECENT_VISIBLE_JOB_LIMIT = 8;
 export const TEXT_BATCH_SIZE = 8;
 export const TEXT_CONCURRENCY = 2;
 export const IMAGE_REQUEST_DELAY_MS = 10_000;
+export const ESTIMATED_STUDY_MINUTES_PER_PACK_ITEM = 1.5;
+/** Fallbacks for the optional Azure AI Foundry deployment env vars. */
+export const DEFAULT_AZURE_FOUNDRY_TEXT_MODEL = "gpt-5.6-luna";
+export const DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL = "gpt-image-2";
 
 // -----------------------------------------------------------------------------
 // Settings & Preferences Defaults & Options
@@ -125,6 +136,13 @@ export const FAST_RESPONSE_EXTRA_ITEMS = 2;
 export const MEDIA_ANALYSIS_PIPELINE_VERSION = "media-analysis-v1";
 export const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 export const OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS = 1_100;
+export const SUBTITLE_SEARCH_MAX_PAGES = 3;
+export const SUBTITLE_CHUNK_MAX_DURATION_SECONDS = 1_800;
+export const SUBTITLE_CHUNK_MAX_CHARACTERS = 30_000;
+export const NLP_ANALYSIS_BATCH_SIZE = 200;
+export const ANALYSIS_LLM_CONCURRENCY = 4;
+export const MAX_CONTEXTS_PER_ANALYSIS_ITEM = 5;
+export const ANALYSIS_ITEM_INSERT_CHUNK_SIZE = 200;
 
 // -----------------------------------------------------------------------------
 // Admin & UI Layout Constants

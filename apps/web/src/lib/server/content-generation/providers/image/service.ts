@@ -10,17 +10,31 @@ import type {
   ImageGenerationAdapter,
   ImageGenerationProviderConfig,
 } from "@/lib/server/content-generation/providers/image/port";
+import { delay } from "@/lib/server/utils/async";
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export type ImageArtifactsResult = {
+  artifacts: GeneratedBinaryArtifact[];
+  warnings: string[];
+};
+
+type ImageEligibleItem = GeneratedTextItem & { imageBrief: string };
+
+/**
+ * Images are only worth generating for items the text model marked as concrete and
+ * described with a usable visual brief.
+ */
+export function selectImageEligibleItems(textItems: GeneratedTextItem[]): ImageEligibleItem[] {
+  return textItems.filter((item): item is ImageEligibleItem =>
+    Boolean(item.imageEligibility.eligible && item.imageBrief?.trim()),
+  );
+}
 
 export async function generateImageArtifactsWithAdapter(input: {
   textItems: GeneratedTextItem[];
   config: ImageGenerationProviderConfig;
   adapter: ImageGenerationAdapter;
-}): Promise<{ artifacts: GeneratedBinaryArtifact[]; warnings: string[] }> {
-  const eligibleItems = input.textItems.filter(
-    (item) => item.imageEligibility.eligible && Boolean(item.imageBrief?.trim()),
-  );
+}): Promise<ImageArtifactsResult> {
+  const eligibleItems = selectImageEligibleItems(input.textItems);
 
   logger.info("[content-generation:image] started", {
     provider: input.adapter.provider,
@@ -48,7 +62,7 @@ export async function generateImageArtifactsWithAdapter(input: {
     );
 
     try {
-      const result = await input.adapter.generate({ prompt: item.imageBrief as string });
+      const result = await input.adapter.generate({ prompt: item.imageBrief });
       artifacts.push({
         itemKey: item.analysisItemId,
         bytes: result.bytes,

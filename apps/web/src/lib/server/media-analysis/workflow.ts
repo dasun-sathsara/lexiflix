@@ -1,67 +1,32 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
-import { eq, sql } from "drizzle-orm";
-import { env } from "@/lib/config/env";
+import { eq } from "drizzle-orm";
+import { MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/constants";
+import { analyzeWithNlpService } from "@/lib/integrations/nlp-service/client";
 import { db } from "@/lib/server/db";
-import type {
-  ContentAnalysisSummary,
-  NlpCandidateContext,
-  StoredCefrLevel,
-  StoredVocabularyKind,
-} from "@/lib/server/db/json-contracts";
+import type { ContentAnalysisSummary } from "@/lib/server/db/json-contracts";
+import { content, contentAnalysisRun } from "@/lib/server/db/schema";
+import { mergeAnalysisItems } from "@/lib/server/media-analysis/merge";
+import { persistAnalysisRunOutput } from "@/lib/server/media-analysis/persistence";
+import { extractSubtitlePhrases } from "@/lib/server/media-analysis/providers/analysis-llm";
 import {
-  content,
-  contentAnalysisItem,
-  contentAnalysisRun,
-  contentAnalysisRunEvent,
-} from "@/lib/server/db/schema";
-import { analyzeChunkWithAzureFoundry } from "@/lib/server/media-analysis/azure-foundry-analysis";
-import {
-  type ContentAnalysisStage,
-  cefrNumericFromLevel,
-  MEDIA_ANALYSIS_PIPELINE_VERSION,
-} from "@/lib/server/media-analysis/contracts";
-import { analyzeChunkWithGemini } from "@/lib/server/media-analysis/gemini-analysis";
-import { analyzeWithNlpService } from "@/lib/server/media-analysis/nlp-service";
-import { recordContentAnalysisRunTransition } from "@/lib/server/media-analysis/runs";
-import {
-  buildPlainTextCorpus,
-  buildSubtitleChunks,
-  buildSubtitleCorpus,
-  type SubtitleLine,
-} from "@/lib/server/media-analysis/subtitle-processing";
-import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
+  type ContentAnalysisRunRow,
+  recordContentAnalysisRunTransition,
+} from "@/lib/server/media-analysis/runs";
+import { buildSubtitleChunks } from "@/lib/server/media-analysis/subtitles/chunks";
+import { buildSubtitleCorpus } from "@/lib/server/media-analysis/subtitles/corpus";
+import { buildPlainTextCorpus } from "@/lib/server/media-analysis/subtitles/parse";
+import { buildAnalysisSummary } from "@/lib/server/media-analysis/summary";
 
 type ContentRow = typeof content.$inferSelect;
-type ContentAnalysisRunRow = typeof contentAnalysisRun.$inferSelect;
 
-type WorkflowRunContext = {
+type RunContext = {
   run: ContentAnalysisRunRow;
   content: ContentRow;
 };
 
-type WorkflowAnalysisItem = {
-  kind: StoredVocabularyKind;
-  normalizedText: string;
-  lemma: string | null;
-  displayText: string;
-  partOfSpeech: string | null;
-  /** Term-catalog CEFR (same value as run-item CEFR for current pipelines). */
-  cefrLevel: StoredCefrLevel | null;
-  cefrNumeric: number | null;
-  notes: string | null;
-  analysisSource: "nlp" | "analysis_llm";
-  surfaceForm: string;
-  representativeContext: string | null;
-  contexts: NlpCandidateContext[];
-  occurrenceCount: number;
-  frequencyRank: number | null;
-};
-
-type PersistedAnalysisItem = typeof contentAnalysisItem.$inferInsert;
-
-type WorkflowResult = {
+export type MediaAnalysisWorkflowResult = {
   runId: string;
   contentId: string;
   status: "completed";
@@ -70,82 +35,9 @@ type WorkflowResult = {
   itemCount: number;
 };
 
-const MAX_CONTEXTS_PER_ITEM = 5;
-
-function normalizeTermText(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, "")
-    .replace(/\s+/g, " ");
-}
-
-function averageCefrLevel(levels: number[]) {
-  if (levels.length === 0) {
-    return null;
-  }
-
-  const average = levels.reduce((sum, value) => sum + value, 0) / levels.length;
-  const rounded = Math.min(6, Math.max(1, Math.round(average)));
-
-  switch (rounded) {
-    case 1:
-      return "A1";
-    case 2:
-      return "A2";
-    case 3:
-      return "B1";
-    case 4:
-      return "B2";
-    case 5:
-      return "C1";
-    case 6:
-      return "C2";
-    default:
-      return null;
-  }
-}
-
-function normalizeContextEntry(context: unknown): string | null {
-  if (typeof context === "string") {
-    return context.trim() || null;
-  }
-  if (context && typeof context === "object" && "text" in context) {
-    const text = (context as { text: unknown }).text;
-    return typeof text === "string" ? text.trim() || null : null;
-  }
-  return null;
-}
-
-function dedupeContexts(contexts: unknown[]): NlpCandidateContext[] {
-  const unique: NlpCandidateContext[] = [];
-  const seen = new Set<string>();
-
-  for (const context of contexts) {
-    const normalized = normalizeContextEntry(context);
-    if (!normalized || seen.has(normalized)) {
-      continue;
-    }
-
-    seen.add(normalized);
-    unique.push(normalized);
-
-    if (unique.length >= MAX_CONTEXTS_PER_ITEM) {
-      break;
-    }
-  }
-
-  return unique;
-}
-
-async function getRunContext(runId: string): Promise<WorkflowRunContext> {
+async function getRunContext(runId: string): Promise<RunContext> {
   const [row] = await db
-    .select({
-      run: contentAnalysisRun,
-      content,
-    })
+    .select({ run: contentAnalysisRun, content })
     .from(contentAnalysisRun)
     .innerJoin(content, eq(contentAnalysisRun.contentId, content.id))
     .where(eq(contentAnalysisRun.id, runId))
@@ -158,392 +50,12 @@ async function getRunContext(runId: string): Promise<WorkflowRunContext> {
   return row;
 }
 
-function createWorkflowItemKey(kind: StoredVocabularyKind, normalizedText: string) {
-  return `${kind}:${normalizedText}`;
-}
-
-function mergeWorkflowItem(target: WorkflowAnalysisItem, incoming: WorkflowAnalysisItem) {
-  target.occurrenceCount += incoming.occurrenceCount;
-  target.contexts = dedupeContexts([...target.contexts, ...incoming.contexts]);
-  target.representativeContext ??= incoming.representativeContext;
-  target.cefrLevel ??= incoming.cefrLevel;
-  target.cefrNumeric ??= incoming.cefrNumeric;
-  target.notes ??= incoming.notes;
-}
-
-function createNlpWorkflowItems(
-  response: Awaited<ReturnType<typeof analyzeWithNlpService>>,
-): WorkflowAnalysisItem[] {
-  const items: WorkflowAnalysisItem[] = [];
-
-  for (const candidate of response.candidates) {
-    const normalizedText = normalizeTermText(candidate.lemma || candidate.text);
-    if (!normalizedText) {
-      continue;
-    }
-
-    const contexts = dedupeContexts(candidate.contexts);
-    const cefrLevel = candidate.cefr_level ?? null;
-    const cefrNumeric = cefrNumericFromLevel(cefrLevel);
-    items.push({
-      kind: "word",
-      normalizedText,
-      lemma: normalizeTermText(candidate.lemma) || candidate.lemma,
-      displayText: candidate.lemma || candidate.text,
-      partOfSpeech: candidate.type,
-      cefrLevel,
-      cefrNumeric,
-      notes: null,
-      analysisSource: "nlp",
-      surfaceForm: candidate.text,
-      representativeContext: contexts[0] ?? null,
-      contexts,
-      occurrenceCount: candidate.count,
-      frequencyRank: null,
-    });
-  }
-
-  return items;
-}
-
-type AnalyzeChunkLlmResponse =
-  | Awaited<ReturnType<typeof analyzeChunkWithGemini>>
-  | Awaited<ReturnType<typeof analyzeChunkWithAzureFoundry>>;
-
-function createLlmWorkflowItems(response: AnalyzeChunkLlmResponse): WorkflowAnalysisItem[] {
-  const items: WorkflowAnalysisItem[] = [];
-
-  for (const item of response.items) {
-    const normalizedText = normalizeTermText(item.text);
-    if (!normalizedText) {
-      continue;
-    }
-
-    const contexts = dedupeContexts(item.contexts);
-    const cefrLevel = item.cefrLevel ?? null;
-    const cefrNumeric = item.cefrNumeric ?? cefrNumericFromLevel(cefrLevel);
-    items.push({
-      kind: item.kind,
-      normalizedText,
-      lemma: normalizedText,
-      displayText: item.displayText,
-      partOfSpeech: null,
-      cefrLevel,
-      cefrNumeric,
-      notes: item.rationale ?? null,
-      analysisSource: "analysis_llm",
-      surfaceForm: item.displayText,
-      representativeContext: item.representativeContext ?? contexts[0] ?? null,
-      contexts,
-      occurrenceCount: 1,
-      frequencyRank: null,
-    });
-  }
-
-  return items;
-}
-
-function mergeAnalysisItems(
-  nlpResponse: Awaited<ReturnType<typeof analyzeWithNlpService>>,
-  llmResponses: Array<AnalyzeChunkLlmResponse>,
-): {
-  items: WorkflowAnalysisItem[];
-  warnings: string[];
-} {
-  const warnings = [...nlpResponse.warnings];
-  const byKey = new Map<string, WorkflowAnalysisItem>();
-
-  for (const item of createNlpWorkflowItems(nlpResponse)) {
-    const key = createWorkflowItemKey(item.kind, item.normalizedText);
-    const existing = byKey.get(key);
-
-    if (existing) {
-      mergeWorkflowItem(existing, item);
-      continue;
-    }
-
-    byKey.set(key, { ...item });
-  }
-
-  for (const response of llmResponses) {
-    warnings.push(...response.warnings);
-
-    for (const item of createLlmWorkflowItems(response)) {
-      const key = createWorkflowItemKey(item.kind, item.normalizedText);
-      const existing = byKey.get(key);
-
-      if (existing) {
-        mergeWorkflowItem(existing, item);
-        continue;
-      }
-
-      byKey.set(key, { ...item });
-    }
-  }
-
-  const items = [...byKey.values()].sort((left, right) => {
-    if (left.occurrenceCount !== right.occurrenceCount) {
-      return right.occurrenceCount - left.occurrenceCount;
-    }
-
-    if (left.kind !== right.kind) {
-      return left.kind.localeCompare(right.kind);
-    }
-
-    return left.normalizedText.localeCompare(right.normalizedText);
-  });
-
-  for (const [index, item] of items.entries()) {
-    item.frequencyRank = index + 1;
-  }
-
-  return {
-    items,
-    warnings,
-  };
-}
-
-function buildSummary(
-  lines: SubtitleLine[],
-  nlpResponse: Awaited<ReturnType<typeof analyzeWithNlpService>>,
-  items: WorkflowAnalysisItem[],
-) {
-  const totalWordCount = buildPlainTextCorpus(lines)
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter(Boolean).length;
-  const uniqueLemmaCount = new Set(
-    nlpResponse.candidates
-      .map((candidate) => normalizeTermText(candidate.lemma || candidate.text))
-      .filter(Boolean),
-  ).size;
-  const kindCounts = items.reduce<Partial<Record<StoredVocabularyKind, number>>>((acc, item) => {
-    acc[item.kind] = (acc[item.kind] ?? 0) + 1;
-    return acc;
-  }, {});
-  const cefrDistribution = items.reduce<Partial<Record<StoredCefrLevel, number>>>((acc, item) => {
-    if (!item.cefrLevel) {
-      return acc;
-    }
-
-    acc[item.cefrLevel] = (acc[item.cefrLevel] ?? 0) + 1;
-    return acc;
-  }, {});
-  const cefrValues = items
-    .map((item) => item.cefrNumeric)
-    .filter((value): value is number => typeof value === "number");
-  const totalDurationSeconds =
-    lines.length > 0 ? lines[lines.length - 1].endSeconds - lines[0].startSeconds : 0;
-
-  return {
-    totalWordCount,
-    uniqueLemmaCount,
-    extractedItemCount: items.length,
-    selectableItemCount: items.length,
-    kindCounts,
-    cefrDistribution,
-    averageCefrLevel: averageCefrLevel(cefrValues),
-    speechRateWpm:
-      totalDurationSeconds > 0 ? Math.round((totalWordCount / totalDurationSeconds) * 60) : null,
-    subtitleLineCount: lines.length,
-  } satisfies ContentAnalysisSummary;
-}
-
-function buildVocabularyUpsertSql(items: WorkflowAnalysisItem[]) {
-  if (items.length === 0) {
-    return null;
-  }
-
-  const rowValues = items.map(
-    (item) =>
-      sql`(${sql`${item.kind}`}, ${sql`${item.normalizedText}`}, ${sql`${crypto.randomUUID()}`}, ${sql`${item.displayText}`}, ${sql`${item.lemma ?? null}`}, ${sql`${item.partOfSpeech ?? null}`}, ${sql`${item.cefrLevel ?? null}`}, ${sql`${item.cefrNumeric ?? null}`}, ${sql`${item.notes ?? null}`})`,
-  );
-
-  return sql<{ id: string; kind: StoredVocabularyKind; normalized_text: string }[]>`
-    INSERT INTO vocabulary_term (kind, normalized_text, id, display_text, lemma, part_of_speech, base_cefr_level, base_cefr_numeric, notes)
-    VALUES ${sql.join(rowValues, sql`, `)}
-    ON CONFLICT (kind, normalized_text)
-    DO UPDATE SET
-      display_text = excluded.display_text,
-      lemma = excluded.lemma,
-      part_of_speech = excluded.part_of_speech,
-      base_cefr_level = excluded.base_cefr_level,
-      base_cefr_numeric = excluded.base_cefr_numeric,
-      notes = excluded.notes
-    RETURNING id, kind, normalized_text`;
-}
-
-function mergePersistedAnalysisItem(
-  target: PersistedAnalysisItem,
-  incoming: PersistedAnalysisItem,
-): PersistedAnalysisItem {
-  return {
-    ...target,
-    occurrenceCount: (target.occurrenceCount ?? 0) + (incoming.occurrenceCount ?? 0),
-    representativeContext: target.representativeContext ?? incoming.representativeContext ?? null,
-    contexts: dedupeContexts([...(target.contexts ?? []), ...(incoming.contexts ?? [])]),
-    frequencyRank: target.frequencyRank ?? incoming.frequencyRank ?? null,
-    cefrLevel: target.cefrLevel ?? incoming.cefrLevel ?? null,
-    cefrNumeric: target.cefrNumeric ?? incoming.cefrNumeric ?? null,
-    cefrNote: target.cefrNote ?? incoming.cefrNote ?? null,
-    isSelectable: true,
-    filteredOutReason: null,
-  };
-}
-
-function dedupeAnalysisItemsByTermId(items: PersistedAnalysisItem[]) {
-  const byTermId = new Map<string, PersistedAnalysisItem>();
-
-  for (const item of items) {
-    const existing = byTermId.get(item.termId);
-
-    if (existing) {
-      byTermId.set(item.termId, mergePersistedAnalysisItem(existing, item));
-      continue;
-    }
-
-    byTermId.set(item.termId, item);
-  }
-
-  return [...byTermId.values()];
-}
-
-async function persistAnalysisOutput(input: {
-  context: WorkflowRunContext;
-  items: WorkflowAnalysisItem[];
-  warnings: string[];
-  summary: ContentAnalysisSummary;
-}) {
-  const completedAt = new Date();
-
-  try {
-    // Clear previous items for this run, then upsert terms when present.
-    await db
-      .delete(contentAnalysisItem)
-      .where(eq(contentAnalysisItem.analysisRunId, input.context.run.id));
-
-    const upsertSql = buildVocabularyUpsertSql(input.items);
-    const termIdByItemKey = new Map<string, string>();
-
-    if (upsertSql) {
-      const upsertResult = await db.execute<{
-        id: string;
-        kind: StoredVocabularyKind;
-        normalized_text: string;
-      }>(upsertSql);
-
-      for (const row of upsertResult.rows) {
-        termIdByItemKey.set(createWorkflowItemKey(row.kind, row.normalized_text), row.id);
-      }
-    }
-
-    const analysisItems = dedupeAnalysisItemsByTermId(
-      input.items.map((item) => {
-        const termId = termIdByItemKey.get(createWorkflowItemKey(item.kind, item.normalizedText));
-        if (!termId) {
-          throw new Error(`Missing term ID for ${item.kind}:${item.normalizedText}`);
-        }
-        return {
-          id: crypto.randomUUID(),
-          analysisRunId: input.context.run.id,
-          contentId: input.context.content.id,
-          termId,
-          analysisSource: item.analysisSource,
-          surfaceForm: item.surfaceForm,
-          representativeContext: item.representativeContext ?? null,
-          contexts: item.contexts ?? null,
-          occurrenceCount: item.occurrenceCount,
-          frequencyRank: item.frequencyRank ?? null,
-          cefrLevel: item.cefrLevel ?? null,
-          cefrNumeric: item.cefrNumeric ?? null,
-          cefrConfidence: null,
-          cefrNote: item.notes ?? null,
-          isSelectable: true,
-          filteredOutReason: null,
-          analyzedAt: completedAt,
-        };
-      }),
-    );
-
-    const finalize = [
-      db
-        .update(contentAnalysisRun)
-        .set({
-          status: "completed",
-          stage: "completed",
-          progressMessage: "Analysis completed.",
-          summary: input.summary,
-          warnings: input.warnings,
-          errorCode: null,
-          errorMessage: null,
-          completedAt,
-        })
-        .where(eq(contentAnalysisRun.id, input.context.run.id)),
-      db.insert(contentAnalysisRunEvent).values({
-        id: crypto.randomUUID(),
-        runId: input.context.run.id,
-        stage: "completed",
-        message: "Analysis completed.",
-        payload: {
-          itemCount: input.items.length,
-          warningCount: input.warnings.length,
-        },
-      }),
-    ];
-
-    if (analysisItems.length === 0) {
-      await db.batch([finalize[0], finalize[1]]);
-    } else {
-      const CHUNK_SIZE = 200;
-      const chunks = [];
-      for (let i = 0; i < analysisItems.length; i += CHUNK_SIZE) {
-        chunks.push(db.insert(contentAnalysisItem).values(analysisItems.slice(i, i + CHUNK_SIZE)));
-      }
-      // @ts-expect-error — TypeScript cannot prove the spread array has >=1 elements
-      await db.batch([...chunks, ...finalize]);
-    }
-  } catch (error) {
-    await transitionRun({
-      runId: input.context.run.id,
-      stage: "failed",
-      message: `Saving analysis failed: ${error instanceof Error ? error.message : String(error)}`,
-      progressMessage: "Saving analysis failed.",
-      warnings: input.warnings,
-    });
-    throw error;
-  }
-}
-
-async function transitionRun(input: {
-  runId: string;
-  stage: ContentAnalysisStage;
-  message: string;
-  payload?: Record<string, unknown>;
-  progressMessage?: string;
-  warnings?: string[];
-  startedAt?: Date | null;
-  completedAt?: Date | null;
-}) {
-  const stageStatus =
-    input.stage === "completed" ? "completed" : input.stage === "failed" ? "failed" : "running";
-
-  await recordContentAnalysisRunTransition({
-    runId: input.runId,
-    status: stageStatus,
-    stage: input.stage,
-    message: input.message,
-    payload: input.payload,
-    progressMessage: input.progressMessage,
-    startedAt: input.startedAt,
-    completedAt: input.completedAt,
-    warnings: input.warnings,
-  });
-}
-
-/** Orchestrate the full media analysis pipeline: subtitle fetch → NLP processing → Gemini enrichment → persistence. */
-export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowResult> {
+/** Orchestrates subtitle fetch, NLP analysis, LLM phrase extraction, merge and persistence. */
+export async function runMediaAnalysisWorkflow(
+  runId: string,
+): Promise<MediaAnalysisWorkflowResult> {
   const startedAt = new Date();
-  let context: WorkflowRunContext | null = null;
+  let context: RunContext | null = null;
 
   try {
     logger.info("[media-analysis] starting workflow", { runId });
@@ -563,7 +75,7 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       };
     }
 
-    await transitionRun({
+    await recordContentAnalysisRunTransition({
       runId,
       stage: "fetching_subtitles",
       message: "Fetching subtitles from OpenSubtitles.",
@@ -571,42 +83,38 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       startedAt,
     });
 
-    const subtitleCorpus = await buildSubtitleCorpus(context.content);
-    const plainTextCorpus = buildPlainTextCorpus(subtitleCorpus.lines);
-    const chunks = buildSubtitleChunks(subtitleCorpus.lines);
+    const corpus = await buildSubtitleCorpus(context.content);
+    const chunks = buildSubtitleChunks(corpus.lines);
+    const warnings = [...corpus.warnings];
 
     logger.info("[media-analysis] subtitles ready", {
       runId,
-      subtitleLineCount: subtitleCorpus.lines.length,
-      subtitleSourceCount: subtitleCorpus.sourceCount,
-      warningCount: subtitleCorpus.warnings.length,
-      plainTextCharacters: plainTextCorpus.length,
+      subtitleLineCount: corpus.lines.length,
+      subtitleSourceCount: corpus.sourceCount,
+      warningCount: corpus.warnings.length,
+      plainTextCharacters: buildPlainTextCorpus(corpus.lines).length,
       chunkCount: chunks.length,
     });
 
-    await transitionRun({
+    await recordContentAnalysisRunTransition({
       runId,
       stage: "running_nlp",
       message: "Running NLP analysis on normalized subtitles.",
       progressMessage: "Running subtitle NLP analysis...",
       payload: {
-        subtitleLineCount: subtitleCorpus.lines.length,
-        subtitleSourceCount: subtitleCorpus.sourceCount,
+        subtitleLineCount: corpus.lines.length,
+        subtitleSourceCount: corpus.sourceCount,
       },
-      warnings: subtitleCorpus.warnings,
+      warnings,
     });
 
     const nlpResponse = await analyzeWithNlpService({
       job_id: runId,
-      content: subtitleCorpus.rawSrtText,
+      content: corpus.rawSrtText,
       content_type: "srt",
       pipeline_version: MEDIA_ANALYSIS_PIPELINE_VERSION,
-      options: {
-        include_propn: false,
-        dedup_lines: true,
-        batch_size: 200,
-      },
     });
+    warnings.push(...nlpResponse.warnings);
 
     logger.info("[media-analysis] NLP service completed", {
       runId,
@@ -614,118 +122,86 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       warningCount: nlpResponse.warnings.length,
     });
 
-    await transitionRun({
+    await recordContentAnalysisRunTransition({
       runId,
       stage: "running_llm",
       message: "Running phrase extraction across subtitle chunks.",
-      progressMessage:
-        env.TEXT_LLM_PROVIDER === "azure-foundry"
-          ? "Analyzing subtitle phrases with Azure AI Foundry..."
-          : "Analyzing subtitle phrases with Gemini...",
-      payload: {
-        chunkCount: chunks.length,
-      },
-      warnings: [...subtitleCorpus.warnings, ...nlpResponse.warnings],
+      progressMessage: "Analyzing subtitle phrases...",
+      payload: { chunkCount: chunks.length },
+      warnings,
     });
 
-    const CONCURRENCY_LIMIT = 4;
-    logger.info(
-      env.TEXT_LLM_PROVIDER === "azure-foundry"
-        ? "[media-analysis] running concurrent Azure AI Foundry phrase extraction"
-        : "[media-analysis] running concurrent Gemini phrase extraction",
-      {
-        runId,
-        chunkCount: chunks.length,
-        concurrencyLimit: CONCURRENCY_LIMIT,
-      },
-    );
-
-    const settledResults = await mapWithConcurrency(chunks, CONCURRENCY_LIMIT, (chunk) =>
-      env.TEXT_LLM_PROVIDER === "azure-foundry"
-        ? analyzeChunkWithAzureFoundry({
-            chunkText: chunk.text,
-            chunkIndex: chunk.chunkIndex,
-            totalChunks: chunks.length,
-          })
-        : analyzeChunkWithGemini({
-            chunkText: chunk.text,
-            chunkIndex: chunk.chunkIndex,
-            totalChunks: chunks.length,
-          }),
-    );
-
-    const llmResponses: Array<AnalyzeChunkLlmResponse> = [];
-    const chunkFailures: string[] = [];
-
-    for (const [index, result] of settledResults.entries()) {
-      if (result.status === "fulfilled") {
-        llmResponses.push(result.value);
-      } else {
-        const errorMsg =
-          result.reason instanceof Error ? result.reason.message : String(result.reason);
-        logger.error("[media-analysis:llm] chunk extraction failed", {
-          runId,
-          chunkIndex: index,
-          error: errorMsg,
-        });
-        chunkFailures.push(`Chunk ${index + 1} analysis failed: ${errorMsg}`);
-      }
-    }
+    const llmResult = await extractSubtitlePhrases({ chunks });
+    warnings.push(...llmResult.warnings);
 
     logger.info("[media-analysis] phrase analysis completed", {
       runId,
-      chunkCount: llmResponses.length,
-      warningCount:
-        llmResponses.reduce((count, response) => count + response.warnings.length, 0) +
-        chunkFailures.length,
+      provider: llmResult.provider,
+      model: llmResult.model,
+      phraseCount: llmResult.phrases.length,
+      warningCount: llmResult.warnings.length,
     });
 
-    await transitionRun({
+    await recordContentAnalysisRunTransition({
       runId,
       stage: "merging_analysis",
       message: "Merging reusable vocabulary and phrase analysis.",
       progressMessage: "Merging analysis results...",
       payload: {
         nlpCandidateCount: nlpResponse.candidates.length,
-        llmChunkCount: llmResponses.length,
+        llmPhraseCount: llmResult.phrases.length,
       },
-      warnings: [...subtitleCorpus.warnings, ...nlpResponse.warnings, ...chunkFailures],
+      warnings,
     });
 
-    const merged = mergeAnalysisItems(nlpResponse, llmResponses);
-    const summary = buildSummary(subtitleCorpus.lines, nlpResponse, merged.items);
-    const warnings = [...subtitleCorpus.warnings, ...merged.warnings, ...chunkFailures];
+    const items = mergeAnalysisItems({ nlpResponse, phrases: llmResult.phrases });
+    const summary = buildAnalysisSummary({
+      lines: corpus.lines,
+      nlpCandidates: nlpResponse.candidates,
+      items,
+    });
 
     logger.info("[media-analysis] merged analysis", {
       runId,
-      itemCount: merged.items.length,
+      itemCount: items.length,
       warningCount: warnings.length,
       selectableItemCount: summary.selectableItemCount,
       totalWordCount: summary.totalWordCount,
     });
 
-    await transitionRun({
+    await recordContentAnalysisRunTransition({
       runId,
       stage: "saving_analysis",
       message: "Saving reusable analysis output.",
       progressMessage: "Saving reusable analysis...",
-      payload: {
-        itemCount: merged.items.length,
-      },
+      payload: { itemCount: items.length },
       warnings,
     });
 
-    await persistAnalysisOutput({
-      context,
-      items: merged.items,
-      warnings,
-      summary,
-    });
+    try {
+      await persistAnalysisRunOutput({
+        runId: context.run.id,
+        contentId: context.content.id,
+        items,
+        warnings,
+        summary,
+      });
+    } catch (error) {
+      await recordContentAnalysisRunTransition({
+        runId: context.run.id,
+        stage: "failed",
+        message: `Saving analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+        progressMessage: "Saving analysis failed.",
+        warnings,
+        completedAt: new Date(),
+      });
+      throw error;
+    }
 
     logger.info("[media-analysis] workflow completed", {
       runId: context.run.id,
       contentId: context.content.id,
-      itemCount: merged.items.length,
+      itemCount: items.length,
       warningCount: warnings.length,
     });
 
@@ -735,7 +211,7 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
       status: "completed",
       summary,
       warningCount: warnings.length,
-      itemCount: merged.items.length,
+      itemCount: items.length,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Media analysis workflow failed.";
@@ -749,14 +225,13 @@ export async function runMediaAnalysisWorkflow(runId: string): Promise<WorkflowR
     if (context) {
       await recordContentAnalysisRunTransition({
         runId: context.run.id,
-        status: "failed",
         stage: "failed",
         message,
         progressMessage: "Subtitle analysis could not be completed.",
         errorCode: "WORKFLOW_FAILED",
         errorMessage: message,
         completedAt: new Date(),
-        payload: { error },
+        payload: { error: message },
       });
     }
 

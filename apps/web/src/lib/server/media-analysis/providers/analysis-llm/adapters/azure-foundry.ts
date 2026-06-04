@@ -3,8 +3,8 @@ import "server-only";
 import { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { env } from "@/lib/config/env";
-import type { TextGenerationAdapter } from "@/lib/server/content-generation/providers/text/port";
-import { generatedTextBatchSchema } from "@/lib/server/content-generation/providers/text/schema";
+import type { AnalysisLlmAdapter } from "@/lib/server/media-analysis/providers/analysis-llm/port";
+import { analysisLlmResponseSchema } from "@/lib/server/media-analysis/providers/analysis-llm/schema";
 
 let openaiClient: AzureOpenAI | null = null;
 
@@ -29,19 +29,19 @@ function getOpenAIClient(deployment: string): AzureOpenAI {
   return openaiClient;
 }
 
-export function createAzureFoundryTextAdapter(): TextGenerationAdapter {
+export function createAzureFoundryAnalysisLlmAdapter(): AnalysisLlmAdapter {
   return {
     provider: "azure-foundry",
-    async generateBatch(request) {
+    async extractPhrases(request) {
       const response = await getOpenAIClient(request.model).chat.completions.create({
         model: request.model,
         messages: [{ role: "user", content: request.prompt }],
-        response_format: zodResponseFormat(generatedTextBatchSchema, "generatedTextBatch"),
+        response_format: zodResponseFormat(analysisLlmResponseSchema, "analysisLlmResponse"),
       });
 
       const text = response.choices[0]?.message?.content;
       if (!text) {
-        throw new Error("Azure AI Foundry returned empty content.");
+        return { items: [] };
       }
 
       return JSON.parse(text);

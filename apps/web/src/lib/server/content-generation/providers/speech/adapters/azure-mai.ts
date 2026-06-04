@@ -5,11 +5,11 @@ dns.setDefaultResultOrder("ipv4first");
 
 import { env } from "@/lib/config/env";
 import type { SpeechArtifactTarget } from "@/lib/server/content-generation/contracts";
-import { delay } from "@/lib/server/content-generation/providers/speech/helpers";
 import type {
   ActiveSpeechProviderConfig,
   SpeechSynthesisAdapter,
 } from "@/lib/server/content-generation/providers/speech/port";
+import { delay } from "@/lib/server/utils/async";
 
 type AzureMaiConfig = Extract<ActiveSpeechProviderConfig, { provider: "azure-mai" }>;
 

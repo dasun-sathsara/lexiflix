@@ -1,6 +1,8 @@
 import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
+import { CEFR_LEVELS } from "@/lib/constants";
+import { normalizeContextList } from "@/lib/domain/contexts";
 import type {
   GenerationRequestSnapshot,
   SelectedGenerationItem,
@@ -9,67 +11,59 @@ import { db } from "@/lib/server/db";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { contentAnalysisItem, userTermState, vocabularyTerm } from "@/lib/server/db/schema";
 
-const cefrOrder: StoredCefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
+type UserTermStateValue = "known" | "learning" | "ignored" | "unseen" | null;
 
-function normalizeContextList(raw: unknown): string[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  return raw
-    .map((entry) => {
-      if (typeof entry === "string") {
-        return entry.trim();
-      }
-      if (entry && typeof entry === "object" && "text" in entry) {
-        const text = (entry as { text: unknown }).text;
-        return typeof text === "string" ? text.trim() : "";
-      }
-      return "";
-    })
-    .filter(Boolean);
-}
+const KNOWN_TERM_PENALTY = 1_000_000;
+const UNRANKED_FREQUENCY_RANK = 999_999;
 
 function allowedLevels(
   level: StoredCefrLevel | null,
   mode: GenerationRequestSnapshot["cefrWindowMode"],
 ) {
   if (!level) {
-    return new Set(cefrOrder);
+    return new Set<StoredCefrLevel>(CEFR_LEVELS);
   }
-  const index = cefrOrder.indexOf(level);
+
+  const index = CEFR_LEVELS.indexOf(level);
+
   if (mode === "same_level") {
-    return new Set([level]);
+    return new Set<StoredCefrLevel>([level]);
   }
   if (mode === "one_level_above") {
-    return new Set(cefrOrder.slice(index, Math.min(index + 2, cefrOrder.length)));
+    return new Set<StoredCefrLevel>(
+      CEFR_LEVELS.slice(index, Math.min(index + 2, CEFR_LEVELS.length)),
+    );
   }
-  return new Set(cefrOrder.slice(index));
+
+  return new Set<StoredCefrLevel>(CEFR_LEVELS.slice(index));
 }
 
 function preferenceScore(
   item: SelectedGenerationItem,
   frequencyPreference: GenerationRequestSnapshot["frequencyPreference"],
 ) {
-  const frequencyRank = item.frequencyRank ?? 999_999;
+  const frequencyRank = item.frequencyRank ?? UNRANKED_FREQUENCY_RANK;
+
   if (frequencyPreference === "common_first") {
     return frequencyRank;
   }
   if (frequencyPreference === "challenge_first") {
-    const cefrIndex = item.cefrLevel ? cefrOrder.indexOf(item.cefrLevel) : -1;
+    const cefrIndex = item.cefrLevel ? CEFR_LEVELS.indexOf(item.cefrLevel) : -1;
     return cefrIndex * -10_000 + frequencyRank;
   }
+
   return frequencyRank - item.occurrenceCount * 5;
 }
 
 function knownTermPenalty(
-  termState: "known" | "learning" | "ignored" | "unseen" | null,
+  termState: UserTermStateValue,
   handling: GenerationRequestSnapshot["knownTermHandling"],
 ) {
   if (handling !== "downrank_known") {
     return 0;
   }
 
-  return termState === "known" ? 1_000_000 : 0;
+  return termState === "known" ? KNOWN_TERM_PENALTY : 0;
 }
 
 export async function selectGenerationItems(input: {
@@ -114,15 +108,14 @@ export async function selectGenerationItems(input: {
     input.requestSnapshot.learnerCefrLevel,
     input.requestSnapshot.cefrWindowMode,
   );
+
   const candidates = rows
     .filter((row) => !row.cefrLevel || levels.has(row.cefrLevel))
     .filter((row) => row.termState !== "ignored")
-    .filter((row) => {
-      if (input.requestSnapshot.knownTermHandling !== "exclude_known") {
-        return true;
-      }
-      return row.termState !== "known";
-    })
+    .filter(
+      (row) =>
+        input.requestSnapshot.knownTermHandling !== "exclude_known" || row.termState !== "known",
+    )
     .map((row) => ({
       analysisItemId: row.analysisItemId,
       termId: row.termId,
@@ -146,10 +139,8 @@ export async function selectGenerationItems(input: {
           knownTermPenalty(right.termState, input.requestSnapshot.knownTermHandling) ||
         preferenceScore(left, input.requestSnapshot.frequencyPreference) -
           preferenceScore(right, input.requestSnapshot.frequencyPreference);
-      if (scoreDelta !== 0) {
-        return scoreDelta;
-      }
-      return left.displayText.localeCompare(right.displayText);
+
+      return scoreDelta !== 0 ? scoreDelta : left.displayText.localeCompare(right.displayText);
     })
     .map<SelectedGenerationItem>(({ termState: _termState, ...item }) => item);
 
