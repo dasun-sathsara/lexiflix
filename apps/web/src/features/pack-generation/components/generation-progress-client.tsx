@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatRelativeTime } from "@/lib/primitives/dates";
+import { formatAbsoluteDate, formatRelativeTime } from "@/lib/primitives/dates";
 import { cn } from "@/lib/ui/cn";
 import { usePolling } from "@/lib/ui/hooks/use-polling";
 import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
@@ -18,14 +18,6 @@ import {
   getGenerationStatusMessage,
   isGenerationActive,
 } from "../utils";
-
-function formatDate(value: string | null) {
-  return value
-    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-        new Date(value),
-      )
-    : null;
-}
 
 function dedupeWarnings(warnings: string[]): { message: string; count: number }[] {
   const map = new Map<string, number>();
@@ -181,9 +173,18 @@ export function GenerationProgressClient({
             Timeline
           </p>
           <div className="space-y-2">
-            <MetaRow label="Created" value={formatDate(generation.createdAt) ?? "—"} />
-            <MetaRow label="Started" value={formatDate(generation.startedAt) ?? "—"} />
-            <MetaRow label="Completed" value={formatDate(generation.completedAt) ?? "—"} />
+            <MetaRow
+              label="Created"
+              value={formatAbsoluteDate(generation.createdAt, { timeStyle: "short" }) ?? "—"}
+            />
+            <MetaRow
+              label="Started"
+              value={formatAbsoluteDate(generation.startedAt, { timeStyle: "short" }) ?? "—"}
+            />
+            <MetaRow
+              label="Completed"
+              value={formatAbsoluteDate(generation.completedAt, { timeStyle: "short" }) ?? "—"}
+            />
           </div>
           <p className="text-xs text-muted-foreground/40 break-all pt-1">{generation.jobId}</p>
         </div>

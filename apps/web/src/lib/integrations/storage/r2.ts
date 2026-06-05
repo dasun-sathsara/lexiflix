@@ -1,3 +1,5 @@
+import "server-only";
+
 import { randomUUID } from "node:crypto";
 import {
   DeleteObjectCommand,
@@ -14,14 +16,6 @@ const ALLOWED_IMAGE_TYPES = new Map<string, string>([
   ["image/png", "png"],
   ["image/webp", "webp"],
 ]);
-
-function ensureServerOnly() {
-  if (typeof window !== "undefined") {
-    throw new Error("R2 storage helpers must only be imported on the server.");
-  }
-}
-
-ensureServerOnly();
 
 const r2Client = new S3Client({
   region: "auto",

@@ -146,11 +146,27 @@ The Pydantic response model and the Zod schema are maintained independently. The
 
 ---
 
-## Suggested sequencing
+## Resolution status (2026-07-28)
 
-1. **Correctness and safety first:** finding 1 (Zod at the packs action boundary), finding 10 (undocumented required env var, stale `apps/scripts`, stale test-suite claims).
-2. **Highest structural payoff:** findings 2, 3 and 4 — they are the same class of problem the recent refactor addressed (writes in read modules, a vendor client off-convention, duplicated mapping) and they are mostly mechanical.
-3. **Then:** findings 5–7 (form pattern, component decomposition, dispatch helper), each independently shippable.
-4. **Opportunistic:** findings 8, 9, 11–14 — bundle the one-liners into whatever change next touches the file, and add tests as the modules they cover get edited.
+All fourteen findings were remediated in the follow-up commit, except where noted.
 
-Findings 3 and 4 are the two I would do next if the goal is consistency with what was just landed.
+| # | Status | Notes |
+|---|--------|-------|
+| 1 | Fixed | actions.ts 646 → 399 lines; `lib/streak.ts`, `server/review-service.ts`, `server/term-state-service.ts`; Zod `safeParse` on every action returning the previous error strings |
+| 2 | Fixed | `curation/server/mutations.ts` and `notifications/server/mutations.ts`; both `queries.ts` are read-only with no compatibility re-exports |
+| 3 | Fixed | `tmdb/{certification,genres,mappers}.ts`; client has a timeout and Zod validation, detail schemas are loose so `content.tmdbRaw` still stores full payloads; Next caching retained |
+| 4 | Fixed | `media/lib/{href,analysis-view}.ts`, root `utils.ts` deleted; settings imports CEFR from `lib/domain/cefr` |
+| 5 | Fixed | `pack-generation-dialog.tsx` on react-hook-form + Zod, `"use client"` added; empty custom instructions still serialize to `null` |
+| 6 | Fixed | assessment 368 → 156 (+`use-assessment-flow`), admin-user-row 375 → 245, pack-staging 381 → 252 (+`use-pack-staging`), preferences card 498 → 57 (+2 sections), study-session-card 377 → 304 |
+| 7 | Fixed | `lib/server/trigger/dispatch.ts`, three call sites rewritten |
+| 8 | Fixed | `lib/domain/types.ts`; `constants.ts` and `lib/domain/*` no longer import from `lib/server/**` |
+| 9 | Fixed | `CONTENT_GENERATION_IMAGE_MODEL`, `CONTENT_GENERATION_LLM_PROVIDER`, `ANALYSIS_LLM_PROVIDER`, with the old names kept as deprecated fallbacks so existing Doppler/Vercel config keeps working |
+| 10 | Fixed | `apps/scripts` references removed; env lists completed in README and both AGENTS.md; test-suite claims corrected |
+| 11 | Fixed | New tests for chunking, merge, selection ranking, streak and study-time; suite is 143 tests across 14 files |
+| 12 | Partial | A committed JSON fixture is validated against `nlpAnalysisResponseSchema`, and the request payload defaults are asserted. The fixture is hand-maintained — generating it from the Python test suite is still open |
+| 13 | Fixed | `formatAbsoluteDate` in `lib/primitives/dates.ts`; alias re-exports, `packs/lib/format.ts` and the three dead exports removed; UI class strings moved to `lib/ui/settings-card.ts` |
+| 14 | Fixed except the index | r2 uses `server-only`; empty route dir deleted; media-scoped admin clears revalidate deck/dashboard/pack/study/media; assessment actions keep the `ActionResult` contract via `getSessionOrNull`; `study-time.ts` moved to `packs/lib/`. **Deferred:** the `contentAnalysisItem.isSelectable` partial index needs a Drizzle migration and database access, and the payoff is unmeasured at demo data volumes |
+
+Two adversarial reviews were run over the remediation. Regressions they caught and that are now fixed: empty custom instructions serializing as `""` instead of `null`, `requireSession()` breaking the assessment `ActionResult` contract, over-narrowed admin revalidation, `ZodError` escaping the pack actions instead of returning a result, strict TMDB schemas silently stripping fields destined for `tmdbRaw`, and the movie certification safety filter loosening from "any US rating" to "first US rating".
+
+Operational follow-up for the repo owner: the new env names are optional and fall back to the deprecated ones, so nothing breaks, but `CONTENT_GENERATION_LLM_PROVIDER`, `ANALYSIS_LLM_PROVIDER` and `CONTENT_GENERATION_IMAGE_MODEL` should be added to Doppler and Vercel before the deprecated names are removed.

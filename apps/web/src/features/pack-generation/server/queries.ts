@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { buildContentMediaHref } from "@/features/media/utils";
+import { buildContentMediaHref } from "@/features/media/lib/href";
 import { getGenerationStageCopy } from "@/features/pack-generation/utils";
 import { RECENT_VISIBLE_JOB_LIMIT } from "@/lib/constants";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";

@@ -4,14 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
+import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/domain/vocabulary";
 import { cn } from "@/lib/ui/cn";
+import { buildCefrDistributionEntries, getCefrColorClass } from "../lib/analysis-view";
 
-import {
-  buildCefrDistributionEntries,
-  GENERATION_VOCABULARY_TYPES,
-  getCefrColorClass,
-  VOCABULARY_TYPE_LABELS,
-} from "../lib/utils";
+const GENERATION_VOCABULARY_TYPES = VOCABULARY_KINDS;
+const VOCABULARY_TYPE_LABELS = VOCABULARY_KIND_LABELS;
 
 /**
  * Displays a grid of summary statistics for the media analysis.

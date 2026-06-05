@@ -1,4 +1,4 @@
-import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
+import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/mutations";
 import { DecksContent } from "@/features/packs/components/decks-content";
 import { computeDeckStats } from "@/features/packs/lib/deck-stats";
 import { getDeckSummariesForUser } from "@/features/packs/server/queries";

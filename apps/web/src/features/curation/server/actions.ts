@@ -9,7 +9,7 @@ import {
   setCuratedEntryLevel,
   setCuratedEntryPublishedState,
   upsertCuratedEntryFromTmdb,
-} from "@/features/curation/server/queries";
+} from "@/features/curation/server/mutations";
 import { requireAdmin } from "@/lib/auth/guards";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";

@@ -85,6 +85,7 @@ export function PasswordSettingsCard() {
               type="password"
               autoComplete="current-password"
               placeholder="••••••••"
+              aria-invalid={!!errors.currentPassword}
               {...register("currentPassword")}
             />
             {errors.currentPassword && (
@@ -100,6 +101,7 @@ export function PasswordSettingsCard() {
               type="password"
               autoComplete="new-password"
               placeholder="At least 8 characters"
+              aria-invalid={!!errors.newPassword}
               {...register("newPassword")}
             />
             {errors.newPassword && (
@@ -115,6 +117,7 @@ export function PasswordSettingsCard() {
               type="password"
               autoComplete="new-password"
               placeholder="Repeat your new password"
+              aria-invalid={!!errors.confirmPassword}
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (

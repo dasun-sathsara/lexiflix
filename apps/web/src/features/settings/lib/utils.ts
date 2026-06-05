@@ -1,18 +1,15 @@
-import type { CefrLevel } from "@/features/assessment/types";
 import type { SettingsTab } from "@/features/settings/types";
+import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
+import type { CefrLevel } from "@/lib/domain/cefr";
 import {
-  CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH,
-  STUDY_VOCABULARY_TYPES,
   SETTINGS_CARD_CLASS as settingsCardClass,
   SETTINGS_CARD_CONTENT_CLASS as settingsCardContentClass,
   SETTINGS_CARD_FOOTER_CLASS as settingsCardFooterClass,
   SETTINGS_CARD_HEADER_CLASS as settingsCardHeaderClass,
   SETTINGS_FIELD_CLASS as settingsFieldClass,
   SETTINGS_LABEL_CLASS as settingsLabelClass,
-  VOCABULARY_KIND_LABELS as vocabularyTypeLabels,
-} from "@/lib/constants";
+} from "@/lib/ui/settings-card";
 
-export { vocabularyTypeLabels, STUDY_VOCABULARY_TYPES };
 export { getInitials } from "@/lib/primitives/strings";
 
 export function toSettingsTab(value: string | null): SettingsTab {

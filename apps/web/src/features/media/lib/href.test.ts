@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContentMediaHref, getLanguageName } from "./utils";
+import { buildContentMediaHref, getLanguageName } from "./href";
 
 describe("buildContentMediaHref", () => {
   it("returns correct movie URL for a movie with tmdbMovieId", () => {

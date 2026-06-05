@@ -1,25 +1,9 @@
 import type { MediaAnalysisSnapshot } from "@/features/media/types";
 import { CEFR_LEVELS, getCefrColorClass } from "@/lib/domain/cefr";
-import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
+import type { StoredCefrLevel } from "@/lib/domain/types";
 import type { ContentAnalysisStage } from "@/lib/server/media-analysis/contracts";
 
 export { getCefrColorClass } from "@/lib/domain/cefr";
-export {
-  VOCABULARY_KIND_LABELS as VOCABULARY_TYPE_LABELS,
-  VOCABULARY_KINDS as GENERATION_VOCABULARY_TYPES,
-} from "@/lib/domain/vocabulary";
-
-/** Human-readable labels for analysis pipeline stages. */
-export const ANALYSIS_STAGE_LABELS: Record<ContentAnalysisStage, string> = {
-  queued: "Queued",
-  fetching_subtitles: "Fetching subtitles",
-  running_nlp: "Analyzing vocabulary",
-  running_llm: "Evaluating difficulty",
-  merging_analysis: "Building profile",
-  saving_analysis: "Saving results",
-  completed: "Complete",
-  failed: "Failed",
-};
 
 /** Pipeline steps shown during analysis in-progress view. */
 export const ANALYSIS_PIPELINE_STEPS: {
@@ -92,7 +76,7 @@ export function buildCefrDistributionEntries(snapshot: MediaAnalysisSnapshot) {
  * Calculates a fallback CEFR level for a media snapshot when a pre-calculated average
  * is missing, by determining the CEFR tier with the highest term count.
  */
-export function getFallbackContentLevel(snapshot: MediaAnalysisSnapshot): StoredCefrLevel | null {
+function getFallbackContentLevel(snapshot: MediaAnalysisSnapshot): StoredCefrLevel | null {
   const distribution = snapshot.summary?.cefrDistribution;
 
   if (!distribution) {

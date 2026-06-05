@@ -1,4 +1,4 @@
-import type { ContentMediaReference } from "./types";
+import type { ContentMediaReference } from "../types";
 
 export function buildContentMediaHref(
   row: ContentMediaReference,

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import {
   createPackFailedNotification,
   createPackReadyNotification,
-} from "@/features/notifications/server/queries";
+} from "@/features/notifications/server/mutations";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { env } from "@/lib/config/env";
 import { sendPackStatusEmail } from "@/lib/email/sender";

@@ -44,6 +44,7 @@ Current required server-side envs include:
 - `GOOGLE_CLOUD_API_KEY`
 - `TRIGGER_SECRET_KEY`
 - `NLP_SERVICE_BASE_URL`
+- `NLP_SERVICE_API_KEY`
 - `RESEND_API_KEY`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
@@ -54,9 +55,19 @@ Current required server-side envs include:
 - `AZURE_SPEECH_API_KEY` (when `CONTENT_GENERATION_AUDIO_PROVIDER=azure-mai`)
 - `AWS_POLLY_ACCESS_KEY_ID` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
 - `AWS_POLLY_SECRET_ACCESS_KEY` (when `CONTENT_GENERATION_AUDIO_PROVIDER=aws-polly`)
+- `AZURE_AI_FOUNDRY_ENDPOINT` (when either LLM provider is `azure-foundry`)
+- `AZURE_AI_FOUNDRY_API_KEY` (when either LLM provider is `azure-foundry`)
+- `AZURE_AI_FOUNDRY_MODEL` (when either LLM provider is `azure-foundry`)
 
 The web app also supports optional server-side tuning vars:
 
+- `CONTENT_GENERATION_LLM_PROVIDER` — LLM provider for pack text generation (`gemini` | `azure-foundry`, default: `gemini`)
+- `ANALYSIS_LLM_PROVIDER` — LLM provider for media-analysis phrase extraction (`gemini` | `azure-foundry`, default: `gemini`)
+- `CONTENT_GENERATION_TEXT_MODEL` — model name for text generation (default: `gemini-3.1-flash-lite`)
+- `ANALYSIS_LLM_MODEL` — model name for analysis LLM (default: `gemini-3.1-flash-lite`)
+- `CONTENT_GENERATION_IMAGE_ENABLED` — enable image generation (`true` | `false`, default: `false`)
+- `CONTENT_GENERATION_IMAGE_MODEL` — image model/deployment name (optional)
+- `TEXT_LLM_PROVIDER` — deprecated, use CONTENT_GENERATION_LLM_PROVIDER and ANALYSIS_LLM_PROVIDER
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`
@@ -154,12 +165,13 @@ Route files under `src/app` should stay thin: parse params and search params, re
 
 ## Validation Expectations
 
-There is no established test suite here yet. Do not pretend Vitest, Playwright, or CI coverage exists unless you add it.
+Unit tests exist: Vitest is configured (`vitest.config.ts`), and `pnpm test` runs colocated `*.test.ts` files covering pure logic and domain utilities. Coverage is partial, not comprehensive — there is no end-to-end or CI integration yet.
 
 For most changes, the minimum useful validation is:
 
 - `task web:typecheck`
 - `task web:lint`
+- `pnpm test` (from `apps/web`)
 - manual verification of the affected route or interaction in the browser
 
 If you skip validation because the environment is unavailable, say so explicitly.

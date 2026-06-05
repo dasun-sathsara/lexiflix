@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { PackGenerationProgressView } from "@/features/pack-generation/types";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import type { TMDBMediaType } from "@/lib/integrations/tmdb/contracts";
@@ -166,3 +167,20 @@ export type ContentMediaReference = {
   tmdbShowId: number | null;
   tmdbSeasonNumber: number | null;
 };
+
+// ── Generation dialog form schema ─────────────────────────────────────────────
+
+export const generationDialogSchema = z.object({
+  cefrWindowMode: z.enum(["same_level", "one_level_above", "all_levels_above"]),
+  knownTermHandling: z.enum(["exclude_known", "downrank_known", "include_known"]),
+  packSize: z.number().int().min(1, "Pack size must be at least 1"),
+  exampleSentenceCount: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  audioVoiceGender: z.enum(["female", "male"]),
+  imageEnabled: z.boolean(),
+  selectedVocabularyTypes: z
+    .array(z.enum(["word", "phrasal_verb", "idiom", "slang"]))
+    .min(1, "Select at least one vocabulary type."),
+  customInstructions: z.string().nullable(),
+});
+
+export type GenerationDialogInput = z.infer<typeof generationDialogSchema>;

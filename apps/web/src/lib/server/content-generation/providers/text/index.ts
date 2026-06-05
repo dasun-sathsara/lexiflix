@@ -11,7 +11,7 @@ import type { TextGenerationProviderConfig } from "@/lib/server/content-generati
 import { generateTextContentWithAdapter } from "@/lib/server/content-generation/providers/text/service";
 
 function getTextGenerationConfig(): TextGenerationProviderConfig {
-  switch (env.TEXT_LLM_PROVIDER) {
+  switch (env.CONTENT_GENERATION_LLM_PROVIDER) {
     case "gemini":
       return {
         provider: "gemini",

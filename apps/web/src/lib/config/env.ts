@@ -76,10 +76,19 @@ const serverSchema = z
       .string()
       .min(1, "CONTENT_GENERATION_TEXT_MODEL must not be empty")
       .default("gemini-3.1-flash-lite"),
-    TEXT_LLM_PROVIDER: z.enum(["gemini", "azure-foundry"]).default("gemini"),
+    /** @deprecated Use CONTENT_GENERATION_LLM_PROVIDER and ANALYSIS_LLM_PROVIDER instead. */
+    TEXT_LLM_PROVIDER: z.enum(["gemini", "azure-foundry"]).optional(),
+    /** LLM provider for pack text generation. Falls back to TEXT_LLM_PROVIDER, then "gemini". */
+    CONTENT_GENERATION_LLM_PROVIDER: z.enum(["gemini", "azure-foundry"]).optional(),
+    /** LLM provider for media-analysis phrase extraction. Falls back to TEXT_LLM_PROVIDER, then "gemini". */
+    ANALYSIS_LLM_PROVIDER: z.enum(["gemini", "azure-foundry"]).optional(),
     CONTENT_GENERATION_AUDIO_PROVIDER: z
       .enum(["disabled", "aws-polly", "azure-mai"])
       .default("azure-mai"),
+    /** @deprecated Use CONTENT_GENERATION_IMAGE_MODEL instead. */
+    CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).optional(),
+    /** Image model/deployment name for content generation. Falls back to CONTENT_GENERATION_IMAGE_PROVIDER. */
+    CONTENT_GENERATION_IMAGE_MODEL: z.string().min(1).optional(),
     AZURE_SPEECH_REGION: z.string().min(1).default("eastus2"),
     AZURE_SPEECH_API_KEY: z.string().min(1).optional(),
     AZURE_SPEECH_CONCURRENCY: z.coerce.number().int().positive().default(4),
@@ -97,7 +106,6 @@ const serverSchema = z
       .enum(["true", "false"])
       .default("false")
       .transform((value) => value === "true"),
-    CONTENT_GENERATION_IMAGE_PROVIDER: z.string().min(1).optional(),
     NLP_SERVICE_BASE_URL: z.url("NLP_SERVICE_BASE_URL must be a valid URL"),
     NLP_SERVICE_API_KEY: z.string().min(1, "NLP_SERVICE_API_KEY is required"),
     NLP_SERVICE_REQUEST_TIMEOUT_MS: z.coerce
@@ -135,30 +143,51 @@ const serverSchema = z
       });
     }
 
-    if (value.TEXT_LLM_PROVIDER === "azure-foundry") {
+    // Resolve effective LLM providers (new vars → deprecated TEXT_LLM_PROVIDER → "gemini")
+    const effectiveContentLlm =
+      value.CONTENT_GENERATION_LLM_PROVIDER ?? value.TEXT_LLM_PROVIDER ?? "gemini";
+    const effectiveAnalysisLlm = value.ANALYSIS_LLM_PROVIDER ?? value.TEXT_LLM_PROVIDER ?? "gemini";
+
+    const needsFoundryCredentials =
+      effectiveContentLlm === "azure-foundry" || effectiveAnalysisLlm === "azure-foundry";
+
+    if (needsFoundryCredentials) {
       if (!value.AZURE_AI_FOUNDRY_ENDPOINT) {
         context.addIssue({
           code: "custom",
           path: ["AZURE_AI_FOUNDRY_ENDPOINT"],
-          message: "AZURE_AI_FOUNDRY_ENDPOINT is required when TEXT_LLM_PROVIDER is azure-foundry",
+          message: "AZURE_AI_FOUNDRY_ENDPOINT is required when an LLM provider is azure-foundry",
         });
       }
       if (!value.AZURE_AI_FOUNDRY_API_KEY) {
         context.addIssue({
           code: "custom",
           path: ["AZURE_AI_FOUNDRY_API_KEY"],
-          message: "AZURE_AI_FOUNDRY_API_KEY is required when TEXT_LLM_PROVIDER is azure-foundry",
+          message: "AZURE_AI_FOUNDRY_API_KEY is required when an LLM provider is azure-foundry",
         });
       }
       if (!value.AZURE_AI_FOUNDRY_MODEL) {
         context.addIssue({
           code: "custom",
           path: ["AZURE_AI_FOUNDRY_MODEL"],
-          message: "AZURE_AI_FOUNDRY_MODEL is required when TEXT_LLM_PROVIDER is azure-foundry",
+          message: "AZURE_AI_FOUNDRY_MODEL is required when an LLM provider is azure-foundry",
         });
       }
     }
-  });
+  })
+  .transform((value) => ({
+    ...value,
+    // Canonical LLM provider fields resolved from new → deprecated → default
+    CONTENT_GENERATION_LLM_PROVIDER: (value.CONTENT_GENERATION_LLM_PROVIDER ??
+      value.TEXT_LLM_PROVIDER ??
+      "gemini") as "gemini" | "azure-foundry",
+    ANALYSIS_LLM_PROVIDER: (value.ANALYSIS_LLM_PROVIDER ?? value.TEXT_LLM_PROVIDER ?? "gemini") as
+      | "gemini"
+      | "azure-foundry",
+    // Canonical image model resolved from new → deprecated fallback
+    CONTENT_GENERATION_IMAGE_MODEL:
+      value.CONTENT_GENERATION_IMAGE_MODEL ?? value.CONTENT_GENERATION_IMAGE_PROVIDER ?? undefined,
+  }));
 
 const isServer = typeof window === "undefined";
 

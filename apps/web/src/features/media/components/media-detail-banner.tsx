@@ -11,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getCountryName, getLanguageName } from "@/features/media/lib/href";
 import type { MediaDetailPageData } from "@/features/media/types";
-import { getCountryName, getLanguageName } from "@/features/media/utils";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
-import { formatRuntime } from "../lib/utils";
+import { formatRuntime } from "../lib/analysis-view";
 
 export interface MediaDetailBannerProps {
   media: MediaDetailPageData["media"];

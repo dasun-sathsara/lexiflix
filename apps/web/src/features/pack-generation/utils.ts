@@ -109,10 +109,6 @@ export function getGenerationStageCopy(stage: ContentGenerationStage) {
   return stageCopy[stage];
 }
 
-export function getGenerationStatusCopy(status: GenerationStatus) {
-  return statusCopy[status];
-}
-
 export function isGenerationActive(status: GenerationStatus) {
   return status === "queued" || status === "running";
 }

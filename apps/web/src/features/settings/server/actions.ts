@@ -4,8 +4,6 @@ import { APIError } from "better-auth/api";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
-
-import { CEFR_LEVELS } from "@/features/assessment/types";
 import {
   FREQUENCY_PREFERENCES,
   GENERATION_AUDIO_VOICE_GENDERS,
@@ -23,6 +21,7 @@ import { requireSession } from "@/lib/auth/guards";
 import { auth } from "@/lib/auth/server";
 import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
 import type { ActionResult } from "@/lib/contracts/action-result";
+import { CEFR_LEVELS } from "@/lib/domain/cefr";
 import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/integrations/storage/r2";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";

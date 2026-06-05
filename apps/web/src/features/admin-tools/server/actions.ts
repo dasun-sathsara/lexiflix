@@ -62,6 +62,15 @@ async function resolveContentId(
   return row?.id ?? null;
 }
 
+/** Media-scoped clears affect deck, study, dashboard and media surfaces. */
+function revalidateMediaSurfaces() {
+  revalidatePath("/decks", "page");
+  revalidatePath("/dashboard", "page");
+  revalidatePath("/pack", "layout");
+  revalidatePath("/study", "layout");
+  revalidatePath("/media", "layout");
+}
+
 export async function clearDecksAndProgressAction(
   input: ScopedInput,
 ): Promise<ActionResult<{ message: string }>> {
@@ -122,7 +131,7 @@ export async function clearDecksAndProgressAction(
         await db.delete(packGenerationJob).where(eq(packGenerationJob.contentId, contentId));
       }
 
-      revalidatePath("/", "layout");
+      revalidateMediaSurfaces();
       return {
         ok: true,
         data: { message: "Successfully cleared decks and progress for this media." },
@@ -224,7 +233,7 @@ export async function clearAnalysisStateAction(
         await db.delete(contentAnalysisRun).where(eq(contentAnalysisRun.contentId, contentId));
       }
 
-      revalidatePath("/", "layout");
+      revalidateMediaSurfaces();
       return {
         ok: true,
         data: { message: "Successfully cleared analysis state and packs for this media." },

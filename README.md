@@ -17,8 +17,6 @@ The repository currently has two main application surfaces:
 - `apps/web` contains the Next.js application, UI, route handlers, auth, and database integration.
 - `apps/nlp_service` contains the Python NLP service that provides subtitle analysis to the workflow layer.
 
-There are also older and experimental scripts under `apps/scripts`. Those are useful reference material and pipeline experiments, but they are not the main product surface.
-
 ## Local Development
 
 The project uses a root `Taskfile.yml` so the normal development commands can be run from the repository root. For the web app, Doppler is the source of truth for local environment variables.
@@ -51,6 +49,7 @@ For `apps/web`, Doppler needs to provide the required server-side envs:
 - `GOOGLE_CLOUD_API_KEY`
 - `TRIGGER_SECRET_KEY`
 - `NLP_SERVICE_BASE_URL`
+- `NLP_SERVICE_API_KEY`
 - `RESEND_API_KEY`
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
@@ -68,8 +67,26 @@ AWS Polly credentials are required only when `CONTENT_GENERATION_AUDIO_PROVIDER=
 - `AWS_POLLY_ACCESS_KEY_ID`
 - `AWS_POLLY_SECRET_ACCESS_KEY`
 
+Azure AI Foundry credentials are required when either `CONTENT_GENERATION_LLM_PROVIDER` or `ANALYSIS_LLM_PROVIDER` is `azure-foundry`:
+
+- `AZURE_AI_FOUNDRY_ENDPOINT`
+- `AZURE_AI_FOUNDRY_API_KEY`
+- `AZURE_AI_FOUNDRY_MODEL`
+
 Optional tuning variables supported by the web app are:
 
+- `CONTENT_GENERATION_LLM_PROVIDER` — LLM provider for pack text generation (`gemini` | `azure-foundry`, default: `gemini`)
+- `ANALYSIS_LLM_PROVIDER` — LLM provider for media-analysis phrase extraction (`gemini` | `azure-foundry`, default: `gemini`)
+- `CONTENT_GENERATION_TEXT_MODEL` — model name for text generation (default: `gemini-3.1-flash-lite`)
+- `ANALYSIS_LLM_MODEL` — model name for analysis LLM (default: `gemini-3.1-flash-lite`)
+- `CONTENT_GENERATION_IMAGE_ENABLED` — enable image generation (`true` | `false`, default: `false`)
+- `CONTENT_GENERATION_IMAGE_MODEL` — image model/deployment name (optional)
+- `TEXT_LLM_PROVIDER` — deprecated, use the two provider vars above
+- `CONTENT_GENERATION_IMAGE_PROVIDER` — deprecated, use `CONTENT_GENERATION_IMAGE_MODEL`
+- `AWS_POLLY_REGION`
+- `AWS_POLLY_ENGINE`
+- `AWS_POLLY_CONCURRENCY`
+- `AWS_POLLY_MAX_RETRIES`
 - `OPENSUBTITLES_API_BASE_URL`
 - `OPENSUBTITLES_REQUEST_TIMEOUT_MS`
 - `NLP_SERVICE_REQUEST_TIMEOUT_MS`

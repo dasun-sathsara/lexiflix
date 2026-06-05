@@ -1,5 +1,5 @@
 import { VOCABULARY_KIND_LABELS, VOCABULARY_KINDS } from "@/lib/constants";
-import type { StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import type { StoredVocabularyKind } from "@/lib/domain/types";
 
 export { VOCABULARY_KINDS, VOCABULARY_KIND_LABELS };
 export function formatVocabularyKindLabel(kind: StoredVocabularyKind) {

@@ -4,26 +4,9 @@ import { Ban, Gauge, Loader2, MoreHorizontal, UserRoundCheck } from "lucide-reac
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,14 +14,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  setUserGenerationLimitAction,
-  setUserSuspendedAction,
-} from "@/features/admin-users/server/actions";
+import { setUserSuspendedAction } from "@/features/admin-users/server/actions";
 import type { AdminUserRow as AdminUserRowData } from "@/features/admin-users/types";
+import { formatAbsoluteDate } from "@/lib/primitives/dates";
 import { cn } from "@/lib/ui/cn";
+
+import { AdminUserLimitDialog } from "./admin-user-limit-dialog";
+import { AdminUserSuspendDialog } from "./admin-user-suspend-dialog";
 
 function getInitials(name: string) {
   return name
@@ -47,14 +29,6 @@ function getInitials(name: string) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
 }
 
 interface AdminUserRowProps {
@@ -67,8 +41,6 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
   const [isPending, startTransition] = useTransition();
   const [limitDialogOpen, setLimitDialogOpen] = useState(false);
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
-  const [reason, setReason] = useState("");
-  const [limit, setLimit] = useState(user.generationLimit?.toString() ?? "");
 
   const isCurrentUser = user.id === currentAdminId;
   const isProtected = isCurrentUser || user.role === "admin";
@@ -79,13 +51,13 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
         ? 100
         : Math.min(100, (user.generationCount / user.generationLimit) * 100);
 
-  function updateSuspension(suspended: boolean) {
+  function reactivateUser() {
     startTransition(async () => {
       try {
         const result = await setUserSuspendedAction({
           userId: user.id,
-          suspended,
-          reason: reason.trim() || undefined,
+          suspended: false,
+          reason: undefined,
         });
 
         if (!result.ok) {
@@ -93,42 +65,10 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
           return;
         }
 
-        setSuspendDialogOpen(false);
-        setReason("");
-        toast.success(suspended ? "Account disabled" : "Account reactivated");
+        toast.success("Account reactivated");
         router.refresh();
       } catch {
         toast.error("Could not update this account.");
-      }
-    });
-  }
-
-  function saveLimit() {
-    const trimmed = limit.trim();
-    const parsedLimit = trimmed === "" ? null : Number(trimmed);
-
-    if (parsedLimit !== null && (!Number.isInteger(parsedLimit) || parsedLimit < 0)) {
-      toast.error("Enter a whole number of zero or more, or leave blank for unlimited.");
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const result = await setUserGenerationLimitAction({
-          userId: user.id,
-          generationLimit: parsedLimit,
-        });
-
-        if (!result.ok) {
-          toast.error(result.error);
-          return;
-        }
-
-        setLimitDialogOpen(false);
-        toast.success("Generation limit updated");
-        router.refresh();
-      } catch {
-        toast.error("Could not update the generation limit.");
       }
     });
   }
@@ -166,7 +106,7 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
           </div>
           <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           <p className="mt-0.5 truncate text-[11px] text-muted-foreground/80">
-            Joined {formatDate(user.createdAt)}
+            Joined {formatAbsoluteDate(user.createdAt) ?? user.createdAt}
             {!user.emailVerified ? " · Email unverified" : ""}
           </p>
         </div>
@@ -251,7 +191,6 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
           <DropdownMenuItem
             onSelect={(event) => {
               event.preventDefault();
-              setLimit(user.generationLimit?.toString() ?? "");
               setLimitDialogOpen(true);
             }}
           >
@@ -264,7 +203,7 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
               disabled={isProtected}
               onSelect={(event) => {
                 event.preventDefault();
-                updateSuspension(false);
+                reactivateUser();
               }}
             >
               <UserRoundCheck className="size-3.5" />
@@ -286,90 +225,21 @@ export function AdminUserRow({ user, currentAdminId }: AdminUserRowProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generation limit</DialogTitle>
-            <DialogDescription>
-              Set the lifetime allowance for {user.name}. Leave blank for unlimited access.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5">
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-muted-foreground">Current usage</span>
-              <span className="font-medium tabular-nums">
-                {user.generationCount.toLocaleString()} generations
-              </span>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor={`generation-limit-${user.id}`} className="text-sm font-medium">
-              Lifetime limit
-            </label>
-            <Input
-              id={`generation-limit-${user.id}`}
-              type="number"
-              min={0}
-              max={1_000_000}
-              inputMode="numeric"
-              value={limit}
-              onChange={(event) => setLimit(event.target.value)}
-              placeholder="Unlimited"
-              className="tabular-nums"
-              disabled={isPending}
-            />
-            <p className="text-xs text-muted-foreground">
-              Set to zero to block new generations. Existing packs are unaffected.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setLimitDialogOpen(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type="button" onClick={saveLimit} disabled={isPending}>
-              {isPending ? <Loader2 className="size-4 animate-spin" /> : "Save limit"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdminUserLimitDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        userId={user.id}
+        userName={user.name}
+        currentLimit={user.generationLimit}
+        generationCount={user.generationCount}
+      />
 
-      <AlertDialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Disable {user.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Active sessions will be revoked and new sign-ins blocked. Learning data is preserved.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-1.5">
-            <label htmlFor={`suspension-reason-${user.id}`} className="text-sm font-medium">
-              Reason (optional)
-            </label>
-            <Textarea
-              id={`suspension-reason-${user.id}`}
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              maxLength={200}
-              placeholder="Add an internal note"
-              className="min-h-16"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => updateSuspension(true)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Disable account
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AdminUserSuspendDialog
+        open={suspendDialogOpen}
+        onOpenChange={setSuspendDialogOpen}
+        userId={user.id}
+        userName={user.name}
+      />
     </div>
   );
 }

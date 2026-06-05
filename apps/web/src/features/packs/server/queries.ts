@@ -4,7 +4,7 @@ import "server-only";
 
 import { and, asc, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { buildContentMediaHref } from "@/features/media/utils";
+import { buildContentMediaHref } from "@/features/media/lib/href";
 import type {
   DeckSummary,
   PackCardCounts,

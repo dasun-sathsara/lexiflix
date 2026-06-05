@@ -1,8 +1,9 @@
 import "server-only";
 
-import { discoverMedia, getGenres, searchMedia } from "@/lib/integrations/tmdb/client";
+import { discoverMedia, searchMedia } from "@/lib/integrations/tmdb/client";
 import type { Genre, TMDBResult } from "@/lib/integrations/tmdb/contracts";
 import { buildTmdbDecadeDateRange } from "@/lib/integrations/tmdb/contracts";
+import { getUnifiedGenreMap } from "@/lib/integrations/tmdb/genres";
 
 interface GetBrowseViewParams {
   searchParams: Record<string, string | string[] | undefined>;
@@ -22,17 +23,10 @@ export async function getBrowseView({ searchParams }: GetBrowseViewParams): Prom
       : "movie";
 
   // Fetch Genres (Always needed for controls and card mapping)
-  // We use Promise.all to fetch them in parallel
-  const [movieGenres, tvGenres] = await Promise.all([getGenres("movie"), getGenres("tv")]);
-
-  // Create unified map
-  const genreMap: Record<number, string> = {};
-  [...movieGenres.genres, ...tvGenres.genres].forEach((g) => {
-    genreMap[g.id] = g.name;
-  });
+  const { movieGenres, tvGenres, genreMap } = await getUnifiedGenreMap();
 
   // Current genres for controls (depend on type)
-  const currentGenres = type === "movie" ? movieGenres.genres : tvGenres.genres;
+  const currentGenres = type === "movie" ? movieGenres : tvGenres;
 
   // Fetch Data
   const q = typeof searchParams.q === "string" ? searchParams.q : undefined;

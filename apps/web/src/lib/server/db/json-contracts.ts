@@ -7,15 +7,29 @@
   of carrying long-lived compatibility parsers for stale rows.
 */
 
-export type StoredCefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
-export type StoredVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
-export type StoredFrequencyPreference = "balanced" | "common_first" | "challenge_first";
-export type GenerationCefrWindowMode = "same_level" | "one_level_above" | "all_levels_above";
-export type GenerationKnownTermHandling = "exclude_known" | "downrank_known" | "include_known";
-export type GenerationAudioVoiceGender = "female" | "male";
-export type CuratedSourceProvider = "tmdb";
-export type CuratedMediaType = "movie" | "tv";
-export type CuratedCurationScope = "movie" | "show" | "season";
+// Domain literal unions live in lib/domain/types.ts and are re-exported here for backward compat.
+export type {
+  CuratedCurationScope,
+  CuratedMediaType,
+  CuratedSourceProvider,
+  ExampleSentenceList,
+  GenerationAudioVoiceGender,
+  GenerationCefrWindowMode,
+  GenerationKnownTermHandling,
+  NlpCandidateContext,
+  StoredCefrLevel,
+  StoredFrequencyPreference,
+  StoredVocabularyKind,
+} from "@/lib/domain/types";
+
+import type {
+  GenerationAudioVoiceGender,
+  GenerationCefrWindowMode,
+  GenerationKnownTermHandling,
+  StoredCefrLevel,
+  StoredFrequencyPreference,
+  StoredVocabularyKind,
+} from "@/lib/domain/types";
 
 export type JsonMap = Record<string, unknown>;
 export type CuratedGenreSnapshot = {
@@ -56,16 +70,6 @@ export type ContentAnalysisSummary = {
   [key: string]: unknown;
 };
 
-/*
-  Mirrors the current NLP service context list (plain strings).
-  Older rows may still store `{ text: string }[]` until re-analysis.
-*/
-export type NlpCandidateContext = string;
-
-/*
-  Keep generated example sentences lightweight until the UI needs richer structure.
-*/
-export type ExampleSentenceList = string[];
 export type ExampleSentenceAudioArtifactList = Array<string | null>;
 
 export type GenerationRequestSnapshot = {

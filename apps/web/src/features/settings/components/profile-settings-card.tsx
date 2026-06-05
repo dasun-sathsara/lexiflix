@@ -258,6 +258,7 @@ export function ProfileSettingsCard({ user }: ProfileSettingsCardProps) {
               <Input
                 id="display-name"
                 placeholder="Your public username"
+                aria-invalid={!!errors.displayName}
                 {...register("displayName")}
               />
               {errors.displayName && (

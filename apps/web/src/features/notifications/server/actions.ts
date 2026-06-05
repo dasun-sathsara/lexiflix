@@ -6,10 +6,10 @@ import type { ListNotificationsActionResult, NotificationMutationResult } from "
 import {
   dismissAllNotifications,
   dismissNotification,
-  listUserNotifications,
   markNotificationRead,
   markVisibleNotificationsRead,
-} from "./queries";
+} from "./mutations";
+import { listUserNotifications } from "./queries";
 
 const notificationIdSchema = z.object({ id: z.string().min(1) });
 const notificationIdsSchema = z.object({ ids: z.array(z.string().min(1)).max(25) });

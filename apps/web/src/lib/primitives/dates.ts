@@ -18,6 +18,26 @@ export function formatRelativeTime(value: string | Date | null): string | null {
 }
 
 /**
+ * Formats a date value into a locale-aware absolute date/time string.
+ * Uses medium date style and short time style by default.
+ * Pass `timeStyle: undefined` to omit the time portion.
+ * Returns null for null/undefined input.
+ */
+export function formatAbsoluteDate(
+  value: string | Date | null,
+  options?: { dateStyle?: "short" | "medium" | "long"; timeStyle?: "short" | "medium" | "long" },
+): string | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  const dateStyle = options?.dateStyle ?? "medium";
+  const timeStyle = options?.timeStyle;
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle,
+    ...(timeStyle ? { timeStyle } : {}),
+  }).format(date);
+}
+
+/**
  * Extracts the year from a date string.
  * Validates the parsed leading year with Number.isFinite.
  */

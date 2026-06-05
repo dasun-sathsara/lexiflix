@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { NlpCandidateContext } from "@/lib/server/db/json-contracts";
+import type { NlpCandidateContext } from "@/lib/domain/types";
 
 /**
  * Subtitle evidence contexts are produced by the NLP service and the analysis LLM, and are

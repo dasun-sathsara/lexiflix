@@ -1,9 +1,8 @@
 "use server";
 
-import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { computeNextReviewState } from "@/features/packs/server/srs";
-import { addUtcDays, getAppDateKey } from "@/features/packs/server/study-time";
+import { z } from "zod";
 import type {
   PackActionResult,
   PackItemActionResult,
@@ -12,10 +11,35 @@ import type {
 } from "@/features/packs/types";
 import { requireSession } from "@/lib/auth/guards";
 import { db } from "@/lib/server/db";
-import { pack, packItem, reviewEvent, userStreak, userTermState } from "@/lib/server/db/schema";
+import { pack, packItem } from "@/lib/server/db/schema";
 import { getOwnedPackId } from "./queries";
+import { executeReview } from "./review-service";
+import { updateTermStateAndCards } from "./term-state-service";
 
-const REVIEW_RATINGS = new Set<PackReviewRating>(["again", "hard", "good", "easy"]);
+// ─── Zod Schemas ────────────────────────────────────────────────────────────
+
+const packIdSchema = z.object({
+  packId: z.string().min(1),
+});
+
+const packItemSchema = z.object({
+  packId: z.string().min(1),
+  itemId: z.string().min(1),
+});
+
+const removePackItemsSchema = z.object({
+  packId: z.string().min(1),
+  itemIds: z.array(z.string().min(1)).min(1),
+});
+
+const ratePackItemSchema = z.object({
+  packId: z.string().min(1),
+  itemId: z.string().min(1),
+  rating: z.enum(["again", "hard", "good", "easy"]),
+  responseTimeMs: z.number().int().nonnegative().nullable().optional(),
+});
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 async function countActiveItems(packId: string) {
   const rows = await db
@@ -49,9 +73,6 @@ async function requireOwnedPackItem({
 
 function revalidatePackSurfaces(packId: string, options?: { includeStudyRoute?: boolean }) {
   revalidatePath(`/pack/${packId}`);
-  // The study route hosts a live, client-stateful session. Revalidating it
-  // mid-session rebuilds the card queue and resets in-progress UI (e.g. the
-  // progress bar), so callers that run during an active session opt out.
   if (options?.includeStudyRoute ?? true) {
     revalidatePath(`/study/${packId}`);
   }
@@ -59,34 +80,7 @@ function revalidatePackSurfaces(packId: string, options?: { includeStudyRoute?: 
   revalidatePath("/dashboard");
 }
 
-function computeNextStreak({
-  previousLastStudyAt,
-  previousCurrent,
-  previousLongest,
-  reviewedAt,
-}: {
-  previousLastStudyAt: Date | null;
-  previousCurrent: number;
-  previousLongest: number;
-  reviewedAt: Date;
-}) {
-  const todayKey = getAppDateKey(reviewedAt);
-  const previousKey = previousLastStudyAt ? getAppDateKey(previousLastStudyAt) : null;
-  const yesterdayKey = addUtcDays(todayKey, -1);
-  const currentStreakDays =
-    previousKey === todayKey
-      ? previousCurrent
-      : previousKey === yesterdayKey
-        ? previousCurrent + 1
-        : 1;
-
-  return {
-    currentStreakDays,
-    longestStreakDays: Math.max(previousLongest, currentStreakDays),
-    streakStartedAt:
-      previousKey === todayKey || previousKey === yesterdayKey ? undefined : reviewedAt,
-  };
-}
+// ─── Actions ────────────────────────────────────────────────────────────────
 
 /**
  * Permanently removes one or more items from a user's pack.
@@ -96,14 +90,19 @@ export async function removePackItemsAction(input: {
   packId: string;
   itemIds: string[];
 }): Promise<PackActionResult> {
+  const parsedInput = removePackItemsSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { ok: false, error: "Select at least one card to remove." };
+  }
+  const parsed = parsedInput.data;
   const session = await requireSession();
-  const itemIds = Array.from(new Set(input.itemIds.filter(Boolean)));
+  const itemIds = Array.from(new Set(parsed.itemIds.filter(Boolean)));
 
   if (itemIds.length === 0) {
     return { ok: false, error: "Select at least one card to remove." };
   }
 
-  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
+  const ownedPack = await getOwnedPackId({ packId: parsed.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -111,7 +110,7 @@ export async function removePackItemsAction(input: {
   const ownedItems = await db
     .select({ id: packItem.id })
     .from(packItem)
-    .where(and(eq(packItem.packId, input.packId), inArray(packItem.id, itemIds)));
+    .where(and(eq(packItem.packId, parsed.packId), inArray(packItem.id, itemIds)));
 
   if (ownedItems.length !== itemIds.length) {
     return { ok: false, error: "One or more cards do not belong to this pack." };
@@ -126,15 +125,15 @@ export async function removePackItemsAction(input: {
       removalReason: "user_removed",
       updatedAt: now,
     })
-    .where(and(eq(packItem.packId, input.packId), inArray(packItem.id, itemIds)));
+    .where(and(eq(packItem.packId, parsed.packId), inArray(packItem.id, itemIds)));
 
-  const activeCount = await countActiveItems(input.packId);
+  const activeCount = await countActiveItems(parsed.packId);
   await db
     .update(pack)
     .set({ itemCount: activeCount, updatedAt: now })
-    .where(eq(pack.id, input.packId));
+    .where(eq(pack.id, parsed.packId));
 
-  revalidatePackSurfaces(input.packId);
+  revalidatePackSurfaces(parsed.packId);
 
   return { ok: true, data: { activeCount } };
 }
@@ -146,8 +145,13 @@ export async function removePackItemsAction(input: {
 export async function resetPackProgressAction(input: {
   packId: string;
 }): Promise<PackActionResult> {
+  const parsedInput = packIdSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { ok: false, error: "Invalid request." };
+  }
+  const parsed = parsedInput.data;
   const session = await requireSession();
-  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
+  const ownedPack = await getOwnedPackId({ packId: parsed.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -171,19 +175,19 @@ export async function resetPackProgressAction(input: {
     })
     .where(
       and(
-        eq(packItem.packId, input.packId),
+        eq(packItem.packId, parsed.packId),
         ne(packItem.state, "removed"),
         isNull(packItem.removedAt),
       ),
     );
 
-  const activeCount = await countActiveItems(input.packId);
+  const activeCount = await countActiveItems(parsed.packId);
   await db
     .update(pack)
     .set({ itemCount: activeCount, updatedAt: now })
-    .where(eq(pack.id, input.packId));
+    .where(eq(pack.id, parsed.packId));
 
-  revalidatePackSurfaces(input.packId);
+  revalidatePackSurfaces(parsed.packId);
 
   return { ok: true, data: { activeCount } };
 }
@@ -196,10 +200,15 @@ export async function restorePackItemAction(input: {
   packId: string;
   itemId: string;
 }): Promise<PackItemActionResult> {
+  const parsedInput = packItemSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { ok: false, error: "Invalid request." };
+  }
+  const parsed = parsedInput.data;
   const session = await requireSession();
   const item = await requireOwnedPackItem({
-    packId: input.packId,
-    itemId: input.itemId,
+    packId: parsed.packId,
+    itemId: parsed.itemId,
     userId: session.user.id,
   });
   if (!item) {
@@ -218,12 +227,12 @@ export async function restorePackItemAction(input: {
     })
     .where(eq(packItem.id, item.id));
 
-  const activeCount = await countActiveItems(input.packId);
+  const activeCount = await countActiveItems(parsed.packId);
   await db
     .update(pack)
     .set({ itemCount: activeCount, updatedAt: now })
-    .where(eq(pack.id, input.packId));
-  revalidatePackSurfaces(input.packId);
+    .where(eq(pack.id, parsed.packId));
+  revalidatePackSurfaces(parsed.packId);
 
   return { ok: true, data: { activeCount, itemId: item.id } };
 }
@@ -236,10 +245,15 @@ export async function resetPackItemAction(input: {
   packId: string;
   itemId: string;
 }): Promise<PackItemActionResult> {
+  const parsedInput = packItemSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { ok: false, error: "Invalid request." };
+  }
+  const parsed = parsedInput.data;
   const session = await requireSession();
   const item = await requireOwnedPackItem({
-    packId: input.packId,
-    itemId: input.itemId,
+    packId: parsed.packId,
+    itemId: parsed.itemId,
     userId: session.user.id,
   });
   if (!item) {
@@ -267,97 +281,11 @@ export async function resetPackItemAction(input: {
     })
     .where(eq(packItem.id, item.id));
 
-  revalidatePackSurfaces(input.packId);
-  return { ok: true, data: { activeCount: await countActiveItems(input.packId), itemId: item.id } };
-}
-async function updateTermStateAndCards({
-  userId,
-  item,
-  nextState,
-}: {
-  userId: string;
-  item: typeof packItem.$inferSelect;
-  nextState: "known" | "learning" | "ignored";
-}) {
-  const now = new Date();
-  await db
-    .insert(userTermState)
-    .values({
-      userId,
-      termId: item.termId,
-      state: nextState,
-      source: "manual",
-      lastPackItemId: item.id,
-      firstSeenAt: now,
-      lastSeenAt: now,
-      knownAt: nextState === "known" ? now : null,
-      ignoredAt: nextState === "ignored" ? now : null,
-    })
-    .onConflictDoUpdate({
-      target: [userTermState.userId, userTermState.termId],
-      set: {
-        state: nextState,
-        source: "manual",
-        lastPackItemId: item.id,
-        firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${now})`,
-        lastSeenAt: now,
-        knownAt:
-          nextState === "known" ? now : nextState === "learning" ? null : userTermState.knownAt,
-        ignoredAt:
-          nextState === "ignored" ? now : nextState === "learning" ? null : userTermState.ignoredAt,
-        updatedAt: now,
-      },
-    });
-
-  const matchingRows = await db
-    .select({ id: packItem.id, packId: packItem.packId })
-    .from(packItem)
-    .innerJoin(pack, eq(pack.id, packItem.packId))
-    .where(
-      and(
-        eq(pack.userId, userId),
-        eq(packItem.termId, item.termId),
-        isNull(packItem.removedAt),
-        ne(packItem.state, "removed"),
-      ),
-    );
-
-  if (matchingRows.length === 0) {
-    return;
-  }
-
-  const matchingIds = matchingRows.map((row) => row.id);
-  if (nextState === "known") {
-    await db
-      .update(packItem)
-      .set({ state: "mastered", masteredAt: now, updatedAt: now })
-      .where(inArray(packItem.id, matchingIds));
-  } else if (nextState === "ignored") {
-    await db
-      .update(packItem)
-      .set({ state: "removed", removedAt: now, removalReason: "globally_ignored", updatedAt: now })
-      .where(inArray(packItem.id, matchingIds));
-  } else {
-    await db
-      .update(packItem)
-      .set({
-        state: "learning",
-        masteredAt: null,
-        dueAt: now,
-        removedAt: null,
-        removalReason: null,
-        updatedAt: now,
-      })
-      .where(inArray(packItem.id, matchingIds));
-  }
-
-  for (const packId of new Set(matchingRows.map((row) => row.packId))) {
-    const activeCount = await countActiveItems(packId);
-    await db
-      .update(pack)
-      .set({ itemCount: activeCount, updatedAt: now })
-      .where(eq(pack.id, packId));
-  }
+  revalidatePackSurfaces(parsed.packId);
+  return {
+    ok: true,
+    data: { activeCount: await countActiveItems(parsed.packId), itemId: item.id },
+  };
 }
 
 async function runTermAction(input: {
@@ -365,10 +293,15 @@ async function runTermAction(input: {
   itemId: string;
   nextState: "known" | "learning" | "ignored";
 }): Promise<PackItemActionResult> {
+  const parsedInput = packItemSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return { ok: false, error: "Invalid request." };
+  }
+  const parsed = parsedInput.data;
   const session = await requireSession();
   const item = await requireOwnedPackItem({
-    packId: input.packId,
-    itemId: input.itemId,
+    packId: parsed.packId,
+    itemId: parsed.itemId,
     userId: session.user.id,
   });
   if (!item) {
@@ -380,9 +313,12 @@ async function runTermAction(input: {
     item,
     nextState: input.nextState,
   });
-  revalidatePackSurfaces(input.packId);
+  revalidatePackSurfaces(parsed.packId);
 
-  return { ok: true, data: { activeCount: await countActiveItems(input.packId), itemId: item.id } };
+  return {
+    ok: true,
+    data: { activeCount: await countActiveItems(parsed.packId), itemId: item.id },
+  };
 }
 
 /**
@@ -426,6 +362,7 @@ export async function unignoreTermAction(input: {
 }): Promise<PackItemActionResult> {
   return runTermAction({ ...input, nextState: "learning" });
 }
+
 /**
  * Records a user's rating for a pack item and computes its next SRS state.
  * Updates the user's daily study streak, appends a review event log, and schedules the next review.
@@ -436,13 +373,14 @@ export async function ratePackItemAction(input: {
   rating: PackReviewRating;
   responseTimeMs?: number | null;
 }): Promise<PackRatingActionResult> {
-  const session = await requireSession();
-
-  if (!REVIEW_RATINGS.has(input.rating)) {
+  const parsedInput = ratePackItemSchema.safeParse(input);
+  if (!parsedInput.success) {
     return { ok: false, error: "Choose a valid review rating." };
   }
+  const parsed = parsedInput.data;
+  const session = await requireSession();
 
-  const ownedPack = await getOwnedPackId({ packId: input.packId, userId: session.user.id });
+  const ownedPack = await getOwnedPackId({ packId: parsed.packId, userId: session.user.id });
   if (!ownedPack) {
     return { ok: false, error: "Pack not found." };
   }
@@ -450,7 +388,7 @@ export async function ratePackItemAction(input: {
   const rows = await db
     .select()
     .from(packItem)
-    .where(and(eq(packItem.id, input.itemId), eq(packItem.packId, input.packId)))
+    .where(and(eq(packItem.id, parsed.itemId), eq(packItem.packId, parsed.packId)))
     .limit(1);
   const item = rows[0] ?? null;
 
@@ -462,185 +400,24 @@ export async function ratePackItemAction(input: {
     return { ok: false, error: "Removed cards cannot be reviewed." };
   }
 
-  const reviewedAt = new Date();
-  const next = computeNextReviewState({
-    rating: input.rating,
-    reviewedAt,
-    previousState:
-      item.state === "mastered" ? "mastered" : item.state === "new" ? "new" : "learning",
-    previousRating: item.lastRating,
-    repetitionCount: item.repetitionCount,
-    lapseCount: item.lapseCount,
-    intervalDays: item.intervalDays,
-    easeFactor: item.easeFactor,
-  });
-  const knownAfterReview =
-    next.state === "mastered" && (input.rating === "good" || input.rating === "easy");
-  const [existingTermState] = await db
-    .select({ state: userTermState.state })
-    .from(userTermState)
-    .where(and(eq(userTermState.userId, session.user.id), eq(userTermState.termId, item.termId)))
-    .limit(1);
-  const shouldDemoteKnownTerm = existingTermState?.state === "known" && input.rating === "again";
-  const shouldPreserveKnownTerm =
-    existingTermState?.state === "known" && input.rating !== "again" && !knownAfterReview;
-  const nextTermState = knownAfterReview ? "known" : shouldPreserveKnownTerm ? "known" : "learning";
-
-  const [existingStreak] = await db
-    .select()
-    .from(userStreak)
-    .where(eq(userStreak.userId, session.user.id))
-    .limit(1);
-  const nextStreak = computeNextStreak({
-    previousLastStudyAt: existingStreak?.lastStudyAt ?? null,
-    previousCurrent: existingStreak?.currentStreakDays ?? 0,
-    previousLongest: existingStreak?.longestStreakDays ?? 0,
-    reviewedAt,
-  });
-
-  await db.insert(reviewEvent).values({
-    id: crypto.randomUUID(),
+  const result = await executeReview({
     userId: session.user.id,
-    packItemId: item.id,
-    termId: item.termId,
-    rating: input.rating,
-    reviewedAt,
-    responseTimeMs: input.responseTimeMs ?? null,
+    packId: parsed.packId,
+    item,
+    rating: parsed.rating,
+    responseTimeMs: parsed.responseTimeMs ?? null,
   });
-  await db
-    .update(packItem)
-    .set({
-      state: next.state,
-      dueAt: next.dueAt,
-      lastReviewedAt: reviewedAt,
-      lastRating: input.rating,
-      repetitionCount: next.repetitionCount,
-      lapseCount: next.lapseCount,
-      intervalDays: next.intervalDays,
-      easeFactor: next.easeFactor,
-      firstStudiedAt: item.firstStudiedAt ?? reviewedAt,
-      masteredAt: next.masteredAt,
-      updatedAt: reviewedAt,
-    })
-    .where(eq(packItem.id, item.id));
-  await db
-    .insert(userTermState)
-    .values({
-      userId: session.user.id,
-      termId: item.termId,
-      state: nextTermState,
-      source: "review",
-      totalReviews: 1,
-      totalLapses: input.rating === "again" ? 1 : 0,
-      lastPackItemId: item.id,
-      firstSeenAt: reviewedAt,
-      lastSeenAt: reviewedAt,
-      lastReviewedAt: reviewedAt,
-      knownAt: nextTermState === "known" ? reviewedAt : null,
-    })
-    .onConflictDoUpdate({
-      target: [userTermState.userId, userTermState.termId],
-      set: {
-        state: nextTermState,
-        source: "review",
-        totalReviews: sql`${userTermState.totalReviews} + 1`,
-        totalLapses:
-          input.rating === "again"
-            ? sql`${userTermState.totalLapses} + 1`
-            : userTermState.totalLapses,
-        lastPackItemId: item.id,
-        firstSeenAt: sql`coalesce(${userTermState.firstSeenAt}, ${reviewedAt})`,
-        lastSeenAt: reviewedAt,
-        lastReviewedAt: reviewedAt,
-        knownAt:
-          nextTermState === "known"
-            ? sql`coalesce(${userTermState.knownAt}, ${reviewedAt})`
-            : shouldDemoteKnownTerm
-              ? null
-              : userTermState.knownAt,
-        updatedAt: reviewedAt,
-      },
-    });
 
-  const matchingRows = await db
-    .select({ id: packItem.id })
-    .from(packItem)
-    .innerJoin(pack, eq(pack.id, packItem.packId))
-    .where(
-      and(
-        eq(pack.userId, session.user.id),
-        eq(packItem.termId, item.termId),
-        ne(packItem.state, "removed"),
-        isNull(packItem.removedAt),
-      ),
-    );
-  const matchingIds = matchingRows.map((row) => row.id);
-  if (knownAfterReview && matchingIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({ state: "mastered", masteredAt: reviewedAt, updatedAt: reviewedAt })
-      .where(inArray(packItem.id, matchingIds));
-  } else if (shouldDemoteKnownTerm && matchingIds.length > 0) {
-    await db
-      .update(packItem)
-      .set({
-        state: "learning",
-        dueAt: next.dueAt,
-        masteredAt: null,
-        updatedAt: reviewedAt,
-      })
-      .where(inArray(packItem.id, matchingIds));
-  }
-
-  await db
-    .insert(userStreak)
-    .values({
-      userId: session.user.id,
-      currentStreakDays: nextStreak.currentStreakDays,
-      longestStreakDays: nextStreak.longestStreakDays,
-      lastStudyAt: reviewedAt,
-      streakStartedAt: nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-    })
-    .onConflictDoUpdate({
-      target: userStreak.userId,
-      set: {
-        currentStreakDays: nextStreak.currentStreakDays,
-        longestStreakDays: nextStreak.longestStreakDays,
-        lastStudyAt: reviewedAt,
-        streakStartedAt:
-          nextStreak.streakStartedAt ?? existingStreak?.streakStartedAt ?? reviewedAt,
-        updatedAt: reviewedAt,
-      },
-    });
-  await db.update(pack).set({ updatedAt: reviewedAt }).where(eq(pack.id, input.packId));
-
-  const nextDueRows = await db
-    .select({ dueAt: packItem.dueAt })
-    .from(packItem)
-    .where(
-      and(
-        eq(packItem.packId, input.packId),
-        ne(packItem.state, "new"),
-        ne(packItem.state, "mastered"),
-        ne(packItem.state, "removed"),
-        isNull(packItem.removedAt),
-      ),
-    );
-  const nextDueAt = nextDueRows
-    .map((row) => row.dueAt)
-    .filter((value): value is Date => Boolean(value))
-    .sort((a, b) => a.getTime() - b.getTime())[0];
-
-  revalidatePackSurfaces(input.packId, { includeStudyRoute: false });
+  revalidatePackSurfaces(parsed.packId, { includeStudyRoute: false });
 
   return {
     ok: true,
     data: {
-      itemId: item.id,
-      nextState: next.state,
-      dueAt: next.dueAt.toISOString(),
-      nextDueAt: nextDueAt ? nextDueAt.toISOString() : null,
-      reviewedCards: next.repetitionCount,
+      itemId: result.itemId,
+      nextState: result.nextState,
+      dueAt: result.dueAt.toISOString(),
+      nextDueAt: result.nextDueAt ? result.nextDueAt.toISOString() : null,
+      reviewedCards: result.reviewedCards,
     },
   };
 }

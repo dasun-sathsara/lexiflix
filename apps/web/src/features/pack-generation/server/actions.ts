@@ -1,15 +1,13 @@
 "use server";
 
-import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
 import { requireSession } from "@/lib/auth/guards";
-import { env } from "@/lib/config/env";
 import {
   recordPackGenerationJobTransition,
   resetFailedPackGenerationJobForRetry,
 } from "@/lib/server/content-generation/jobs";
-import type { generateContentPackTask } from "@/trigger/generate-content-pack";
+import { dispatchTriggerTask } from "@/lib/server/trigger/dispatch";
 import type {
   ListPackGenerationJobsActionResult,
   PackGenerationProgressActionResult,
@@ -80,25 +78,21 @@ export async function retryPackGenerationAction(
       return { ok: false, error: "Failed to reset the generation job for retry." };
     }
 
-    try {
-      await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", {
-        jobId: parsed.jobId,
-      });
-    } catch (error) {
-      await recordPackGenerationJobTransition({
-        jobId: parsed.jobId,
-        status: "failed",
-        stage: "failed",
-        message: "Failed to trigger pack generation retry.",
-        errorCode: "WORKFLOW_TRIGGER_FAILED",
-        errorMessage: PUBLIC_GENERATION_FAILURE_MESSAGE,
-        payload: {
-          triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
-          triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
-        },
-      });
-      throw error;
-    }
+    await dispatchTriggerTask(
+      "generate-content-pack",
+      { jobId: parsed.jobId },
+      async ({ errorCode, errorMessage, payload }) => {
+        await recordPackGenerationJobTransition({
+          jobId: parsed.jobId,
+          status: "failed",
+          stage: "failed",
+          message: "Failed to trigger pack generation retry.",
+          errorCode,
+          errorMessage: errorMessage || PUBLIC_GENERATION_FAILURE_MESSAGE,
+          payload,
+        });
+      },
+    );
 
     const updated = await getPackGenerationProgressView({
       userId: session.user.id,

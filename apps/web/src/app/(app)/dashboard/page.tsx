@@ -2,7 +2,7 @@ import { getCefrProfile, shouldShowAssessmentBanner } from "@/features/assessmen
 import { DashboardContent } from "@/features/dashboard/components/dashboard-content";
 import { buildDashboardViewModel } from "@/features/dashboard/lib/view-model";
 import { getDashboardView } from "@/features/dashboard/server/queries";
-import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
+import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/mutations";
 import { getEffectiveCefrLevel } from "@/features/settings/lib/utils";
 import { requireSession } from "@/lib/auth/guards";
 

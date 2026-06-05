@@ -6,7 +6,7 @@ import { AppErrorAlert } from "@/components/common/app-surface";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MediaDetailPageData } from "@/features/media/types";
 import { cn } from "@/lib/ui/cn";
-import { ANALYSIS_PIPELINE_STEPS } from "../lib/utils";
+import { ANALYSIS_PIPELINE_STEPS } from "../lib/analysis-view";
 import { AnalysisResults } from "./analysis-results";
 
 export interface MediaAnalysisContentProps {

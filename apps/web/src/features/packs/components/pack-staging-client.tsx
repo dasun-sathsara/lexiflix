@@ -1,9 +1,6 @@
 "use client";
 
 import { Check, Layers, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import * as React from "react";
-import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -27,150 +24,45 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ignoreTermGloballyAction,
-  markTermKnownAction,
-  markTermLearningAction,
-  removePackItemsAction,
-  resetPackItemAction,
-  resetPackProgressAction,
-  restorePackItemAction,
-  unignoreTermAction,
-} from "@/features/packs/server/actions";
-import type { PackCardView, PackStagingView, PackVocabularyKind } from "@/features/packs/types";
-import type { ActionResult } from "@/lib/contracts/action-result";
+import { usePackStaging } from "@/features/packs/hooks/use-pack-staging";
+import type { PackStagingView, PackVocabularyKind } from "@/features/packs/types";
 import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/domain/vocabulary";
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
 import { PackStagingHero } from "./pack-staging-hero";
 import { PackStagingSidebar } from "./pack-staging-sidebar";
 
-type TabValue = "all" | PackCardView["state"];
-type VocabularyTypeFilter = "all" | PackVocabularyKind;
 const VOCABULARY_TYPE_FILTERS = VOCABULARY_KINDS;
 
 function label(value: string) {
   return value.replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
-function toTabValue(value: string): TabValue {
-  if (
-    value === "new" ||
-    value === "learning" ||
-    value === "due" ||
-    value === "mastered" ||
-    value === "removed"
-  ) {
-    return value;
-  }
-  return "all";
-}
-
 export function PackStagingClient({ pack }: { pack: PackStagingView }) {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = React.useState<TabValue>("all");
-  const [vocabularyType, setVocabularyType] = React.useState<VocabularyTypeFilter>("all");
-  const [cards, setCards] = React.useState(pack.cards);
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = React.useState(false);
-  const [pendingAction, startAction] = React.useTransition();
-
-  React.useEffect(() => {
-    setCards(pack.cards);
-  }, [pack.cards]);
-
-  const stats = React.useMemo(
-    () =>
-      cards.reduce(
-        (counts, card) => {
-          if (card.state === "removed") {
-            counts.hidden += 1;
-            return counts;
-          }
-          counts[card.state] += 1;
-          counts.total += 1;
-          return counts;
-        },
-        { new: 0, learning: 0, due: 0, mastered: 0, futureLearning: 0, hidden: 0, total: 0 },
-      ),
-    [cards],
-  );
-  const stateFilteredCards =
-    activeTab === "all" ? cards : cards.filter((item) => item.state === activeTab);
-  const vocabularyTypeCounts = React.useMemo(
-    () =>
-      stateFilteredCards.reduce<Record<PackVocabularyKind, number>>(
-        (counts, card) => {
-          counts[card.kind] += 1;
-          return counts;
-        },
-        { word: 0, phrasal_verb: 0, idiom: 0, slang: 0 },
-      ),
-    [stateFilteredCards],
-  );
-  const filtered =
-    vocabularyType === "all"
-      ? stateFilteredCards
-      : stateFilteredCards.filter((item) => item.kind === vocabularyType);
-  const progressPct = Math.round((stats.mastered / Math.max(1, stats.total)) * 100);
-  const selectedCount = selectedIds.size;
-
-  function removeCards(itemIds: string[]) {
-    startAction(async () => {
-      const previousCards = cards;
-      setCards((current) => current.filter((card) => !itemIds.includes(card.id)));
-      setSelectedIds(new Set());
-      setIsSelectionMode(false);
-
-      const result = await removePackItemsAction({ packId: pack.id, itemIds });
-      if (!result.ok) {
-        setCards(previousCards);
-        toast.error(result.error);
-        return;
-      }
-      router.refresh();
-    });
-  }
-
-  function resetPack() {
-    startAction(async () => {
-      const result = await resetPackProgressAction({ packId: pack.id });
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      router.refresh();
-    });
-  }
-
-  function runItemAction(action: () => Promise<ActionResult<unknown>>) {
-    startAction(async () => {
-      const result = await action();
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      router.refresh();
-    });
-  }
-
-  function toggleSelect(cardId: string) {
-    setSelectedIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(cardId)) {
-        next.delete(cardId);
-      } else {
-        next.add(cardId);
-      }
-      return next;
-    });
-  }
-
-  function toggleSelectAll() {
-    setSelectedIds((previous) =>
-      previous.size === filtered.length ? new Set() : new Set(filtered.map((card) => card.id)),
-    );
-  }
+  const {
+    activeTab,
+    setActiveTab,
+    vocabularyType,
+    setVocabularyType,
+    cards,
+    selectedIds,
+    isSelectionMode,
+    pendingAction,
+    stats,
+    stateFilteredCards,
+    vocabularyTypeCounts,
+    filtered,
+    progressPct,
+    selectedCount,
+    removeCards,
+    resetPack,
+    runItemAction,
+    toggleSelect,
+    toggleSelectAll,
+    enterSelectionMode,
+    exitSelectionMode,
+    getItemActions,
+  } = usePackStaging(pack);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-6">
@@ -189,14 +81,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 </div>
                 {isSelectionMode ? (
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setIsSelectionMode(false);
-                        setSelectedIds(new Set());
-                      }}
-                    >
+                    <Button variant="ghost" size="sm" onClick={exitSelectionMode}>
                       Cancel
                     </Button>
                     <AlertDialog>
@@ -236,7 +121,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsSelectionMode(true)}
+                    onClick={enterSelectionMode}
                     className="gap-1.5"
                     disabled={cards.length === 0}
                   >
@@ -248,13 +133,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
             </CardHeader>
 
             <CardContent className="px-4 pb-3 pt-0">
-              <Tabs
-                value={activeTab}
-                onValueChange={(value) => {
-                  setActiveTab(toTabValue(value));
-                  setSelectedIds(new Set());
-                }}
-              >
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="w-full justify-start">
                   {(["all", "new", "learning", "due", "mastered", "removed"] as const).map(
                     (tab) => (
@@ -279,13 +158,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                       Showing <span className="font-medium text-foreground">{filtered.length}</span>{" "}
                       of <span className="font-medium text-foreground">{cards.length}</span> cards
                     </p>
-                    <Select
-                      value={vocabularyType}
-                      onValueChange={(value) => {
-                        setVocabularyType(value as VocabularyTypeFilter);
-                        setSelectedIds(new Set());
-                      }}
-                    >
+                    <Select value={vocabularyType} onValueChange={setVocabularyType}>
                       <SelectTrigger className="h-8 w-full sm:w-[250px]">
                         <SelectValue />
                       </SelectTrigger>
@@ -295,7 +168,8 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                         </SelectItem>
                         {VOCABULARY_TYPE_FILTERS.map((kind) => (
                           <SelectItem key={kind} value={kind}>
-                            {formatVocabularyKindLabel(kind)} ({vocabularyTypeCounts[kind]})
+                            {formatVocabularyKindLabel(kind)} (
+                            {vocabularyTypeCounts[kind as PackVocabularyKind]})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -340,30 +214,27 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 </CardContent>
               </Card>
             ) : (
-              filtered.map((item) => (
-                <PackStagingCardItem
-                  key={item.id}
-                  item={item}
-                  packId={pack.id}
-                  isSelected={selectedIds.has(item.id)}
-                  isSelectionMode={isSelectionMode}
-                  pendingAction={pendingAction}
-                  onToggleSelect={toggleSelect}
-                  onRemoveCard={(id) => removeCards([id])}
-                  onRunItemAction={runItemAction}
-                  onRestore={() => restorePackItemAction({ packId: pack.id, itemId: item.id })}
-                  onReset={() => resetPackItemAction({ packId: pack.id, itemId: item.id })}
-                  onMarkKnown={() => markTermKnownAction({ packId: pack.id, itemId: item.id })}
-                  onMarkLearning={() =>
-                    markTermLearningAction({ packId: pack.id, itemId: item.id })
-                  }
-                  onIgnore={() =>
-                    item.state === "removed"
-                      ? unignoreTermAction({ packId: pack.id, itemId: item.id })
-                      : ignoreTermGloballyAction({ packId: pack.id, itemId: item.id })
-                  }
-                />
-              ))
+              filtered.map((item) => {
+                const itemActions = getItemActions(item);
+                return (
+                  <PackStagingCardItem
+                    key={item.id}
+                    item={item}
+                    packId={pack.id}
+                    isSelected={selectedIds.has(item.id)}
+                    isSelectionMode={isSelectionMode}
+                    pendingAction={pendingAction}
+                    onToggleSelect={toggleSelect}
+                    onRemoveCard={(id) => removeCards([id])}
+                    onRunItemAction={runItemAction}
+                    onRestore={itemActions.onRestore}
+                    onReset={itemActions.onReset}
+                    onMarkKnown={itemActions.onMarkKnown}
+                    onMarkLearning={itemActions.onMarkLearning}
+                    onIgnore={itemActions.onIgnore}
+                  />
+                );
+              })
             )}
           </div>
         </div>

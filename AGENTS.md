@@ -10,7 +10,6 @@ Optimize for fast iteration, reliable demos, and clear architecture — not ente
 |------|------|
 | `apps/web` | Product center — Next.js 15, React 19, Better Auth, Drizzle, Biome |
 | `apps/nlp_service` | Narrow FastAPI NLP service (spaCy/transformers) |
-| `apps/scripts` | Legacy/experimental tooling — reference only |
 | `docs` | Architecture and design docs |
 | `infra` | Reserved, not central to deployment |
 
@@ -41,13 +40,11 @@ Run app-native commands from the correct subdirectory only when clearer than `ta
 
 **`apps/nlp_service` must not become:** a public backend, queue/orchestrator, or product-state owner. No Celery/Redis assumptions.
 
-**`apps/scripts`:** supporting material only — don't move product-critical logic here.
-
 ## Validation
 
-No mature test suite — don't claim one exists.
+Unit tests exist for the web app (`apps/web/vitest.config.ts`, run via `pnpm test` from `apps/web`). Tests are colocated `*.test.ts` files covering pure logic and domain utilities — coverage is partial, not comprehensive, and there is no e2e or CI integration yet.
 
-- Web: `task web:typecheck`, `task web:lint`, manual browser check
+- Web: `task web:typecheck`, `task web:lint`, `pnpm test` (from `apps/web`), manual browser check
 - NLP service: local tooling from `apps/nlp_service` via `uv`
 
 State clearly what you verified and what you did not.

@@ -1,5 +1,3 @@
-import "server-only";
-
 import { APP_TIME_ZONE, APP_TIME_ZONE_OFFSET_MINUTES } from "@/lib/constants";
 
 export function getAppDateKey(date: Date) {

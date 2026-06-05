@@ -17,7 +17,7 @@ export type {
 } from "@/lib/server/media-analysis/providers/analysis-llm/service";
 
 function getAnalysisLlmConfig(): AnalysisLlmProviderConfig {
-  switch (env.TEXT_LLM_PROVIDER) {
+  switch (env.ANALYSIS_LLM_PROVIDER) {
     case "gemini":
       return {
         provider: "gemini",

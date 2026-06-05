@@ -1,6 +1,5 @@
 "use server";
 
-import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 import {
   getAnalysisSnapshotByRunId,
@@ -18,7 +17,6 @@ import type {
 import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
 import { getSettingsPreferences } from "@/features/settings/server/queries";
 import { requireSession } from "@/lib/auth/guards";
-import { env } from "@/lib/config/env";
 import { MEDIA_ANALYSIS_FINGERPRINT, MEDIA_ANALYSIS_PIPELINE_VERSION } from "@/lib/constants";
 import { generationRequestSchema } from "@/lib/server/content-generation/contracts";
 import {
@@ -33,8 +31,7 @@ import {
   recordContentAnalysisRunTransition,
   resetFailedContentAnalysisRunForRetry,
 } from "@/lib/server/media-analysis/runs";
-import type { analyzeMediaSubtitlesTask } from "@/trigger/analyze-media-subtitles";
-import type { generateContentPackTask } from "@/trigger/generate-content-pack";
+import { dispatchTriggerTask } from "@/lib/server/trigger/dispatch";
 
 const startAnalysisInputSchema = z.discriminatedUnion("mediaType", [
   z.object({
@@ -68,47 +65,41 @@ const generationStatusInputSchema = z.object({
 });
 
 async function triggerAnalysisRun(runId: string) {
-  try {
-    await tasks.trigger<typeof analyzeMediaSubtitlesTask>("analyze-media-subtitles", { runId });
-  } catch (error) {
-    await recordContentAnalysisRunTransition({
-      runId,
-      status: "failed",
-      stage: "failed",
-      message: "Failed to trigger reusable subtitle analysis.",
-      progressMessage: "Failed to trigger reusable subtitle analysis.",
-      errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage:
-        error instanceof Error ? error.message : "Failed to trigger reusable subtitle analysis.",
-      completedAt: new Date(),
-      payload: {
-        triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
-        triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
-      },
-    });
-
-    throw error;
-  }
+  await dispatchTriggerTask(
+    "analyze-media-subtitles",
+    { runId },
+    async ({ errorCode, errorMessage, payload }) => {
+      await recordContentAnalysisRunTransition({
+        runId,
+        status: "failed",
+        stage: "failed",
+        message: "Failed to trigger reusable subtitle analysis.",
+        progressMessage: "Failed to trigger reusable subtitle analysis.",
+        errorCode,
+        errorMessage,
+        completedAt: new Date(),
+        payload,
+      });
+    },
+  );
 }
 
 async function triggerPackGenerationJob(jobId: string) {
-  try {
-    await tasks.trigger<typeof generateContentPackTask>("generate-content-pack", { jobId });
-  } catch (error) {
-    await recordPackGenerationJobTransition({
-      jobId,
-      status: "failed",
-      stage: "failed",
-      message: "Failed to trigger pack generation.",
-      errorCode: "WORKFLOW_TRIGGER_FAILED",
-      errorMessage: error instanceof Error ? error.message : PUBLIC_GENERATION_FAILURE_MESSAGE,
-      payload: {
-        triggerApiUrl: process.env.TRIGGER_API_URL ?? "https://api.trigger.dev",
-        triggerSecretConfigured: Boolean(env.TRIGGER_SECRET_KEY),
-      },
-    });
-    throw error;
-  }
+  await dispatchTriggerTask(
+    "generate-content-pack",
+    { jobId },
+    async ({ errorCode, errorMessage, payload }) => {
+      await recordPackGenerationJobTransition({
+        jobId,
+        status: "failed",
+        stage: "failed",
+        message: "Failed to trigger pack generation.",
+        errorCode,
+        errorMessage: errorMessage || PUBLIC_GENERATION_FAILURE_MESSAGE,
+        payload,
+      });
+    },
+  );
 }
 
 export async function startAnalysisAction(

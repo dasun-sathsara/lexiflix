@@ -30,12 +30,8 @@ const answerSchema = z.object({
 
 export async function startAssessmentAction(): Promise<StartAssessmentActionResult> {
   const session = await getSessionOrNull();
-
   if (!session?.user) {
-    return {
-      ok: false,
-      error: "Unauthorized",
-    };
+    return { ok: false, error: "Unauthorized" };
   }
 
   const { state, firstItem } = initializeAssessmentState();
@@ -81,12 +77,8 @@ export async function answerAssessmentAction(input: {
   responseTimeMs?: number | null;
 }): Promise<AnswerAssessmentActionResult> {
   const session = await getSessionOrNull();
-
   if (!session?.user) {
-    return {
-      ok: false,
-      error: "Unauthorized",
-    };
+    return { ok: false, error: "Unauthorized" };
   }
 
   const parsed = answerSchema.safeParse(input);

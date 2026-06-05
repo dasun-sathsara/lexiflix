@@ -64,7 +64,7 @@ export async function runPackGenerationWorkflow(
         textModel: env.CONTENT_GENERATION_TEXT_MODEL,
         audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
         imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled,
-        imageModel: env.CONTENT_GENERATION_IMAGE_PROVIDER,
+        imageModel: env.CONTENT_GENERATION_IMAGE_MODEL,
       },
     });
 

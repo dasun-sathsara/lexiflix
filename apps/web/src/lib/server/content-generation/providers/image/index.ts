@@ -20,7 +20,7 @@ export type { ImageArtifactsResult } from "@/lib/server/content-generation/provi
 function getImageGenerationConfig(): ImageGenerationProviderConfig {
   return {
     provider: "azure-foundry",
-    model: env.CONTENT_GENERATION_IMAGE_PROVIDER ?? DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL,
+    model: env.CONTENT_GENERATION_IMAGE_MODEL ?? DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL,
   };
 }
 

@@ -1,70 +1,18 @@
 import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { CEFR_LEVELS } from "@/lib/constants";
 import { normalizeContextList } from "@/lib/domain/contexts";
 import type {
   GenerationRequestSnapshot,
   SelectedGenerationItem,
 } from "@/lib/server/content-generation/contracts";
+import {
+  allowedLevels,
+  knownTermPenalty,
+  preferenceScore,
+} from "@/lib/server/content-generation/selection-ranking";
 import { db } from "@/lib/server/db";
-import type { StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { contentAnalysisItem, userTermState, vocabularyTerm } from "@/lib/server/db/schema";
-
-type UserTermStateValue = "known" | "learning" | "ignored" | "unseen" | null;
-
-const KNOWN_TERM_PENALTY = 1_000_000;
-const UNRANKED_FREQUENCY_RANK = 999_999;
-
-function allowedLevels(
-  level: StoredCefrLevel | null,
-  mode: GenerationRequestSnapshot["cefrWindowMode"],
-) {
-  if (!level) {
-    return new Set<StoredCefrLevel>(CEFR_LEVELS);
-  }
-
-  const index = CEFR_LEVELS.indexOf(level);
-
-  if (mode === "same_level") {
-    return new Set<StoredCefrLevel>([level]);
-  }
-  if (mode === "one_level_above") {
-    return new Set<StoredCefrLevel>(
-      CEFR_LEVELS.slice(index, Math.min(index + 2, CEFR_LEVELS.length)),
-    );
-  }
-
-  return new Set<StoredCefrLevel>(CEFR_LEVELS.slice(index));
-}
-
-function preferenceScore(
-  item: SelectedGenerationItem,
-  frequencyPreference: GenerationRequestSnapshot["frequencyPreference"],
-) {
-  const frequencyRank = item.frequencyRank ?? UNRANKED_FREQUENCY_RANK;
-
-  if (frequencyPreference === "common_first") {
-    return frequencyRank;
-  }
-  if (frequencyPreference === "challenge_first") {
-    const cefrIndex = item.cefrLevel ? CEFR_LEVELS.indexOf(item.cefrLevel) : -1;
-    return cefrIndex * -10_000 + frequencyRank;
-  }
-
-  return frequencyRank - item.occurrenceCount * 5;
-}
-
-function knownTermPenalty(
-  termState: UserTermStateValue,
-  handling: GenerationRequestSnapshot["knownTermHandling"],
-) {
-  if (handling !== "downrank_known") {
-    return 0;
-  }
-
-  return termState === "known" ? KNOWN_TERM_PENALTY : 0;
-}
 
 export async function selectGenerationItems(input: {
   userId: string;
