@@ -26,7 +26,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
 
   // State
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
-  const [, startTransition] = useTransition();
+  const [_, startTransition] = useTransition();
 
   // Debounce search
   useEffect(() => {

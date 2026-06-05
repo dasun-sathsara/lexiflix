@@ -9,8 +9,7 @@ export interface UnifiedGenreMap {
 
 /**
  * Fetches both movie and TV genre lists in parallel and merges them into a
- * single id→name lookup map. This eliminates the duplicated Promise.all +
- * map-construction pattern across features.
+ * single id→name lookup map.
  */
 export async function getUnifiedGenreMap(): Promise<UnifiedGenreMap> {
   const [movieResponse, tvResponse] = await Promise.all([getGenres("movie"), getGenres("tv")]);

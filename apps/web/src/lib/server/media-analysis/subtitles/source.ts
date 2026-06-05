@@ -70,7 +70,7 @@ async function resolveSeasonSource(content: SubtitleContentContext): Promise<Sub
 
 /**
  * Resolves and downloads every subtitle file for a movie or season and returns the raw
- * text. Parsing, normalization and segmentation belong to the NLP service.
+ * text.
  */
 export async function resolveSubtitleSource(
   content: SubtitleContentContext,
