@@ -5,28 +5,26 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { ANALYSIS_ITEM_INSERT_CHUNK_SIZE, MAX_CONTEXTS_PER_ANALYSIS_ITEM } from "@/lib/constants";
 import { normalizeContextList } from "@/lib/domain/contexts";
 import { db } from "@/lib/server/db";
-import type { ContentAnalysisSummary, StoredVocabularyKind } from "@/lib/server/db/json-contracts";
+import type { ContentAnalysisSummary } from "@/lib/server/db/json-contracts";
 import {
   contentAnalysisItem,
   contentAnalysisRun,
   contentAnalysisRunEvent,
+  vocabularyTerm,
 } from "@/lib/server/db/schema";
 import type { MergedAnalysisItem } from "@/lib/server/media-analysis/merge";
 import { analysisItemKey } from "@/lib/server/media-analysis/terms";
 
 type AnalysisItemInsert = typeof contentAnalysisItem.$inferInsert;
 
-type VocabularyTermUpsertRow = {
-  id: string;
-  kind: StoredVocabularyKind;
-  normalized_text: string;
-};
-
 const COMPLETION_MESSAGE = "Analysis completed.";
 
 /**
  * Upserts the shared vocabulary catalog rows for this run and returns their ids keyed by
  * kind and normalized text.
+ *
+ * `DO UPDATE` is used instead of `DO NOTHING` so `RETURNING` also yields ids for terms that
+ * already exist in the catalog, which avoids a second lookup query.
  */
 async function upsertVocabularyTerms(items: MergedAnalysisItem[]) {
   const termIdByItemKey = new Map<string, string>();
@@ -34,26 +32,42 @@ async function upsertVocabularyTerms(items: MergedAnalysisItem[]) {
     return termIdByItemKey;
   }
 
-  const rowValues = items.map(
-    (item) =>
-      sql`(${item.kind}, ${item.normalizedText}, ${crypto.randomUUID()}, ${item.displayText}, ${item.lemma ?? null}, ${item.partOfSpeech ?? null}, ${item.cefrLevel ?? null}, ${item.cefrNumeric ?? null}, ${item.notes ?? null})`,
-  );
+  const rows = await db
+    .insert(vocabularyTerm)
+    .values(
+      items.map((item) => ({
+        id: crypto.randomUUID(),
+        kind: item.kind,
+        normalizedText: item.normalizedText,
+        displayText: item.displayText,
+        lemma: item.lemma,
+        partOfSpeech: item.partOfSpeech,
+        baseCefrLevel: item.cefrLevel,
+        baseCefrNumeric: item.cefrNumeric,
+        notes: item.notes,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [vocabularyTerm.kind, vocabularyTerm.normalizedText],
+      set: {
+        displayText: sql`excluded.display_text`,
+        lemma: sql`excluded.lemma`,
+        partOfSpeech: sql`excluded.part_of_speech`,
+        baseCefrLevel: sql`excluded.base_cefr_level`,
+        baseCefrNumeric: sql`excluded.base_cefr_numeric`,
+        notes: sql`excluded.notes`,
+        // `$onUpdate` only fires for `update()` statements, so bump it explicitly here.
+        updatedAt: new Date(),
+      },
+    })
+    .returning({
+      id: vocabularyTerm.id,
+      kind: vocabularyTerm.kind,
+      normalizedText: vocabularyTerm.normalizedText,
+    });
 
-  const result = await db.execute<VocabularyTermUpsertRow>(sql`
-    INSERT INTO vocabulary_term (kind, normalized_text, id, display_text, lemma, part_of_speech, base_cefr_level, base_cefr_numeric, notes)
-    VALUES ${sql.join(rowValues, sql`, `)}
-    ON CONFLICT (kind, normalized_text)
-    DO UPDATE SET
-      display_text = excluded.display_text,
-      lemma = excluded.lemma,
-      part_of_speech = excluded.part_of_speech,
-      base_cefr_level = excluded.base_cefr_level,
-      base_cefr_numeric = excluded.base_cefr_numeric,
-      notes = excluded.notes
-    RETURNING id, kind, normalized_text`);
-
-  for (const row of result.rows) {
-    termIdByItemKey.set(analysisItemKey(row.kind, row.normalized_text), row.id);
+  for (const row of rows) {
+    termIdByItemKey.set(analysisItemKey(row.kind, row.normalizedText), row.id);
   }
 
   return termIdByItemKey;
