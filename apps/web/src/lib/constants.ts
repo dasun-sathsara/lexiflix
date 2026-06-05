@@ -137,9 +137,9 @@ export const MEDIA_ANALYSIS_PIPELINE_VERSION = "media-analysis-v1";
 export const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPELINE_VERSION}`;
 export const OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS = 1_100;
 export const SUBTITLE_SEARCH_MAX_PAGES = 3;
-export const SUBTITLE_CHUNK_MAX_DURATION_SECONDS = 1_800;
-export const SUBTITLE_CHUNK_MAX_CHARACTERS = 30_000;
 export const NLP_ANALYSIS_BATCH_SIZE = 200;
+/** Prompt window size for analysis-LLM phrase extraction over raw subtitle text. */
+export const ANALYSIS_LLM_WINDOW_CHARACTERS = 30_000;
 export const ANALYSIS_LLM_CONCURRENCY = 4;
 export const MAX_CONTEXTS_PER_ANALYSIS_ITEM = 5;
 export const ANALYSIS_ITEM_INSERT_CHUNK_SIZE = 200;

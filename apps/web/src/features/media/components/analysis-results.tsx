@@ -29,11 +29,8 @@ function AnalysisSummaryGrid({ snapshot }: { snapshot: MediaAnalysisSnapshot }) 
       value: snapshot.summary?.subtitleLineCount,
     },
     {
-      label: "Speech rate",
-      value:
-        typeof snapshot.summary?.speechRateWpm === "number"
-          ? `${snapshot.summary.speechRateWpm} wpm`
-          : null,
+      label: "Unique lemmas",
+      value: snapshot.summary?.uniqueLemmaCount,
     },
   ];
 

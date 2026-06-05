@@ -12,13 +12,8 @@ import {
   type AnalysisLlmItem,
   analysisLlmResponseSchema,
 } from "@/lib/server/media-analysis/providers/analysis-llm/schema";
+import { buildPromptWindows } from "@/lib/server/media-analysis/providers/analysis-llm/windows";
 import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
-
-/** Minimal chunk shape the provider needs, so it stays decoupled from subtitle types. */
-export type AnalysisLlmChunk = {
-  chunkIndex: number;
-  text: string;
-};
 
 export type AnalysisLlmPhrase = AnalysisLlmItem & {
   cefrNumeric: number | null;
@@ -27,30 +22,35 @@ export type AnalysisLlmPhrase = AnalysisLlmItem & {
 export type AnalysisLlmResult = {
   provider: AnalysisLlmProviderConfig["provider"];
   model: string;
+  /** Number of prompt windows the subtitle text was split into. */
+  windowCount: number;
   phrases: AnalysisLlmPhrase[];
   warnings: string[];
 };
 
 export async function extractSubtitlePhrasesWithAdapter(input: {
-  chunks: AnalysisLlmChunk[];
+  subtitleText: string;
   config: AnalysisLlmProviderConfig;
   adapter: AnalysisLlmAdapter;
 }): Promise<AnalysisLlmResult> {
+  const windows = buildPromptWindows(input.subtitleText);
+
   logger.info("[media-analysis:llm] starting phrase extraction", {
     provider: input.adapter.provider,
     model: input.config.model,
-    chunkCount: input.chunks.length,
+    windowCount: windows.length,
+    subtitleCharacters: input.subtitleText.length,
     concurrency: ANALYSIS_LLM_CONCURRENCY,
   });
 
   const settledResults = await mapWithConcurrency(
-    input.chunks,
+    windows,
     ANALYSIS_LLM_CONCURRENCY,
-    async (chunk) => {
+    async (windowText, windowIndex) => {
       const prompt = buildPhraseExtractionPrompt({
-        chunkText: chunk.text,
-        chunkIndex: chunk.chunkIndex,
-        totalChunks: input.chunks.length,
+        windowText,
+        windowIndex,
+        totalWindows: windows.length,
       });
 
       const payload = await input.adapter.extractPhrases({
@@ -69,12 +69,12 @@ export async function extractSubtitlePhrasesWithAdapter(input: {
     if (result.status === "rejected") {
       const errorMessage =
         result.reason instanceof Error ? result.reason.message : String(result.reason);
-      logger.error("[media-analysis:llm] chunk extraction failed", {
+      logger.error("[media-analysis:llm] window extraction failed", {
         provider: input.adapter.provider,
-        chunkIndex: index,
+        windowIndex: index,
         error: errorMessage,
       });
-      warnings.push(`Chunk ${index + 1} analysis failed: ${errorMessage}`);
+      warnings.push(`Subtitle window ${index + 1} analysis failed: ${errorMessage}`);
       continue;
     }
 
@@ -90,12 +90,13 @@ export async function extractSubtitlePhrasesWithAdapter(input: {
     provider: input.adapter.provider,
     model: input.config.model,
     phraseCount: phrases.length,
-    failedChunkCount: warnings.length,
+    failedWindowCount: warnings.length,
   });
 
   return {
     provider: input.adapter.provider,
     model: input.config.model,
+    windowCount: windows.length,
     phrases,
     warnings,
   };

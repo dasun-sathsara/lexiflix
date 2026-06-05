@@ -58,15 +58,14 @@ export type ArtifactMetadata = JsonMap;
 export type ProcessingWarningList = string[];
 
 export type ContentAnalysisSummary = {
-  totalWordCount?: number;
   uniqueLemmaCount?: number;
   extractedItemCount?: number;
   selectableItemCount?: number;
   kindCounts?: Partial<Record<StoredVocabularyKind, number>>;
   cefrDistribution?: Partial<Record<StoredCefrLevel, number>>;
   averageCefrLevel?: StoredCefrLevel | null;
-  speechRateWpm?: number | null;
   subtitleLineCount?: number;
+  subtitleCharacterCount?: number;
   [key: string]: unknown;
 };
 

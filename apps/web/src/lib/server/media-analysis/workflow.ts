@@ -14,9 +14,7 @@ import {
   type ContentAnalysisRunRow,
   recordContentAnalysisRunTransition,
 } from "@/lib/server/media-analysis/runs";
-import { buildSubtitleChunks } from "@/lib/server/media-analysis/subtitles/chunks";
-import { buildSubtitleCorpus } from "@/lib/server/media-analysis/subtitles/corpus";
-import { buildPlainTextCorpus } from "@/lib/server/media-analysis/subtitles/parse";
+import { resolveSubtitleSource } from "@/lib/server/media-analysis/subtitles/source";
 import { buildAnalysisSummary } from "@/lib/server/media-analysis/summary";
 
 type ContentRow = typeof content.$inferSelect;
@@ -83,17 +81,14 @@ export async function runMediaAnalysisWorkflow(
       startedAt,
     });
 
-    const corpus = await buildSubtitleCorpus(context.content);
-    const chunks = buildSubtitleChunks(corpus.lines);
-    const warnings = [...corpus.warnings];
+    const subtitles = await resolveSubtitleSource(context.content);
+    const warnings = [...subtitles.warnings];
 
-    logger.info("[media-analysis] subtitles ready", {
+    logger.info("[media-analysis] subtitles downloaded", {
       runId,
-      subtitleLineCount: corpus.lines.length,
-      subtitleSourceCount: corpus.sourceCount,
-      warningCount: corpus.warnings.length,
-      plainTextCharacters: buildPlainTextCorpus(corpus.lines).length,
-      chunkCount: chunks.length,
+      subtitleSourceCount: subtitles.sourceCount,
+      subtitleCharacters: subtitles.subtitleText.length,
+      warningCount: subtitles.warnings.length,
     });
 
     await recordContentAnalysisRunTransition({
@@ -102,15 +97,15 @@ export async function runMediaAnalysisWorkflow(
       message: "Running NLP analysis on normalized subtitles.",
       progressMessage: "Running subtitle NLP analysis...",
       payload: {
-        subtitleLineCount: corpus.lines.length,
-        subtitleSourceCount: corpus.sourceCount,
+        subtitleSourceCount: subtitles.sourceCount,
+        subtitleCharacters: subtitles.subtitleText.length,
       },
       warnings,
     });
 
     const nlpResponse = await analyzeWithNlpService({
       job_id: runId,
-      content: corpus.rawSrtText,
+      content: subtitles.subtitleText,
       content_type: "srt",
       pipeline_version: MEDIA_ANALYSIS_PIPELINE_VERSION,
     });
@@ -127,17 +122,18 @@ export async function runMediaAnalysisWorkflow(
       stage: "running_llm",
       message: "Running phrase extraction across subtitle chunks.",
       progressMessage: "Analyzing subtitle phrases...",
-      payload: { chunkCount: chunks.length },
+      payload: { subtitleCharacters: subtitles.subtitleText.length },
       warnings,
     });
 
-    const llmResult = await extractSubtitlePhrases({ chunks });
+    const llmResult = await extractSubtitlePhrases({ subtitleText: subtitles.subtitleText });
     warnings.push(...llmResult.warnings);
 
     logger.info("[media-analysis] phrase analysis completed", {
       runId,
       provider: llmResult.provider,
       model: llmResult.model,
+      windowCount: llmResult.windowCount,
       phraseCount: llmResult.phrases.length,
       warningCount: llmResult.warnings.length,
     });
@@ -155,18 +151,14 @@ export async function runMediaAnalysisWorkflow(
     });
 
     const items = mergeAnalysisItems({ nlpResponse, phrases: llmResult.phrases });
-    const summary = buildAnalysisSummary({
-      lines: corpus.lines,
-      nlpCandidates: nlpResponse.candidates,
-      items,
-    });
+    const summary = buildAnalysisSummary({ nlpResponse, items });
 
     logger.info("[media-analysis] merged analysis", {
       runId,
       itemCount: items.length,
       warningCount: warnings.length,
       selectableItemCount: summary.selectableItemCount,
-      totalWordCount: summary.totalWordCount,
+      subtitleLineCount: summary.subtitleLineCount,
     });
 
     await recordContentAnalysisRunTransition({

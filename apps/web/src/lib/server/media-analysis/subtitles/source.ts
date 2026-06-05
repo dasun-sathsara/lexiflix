@@ -1,38 +1,28 @@
 import "server-only";
 
 import { downloadSubtitleFile } from "@/lib/integrations/opensubtitles/client";
-import { parseSrtText } from "@/lib/server/media-analysis/subtitles/parse";
 import {
   findMovieSubtitle,
   findSeasonSubtitles,
 } from "@/lib/server/media-analysis/subtitles/search";
 import type {
   SubtitleContentContext,
-  SubtitleCorpus,
-  SubtitleLine,
+  SubtitleSource,
 } from "@/lib/server/media-analysis/subtitles/types";
 
-async function buildMovieCorpus(content: SubtitleContentContext): Promise<SubtitleCorpus> {
+async function resolveMovieSource(content: SubtitleContentContext): Promise<SubtitleSource> {
   const candidate = await findMovieSubtitle(content);
   if (!candidate) {
     throw new Error(`No compatible English subtitles were found for movie ${content.title}.`);
   }
 
   const downloaded = await downloadSubtitleFile(candidate.fileId);
-  const lines = parseSrtText(
-    downloaded.fileName ?? `movie-${candidate.fileId}`,
-    downloaded.subtitleText,
-  );
-
-  if (lines.length === 0) {
-    throw new Error(
-      `Downloaded subtitles for movie ${content.title} contained no usable dialogue lines.`,
-    );
+  if (!downloaded.subtitleText.trim()) {
+    throw new Error(`Downloaded subtitles for movie ${content.title} were empty.`);
   }
 
   return {
-    lines,
-    rawSrtText: downloaded.subtitleText,
+    subtitleText: downloaded.subtitleText,
     warnings: candidate.hearingImpaired
       ? ["Movie subtitle fallback used a hearing-impaired subtitle file."]
       : [],
@@ -40,26 +30,18 @@ async function buildMovieCorpus(content: SubtitleContentContext): Promise<Subtit
   };
 }
 
-async function buildSeasonCorpus(content: SubtitleContentContext): Promise<SubtitleCorpus> {
+async function resolveSeasonSource(content: SubtitleContentContext): Promise<SubtitleSource> {
   const candidates = await findSeasonSubtitles(content);
   if (candidates.length === 0) {
     throw new Error(`No compatible English subtitles were found for ${content.title}.`);
   }
 
   const warnings: string[] = [];
-  const lines: SubtitleLine[] = [];
-  const rawSrtParts: string[] = [];
+  const parts: string[] = [];
 
   for (const candidate of candidates) {
     const downloaded = await downloadSubtitleFile(candidate.fileId);
-
-    lines.push(
-      ...parseSrtText(
-        downloaded.fileName ?? `season-${candidate.episodeNumber ?? candidate.fileId}`,
-        downloaded.subtitleText,
-      ),
-    );
-    rawSrtParts.push(downloaded.subtitleText);
+    parts.push(downloaded.subtitleText);
 
     if (candidate.hearingImpaired) {
       warnings.push(
@@ -74,23 +56,24 @@ async function buildSeasonCorpus(content: SubtitleContentContext): Promise<Subti
     );
   }
 
-  if (lines.length === 0) {
-    throw new Error(
-      `Downloaded season subtitles for ${content.title} contained no usable dialogue lines.`,
-    );
+  const subtitleText = parts.join("\n\n");
+  if (!subtitleText.trim()) {
+    throw new Error(`Downloaded season subtitles for ${content.title} were empty.`);
   }
 
   return {
-    lines,
-    rawSrtText: rawSrtParts.join("\n\n"),
+    subtitleText,
     warnings,
     sourceCount: candidates.length,
   };
 }
 
-/** Resolves, downloads and parses every subtitle source for a movie or season. */
-export async function buildSubtitleCorpus(
+/**
+ * Resolves and downloads every subtitle file for a movie or season and returns the raw
+ * text. Parsing, normalization and segmentation belong to the NLP service.
+ */
+export async function resolveSubtitleSource(
   content: SubtitleContentContext,
-): Promise<SubtitleCorpus> {
-  return content.kind === "movie" ? buildMovieCorpus(content) : buildSeasonCorpus(content);
+): Promise<SubtitleSource> {
+  return content.kind === "movie" ? resolveMovieSource(content) : resolveSeasonSource(content);
 }
