@@ -110,6 +110,10 @@ export const SRS_CONFIG = {
   easyBonus: 1.3,
   hardIntervalMultiplier: 1.2,
   minimumEaseFactor: 1.3,
+  /** Ease factor adjustments applied when a graduated card is reviewed. */
+  lapseEasePenalty: 0.2,
+  hardEasePenalty: 0.15,
+  easyEaseBonus: 0.15,
   leechThreshold: 8,
   maximumIntervalDays: 36_500,
   masteryRepetitionThreshold: 5,

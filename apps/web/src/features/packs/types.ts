@@ -1,5 +1,10 @@
 import type { ActionResult } from "@/lib/contracts/action-result";
 export type PackCardState = "new" | "learning" | "due" | "mastered" | "removed";
+/**
+ * Card states the SRS scheduler can persist. `due` is derived from the due date
+ * at read time, and `removed` is a user action rather than a review outcome.
+ */
+export type PackSrsState = Exclude<PackCardState, "due" | "removed">;
 export type PackContentKind = "movie" | "season";
 export type PackVocabularyKind = "word" | "phrasal_verb" | "idiom" | "slang";
 export type PackCefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -129,7 +134,7 @@ export type PackItemActionResult = ActionResult<{ activeCount: number; itemId: s
 
 export type PackRatingActionResult = ActionResult<{
   itemId: string;
-  nextState: Exclude<PackCardState, "due" | "removed">;
+  nextState: PackSrsState;
   dueAt: string;
   nextDueAt: string | null;
   reviewedCards: number;

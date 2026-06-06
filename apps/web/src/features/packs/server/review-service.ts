@@ -1,9 +1,9 @@
 import "server-only";
 
 import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { computeNextReviewState, toPackSrsState } from "@/features/packs/lib/srs";
 import { computeNextStreak } from "@/features/packs/lib/streak";
-import { computeNextReviewState } from "@/features/packs/server/srs";
-import type { PackReviewRating } from "@/features/packs/types";
+import type { PackReviewRating, PackSrsState } from "@/features/packs/types";
 import { db } from "@/lib/server/db";
 import { pack, packItem, reviewEvent, userStreak, userTermState } from "@/lib/server/db/schema";
 
@@ -17,7 +17,7 @@ export type ReviewItemInput = {
 
 export type ReviewItemResult = {
   itemId: string;
-  nextState: "new" | "learning" | "mastered";
+  nextState: PackSrsState;
   dueAt: Date;
   nextDueAt: Date | null;
   reviewedCards: number;
@@ -35,8 +35,7 @@ export async function executeReview(input: ReviewItemInput): Promise<ReviewItemR
   const next = computeNextReviewState({
     rating,
     reviewedAt,
-    previousState:
-      item.state === "mastered" ? "mastered" : item.state === "new" ? "new" : "learning",
+    previousState: toPackSrsState(item.state),
     previousRating: item.lastRating,
     repetitionCount: item.repetitionCount,
     lapseCount: item.lapseCount,

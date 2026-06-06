@@ -1,10 +1,9 @@
 import "server-only";
 
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
+import { getEffectivePackCardState } from "@/features/packs/lib/srs";
 import { getAppWeekStart } from "@/features/packs/lib/study-time";
-import { getEffectivePackCardState } from "@/features/packs/server/srs";
 import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
-import type { PackCardState } from "@/features/packs/types";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/integrations/tmdb/contracts";
 import { db } from "@/lib/server/db";
 import {
@@ -86,7 +85,7 @@ export async function getDashboardView({ userId }: { userId: string }): Promise<
 
       for (const item of items) {
         const effectiveState = getEffectivePackCardState({
-          state: item.state as PackCardState,
+          state: item.state,
           dueAt: item.dueAt,
           now,
           removedAt: item.removedAt,

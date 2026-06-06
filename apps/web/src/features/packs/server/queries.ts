@@ -5,10 +5,14 @@ import "server-only";
 import { and, asc, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { buildContentMediaHref } from "@/features/media/lib/href";
+import {
+  getEffectivePackCardState,
+  getRatingIntervalPreviews,
+  toPackSrsState,
+} from "@/features/packs/lib/srs";
 import type {
   DeckSummary,
   PackCardCounts,
-  PackCardState,
   PackCardView,
   PackContentKind,
   PackMediaSummary,
@@ -28,7 +32,6 @@ import {
   userTermState,
   vocabularyTerm,
 } from "@/lib/server/db/schema";
-import { getEffectivePackCardState, getRatingIntervalPreviews } from "./srs";
 import { buildStudyQueue, getPackStudyPlan, getStudyPlanForUser } from "./study-plan";
 
 const audioArtifact = alias(artifactObject, "audio_artifact");
@@ -87,19 +90,21 @@ function deriveCounts(cards: Pick<PackCardView, "state">[]): PackCardCounts {
   );
 }
 
+/**
+ * Recomputes the read-time card fields: the derived state (`due` vs `learning`)
+ * and the per-rating interval previews shown on the study screen.
+ */
 function toEffectiveCardView(card: PackCardView, now: Date): PackCardView {
-  const previousState =
-    card.state === "mastered" ? "mastered" : card.state === "new" ? "new" : "learning";
   return {
     ...card,
     state: getEffectivePackCardState({
       state: card.state,
       dueAt: card.dueAt ? new Date(card.dueAt) : null,
       now,
-    }) as PackCardState,
+    }),
     ratingPreviews: getRatingIntervalPreviews({
       reviewedAt: now,
-      previousState,
+      previousState: toPackSrsState(card.state),
       previousRating: card.lastRating,
       repetitionCount: card.repetitionCount,
       lapseCount: card.lapseCount,
@@ -182,7 +187,7 @@ async function getPackCards(packId: string, userId: string): Promise<PackCardVie
           occurrenceCount: analysis.occurrenceCount,
           frequencyRank: analysis.frequencyRank,
           includedReason: item.includedReason,
-          state: item.state as PackCardView["state"],
+          state: item.state,
           dueAt: toIso(item.dueAt),
           lastReviewedAt: toIso(item.lastReviewedAt),
           lastRating: item.lastRating,
@@ -365,7 +370,7 @@ export async function getDeckSummariesForUser({
           dueAt: card.dueAt,
           now,
           removedAt: card.removedAt,
-        }) as PackCardState,
+        }),
       })),
     );
     counts.new = studyPlan.newAvailableToday;
