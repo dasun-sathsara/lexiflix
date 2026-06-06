@@ -3,7 +3,6 @@ import { CEFR_LEVELS, NLP_ANALYSIS_BATCH_SIZE } from "@/lib/constants";
 import { contextListSchema } from "@/lib/domain/contexts";
 
 export const nlpAnalysisOptionsSchema = z.object({
-  include_propn: z.boolean().default(false),
   dedup_lines: z.boolean().default(true),
   batch_size: z.number().int().min(1).max(10_000).default(NLP_ANALYSIS_BATCH_SIZE),
 });
@@ -11,7 +10,6 @@ export const nlpAnalysisOptionsSchema = z.object({
 export const nlpAnalysisRequestSchema = z.object({
   job_id: z.string().min(1).nullable().optional(),
   content: z.string().min(1),
-  content_type: z.enum(["srt", "plain_text"]).default("srt"),
   pipeline_version: z.string().min(1).nullable().optional(),
   options: nlpAnalysisOptionsSchema.prefault({}),
 });

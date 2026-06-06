@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import timedelta
 
 from app.services.text_processing import (
-    _deduplicate_lines,
+    Cue,
+    _deduplicate_cues,
+    _group_into_scenes,
     _join_broken_sentences,
-    chunk_lines,
     clean_subtitle_text,
     is_subtitle_metadata_line,
-    split_plain_text,
 )
 
 
@@ -56,63 +56,87 @@ class TestIsSubtitleMetadataLine:
         assert is_subtitle_metadata_line("www.opensubtitles.com") is True
 
 
-class TestDeduplicateLines:
+class TestDeduplicateCues:
     def test_preserves_order(self) -> None:
-        lines = ["First", "Second", "Third"]
-        assert _deduplicate_lines(lines) == lines
+        cues = make_cues(["First", "Second", "Third"])
+        assert [c.text for c in _deduplicate_cues(cues)] == ["First", "Second", "Third"]
 
     def test_case_insensitive_dedup(self) -> None:
-        lines = ["Hello", "hello", "HELLO"]
-        assert _deduplicate_lines(lines) == ["Hello"]
+        cues = make_cues(["Hello", "hello", "HELLO"])
+        assert [c.text for c in _deduplicate_cues(cues)] == ["Hello"]
 
     def test_punctuation_insensitive_dedup(self) -> None:
-        lines = ["Hello!", "Hello", "Hi."]
-        assert _deduplicate_lines(lines) == ["Hello!", "Hi."]
-
-    def test_keeps_unique_lines(self) -> None:
-        lines = ["Alpha", "Beta", "Alpha", "Gamma", "beta"]
-        assert _deduplicate_lines(lines) == ["Alpha", "Beta", "Gamma"]
+        cues = make_cues(["Hello!", "Hello", "Hi."])
+        assert [c.text for c in _deduplicate_cues(cues)] == ["Hello!", "Hi."]
 
     def test_whitespace_normalization_for_dedup(self) -> None:
-        lines = ["A  b", "a b", "A b"]
-        assert _deduplicate_lines(lines) == ["A  b"]
+        cues = make_cues(["A  b", "a b", "A b"])
+        assert [c.text for c in _deduplicate_cues(cues)] == ["A  b"]
+
+
+def make_cues(texts: list[str], gaps: list[float] | None = None) -> list[Cue]:
+    """Build cues two seconds long each, separated by `gaps` seconds."""
+
+    cues: list[Cue] = []
+    start = timedelta(seconds=0)
+    gaps = gaps or [1.0] * (len(texts) - 1)
+    for index, text in enumerate(texts):
+        end = start + timedelta(seconds=2)
+        cues.append(Cue(text=text, start=start, end=end))
+        if index < len(gaps):
+            start = end + timedelta(seconds=gaps[index])
+    return cues
 
 
 class TestJoinBrokenSentences:
-    def _make_items(self, texts: list[str], gaps: list[float] | None = None) -> list[tuple[str, timedelta, timedelta]]:
-        """Helper to build subtitle item tuples."""
-        items: list[tuple[str, timedelta, timedelta]] = []
-        start = timedelta(seconds=0)
-        gaps = gaps or [1.0] * (len(texts) - 1)
-        for i, text in enumerate(texts):
-            end = start + timedelta(seconds=2)
-            items.append((text, start, end))
-            if i < len(gaps):
-                start = end + timedelta(seconds=gaps[i])
-        return items
-
     def test_joins_mid_sentence_breaks_within_2s_gap(self) -> None:
-        items = self._make_items(["Hello there", "my friend"], gaps=[1.0])
-        result = _join_broken_sentences(items)
-        assert result == ["Hello there my friend"]
+        result = _join_broken_sentences(
+            make_cues(["Hello there", "my friend"], gaps=[1.0])
+        )
+        assert [cue.text for cue in result] == ["Hello there my friend"]
 
     def test_does_not_join_when_gap_exceeds_2s(self) -> None:
-        items = self._make_items(["Hello there", "my friend"], gaps=[3.0])
-        result = _join_broken_sentences(items)
-        assert result == ["Hello there", "my friend"]
+        result = _join_broken_sentences(
+            make_cues(["Hello there", "my friend"], gaps=[3.0])
+        )
+        assert [cue.text for cue in result] == ["Hello there", "my friend"]
 
     def test_does_not_join_when_line_ends_with_punctuation(self) -> None:
-        items = self._make_items(["Hello there.", "My friend"], gaps=[1.0])
-        result = _join_broken_sentences(items)
-        assert result == ["Hello there.", "My friend"]
+        result = _join_broken_sentences(
+            make_cues(["Hello there.", "My friend"], gaps=[1.0])
+        )
+        assert [cue.text for cue in result] == ["Hello there.", "My friend"]
 
     def test_joins_multiple_fragments(self) -> None:
-        items = self._make_items(["One", "two", "three."], gaps=[0.5, 0.5])
-        result = _join_broken_sentences(items)
-        assert result == ["One two three."]
+        result = _join_broken_sentences(
+            make_cues(["One", "two", "three."], gaps=[0.5, 0.5])
+        )
+        assert [cue.text for cue in result] == ["One two three."]
+
+    def test_keeps_timings_of_the_merged_span(self) -> None:
+        result = _join_broken_sentences(make_cues(["One", "two."], gaps=[0.5]))
+        assert result[0].start == timedelta(seconds=0)
+        assert result[0].end == timedelta(seconds=4.5)
 
     def test_empty_list_returns_empty(self) -> None:
         assert _join_broken_sentences([]) == []
+
+
+class TestGroupIntoScenes:
+    def test_groups_cues_close_together(self) -> None:
+        cues = make_cues(["Hello there.", "Hi back."], gaps=[1.0])
+        assert _group_into_scenes(cues) == [["Hello there.", "Hi back."]]
+
+    def test_splits_on_a_long_pause(self) -> None:
+        cues = make_cues(["Hello there.", "Hi back."], gaps=[9.0])
+        assert _group_into_scenes(cues) == [["Hello there."], ["Hi back."]]
+
+    def test_caps_scene_size(self) -> None:
+        cues = make_cues(["x" * 600, "y" * 600], gaps=[1.0])
+        assert _group_into_scenes(cues) == [["x" * 600], ["y" * 600]]
+
+    def test_empty_list_returns_empty(self) -> None:
+        assert _group_into_scenes([]) == []
 
 
 class TestCleanSubtitleTextEdgeCases:
@@ -151,59 +175,3 @@ class TestCleanSubtitleTextEdgeCases:
 
     def test_long_speaker_name(self) -> None:
         assert clean_subtitle_text("SUPERMAN-CLARK KENT: Hello") == "Hello"
-
-
-class TestChunkLines:
-    """Tests for chunking lines into character-limited groups."""
-
-    def test_yields_single_chunk_when_under_limit(self) -> None:
-        lines = ["Hello", "world"]
-        result = list(chunk_lines(lines, max_chars=100))
-        assert result == ["Hello\nworld"]
-
-    def test_splits_into_multiple_chunks(self) -> None:
-        lines = ["Hello", "world", "foo", "bar"]
-        result = list(chunk_lines(lines, max_chars=8))
-        # "Hello" (5) + "world" (5) = 10 > 8, so first chunk is just "Hello"
-        assert result[0] == "Hello"
-        # "world" (5) + "foo" (3) = 8, not > 8, so chunk is "world\nfoo"
-        assert result[1] == "world\nfoo"
-        # "bar" left alone
-        assert result[2] == "bar"
-
-    def test_empty_list(self) -> None:
-        assert list(chunk_lines([], max_chars=100)) == []
-
-    def test_exact_boundary(self) -> None:
-        lines = ["abcd", "efgh"]
-        # "abcd" (4) + "efgh" (4) = 8, not > 8
-        result = list(chunk_lines(lines, max_chars=8))
-        assert result == ["abcd\nefgh"]
-
-
-class TestSplitPlainText:
-    """Tests for splitting pre-cleaned plain text (caller owns cleaning)."""
-
-    def test_splits_non_empty_lines(self) -> None:
-        text = "Hello world\n\n  Hi there  \n"
-        result = split_plain_text(text, dedup_lines=False)
-        assert result == ["Hello world", "Hi there"]
-
-    def test_does_not_re_clean_srt_artifacts(self) -> None:
-        # Web owns cleaning; plain_text path must not strip speaker labels.
-        text = "JOHN: Hi there\n[music playing]"
-        result = split_plain_text(text, dedup_lines=False)
-        assert result == ["JOHN: Hi there", "[music playing]"]
-
-    def test_deduplicates_by_default(self) -> None:
-        text = "Hello\nhello\nHELLO\nWorld"
-        result = split_plain_text(text)
-        assert result == ["Hello", "World"]
-
-    def test_empty_text(self) -> None:
-        assert split_plain_text("") == []
-
-    def test_no_dedup_option(self) -> None:
-        text = "Hello\nhello"
-        result = split_plain_text(text, dedup_lines=False)
-        assert result == ["Hello", "hello"]

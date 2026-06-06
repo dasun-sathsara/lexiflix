@@ -70,7 +70,8 @@ export type SelectedGenerationItem = {
   termId: string;
   kind: StoredVocabularyKind;
   displayText: string;
-  surfaceForm: string;
+  /** Every part of speech this lemma was observed with, most frequent first. */
+  partsOfSpeech: string[];
   cefrLevel: StoredCefrLevel | null;
   occurrenceCount: number;
   frequencyRank: number | null;

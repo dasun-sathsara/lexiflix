@@ -34,15 +34,14 @@ def _http_for_domain_error(exc: NLPServiceError) -> tuple[int, str]:
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
-    """Analyze subtitle content and return structured vocabulary candidates.
+    """Analyze SRT subtitle content and return structured vocabulary candidates.
 
-    Accepts either raw SRT content or pre-extracted plain text.
     Called synchronously by Trigger.dev as one workflow step.
     """
+
     logger.info(
-        "Analyze request received (job_id=%s, content_type=%s, content_length=%d)",
+        "Analyze request received (job_id=%s, content_length=%d)",
         request.job_id,
-        request.content_type,
         len(request.content),
     )
 

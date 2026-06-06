@@ -13,7 +13,19 @@ export function normalizeTermText(value: string) {
     .replace(/\s+/g, " ");
 }
 
-/** Identity of a vocabulary term inside one analysis run. */
-export function analysisItemKey(kind: StoredVocabularyKind, normalizedText: string) {
-  return `${kind}:${normalizedText}`;
+/** Catalog form of a part of speech: `null` for phrases, which have none. */
+export function normalizePartOfSpeech(value: string | null | undefined) {
+  return value?.trim().toLowerCase() || null;
+}
+
+/**
+ * Identity of a vocabulary term. Must stay in sync with the
+ * `vocabulary_term_kind_text_pos_unique` constraint.
+ */
+export function analysisItemKey(
+  kind: StoredVocabularyKind,
+  normalizedText: string,
+  partOfSpeech: string | null,
+) {
+  return `${kind}:${normalizedText}:${partOfSpeech ?? ""}`;
 }

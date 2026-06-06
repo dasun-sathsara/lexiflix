@@ -2,12 +2,12 @@
 
 Internal Python microservice for subtitle analysis and vocabulary extraction. Called by Trigger.dev workflows as a single compute step — not intended for direct browser access.
 
-The service uses `cefrpy` for CEFR level resolution. Production web callers send
-pre-cleaned `plain_text`; the SRT path is for direct API/Bruno testing.
+The service uses `cefrpy` for CEFR level resolution. Callers send raw SRT markup;
+subtitle parsing, cleaning and scene grouping all happen here.
 
 ## Architecture Role
 
-This service is deliberately narrow. It accepts subtitle text (SRT or plain text), runs the NLP pipeline, and returns structured vocabulary candidates as JSON. It does **not** own:
+This service is deliberately narrow. It accepts SRT subtitle text, runs the NLP pipeline, and returns structured vocabulary candidates as JSON. It does **not** own:
 
 - Authentication or sessions
 - Job orchestration or queues
@@ -39,9 +39,10 @@ apps/nlp_service/
 │   └── services/             # NLP pipeline logic
 │       ├── cefr.py           # cefrpy-based CEFR resolution
 │       ├── contexts.py       # Scoring subtitle sentences as usage examples
+│       ├── cue_boundaries.py # spaCy component pinning sentences to cues
 │       ├── pipeline.py       # Pipeline façade (main entry point)
 │       ├── spacy_models.py   # spaCy model loading + singleton
-│       ├── text_processing.py # SRT parsing, cleaning, dedup
+│       ├── text_processing.py # SRT parsing, cleaning, dedup, scene grouping
 │       └── token_filters.py  # Token exclusion rules + lemma selection
 ├── main.py                   # Uvicorn runner shim
 ├── pyproject.toml            # Dependencies + tooling config
@@ -137,7 +138,6 @@ curl -X POST http://localhost:8000/api/v1/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "content": "1\n00:00:01,000 --> 00:00:04,000\nThe quick brown fox jumped over the lazy dog.\n\n2\n00:00:05,000 --> 00:00:08,000\nShe sells seashells by the seashore.",
-    "content_type": "srt",
     "job_id": "test-123"
   }'
 ```
@@ -160,7 +160,7 @@ All settings are read from environment variables with an `NLP_` prefix:
 | ------ | ----------------- | ------------------------------------------- |
 | `GET`  | `/health`         | Liveness probe                              |
 | `GET`  | `/ready`          | Readiness probe (reports spaCy model state) |
-| `POST` | `/api/v1/analyze` | Subtitle analysis → vocabulary candidates   |
+| `POST` | `/api/v1/analyze` | SRT analysis → vocabulary candidates        |
 
 ## Development Commands
 
@@ -190,7 +190,6 @@ It includes:
 - `GET /health`
 - `GET /ready`
 - `POST /api/v1/analyze` with SRT input
-- `POST /api/v1/analyze` with plain text input
 - `POST /api/v1/analyze` with invalid SRT to verify the `422` error path
 
 ### Using the collection

@@ -1,7 +1,7 @@
 """spaCy model management — loading and singleton lifecycle.
 
 Expensive model initialization is done once at startup and reused across
-requests. The ``SpaCyModelManager`` holds the loaded pipeline and exposes
+requests. The `SpaCyModelManager` holds the loaded pipeline and exposes
 readiness state for the health endpoint.
 """
 
@@ -13,10 +13,12 @@ import spacy  # type: ignore[import-untyped]
 from spacy.language import Language  # type: ignore[import-untyped]
 
 from app.core.exceptions import SpaCyModelError
+from app.services.cue_boundaries import CUE_BOUNDARIES
 
 logger = logging.getLogger(__name__)
 
 _MODEL_NAME = "en_core_web_trf"
+
 
 class SpaCyModelManager:
     """Singleton-ish manager for the loaded spaCy pipeline.
@@ -44,6 +46,7 @@ class SpaCyModelManager:
 
     def load(self) -> None:
         """Load the ``en_core_web_trf`` pipeline."""
+
         if self._nlp is not None:
             logger.info("spaCy model already loaded — skipping.")
             return
@@ -63,8 +66,18 @@ class SpaCyModelManager:
                 detail=str(exc),
             ) from exc
 
+        _add_cue_boundaries(nlp)
         self._nlp = nlp
         logger.info("spaCy model loaded successfully.")
+
+
+def _add_cue_boundaries(nlp: Language) -> None:
+    """Pin sentence boundaries to subtitle cues, ahead of the parser."""
+
+    if "parser" in nlp.pipe_names:
+        nlp.add_pipe(CUE_BOUNDARIES, before="parser")
+    else:
+        nlp.add_pipe(CUE_BOUNDARIES, first=True)
 
 
 # Module-level singleton

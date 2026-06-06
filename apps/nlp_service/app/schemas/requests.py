@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import BaseModel, Field
 
 
 class AnalysisOptions(BaseModel):
     """Pipeline toggles the caller can send."""
 
-    include_propn: bool = Field(
-        default=False,
-        description="Include proper nouns (treated as common nouns) in the output.",
-    )
     dedup_lines: bool = Field(
         default=True,
         description="Deduplicate near-identical subtitle lines before analysis.",
@@ -27,12 +21,7 @@ class AnalysisOptions(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    """Top-level request body for ``POST /api/v1/analyze``.
-
-    Accepts either raw SRT content or already-extracted plain text. The web
-    media-analysis workflow sends raw ``srt``; ``plain_text`` is for callers
-    that have already parsed the subtitles themselves.
-    """
+    """Top-level request body for ``POST /api/v1/analyze``."""
 
     job_id: str | None = Field(
         default=None,
@@ -41,11 +30,7 @@ class AnalyzeRequest(BaseModel):
     content: str = Field(
         ...,
         min_length=1,
-        description="Subtitle content — either SRT markup or plain text.",
-    )
-    content_type: Literal["srt", "plain_text"] = Field(
-        default="srt",
-        description="Format of the content field.",
+        description="Raw SRT markup.",
     )
     pipeline_version: str | None = Field(
         default=None,

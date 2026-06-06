@@ -13,6 +13,7 @@ import {
   real,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -502,7 +503,11 @@ export const vocabularyTerm = pgTable(
     ...auditColumns,
   },
   (table) => [
-    uniqueIndex("vocabulary_term_kind_text_unique").on(table.kind, table.normalizedText),
+    // NULLS NOT DISTINCT: phrases have no part of speech, and two NULL rows must
+    // not bypass the constraint.
+    unique("vocabulary_term_kind_text_pos_unique")
+      .on(table.kind, table.normalizedText, table.partOfSpeech)
+      .nullsNotDistinct(),
     index("vocabulary_term_kind_idx").on(table.kind),
   ],
 );

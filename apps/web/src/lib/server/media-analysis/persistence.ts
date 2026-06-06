@@ -45,11 +45,10 @@ async function upsertVocabularyTerms(items: MergedAnalysisItem[]) {
       })),
     )
     .onConflictDoUpdate({
-      target: [vocabularyTerm.kind, vocabularyTerm.normalizedText],
+      target: [vocabularyTerm.kind, vocabularyTerm.normalizedText, vocabularyTerm.partOfSpeech],
       set: {
         displayText: sql`excluded.display_text`,
         lemma: sql`excluded.lemma`,
-        partOfSpeech: sql`excluded.part_of_speech`,
         baseCefrLevel: sql`excluded.base_cefr_level`,
         baseCefrNumeric: sql`excluded.base_cefr_numeric`,
         notes: sql`excluded.notes`,
@@ -61,10 +60,11 @@ async function upsertVocabularyTerms(items: MergedAnalysisItem[]) {
       id: vocabularyTerm.id,
       kind: vocabularyTerm.kind,
       normalizedText: vocabularyTerm.normalizedText,
+      partOfSpeech: vocabularyTerm.partOfSpeech,
     });
 
   for (const row of rows) {
-    termIdByItemKey.set(analysisItemKey(row.kind, row.normalizedText), row.id);
+    termIdByItemKey.set(analysisItemKey(row.kind, row.normalizedText, row.partOfSpeech), row.id);
   }
 
   return termIdByItemKey;
@@ -121,7 +121,9 @@ export async function persistAnalysisRunOutput(input: {
 
   const analysisItems = foldByTermId(
     input.items.map((item) => {
-      const termId = termIdByItemKey.get(analysisItemKey(item.kind, item.normalizedText));
+      const termId = termIdByItemKey.get(
+        analysisItemKey(item.kind, item.normalizedText, item.partOfSpeech),
+      );
       if (!termId) {
         throw new Error(`Missing term ID for ${item.kind}:${item.normalizedText}`);
       }

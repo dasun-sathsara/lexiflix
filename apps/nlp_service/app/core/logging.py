@@ -11,6 +11,7 @@ from app.core.settings import settings
 
 def suppress_known_warnings() -> None:
     """Hide narrow third-party deprecation noise that we do not control."""
+
     warnings.filterwarnings(
         "ignore",
         message=(
@@ -24,6 +25,7 @@ def suppress_known_warnings() -> None:
 
 def setup_logging() -> None:
     """Configure root logger with a clean, structured format."""
+
     suppress_known_warnings()
     level = getattr(logging, settings.log_level.upper(), logging.INFO)
 

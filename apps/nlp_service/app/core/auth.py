@@ -18,6 +18,7 @@ def require_api_key(
     When ``NLP_API_KEY`` is not set, auth is skipped (local dev mode).
     When set, every request must include ``Authorization: Bearer <key>``.
     """
+
     if settings.api_key is None:
         return
 

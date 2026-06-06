@@ -1,0 +1,2 @@
+DROP INDEX "vocabulary_term_kind_text_unique";--> statement-breakpoint
+ALTER TABLE "vocabulary_term" ADD CONSTRAINT "vocabulary_term_kind_text_pos_unique" UNIQUE NULLS NOT DISTINCT("kind","normalized_text","part_of_speech");

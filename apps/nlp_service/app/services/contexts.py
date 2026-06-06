@@ -12,7 +12,8 @@ _TRAILING_OFF = ("...", "--")
 
 
 def score_context(sentence: Span, target: Token) -> int:
-    """Rate how well ``sentence`` demonstrates ``target``."""
+    """Rate how well `sentence` demonstrates `target`."""
+
     text = sentence.text.strip()
     words = [token for token in sentence if not token.is_punct and not token.is_space]
     score = 0
@@ -41,5 +42,6 @@ def score_context(sentence: Span, target: Token) -> int:
 
 def _is_shouted(text: str) -> bool:
     """All-caps dialogue, which looks wrong on a study card."""
+
     letters = [char for char in text if char.isalpha()]
     return len(letters) > 3 and all(char.isupper() for char in letters)

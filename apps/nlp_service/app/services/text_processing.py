@@ -1,20 +1,19 @@
 """Subtitle text preprocessing — parsing, cleaning, deduplication, sentence
-joining, and chunking.
-
-Extracted from the original analyzer script. Each function is a small,
-testable unit with no side-effects beyond its return value.
+joining, and grouping lines into scenes.
 """
 
 from __future__ import annotations
 
 import html
 import re
-from collections.abc import Iterator
+from dataclasses import dataclass
 from datetime import timedelta
 
 import srt  # type: ignore[import-untyped]
 
 from app.core.exceptions import SRTParsingError
+
+type Scene = list[str]
 
 _METADATA_PREFIXES = (
     "caption by",
@@ -44,7 +43,26 @@ _METADATA_SNIPPETS = (
 )
 
 _SENTENCE_END_RE = re.compile(r'[.!?]"?' + "$")
+
+# A pause this long means the next line starts a new sentence.
 _MAX_JOIN_GAP = timedelta(seconds=2)
+
+# A pause this long means the next line belongs to a different conversation.
+_MAX_SCENE_GAP = timedelta(seconds=5)
+
+# Safety cap so uninterrupted dialogue cannot grow one huge document. This is a
+# memory guard, not a linguistic rule.
+_MAX_SCENE_CHARACTERS = 1000
+
+
+@dataclass(frozen=True)
+class Cue:
+    """One subtitle line with the timings it was displayed at."""
+
+    text: str
+    start: timedelta
+    end: timedelta
+
 
 # ---------------------------------------------------------------------------
 # Cleaning
@@ -53,6 +71,7 @@ _MAX_JOIN_GAP = timedelta(seconds=2)
 
 def clean_subtitle_text(text: str) -> str:
     """Remove HTML tags, bracketed cues, speaker labels, and collapse whitespace."""
+
     text = html.unescape(text)
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\[[^\]]*\]", " ", text)
@@ -66,6 +85,7 @@ def clean_subtitle_text(text: str) -> str:
 
 def is_subtitle_metadata_line(text: str) -> bool:
     """Detect credits and release metadata that should not reach the pipeline."""
+
     normalized = text.casefold().strip()
     if not normalized:
         return True
@@ -84,11 +104,22 @@ def is_subtitle_metadata_line(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
-    """Parse raw SRT markup into a list of cleaned, sentence-joined subtitle lines.
+def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[Scene]:
+    """Parse raw SRT markup into scenes of cleaned, sentence-joined lines.
 
-    Raises ``SRTParsingError`` if the SRT content is malformed.
+    Raises `SRTParsingError` if the SRT content is malformed.
     """
+
+    cues = _clean_cues(srt_text)
+    cues = _join_broken_sentences(cues)
+    if dedup_lines:
+        cues = _deduplicate_cues(cues)
+    return _group_into_scenes(cues)
+
+
+def _clean_cues(srt_text: str) -> list[Cue]:
+    """Parse the SRT and keep only cues with usable text."""
+
     try:
         subs = list(srt.parse(srt_text))
     except Exception as exc:
@@ -97,81 +128,72 @@ def parse_srt_content(srt_text: str, *, dedup_lines: bool = True) -> list[str]:
             detail=str(exc),
         ) from exc
 
-    items: list[tuple[str, timedelta, timedelta]] = []
+    cues: list[Cue] = []
     for sub in subs:
-        line = sub.content.replace("\n", " ").strip()
-        line = clean_subtitle_text(line)
-        if line and not is_subtitle_metadata_line(line):
-            items.append((line, sub.start, sub.end))
-
-    lines = _join_broken_sentences(items)
-
-    if not dedup_lines:
-        return lines
-
-    return _deduplicate_lines(lines)
+        text = clean_subtitle_text(sub.content.replace("\n", " ").strip())
+        if text and not is_subtitle_metadata_line(text):
+            cues.append(Cue(text=text, start=sub.start, end=sub.end))
+    return cues
 
 
-def _join_broken_sentences(
-    items: list[tuple[str, timedelta, timedelta]],
-) -> list[str]:
-    """Join subtitle fragments that were split mid-sentence.
+def _join_broken_sentences(cues: list[Cue]) -> list[Cue]:
+    """Join cues that a subtitle file split mid-sentence.
 
-    Uses timing gaps and sentence-ending punctuation heuristics:
-    - Lines that don't end with ``.!?`` are candidates for joining.
-    - A gap larger than ``_MAX_JOIN_GAP`` between two subtitles is treated
-      as a true sentence boundary.
+    A cue is joined to the next one when it does not already end in `.!?` and
+    the pause between them is shorter than `_MAX_JOIN_GAP`.
     """
-    if not items:
-        return []
-    result: list[str] = []
-    i = 0
-    while i < len(items):
-        line, _, end = items[i]
-        while i + 1 < len(items):
-            next_line, next_start, _ = items[i + 1]
-            gap = next_start - end
-            if gap > _MAX_JOIN_GAP:
-                break
-            if _SENTENCE_END_RE.search(line):
-                break
-            line = line + " " + next_line
-            end = items[i + 1][2]
-            i += 1
-        result.append(line)
-        i += 1
-    return result
+
+    joined: list[Cue] = []
+    for cue in cues:
+        previous = joined[-1] if joined else None
+        if previous and _continues(previous, cue):
+            joined[-1] = Cue(
+                text=f"{previous.text} {cue.text}",
+                start=previous.start,
+                end=cue.end,
+            )
+        else:
+            joined.append(cue)
+    return joined
 
 
-def chunk_lines(lines: list[str], max_chars: int = 1500) -> Iterator[str]:
-    """Group short lines into larger chunks for efficient transformer processing.
+def _continues(previous: Cue, cue: Cue) -> bool:
+    """True when `cue` finishes the sentence `previous` started."""
 
-    Each chunk is a single string with lines separated by newlines so that
-    spaCy can still segment them into individual sentences via ``doc.sents``.
+    if _SENTENCE_END_RE.search(previous.text):
+        return False
+    return cue.start - previous.end <= _MAX_JOIN_GAP
+
+
+# ---------------------------------------------------------------------------
+# Scenes
+# ---------------------------------------------------------------------------
+
+
+def _group_into_scenes(cues: list[Cue]) -> list[Scene]:
+    """Group cues from the same stretch of dialogue into one scene.
+
+    Lines in a scene are analyzed together, so the tagger sees the surrounding
+    conversation. A long pause starts a new scene, which keeps unrelated parts
+    of the film from influencing each other.
     """
-    chunk: list[str] = []
-    size = 0
-    for ln in lines:
-        if size + len(ln) > max_chars and chunk:
-            yield "\n".join(chunk)
-            chunk = []
-            size = 0
-        chunk.append(ln)
-        size += len(ln)
-    if chunk:
-        yield "\n".join(chunk)
+
+    scenes: list[Scene] = []
+    for index, cue in enumerate(cues):
+        previous = cues[index - 1] if index else None
+        if previous and _same_scene(previous, cue, scenes[-1]):
+            scenes[-1].append(cue.text)
+        else:
+            scenes.append([cue.text])
+    return scenes
 
 
-def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
-    """Split pre-cleaned plain text into non-empty lines and optionally deduplicate.
+def _same_scene(previous: Cue, cue: Cue, scene: Scene) -> bool:
+    """True when `cue` continues the conversation `scene` is holding."""
 
-    Used by callers that own subtitle cleaning themselves and send
-    ``content_type=plain_text``. This path does not re-run the SRT cleaners.
-    """
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    if not dedup_lines:
-        return lines
-    return _deduplicate_lines(lines)
+    if cue.start - previous.end > _MAX_SCENE_GAP:
+        return False
+    return sum(len(line) for line in scene) + len(cue.text) <= _MAX_SCENE_CHARACTERS
 
 
 # ---------------------------------------------------------------------------
@@ -179,14 +201,21 @@ def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _deduplicate_lines(lines: list[str]) -> list[str]:
-    """Case-insensitive, punctuation-insensitive dedup preserving order."""
+def _line_key(text: str) -> str:
+    """Case- and punctuation-insensitive identity of a line."""
+
+    key = re.sub(r"[^\w\s]", "", text.casefold())
+    return re.sub(r"\s+", " ", key).strip()
+
+
+def _deduplicate_cues(cues: list[Cue]) -> list[Cue]:
+    """Drop repeated cues, keeping the first occurrence."""
+
     seen: set[str] = set()
-    result: list[str] = []
-    for line in lines:
-        key = re.sub(r"[^\w\s]", "", line.casefold())
-        key = re.sub(r"\s+", " ", key).strip()
+    result: list[Cue] = []
+    for cue in cues:
+        key = _line_key(cue.text)
         if key not in seen:
             seen.add(key)
-            result.append(line)
+            result.append(cue)
     return result

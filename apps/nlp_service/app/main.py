@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan — runs expensive initialization at startup."""
+
     setup_logging()
     logger.info(
         "Starting %s v%s (debug=%s)",
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+
     app = FastAPI(
         title="LexiFlix NLP Service",
         description=(

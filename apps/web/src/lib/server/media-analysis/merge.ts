@@ -10,7 +10,11 @@ import type {
   StoredVocabularyKind,
 } from "@/lib/server/db/json-contracts";
 import type { AnalysisLlmPhrase } from "@/lib/server/media-analysis/providers/analysis-llm";
-import { analysisItemKey, normalizeTermText } from "@/lib/server/media-analysis/terms";
+import {
+  analysisItemKey,
+  normalizePartOfSpeech,
+  normalizeTermText,
+} from "@/lib/server/media-analysis/terms";
 
 export type MergedAnalysisItem = {
   kind: StoredVocabularyKind;
@@ -51,7 +55,7 @@ function toNlpItems(response: NlpAnalysisResponse): MergedAnalysisItem[] {
       normalizedText,
       lemma: normalizeTermText(candidate.lemma) || candidate.lemma,
       displayText: candidate.lemma || candidate.text,
-      partOfSpeech: candidate.type,
+      partOfSpeech: normalizePartOfSpeech(candidate.type),
       cefrLevel,
       cefrNumeric: cefrNumericFromLevel(cefrLevel),
       notes: null,
@@ -111,7 +115,7 @@ function absorb(target: MergedAnalysisItem, incoming: MergedAnalysisItem) {
 
 /**
  * Combines NLP word candidates with LLM phrase candidates into one ranked item list.
- * Items are keyed by kind and normalized text, and ranked by occurrence count.
+ * Items are keyed by kind, normalized text and part of speech, and ranked by occurrence count.
  */
 export function mergeAnalysisItems(input: {
   nlpResponse: NlpAnalysisResponse;
@@ -120,7 +124,7 @@ export function mergeAnalysisItems(input: {
   const byKey = new Map<string, MergedAnalysisItem>();
 
   for (const item of [...toNlpItems(input.nlpResponse), ...toLlmItems(input.phrases)]) {
-    const key = analysisItemKey(item.kind, item.normalizedText);
+    const key = analysisItemKey(item.kind, item.normalizedText, item.partOfSpeech);
     const existing = byKey.get(key);
 
     if (existing) {
@@ -138,7 +142,10 @@ export function mergeAnalysisItems(input: {
     if (left.kind !== right.kind) {
       return left.kind.localeCompare(right.kind);
     }
-    return left.normalizedText.localeCompare(right.normalizedText);
+    if (left.normalizedText !== right.normalizedText) {
+      return left.normalizedText.localeCompare(right.normalizedText);
+    }
+    return (left.partOfSpeech ?? "").localeCompare(right.partOfSpeech ?? "");
   });
 
   for (const [index, item] of items.entries()) {

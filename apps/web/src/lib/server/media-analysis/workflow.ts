@@ -106,7 +106,6 @@ export async function runMediaAnalysisWorkflow(
     const nlpResponse = await analyzeWithNlpService({
       job_id: runId,
       content: subtitles.subtitleText,
-      content_type: "srt",
       pipeline_version: MEDIA_ANALYSIS_PIPELINE_VERSION,
     });
     warnings.push(...nlpResponse.warnings);

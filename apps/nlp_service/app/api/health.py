@@ -13,6 +13,7 @@ router = APIRouter(tags=["health"])
 @router.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     """Liveness probe — always returns 200 if the process is running."""
+
     return HealthResponse(status="ok")
 
 
@@ -24,6 +25,7 @@ async def ready() -> ReadyResponse:
     distinguish between "process alive but not ready" vs. "process dead").
     The ``spacy_model_loaded`` flag carries the actual readiness signal.
     """
+
     return ReadyResponse(
         status="ok" if model_manager.is_loaded else "loading",
         spacy_model_loaded=model_manager.is_loaded,

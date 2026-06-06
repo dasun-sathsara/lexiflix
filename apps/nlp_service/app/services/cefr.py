@@ -14,7 +14,6 @@ _PTB_TAG_BY_POS = {
     "VERB": "VB",
     "ADJ": "JJ",
     "ADV": "RB",
-    "PROPN": "NN",
 }
 
 _analyzer = CEFRAnalyzer()
@@ -26,6 +25,7 @@ def resolve_cefr(lemma: str, pos: str) -> CefrRating | None:
     Falls back to the word's average level across parts of speech, which covers
     words cefrpy knows but not under the POS we tagged.
     """
+
     word = lemma.casefold().strip()
     if not word:
         return None
@@ -40,11 +40,12 @@ def resolve_cefr(lemma: str, pos: str) -> CefrRating | None:
 
 
 def _rate(lookup) -> CefrRating | None:  # type: ignore[no-untyped-def]
-    """Normalize a cefrpy lookup to ``CefrRating | None``.
+    """Normalize a cefrpy lookup to `CefrRating | None`.
 
     cefrpy raises for words and tags it does not know, so an unknown word is a
     normal outcome here rather than an error worth propagating.
     """
+
     try:
         level = lookup()
     except Exception:

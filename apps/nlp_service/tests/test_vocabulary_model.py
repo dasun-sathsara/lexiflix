@@ -57,7 +57,6 @@ class TestPosCategory:
             ("VERB", "verb"),
             ("ADJ", "adjective"),
             ("ADV", "adverb"),
-            ("PROPN", "noun"),
             ("INTJ", "unknown"),
         ],
     )
