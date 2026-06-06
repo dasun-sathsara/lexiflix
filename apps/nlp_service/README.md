@@ -30,7 +30,7 @@ apps/nlp_service/
 │   │   ├── logging.py        # Centralized logging setup
 │   │   └── settings.py       # Environment-driven config (pydantic-settings)
 │   ├── models/               # Internal domain structures
-│   │   └── vocabulary.py     # WordStats dataclass
+│   │   └── vocabulary.py     # WordStats, CefrRating, context selection
 │   ├── data/
 │   │   ├── __init__.py
 │   ├── schemas/              # Pydantic request/response models
@@ -38,10 +38,11 @@ apps/nlp_service/
 │   │   └── responses.py      # AnalyzeResponse, VocabularyCandidate, etc.
 │   └── services/             # NLP pipeline logic
 │       ├── cefr.py           # cefrpy-based CEFR resolution
+│       ├── contexts.py       # Scoring subtitle sentences as usage examples
 │       ├── pipeline.py       # Pipeline façade (main entry point)
 │       ├── spacy_models.py   # spaCy model loading + singleton
 │       ├── text_processing.py # SRT parsing, cleaning, dedup
-│       └── token_filters.py  # Token exclusion rules
+│       └── token_filters.py  # Token exclusion rules + lemma selection
 ├── main.py                   # Uvicorn runner shim
 ├── pyproject.toml            # Dependencies + tooling config
 └── .python-version           # Python 3.13

@@ -165,8 +165,8 @@ def chunk_lines(lines: list[str], max_chars: int = 1500) -> Iterator[str]:
 def split_plain_text(text: str, *, dedup_lines: bool = True) -> list[str]:
     """Split pre-cleaned plain text into non-empty lines and optionally deduplicate.
 
-    Production callers (web media-analysis) own subtitle cleaning and send
-    ``content_type=plain_text``. This path does not re-run SRT cleaners.
+    Used by callers that own subtitle cleaning themselves and send
+    ``content_type=plain_text``. This path does not re-run the SRT cleaners.
     """
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     if not dedup_lines:

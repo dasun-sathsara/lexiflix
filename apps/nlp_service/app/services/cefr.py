@@ -1,14 +1,15 @@
-"""CEFR level resolution via cefrpy."""
+"""CEFR level resolution: given a lemma and its part of speech, ask cefrpy for a level."""
 
 from __future__ import annotations
 
 from cefrpy import CEFRAnalyzer  # type: ignore[import-untyped]
-from cefrpy.CEFRLevel import CEFRLevel  # type: ignore[import-untyped]
 
-LABEL_TO_NUM: dict[str, int] = {"A1": 1, "A2": 2, "B1": 3, "B2": 4, "C1": 5, "C2": 6}
-NUM_TO_LABEL: dict[int, str] = {v: k for k, v in LABEL_TO_NUM.items()}
+from app.models.vocabulary import CefrRating
 
-_COARSE_TO_PTB: dict[str, str] = {
+_LABELS_BY_NUMERIC = {1: "A1", 2: "A2", 3: "B1", 4: "B2", 5: "C1", 6: "C2"}
+
+# cefrpy expects base Penn Treebank tags, not spaCy's coarse POS.
+_PTB_TAG_BY_POS = {
     "NOUN": "NN",
     "VERB": "VB",
     "ADJ": "JJ",
@@ -19,42 +20,39 @@ _COARSE_TO_PTB: dict[str, str] = {
 _analyzer = CEFRAnalyzer()
 
 
-def coarse_to_base_ptb(pos: str | None) -> str | None:
-    """Map spaCy coarse POS to the base Penn Treebank tag used by cefrpy."""
-    return _COARSE_TO_PTB.get((pos or "").upper())
+def resolve_cefr(lemma: str, pos: str) -> CefrRating | None:
+    """CEFR rating for a lemma, preferring the level cefrpy holds for this POS.
+
+    Falls back to the word's average level across parts of speech, which covers
+    words cefrpy knows but not under the POS we tagged.
+    """
+    word = lemma.casefold().strip()
+    if not word:
+        return None
+
+    ptb_tag = _PTB_TAG_BY_POS.get(pos.upper())
+    if ptb_tag:
+        rating = _rate(lambda: _analyzer.get_word_pos_level_CEFR(word, ptb_tag))
+        if rating:
+            return rating
+
+    return _rate(lambda: _analyzer.get_average_word_level_CEFR(word))
 
 
-def _level_to_pair(level: CEFRLevel | None) -> tuple[int | None, str | None]:
+def _rate(lookup) -> CefrRating | None:  # type: ignore[no-untyped-def]
+    """Normalize a cefrpy lookup to ``CefrRating | None``.
+
+    cefrpy raises for words and tags it does not know, so an unknown word is a
+    normal outcome here rather than an error worth propagating.
+    """
+    try:
+        level = lookup()
+    except Exception:
+        return None
+
     if level is None:
-        return None, None
-    num = int(level)
-    return num, NUM_TO_LABEL.get(num)
+        return None
 
-
-def _lookup_pos(word: str, pos_ptb: str) -> tuple[int | None, str | None]:
-    try:
-        return _level_to_pair(_analyzer.get_word_pos_level_CEFR(word, pos_ptb))
-    except Exception:
-        return None, None
-
-
-def _lookup_average(word: str) -> tuple[int | None, str | None]:
-    try:
-        return _level_to_pair(_analyzer.get_average_word_level_CEFR(word))
-    except Exception:
-        return None, None
-
-
-def resolve_cefr(lemma: str, pos: str | None) -> tuple[int | None, str | None]:
-    """Resolve CEFR for an aggregated lemma: POS lookup, then average fallback."""
-    lemma = lemma.casefold().strip()
-    if not lemma:
-        return None, None
-
-    pos_ptb = coarse_to_base_ptb(pos)
-    if pos_ptb:
-        num, label = _lookup_pos(lemma, pos_ptb)
-        if num is not None:
-            return num, label
-
-    return _lookup_average(lemma)
+    numeric = int(level)
+    label = _LABELS_BY_NUMERIC.get(numeric)
+    return CefrRating(numeric=numeric, label=label) if label else None

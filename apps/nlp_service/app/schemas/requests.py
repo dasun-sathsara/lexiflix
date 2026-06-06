@@ -29,9 +29,9 @@ class AnalysisOptions(BaseModel):
 class AnalyzeRequest(BaseModel):
     """Top-level request body for ``POST /api/v1/analyze``.
 
-    Accepts either raw SRT content or already-extracted plain text.
-    Production callers send pre-cleaned ``plain_text``; SRT parsing lives here
-    for direct/API testing only.
+    Accepts either raw SRT content or already-extracted plain text. The web
+    media-analysis workflow sends raw ``srt``; ``plain_text`` is for callers
+    that have already parsed the subtitles themselves.
     """
 
     job_id: str | None = Field(

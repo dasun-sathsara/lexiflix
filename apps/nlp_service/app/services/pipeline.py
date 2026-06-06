@@ -1,12 +1,13 @@
 """NLP pipeline façade — the single entry point for subtitle analysis.
 
-Orchestrates text preprocessing → spaCy processing → token filtering →
-CEFR resolution → structured output. Called by the API route handler.
+Flow: extract lines → spaCy → per-(lemma, POS) aggregation → CEFR → pruning →
+response. Called by the API route handler.
 """
 
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from collections.abc import Iterable
 
 from spacy.tokens import Doc  # type: ignore[import-untyped]
@@ -20,17 +21,25 @@ from app.schemas.responses import (
     VocabularyCandidate,
 )
 from app.services.cefr import resolve_cefr
+from app.services.contexts import score_context
 from app.services.spacy_models import model_manager
 from app.services.text_processing import (
     chunk_lines,
     parse_srt_content,
     split_plain_text,
 )
-from app.services.token_filters import get_valid_lemma
+from app.services.token_filters import resolve_candidate
 
 logger = logging.getLogger(__name__)
 
-_MAX_CONTEXTS = 3
+type CandidateKey = tuple[str, str]  # (lemma, part of speech)
+
+_MINORITY_POS_SHARE = 0.2
+_NAME_CAPITALIZATION_SHARE = 0.8
+
+# CEFR numeric below this (A1–B1) means the word is common enough that a
+# capitalized-only spelling is probably sentence position, not a name.
+_COMMON_WORD_CEFR = 4
 
 
 class AnalysisPipeline:
@@ -58,17 +67,18 @@ class AnalysisPipeline:
         )
 
         docs = self._run_spacy(lines, request.options.batch_size)
-        word_stats = self._process_docs(
-            docs,
-            include_propn=request.options.include_propn,
-        )
+        stats_by_key = _collect_stats(docs, include_propn=request.options.include_propn)
+        _apply_cefr(stats_by_key)
+        stats_by_key = _prune(stats_by_key, include_propn=request.options.include_propn)
 
-        if not word_stats:
-            warnings.append("No valid vocabulary candidates were found after filtering.")
+        if not stats_by_key:
+            warnings.append(
+                "No valid vocabulary candidates were found after filtering."
+            )
 
-        logger.info("Pipeline: %d unique candidate lemmas", len(word_stats))
+        logger.info("Pipeline: %d candidates after pruning", len(stats_by_key))
 
-        candidates = self._build_candidates(word_stats)
+        candidates = _build_candidates(stats_by_key)
         metadata = AnalysisMetadata(
             job_id=request.job_id,
             total_lines=len(lines),
@@ -108,116 +118,176 @@ class AnalysisPipeline:
                 detail=str(exc),
             ) from exc
 
-    def _process_docs(
-        self,
-        docs: Iterable[Doc],
-        *,
-        include_propn: bool,
-    ) -> dict[str, WordStats]:
-        """Filter tokens, count frequencies, assign CEFR, collect contexts."""
-        allowed_pos: set[str] = {"NOUN", "VERB", "ADJ", "ADV"}
-        if include_propn:
-            allowed_pos.add("PROPN")
 
-        word_stats: dict[str, WordStats] = {}
+# ---------------------------------------------------------------------------
+# Aggregation
+# ---------------------------------------------------------------------------
 
-        for doc in docs:
-            for sent in doc.sents:
-                sent_text = sent.text
 
-                for token in sent:
-                    lemma = get_valid_lemma(token, allowed_pos)
-                    if not lemma:
-                        continue
+def _collect_stats(
+    docs: Iterable[Doc],
+    *,
+    include_propn: bool,
+) -> dict[CandidateKey, WordStats]:
+    """Count every accepted token under its (lemma, POS) key and collect examples."""
+    allowed_pos = {"NOUN", "VERB", "ADJ", "ADV"}
+    if include_propn:
+        allowed_pos.add("PROPN")
 
-                    stats = word_stats.get(lemma)
-                    if stats is None:
-                        stats = WordStats()
-                        word_stats[lemma] = stats
-                    stats.count += 1
-                    # Participial ADJs remapped to a verb lemma should count as VERB
-                    # so CEFR POS lookup matches the stored lemma form.
-                    pos = token.pos_
-                    if (
-                        pos == "ADJ"
-                        and lemma != token.lemma_.casefold().strip()
-                        and (
-                            token.text.casefold().endswith("ed")
-                            or token.text.casefold().endswith("ing")
-                        )
-                    ):
-                        pos = "VERB"
-                    if pos:
-                        stats.pos_counts[pos] += 1
+    stats_by_key: dict[CandidateKey, WordStats] = {}
 
-                    surface = token.text.casefold().strip()
-                    if surface and surface.isalpha():
-                        stats.surface_counts[surface] += 1
+    for doc in docs:
+        for sentence in doc.sents:
+            for token in sentence:
+                candidate = resolve_candidate(token, allowed_pos)
+                if candidate is None:
+                    continue
 
-                    if token.text.islower():
-                        stats.lowercase_count += 1
-                    elif token.text[:1].isupper():
-                        stats.capitalized_count += 1
+                key = (candidate.lemma, candidate.pos)
+                stats = stats_by_key.get(key)
+                if stats is None:
+                    stats = WordStats(pos=candidate.pos)
+                    stats_by_key[key] = stats
 
-                    if len(stats.contexts) < _MAX_CONTEXTS and sent_text not in stats.contexts:
-                        stats.contexts.append(sent_text)
+                stats.count += 1
+                stats.add_context(sentence.text.strip(), score_context(sentence, token))
+                _record_surface_form(stats, token.text)
 
-        self._apply_cefr(word_stats)
-        return self._prune_word_stats(word_stats, include_propn=include_propn)
+    return stats_by_key
 
-    @staticmethod
-    def _apply_cefr(word_stats: dict[str, WordStats]) -> None:
-        """Assign CEFR labels after lemma aggregation."""
-        for lemma, stats in word_stats.items():
-            level_num, level_label = resolve_cefr(lemma, stats.dominant_pos)
-            stats.cefr_num = level_num
-            stats.cefr_label = level_label
 
-    @staticmethod
-    def _prune_word_stats(
-        word_stats: dict[str, WordStats],
-        *,
-        include_propn: bool,
-    ) -> dict[str, WordStats]:
-        """Drop low-signal artifacts and title-case name-like one-offs."""
-        filtered: dict[str, WordStats] = {}
-        for lemma, stats in word_stats.items():
-            if stats.count == 1 and stats.cefr_num is None:
+def _record_surface_form(stats: WordStats, text: str) -> None:
+    """Track how the word actually appeared, for display and name detection."""
+    surface = text.casefold().strip()
+    if surface.isalpha():
+        stats.surface_counts[surface] += 1
+
+    if text.islower():
+        stats.lowercase_count += 1
+    elif text[:1].isupper():
+        stats.capitalized_count += 1
+
+
+def _apply_cefr(stats_by_key: dict[CandidateKey, WordStats]) -> None:
+    """Resolve one CEFR level per (lemma, POS) pair."""
+    for (lemma, pos), stats in stats_by_key.items():
+        stats.cefr = resolve_cefr(lemma, pos)
+
+
+# ---------------------------------------------------------------------------
+# Pruning
+# ---------------------------------------------------------------------------
+
+
+def _prune(
+    stats_by_key: dict[CandidateKey, WordStats],
+    *,
+    include_propn: bool,
+) -> dict[CandidateKey, WordStats]:
+    """Drop low-signal candidates: missed names, unrated one-offs, tagger slips."""
+    kept: dict[CandidateKey, WordStats] = {}
+
+    for lemma, variants in _group_by_lemma(stats_by_key).items():
+        if not include_propn and _looks_like_missed_name(variants):
+            continue
+
+        total_count = sum(variant.count for variant in variants)
+        dominant = _dominant_variant(variants)
+
+        for variant in variants:
+            if variant.count == 1 and variant.cefr is None:
                 continue
-            if not include_propn and AnalysisPipeline._looks_like_missed_name(stats):
+            if _is_tagger_slip(variant, dominant=dominant, total_count=total_count):
                 continue
-            filtered[lemma] = stats
-        return filtered
+            kept[(lemma, variant.pos)] = variant
 
-    @staticmethod
-    def _looks_like_missed_name(stats: WordStats) -> bool:
-        """Drop never-lowercase, mostly capitalized lemmas with no easy CEFR signal."""
-        if stats.count == 0 or stats.lowercase_count > 0:
-            return False
-        if stats.cefr_num is not None and stats.cefr_num < 4:
-            return False
-        return stats.capitalized_count / stats.count >= 0.8
+    return kept
 
-    @staticmethod
-    def _build_candidates(
-        word_stats: dict[str, WordStats],
-    ) -> list[VocabularyCandidate]:
-        """Convert internal WordStats to the response schema, sorted by count desc."""
-        sorted_items = sorted(
-            word_stats.items(),
-            key=lambda item: (-item[1].count, item[0]),
+
+def _group_by_lemma(
+    stats_by_key: dict[CandidateKey, WordStats],
+) -> dict[str, list[WordStats]]:
+    """Collect the POS variants of each lemma so lemma-wide rules can see them all."""
+    grouped: dict[str, list[WordStats]] = defaultdict(list)
+    for (lemma, _pos), stats in stats_by_key.items():
+        grouped[lemma].append(stats)
+    return grouped
+
+
+def _dominant_variant(variants: list[WordStats]) -> WordStats:
+    """The POS variant that best represents the lemma: most frequent wins."""
+    pos_priority = {"VERB": 4, "NOUN": 3, "ADJ": 2, "ADV": 1, "PROPN": 0}
+    return min(
+        variants,
+        key=lambda variant: (
+            -variant.count,
+            -pos_priority.get(variant.pos, -1),
+            variant.pos,
+        ),
+    )
+
+
+def _is_tagger_slip(
+    variant: WordStats,
+    *,
+    dominant: WordStats,
+    total_count: int,
+) -> bool:
+    """A rare secondary POS that adds no new information for the learner."""
+    if variant is dominant or variant.count > 1:
+        return False
+    if variant.count / total_count >= _MINORITY_POS_SHARE:
+        return False
+
+    # Keep it if it teaches a different difficulty than the dominant reading.
+    return variant.cefr_label == dominant.cefr_label
+
+
+def _looks_like_missed_name(variants: list[WordStats]) -> bool:
+    """True when a lemma is always capitalized and not a common word.
+
+    Capitalization is summed across POS variants, since one variant alone may
+    have too few occurrences for the ratio to mean anything.
+    """
+    total = sum(variant.count for variant in variants)
+    if total == 0:
+        return False
+    if any(variant.lowercase_count > 0 for variant in variants):
+        return False
+    if any(
+        variant.cefr is not None and variant.cefr.numeric < _COMMON_WORD_CEFR
+        for variant in variants
+    ):
+        return False
+
+    capitalized = sum(variant.capitalized_count for variant in variants)
+    return capitalized / total >= _NAME_CAPITALIZATION_SHARE
+
+
+# ---------------------------------------------------------------------------
+# Response
+# ---------------------------------------------------------------------------
+
+
+def _build_candidates(
+    stats_by_key: dict[CandidateKey, WordStats],
+) -> list[VocabularyCandidate]:
+    """Convert internal stats to the response schema, most frequent first."""
+    sorted_items = sorted(
+        stats_by_key.items(),
+        key=lambda item: (-item[1].count, item[0]),
+    )
+    return [
+        VocabularyCandidate(
+            text=stats.representative_text or lemma,
+            lemma=lemma,
+            type=stats.pos_category,
+            cefr_level=stats.cefr_label,
+            count=stats.count,
+            contexts=stats.context_texts,
         )
-        return [
-            VocabularyCandidate(
-                text=stats.representative_text or lemma,
-                lemma=lemma,
-                type=stats.pos_category,
-                cefr_level=stats.cefr_label,
-                count=stats.count,
-                contexts=list(stats.contexts),
-            )
-            for lemma, stats in sorted_items
-        ]
+        for (lemma, _pos), stats in sorted_items
+    ]
 
 
 pipeline = AnalysisPipeline()
