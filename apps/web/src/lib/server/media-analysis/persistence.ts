@@ -22,9 +22,6 @@ const COMPLETION_MESSAGE = "Analysis completed.";
 /**
  * Upserts the shared vocabulary catalog rows for this run and returns their ids keyed by
  * kind and normalized text.
- *
- * `DO UPDATE` is used instead of `DO NOTHING` so `RETURNING` also yields ids for terms that
- * already exist in the catalog, which avoids a second lookup query.
  */
 async function upsertVocabularyTerms(items: MergedAnalysisItem[]) {
   const termIdByItemKey = new Map<string, string>();
