@@ -2,6 +2,13 @@
 
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import {
+  applyAnswerToState,
+  getItemById,
+  initializeAssessmentState,
+  parseAssessmentState,
+  toPublicItem,
+} from "@/features/assessment/lib/adaptive-test";
 import type {
   AnswerAssessmentActionResult,
   AnswerAssessmentResponse,
@@ -9,15 +16,8 @@ import type {
   StartAssessmentActionResult,
   StartAssessmentResponse,
 } from "@/features/assessment/types";
-import {
-  ASSESSMENT_LIMITS,
-  applyAnswerToState,
-  getItemById,
-  initializeAssessmentState,
-  parseAssessmentState,
-  toPublicItem,
-} from "@/features/assessment/utils";
 import { getSessionOrNull } from "@/lib/auth/guards";
+import { ASSESSMENT_LIMITS } from "@/lib/constants";
 import { db } from "@/lib/server/db";
 import { cefrAssessmentAttempt, cefrAssessmentResponse, cefrProfile } from "@/lib/server/db/schema";
 

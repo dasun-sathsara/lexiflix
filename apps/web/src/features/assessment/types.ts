@@ -43,6 +43,29 @@ export type AssessmentResult = PosteriorSummary & {
   answeredCount: number;
 };
 
+/** Item-count bounds reported back to the client alongside every outcome. */
+type AssessmentLimits = {
+  minItems: number;
+  maxItems: number;
+};
+
+/** The attempt continues: here is the next question and the current belief. */
+export type AssessmentInProgressOutcome = AssessmentLimits & {
+  status: "in_progress";
+  state: AssessmentState;
+  nextItem: AssessmentItem;
+  summary: PosteriorSummary;
+};
+
+/** The attempt is over, either by the stopping rule or an exhausted item bank. */
+export type AssessmentCompletedOutcome = AssessmentLimits & {
+  status: "completed";
+  state: AssessmentState;
+  result: AssessmentResult;
+};
+
+export type ApplyAnswerOutcome = AssessmentInProgressOutcome | AssessmentCompletedOutcome;
+
 export type StartAssessmentResponse = {
   status: "in_progress";
   attemptId: string;
