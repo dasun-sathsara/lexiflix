@@ -17,19 +17,19 @@ import { ElegantButton } from "@/components/ui/button";
 const navItems = [
   {
     name: "Features",
-    link: "#features",
+    link: "/#features",
   },
   {
     name: "How It Works",
-    link: "#cta",
+    link: "/#cta",
   },
   {
     name: "FAQ",
-    link: "#faq",
+    link: "/#faq",
   },
   {
-    name: "Contact",
-    link: "#contact",
+    name: "About",
+    link: "/about",
   },
 ];
 
@@ -46,13 +46,19 @@ export function MarketingNavbar({ isLoggedIn = false }: MarketingNavbarProps) {
     event: MouseEvent<HTMLAnchorElement>,
     item: (typeof navItems)[number],
   ) => {
-    if (item.link.startsWith("#")) {
-      event.preventDefault();
-      const target = document.querySelector(item.link);
-      const navbar = document.querySelector<HTMLElement>("[data-marketing-navbar]");
-      const offset = navbar?.getBoundingClientRect().height ?? 0;
+    // Section links use a "/#id" form so they work from any page. When the
+    // target section is present on the current page, intercept and smooth-scroll
+    // instead of triggering a full navigation. Otherwise let the browser follow
+    // the link (e.g. from /about back to a section on the landing page).
+    const hashIndex = item.link.indexOf("#");
+    if (hashIndex !== -1) {
+      const hash = item.link.slice(hashIndex);
+      const target = document.querySelector(hash);
 
       if (target) {
+        event.preventDefault();
+        const navbar = document.querySelector<HTMLElement>("[data-marketing-navbar]");
+        const offset = navbar?.getBoundingClientRect().height ?? 0;
         const targetPosition = target.getBoundingClientRect().top + window.scrollY - (offset + 16);
 
         window.scrollTo({

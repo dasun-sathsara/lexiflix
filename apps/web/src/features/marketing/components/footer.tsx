@@ -11,17 +11,20 @@ export function Footer() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-          <a href="#features" className="hover:text-foreground">
+          <a href="/#features" className="hover:text-foreground">
             Features
           </a>
-          <a href="#contact" className="hover:text-foreground">
+          <a href="/about" className="hover:text-foreground">
+            About
+          </a>
+          <a href="/about#contact" className="hover:text-foreground">
             Contact
           </a>
-          <a href="#faq" className="hover:text-foreground">
+          <a href="/#faq" className="hover:text-foreground">
             FAQ
           </a>
-          <a href="mailto:admin@lexiflix.app" className="hover:text-foreground">
-            admin@lexiflix.app
+          <a href="mailto:dasun@lexiflix.app" className="hover:text-foreground">
+            dasun@lexiflix.app
           </a>
         </div>
       </div>

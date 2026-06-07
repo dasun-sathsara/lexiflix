@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Ubuntu_Mono } from "next/font/google";
 import "../styles/globals.css";
+import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { AppProviders } from "@/providers/app-providers";
 
@@ -27,6 +28,7 @@ const ubuntuMono = Ubuntu_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "LexiFlix | Pre-Learn Vocabulary from Movies & TV",
   description:
     "LexiFlix analyzes subtitles to build CEFR-aligned vocabulary packs, AI study aids, and spaced-repetition reviews so you can watch with confidence.",
