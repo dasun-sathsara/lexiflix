@@ -20,6 +20,9 @@ export default defineConfig({
       syncEnvVars(async (_ctx) => {
         const varsToSync = [
           "DATABASE_URL",
+          // Required to decrypt user-supplied AI provider credentials during generation.
+          "AUTH_SECRET",
+          "AI_CREDENTIALS_ENCRYPTION_KEY",
           "RESEND_API_KEY",
           "NEXT_PUBLIC_APP_URL",
           "GOOGLE_CLOUD_API_KEY",

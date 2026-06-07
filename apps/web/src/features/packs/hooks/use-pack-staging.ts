@@ -1,7 +1,13 @@
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-
+import {
+  clampPage,
+  DEFAULT_PACK_STAGING_PAGE_SIZE,
+  getPageRange,
+  getPageSlice,
+  getTotalPages,
+} from "@/features/packs/lib/pagination";
 import {
   ignoreTermGloballyAction,
   markTermKnownAction,
@@ -39,9 +45,25 @@ export function usePackStaging(pack: PackStagingView) {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = React.useState(false);
   const [pendingAction, startAction] = React.useTransition();
+  const [page, setPageRaw] = React.useState(1);
+  const [pageSize, setPageSizeRaw] = React.useState<number>(DEFAULT_PACK_STAGING_PAGE_SIZE);
 
   React.useEffect(() => {
     setCards(pack.cards);
+  }, [pack.cards]);
+
+  // Drop selections for cards that no longer exist once fresh server data arrives.
+  React.useEffect(() => {
+    const availableIds = new Set(pack.cards.map((card) => card.id));
+
+    setSelectedIds((previous) => {
+      if (previous.size === 0) {
+        return previous;
+      }
+
+      const next = new Set([...previous].filter((id) => availableIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
   }, [pack.cards]);
 
   const stats = React.useMemo(
@@ -84,14 +106,35 @@ export function usePackStaging(pack: PackStagingView) {
   const progressPct = Math.round((stats.mastered / Math.max(1, stats.total)) * 100);
   const selectedCount = selectedIds.size;
 
+  const totalPages = getTotalPages(filtered.length, pageSize);
+  // Clamp on read as well as on write so removals cannot leave the view on a dead page.
+  const currentPage = clampPage(page, totalPages);
+  const visibleCards = getPageSlice(filtered, currentPage, pageSize);
+  const pageRange = getPageRange(currentPage, pageSize, filtered.length);
+
+  React.useEffect(() => {
+    setPageRaw((previous) => clampPage(previous, totalPages));
+  }, [totalPages]);
+
+  function setPage(nextPage: number) {
+    setPageRaw(clampPage(nextPage, totalPages));
+  }
+
+  function setPageSize(nextPageSize: number) {
+    setPageSizeRaw(nextPageSize);
+    setPageRaw(1);
+  }
+
   function setActiveTab(value: string) {
     setActiveTabRaw(toTabValue(value));
     setSelectedIds(new Set());
+    setPageRaw(1);
   }
 
   function setVocabularyType(value: string) {
     setVocabularyTypeRaw(value as VocabularyTypeFilter);
     setSelectedIds(new Set());
+    setPageRaw(1);
   }
 
   function removeCards(itemIds: string[]) {
@@ -186,6 +229,13 @@ export function usePackStaging(pack: PackStagingView) {
     stateFilteredCards,
     vocabularyTypeCounts,
     filtered,
+    visibleCards,
+    page: currentPage,
+    pageSize,
+    totalPages,
+    pageRange,
+    setPage,
+    setPageSize,
     progressPct,
     selectedCount,
     removeCards,

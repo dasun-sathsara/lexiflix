@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { AppErrorAlert } from "@/components/common/app-surface";
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GenerationDialogDefaults, PackGenerationSnapshot } from "@/features/media/types";
@@ -97,6 +98,7 @@ export function PackGenerationPanel({
             <Link href={generation.packHref}>
               <BookOpen className="size-4" />
               Open Pack
+              <LinkPendingIndicator label="Opening pack" />
             </Link>
           </Button>
         ) : null}

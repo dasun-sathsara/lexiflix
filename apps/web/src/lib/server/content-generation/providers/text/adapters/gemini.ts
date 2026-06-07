@@ -1,13 +1,8 @@
 import "server-only";
 
 import { GoogleGenAI, type Schema, Type } from "@google/genai";
-import { env } from "@/lib/config/env";
+import type { GeminiCredentials } from "@/lib/server/ai-credentials/types";
 import type { TextGenerationAdapter } from "@/lib/server/content-generation/providers/text/port";
-
-const geminiClient = new GoogleGenAI({
-  vertexai: true,
-  apiKey: env.GOOGLE_CLOUD_API_KEY,
-});
 
 const responseSchema: Schema = {
   type: Type.OBJECT,
@@ -39,7 +34,13 @@ const responseSchema: Schema = {
   required: ["items"],
 };
 
-export function createGeminiTextAdapter(): TextGenerationAdapter {
+export function createGeminiTextAdapter(credentials: GeminiCredentials): TextGenerationAdapter {
+  // A client per adapter instance: credentials differ per user for bring-your-own keys.
+  const geminiClient = new GoogleGenAI({
+    vertexai: credentials.useVertexAi,
+    apiKey: credentials.apiKey,
+  });
+
   return {
     provider: "gemini",
     async generateBatch(request) {

@@ -12,6 +12,11 @@ import {
 } from "@/lib/constants";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import type {
+  AiCredentialMetadata,
+  AiCredentialSource,
+  AiProviderId,
+} from "@/lib/server/ai-credentials/types";
+import type {
   GenerationAudioVoiceGender,
   GenerationCefrWindowMode,
   GenerationKnownTermHandling,
@@ -116,4 +121,86 @@ export type StatusState = {
 
 export type ManualOverrideSelection = CefrLevel | "assessed";
 
-export type SettingsTab = "account" | "preferences";
+export type SettingsTab = "account" | "preferences" | "ai-services";
+
+// ---------------------------------------------------------------------------
+// AI services (bring-your-own credentials)
+// ---------------------------------------------------------------------------
+
+export const aiServiceCredentialSchema = z.discriminatedUnion("provider", [
+  z.object({
+    provider: z.literal("gemini"),
+    apiKey: z.string().trim().min(10, "Enter the full Gemini API key."),
+  }),
+  z.object({
+    provider: z.literal("azure-foundry"),
+    endpoint: z.url("Enter the Azure AI Foundry resource endpoint URL."),
+    apiKey: z.string().trim().min(10, "Enter the full Azure AI Foundry API key."),
+    model: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((value) => value || undefined),
+    imageModel: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .transform((value) => value || undefined),
+  }),
+  z.object({
+    provider: z.literal("aws-polly"),
+    accessKeyId: z.string().trim().min(10, "Enter the AWS access key ID."),
+    secretAccessKey: z.string().trim().min(10, "Enter the AWS secret access key."),
+    region: z
+      .string()
+      .trim()
+      .max(40)
+      .optional()
+      .transform((value) => value || undefined),
+  }),
+  z.object({
+    provider: z.literal("azure-mai"),
+    apiKey: z.string().trim().min(10, "Enter the Azure Speech API key."),
+    region: z
+      .string()
+      .trim()
+      .max(40)
+      .optional()
+      .transform((value) => value || undefined),
+  }),
+]);
+
+export type AiServiceCredentialInput = z.input<typeof aiServiceCredentialSchema>;
+
+/** Client-safe view of one provider's configuration. Never contains secret values. */
+export type AiServiceProviderView = {
+  provider: AiProviderId;
+  label: string;
+  /** True when the user has saved their own credential for this provider. */
+  configured: boolean;
+  /** Masked tail of the stored secret, e.g. `••••1234`. */
+  secretHint: string | null;
+  enabled: boolean;
+  /** Non-secret configuration such as endpoint, region and deployment names. */
+  metadata: AiCredentialMetadata;
+  /** True when the operator has configured this provider in the system environment. */
+  systemConfigured: boolean;
+  /** Which credentials this provider would use for the current user right now. */
+  effectiveSource: AiCredentialSource;
+  updatedAt: string | null;
+};
+
+export type AiServicesSettings = {
+  /** Admin-enforced global use of the system `.env` credentials. */
+  enforceSystemCredentials: boolean;
+  isAdmin: boolean;
+  /** False when the runtime cannot encrypt secrets, which disables custom credentials. */
+  encryptionAvailable: boolean;
+  providers: AiServiceProviderView[];
+};
+
+export type AiServicesSettingsActionResult = ActionResult<{
+  aiServices: AiServicesSettings;
+}>;

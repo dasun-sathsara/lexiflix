@@ -13,7 +13,15 @@ import {
 export { getInitials } from "@/lib/primitives/strings";
 
 export function toSettingsTab(value: string | null): SettingsTab {
-  return value === "preferences" ? "preferences" : "account";
+  if (value === "preferences") {
+    return "preferences";
+  }
+
+  if (value === "ai-services") {
+    return "ai-services";
+  }
+
+  return "account";
 }
 
 export { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH };

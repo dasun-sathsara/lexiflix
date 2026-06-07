@@ -1,13 +1,17 @@
 import "server-only";
 
+import type { AzureFoundryCredentials, GeminiCredentials } from "@/lib/server/ai-credentials/types";
+
 export type TextGenerationProviderConfig =
   | {
       provider: "gemini";
       model: string;
+      credentials: GeminiCredentials;
     }
   | {
       provider: "azure-foundry";
       model: string;
+      credentials: AzureFoundryCredentials;
     };
 
 export type TextBatchRequest = {

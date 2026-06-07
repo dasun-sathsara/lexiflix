@@ -16,9 +16,9 @@ export function createTextGenerationAdapter(
 ): TextGenerationAdapter {
   switch (config.provider) {
     case "gemini":
-      return createGeminiTextAdapter();
+      return createGeminiTextAdapter(config.credentials);
     case "azure-foundry":
-      return createAzureFoundryTextAdapter();
+      return createAzureFoundryTextAdapter(config.credentials);
     default:
       return assertNever(config);
   }

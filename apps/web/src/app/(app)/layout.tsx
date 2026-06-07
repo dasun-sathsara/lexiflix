@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import type * as React from "react";
+import { NavigationProgressProvider } from "@/components/common/navigation-progress";
+import { RouteProgressBar } from "@/components/common/route-progress-bar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getStudyPlanForUser } from "@/features/packs/server/study-plan";
 import { AppInset, AppSidebar } from "@/features/sidebar/components/app-sidebar";
@@ -22,12 +24,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const sidebarUser = mapToSidebarUser(session.user);
 
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar user={sidebarUser} dueCount={studyPlan.dueNow} />
-      <AppInset>
-        {needsEmailVerification && <EmailVerificationBanner />}
-        {children}
-      </AppInset>
-    </SidebarProvider>
+    <NavigationProgressProvider>
+      <RouteProgressBar />
+      <SidebarProvider defaultOpen={defaultOpen}>
+        <AppSidebar user={sidebarUser} dueCount={studyPlan.dueNow} />
+        <AppInset>
+          {needsEmailVerification && <EmailVerificationBanner />}
+          {children}
+        </AppInset>
+      </SidebarProvider>
+    </NavigationProgressProvider>
   );
 }

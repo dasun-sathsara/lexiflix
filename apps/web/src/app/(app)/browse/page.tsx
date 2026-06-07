@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { PendingSection } from "@/components/common/pending-section";
 import { BrowseControls } from "@/features/browse/components/browse-controls";
 import { MediaGrid } from "@/features/browse/components/media-grid";
 import { PaginationControls } from "@/features/browse/components/pagination-controls";
@@ -34,7 +35,9 @@ export default async function BrowsePage({
           <BrowseControls genres={currentGenres} />
         </section>
         <section>
-          <MediaGrid results={results} genreMap={genreMap} />
+          <PendingSection>
+            <MediaGrid results={results} genreMap={genreMap} />
+          </PendingSection>
         </section>
         <section className="flex justify-center">
           <PaginationControls currentPage={currentPage} totalPages={totalPages} />

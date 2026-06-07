@@ -17,6 +17,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
+import type { AiCredentialMetadata } from "@/lib/server/ai-credentials/types";
+
 import type {
   ArtifactMetadata,
   AssessmentAttemptState,
@@ -51,6 +53,12 @@ const auditColumns = {
 };
 
 export const userRoleEnum = pgEnum("user_role", ["learner", "admin"]);
+export const aiProviderEnum = pgEnum("ai_provider", [
+  "gemini",
+  "azure-foundry",
+  "aws-polly",
+  "azure-mai",
+]);
 export const curatedSourceProviderEnum = pgEnum("curated_source_provider", ["tmdb"]);
 export const curatedMediaTypeEnum = pgEnum("curated_media_type", ["movie", "tv"]);
 export const curationScopeEnum = pgEnum("curation_scope", ["movie", "show", "season"]);
@@ -283,6 +291,50 @@ export const userPreferences = pgTable("user_preferences", {
   streakAlertsEnabled: boolean("streak_alerts_enabled").default(true).notNull(),
   ...auditColumns,
 });
+
+/*
+  User-supplied ("bring your own") AI provider credentials.
+
+  The provider secret is stored as an AES-256-GCM envelope (see lib/server/security/secret-box.ts);
+  only non-secret configuration such as endpoints, regions and deployment names lives in metadata.
+  Adding a value to ai_provider later requires a non-transactional migration
+  (`ALTER TYPE ... ADD VALUE` cannot run inside a transaction).
+*/
+export const userAiCredential = pgTable(
+  "user_ai_credential",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    provider: aiProviderEnum("provider").notNull(),
+    secretCiphertext: text("secret_ciphertext").notNull(),
+    secretHint: text("secret_hint").notNull(),
+    metadata: jsonb("metadata").$type<AiCredentialMetadata>().default({}).notNull(),
+    enabled: boolean("enabled").default(true).notNull(),
+    ...auditColumns,
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.provider] }),
+    index("user_ai_credential_user_idx").on(table.userId),
+  ],
+);
+
+/*
+  Single-row policy table. When enforcement is on, every user runs on the system `.env`
+  provider configuration and custom credentials are ignored.
+*/
+export const aiCredentialPolicy = pgTable(
+  "ai_credential_policy",
+  {
+    id: text("id").primaryKey(),
+    enforceSystemCredentials: boolean("enforce_system_credentials").default(false).notNull(),
+    updatedByUserId: text("updated_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    ...auditColumns,
+  },
+  (table) => [check("ai_credential_policy_singleton_check", sql`${table.id} = 'global'`)],
+);
 
 /*
   Cached TMDB-backed learning targets.

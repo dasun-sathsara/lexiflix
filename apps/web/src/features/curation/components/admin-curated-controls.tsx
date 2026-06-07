@@ -1,9 +1,10 @@
 "use client";
 
-import { RotateCcw, Search } from "lucide-react";
+import { Loader2, RotateCcw, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
+import { useReportNavigationPending } from "@/components/common/navigation-progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,10 +41,14 @@ function Segment<T extends string>({
   options,
   value,
   onChange,
+  disabled,
+  pendingValue,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (next: T) => void;
+  disabled?: boolean;
+  pendingValue?: T | null;
 }) {
   return (
     <div className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/40 p-0.5 shadow-xs">
@@ -52,14 +57,18 @@ function Segment<T extends string>({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
+          disabled={disabled}
           className={cn(
-            "inline-flex items-center justify-center rounded px-2 py-1 text-xs font-medium transition-colors",
+            "inline-flex items-center justify-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70",
             value === opt.value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
           {opt.label}
+          {pendingValue === opt.value ? (
+            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+          ) : null}
         </button>
       ))}
     </div>
@@ -78,7 +87,16 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const [pendingSegment, setPendingSegment] = useState<string | null>(null);
+
+  useReportNavigationPending(isPending);
+
+  useEffect(() => {
+    if (!isPending) {
+      setPendingSegment(null);
+    }
+  }, [isPending]);
 
   // Local state for search input only (needs explicit commit)
   const [query, setQuery] = useState<string>(queryState.query);
@@ -109,6 +127,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   );
 
   function handleModeChange(next: CuratedAdminMode) {
+    setPendingSegment(next);
     push({
       view: "discover",
       mode: next,
@@ -117,6 +136,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   }
 
   function handleMediaTypeChange(next: TMDBMediaType) {
+    setPendingSegment(next);
     push({
       view: "discover",
       type: next,
@@ -161,7 +181,10 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
     queryState.sortBy !== getDefaultAdminSort(queryState.mediaType);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 px-3 py-2 shadow-xs">
+    <div
+      className="flex flex-wrap items-center gap-2 rounded-[calc(var(--radius)+2px)] border border-border/80 bg-card/70 px-3 py-2 shadow-xs"
+      aria-busy={isPending}
+    >
       <Segment<CuratedAdminMode>
         options={[
           { value: "search", label: "Search" },
@@ -169,6 +192,8 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
         ]}
         value={queryState.mode}
         onChange={handleModeChange}
+        disabled={isPending}
+        pendingValue={pendingSegment as CuratedAdminMode | null}
       />
 
       <Segment<TMDBMediaType>
@@ -178,6 +203,8 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
         ]}
         value={queryState.mediaType}
         onChange={handleMediaTypeChange}
+        disabled={isPending}
+        pendingValue={pendingSegment as TMDBMediaType | null}
       />
 
       <div className="mx-0.5 hidden h-5 w-px bg-border/60 sm:block" />
@@ -198,12 +225,22 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
                 handleSearchCommit();
               }
             }}
-            className="h-8 border-border/80 pl-8 text-sm shadow-xs"
+            className="h-8 border-border/80 pl-8 pr-8 text-sm shadow-xs"
           />
+          {isPending ? (
+            <Loader2
+              className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       ) : (
         <>
-          <Select value={queryState.genreId ?? "all"} onValueChange={handleGenreChange}>
+          <Select
+            value={queryState.genreId ?? "all"}
+            onValueChange={handleGenreChange}
+            disabled={isPending}
+          >
             <SelectTrigger size="sm" className="h-8 w-[140px] text-xs">
               <SelectValue placeholder="Genre" />
             </SelectTrigger>
@@ -217,7 +254,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             </SelectContent>
           </Select>
 
-          <Select value={queryState.sortBy} onValueChange={handleSortChange}>
+          <Select value={queryState.sortBy} onValueChange={handleSortChange} disabled={isPending}>
             <SelectTrigger size="sm" className="h-8 w-[150px] text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -233,6 +270,7 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
           <Select
             value={queryState.decade != null ? String(queryState.decade) : "all"}
             onValueChange={handleDecadeChange}
+            disabled={isPending}
           >
             <SelectTrigger size="sm" className="h-8 w-[120px] text-xs">
               <SelectValue placeholder="Decade" />
@@ -256,8 +294,13 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
             variant="ghost"
             className="h-8 gap-1.5 px-2 text-xs"
             onClick={handleReset}
+            disabled={isPending}
           >
-            <RotateCcw className="size-3.5" />
+            {isPending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="size-3.5" />
+            )}
             Reset
           </Button>
         ) : null}

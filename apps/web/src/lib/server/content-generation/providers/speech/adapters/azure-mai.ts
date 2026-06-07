@@ -32,8 +32,8 @@ function buildSsml(input: { voice: string; style: string; text: string }) {
   return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US"><voice name="${escapedVoice}"><mstts:express-as style="${escapedStyle}">${escapedText}</mstts:express-as></voice></speak>`;
 }
 
-function createEndpoint() {
-  return `https://${env.AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`;
+function createEndpoint(region: string) {
+  return `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
 }
 
 function isAzureRetryable(status: number) {
@@ -47,11 +47,11 @@ async function synthesizeWithRetry(input: {
   let attempt = 0;
 
   while (true) {
-    const response = await fetch(createEndpoint(), {
+    const response = await fetch(createEndpoint(input.config.credentials.region), {
       method: "POST",
       headers: {
         "Content-Type": "application/ssml+xml",
-        "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_API_KEY ?? "",
+        "Ocp-Apim-Subscription-Key": input.config.credentials.apiKey,
         "User-Agent": "lexiflix-content-generation",
         "X-Microsoft-OutputFormat": AZURE_TTS_OUTPUT_FORMAT,
       },
@@ -82,8 +82,8 @@ async function synthesizeWithRetry(input: {
 }
 
 export function createAzureMaiSpeechAdapter(config: AzureMaiConfig): SpeechSynthesisAdapter {
-  if (!env.AZURE_SPEECH_API_KEY) {
-    throw new Error("AZURE_SPEECH_API_KEY is required for Azure MAI audio generation.");
+  if (!config.credentials?.apiKey) {
+    throw new Error("An Azure Speech API key is required for Azure MAI audio generation.");
   }
 
   return {
@@ -101,7 +101,7 @@ export function createAzureMaiSpeechAdapter(config: AzureMaiConfig): SpeechSynth
           model: "MAI-Voice-1",
           voice: config.voice,
           style: config.style,
-          region: env.AZURE_SPEECH_REGION,
+          region: config.credentials.region,
           outputFormat: AZURE_TTS_OUTPUT_FORMAT,
         },
       };

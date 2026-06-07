@@ -2,6 +2,7 @@ import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
 import { env } from "@/lib/config/env";
+import type { ResolvedAiCredentials } from "@/lib/server/ai-credentials/types";
 import type {
   GeneratedTextItem,
   GenerationRequestSnapshot,
@@ -24,24 +25,39 @@ const PROVIDER_LABELS: Record<ActiveSpeechProviderConfig["provider"], string> = 
   "azure-mai": "Azure MAI",
 };
 
-function getSpeechProviderConfig(
-  voiceGender: GenerationRequestSnapshot["audioVoiceGender"],
-): SpeechProviderConfig {
+function getSpeechProviderConfig(input: {
+  voiceGender: GenerationRequestSnapshot["audioVoiceGender"];
+  aiCredentials: ResolvedAiCredentials;
+}): SpeechProviderConfig {
   switch (env.CONTENT_GENERATION_AUDIO_PROVIDER) {
     case "disabled":
       return { provider: "disabled" };
-    case "aws-polly":
+    case "aws-polly": {
+      const credentials = input.aiCredentials.awsPolly.credentials;
+      if (!credentials) {
+        throw new Error("No AWS Polly credentials are available for audio generation.");
+      }
+
       return {
         provider: "aws-polly",
-        voice: voiceGender === "male" ? "Matthew" : "Joanna",
+        voice: input.voiceGender === "male" ? "Matthew" : "Joanna",
         engine: env.AWS_POLLY_ENGINE,
+        credentials,
       };
-    case "azure-mai":
+    }
+    case "azure-mai": {
+      const credentials = input.aiCredentials.azureMai.credentials;
+      if (!credentials) {
+        throw new Error("No Azure Speech credentials are available for audio generation.");
+      }
+
       return {
         provider: "azure-mai",
-        voice: voiceGender === "male" ? env.AZURE_MAI_VOICE_MALE : env.AZURE_MAI_VOICE_FEMALE,
+        voice: input.voiceGender === "male" ? env.AZURE_MAI_VOICE_MALE : env.AZURE_MAI_VOICE_FEMALE,
         style: env.AZURE_MAI_VOICE_STYLE,
+        credentials,
       };
+    }
   }
 }
 
@@ -49,12 +65,29 @@ export async function generateSpeechArtifacts(input: {
   selectedItems: SelectedGenerationItem[];
   textItems: GeneratedTextItem[];
   voiceGender: GenerationRequestSnapshot["audioVoiceGender"];
+  aiCredentials: ResolvedAiCredentials;
 }): Promise<SpeechArtifactsResult> {
-  const config = getSpeechProviderConfig(input.voiceGender);
+  let config: SpeechProviderConfig;
+  try {
+    config = getSpeechProviderConfig({
+      voiceGender: input.voiceGender,
+      aiCredentials: input.aiCredentials,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("[content-generation:audio] no usable credentials", { error: errorMessage });
+    return { artifacts: [], warnings: [`Audio generation bypassed: ${errorMessage}`] };
+  }
 
   logger.info("[content-generation:audio] started", {
     provider: config.provider,
     voice: config.provider === "disabled" ? undefined : config.voice,
+    credentialSource:
+      config.provider === "aws-polly"
+        ? input.aiCredentials.awsPolly.source
+        : config.provider === "azure-mai"
+          ? input.aiCredentials.azureMai.source
+          : undefined,
     selectedItemCount: input.selectedItems.length,
     textItemCount: input.textItems.length,
   });

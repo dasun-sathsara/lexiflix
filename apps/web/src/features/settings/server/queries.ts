@@ -2,7 +2,11 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import type { SettingsPreferences } from "@/features/settings/types";
+import type {
+  AiServiceProviderView,
+  AiServicesSettings,
+  SettingsPreferences,
+} from "@/features/settings/types";
 import {
   CEFR_LEVELS,
   type CefrLevel,
@@ -26,6 +30,19 @@ import {
   GENERATION_KNOWN_TERM_HANDLINGS,
   STUDY_VOCABULARY_TYPES,
 } from "@/lib/constants";
+import { isAiCredentialEncryptionAvailable } from "@/lib/server/ai-credentials/encryption-key";
+import { chooseCredentialSource } from "@/lib/server/ai-credentials/policy";
+import {
+  getEnforceSystemCredentials,
+  listUserAiCredentials,
+} from "@/lib/server/ai-credentials/store";
+import { getSystemCredentialAvailability } from "@/lib/server/ai-credentials/system";
+import {
+  AI_PROVIDER_IDS,
+  AI_PROVIDER_LABELS,
+  type AiProviderId,
+  type StoredAiCredential,
+} from "@/lib/server/ai-credentials/types";
 import { db } from "@/lib/server/db";
 import type {
   GenerationAudioVoiceGender,
@@ -185,3 +202,64 @@ export const settingsPreferenceDefaults = {
   emailRemindersEnabled: DEFAULT_EMAIL_REMINDERS_ENABLED,
   streakAlertsEnabled: DEFAULT_STREAK_ALERTS_ENABLED,
 } as const;
+
+// ---------------------------------------------------------------------------
+// AI services (bring-your-own credentials)
+// ---------------------------------------------------------------------------
+
+/** A stored credential is only usable when the provider-specific required fields are present. */
+function hasRequiredCredentialFields(provider: AiProviderId, row: StoredAiCredential): boolean {
+  switch (provider) {
+    case "azure-foundry":
+      return Boolean(row.metadata.endpoint);
+    case "aws-polly":
+      return Boolean(row.metadata.accessKeyId);
+    default:
+      return true;
+  }
+}
+
+/**
+ * Read model for the AI services settings tab. Secrets are never returned — only a masked
+ * hint plus non-secret configuration such as endpoints and regions.
+ */
+export async function getAiServicesSettings(input: {
+  userId: string;
+  isAdmin: boolean;
+}): Promise<AiServicesSettings> {
+  const [enforceSystemCredentials, rows] = await Promise.all([
+    getEnforceSystemCredentials(),
+    listUserAiCredentials(input.userId),
+  ]);
+
+  const systemAvailability = getSystemCredentialAvailability();
+  const byProvider = new Map(rows.map((row) => [row.provider, row]));
+
+  const providers: AiServiceProviderView[] = AI_PROVIDER_IDS.map((provider) => {
+    const row = byProvider.get(provider);
+    const usable =
+      Boolean(row?.enabled) && Boolean(row && hasRequiredCredentialFields(provider, row));
+
+    return {
+      provider,
+      label: AI_PROVIDER_LABELS[provider],
+      configured: Boolean(row),
+      secretHint: row?.secretHint ?? null,
+      enabled: row?.enabled ?? false,
+      metadata: row?.metadata ?? {},
+      systemConfigured: systemAvailability[provider],
+      effectiveSource: chooseCredentialSource({
+        enforceSystemCredentials,
+        hasUsableUserCredential: usable,
+      }),
+      updatedAt: row?.updatedAt?.toISOString() ?? null,
+    };
+  });
+
+  return {
+    enforceSystemCredentials,
+    isAdmin: input.isAdmin,
+    encryptionAvailable: isAiCredentialEncryptionAvailable(),
+    providers,
+  };
+}

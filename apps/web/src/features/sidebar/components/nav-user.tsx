@@ -1,6 +1,14 @@
 "use client";
 
-import { BadgeCheck, Bell, ChevronsUpDown, Clapperboard, LogOut, Shield } from "lucide-react";
+import {
+  BadgeCheck,
+  Bell,
+  ChevronsUpDown,
+  Clapperboard,
+  KeyRound,
+  LogOut,
+  Shield,
+} from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -132,6 +140,12 @@ export function NavUser({
                 <Link href="/settings?tab=preferences">
                   <Bell />
                   Preferences
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings?tab=ai-services">
+                  <KeyRound />
+                  AI services
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

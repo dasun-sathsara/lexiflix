@@ -61,6 +61,7 @@ Current required server-side envs include:
 
 The web app also supports optional server-side tuning vars:
 
+- `AI_CREDENTIALS_ENCRYPTION_KEY` — dedicated key used to encrypt user-supplied AI provider credentials. Falls back to `AUTH_SECRET`. Rotating whichever secret is in use makes previously stored user credentials undecryptable, and affected users must re-enter their keys.
 - `CONTENT_GENERATION_LLM_PROVIDER` — LLM provider for pack text generation (`gemini` | `azure-foundry`, default: `gemini`)
 - `ANALYSIS_LLM_PROVIDER` — LLM provider for media-analysis phrase extraction (`gemini` | `azure-foundry`, default: `gemini`)
 - `CONTENT_GENERATION_TEXT_MODEL` — model name for text generation (default: `gemini-3.1-flash-lite`)
@@ -162,6 +163,17 @@ Use `ok`, not `success`; use `error`, not `message`; put successful payloads und
 Auth checks for app-owned surfaces should go through `src/lib/auth-guards.ts`: `getSessionOrNull()` for optional session reads, `requireSession()` for signed-in app routes and actions, and `requireAdmin()` for admin-only surfaces. Do not call `auth.api.getSession` directly from signed-in app routes. Route handlers that need request headers should use a shared auth helper instead of duplicating Better Auth calls.
 
 Route files under `src/app` should stay thin: parse params and search params, require session/admin access, call feature read-model functions, choose `notFound()` or redirects, and render feature components. Keep Drizzle query construction, domain state transitions, TMDB mapping, repeated authorization logic, and mock data out of route files unless there is a documented reason.
+
+## AI Credentials (bring your own)
+
+Learners can store their own provider credentials under Settings → AI services. Behaviour:
+
+- Supported providers: Gemini, Azure AI Foundry, AWS Polly, Azure MAI Speech.
+- Secrets are encrypted at rest with AES-256-GCM (`src/lib/server/security/secret-box.ts`); only non-secret fields such as endpoints, regions and deployment names are stored in clear text, and the settings read model never returns plaintext secrets.
+- Resolution order lives in `src/lib/server/ai-credentials/policy.ts`: admin enforcement → the user's own credential → system `.env`. Administrators therefore run on the system configuration by default, since they normally store no personal keys.
+- Admins can force every account onto the system configuration from the same tab; custom credentials remain stored but are ignored while enforcement is on.
+- Only per-user pack generation uses these credentials. Subtitle analysis (`content_analysis_run`) is content-scoped and shared between users, so it always runs on system credentials.
+- `AUTH_SECRET` and `AI_CREDENTIALS_ENCRYPTION_KEY` are synced to the Trigger.dev worker (`trigger.config.ts`) because decryption happens inside the generation task.
 
 ## Validation Expectations
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AwsPollyCredentials, AzureMaiCredentials } from "@/lib/server/ai-credentials/types";
 import type { SpeechArtifactTarget } from "@/lib/server/content-generation/contracts";
 
 export type SpeechProviderConfig =
@@ -10,11 +11,13 @@ export type SpeechProviderConfig =
       provider: "aws-polly";
       voice: string;
       engine: "standard" | "neural";
+      credentials: AwsPollyCredentials;
     }
   | {
       provider: "azure-mai";
       voice: string;
       style: string;
+      credentials: AzureMaiCredentials;
     };
 
 export type ActiveSpeechProviderConfig = Exclude<SpeechProviderConfig, { provider: "disabled" }>;

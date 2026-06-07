@@ -2,6 +2,7 @@ import { CheckCircle2, Clock, Film, Layers, Play, Tv } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CardCountPill } from "@/features/packs/components/card-count-pill";
@@ -129,6 +130,7 @@ export function DeckRow({ deck }: DeckRowProps) {
           <Link href={`/pack/${deck.id}`}>
             <Layers className="size-4" />
             <span className="sm:hidden lg:inline">Open Pack</span>
+            <LinkPendingIndicator label="Opening pack" />
           </Link>
         </Button>
 
@@ -137,6 +139,7 @@ export function DeckRow({ deck }: DeckRowProps) {
             <Link href={studyHref}>
               <Play className="size-3.5 fill-current" />
               {deck.studyPlan.dueCount > 0 ? "Review Due" : "Learn New"}
+              <LinkPendingIndicator label="Starting session" />
             </Link>
           </Button>
         ) : (

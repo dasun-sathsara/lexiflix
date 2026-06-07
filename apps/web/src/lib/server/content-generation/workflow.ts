@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@trigger.dev/sdk";
 import { eq } from "drizzle-orm";
 import { env } from "@/lib/config/env";
+import { resolveAiCredentialsForUser } from "@/lib/server/ai-credentials/resolver";
 import {
   discardPersistedArtifacts,
   persistGeneratedArtifacts,
@@ -55,6 +56,10 @@ export async function runPackGenerationWorkflow(
   const warnings: string[] = [];
 
   try {
+    // Credentials are resolved per job owner: learners may bring their own provider keys,
+    // unless an administrator has enforced the system `.env` configuration.
+    const aiCredentials = await resolveAiCredentialsForUser(job.userId);
+
     await recordPackGenerationJobTransition({
       jobId,
       status: "running",
@@ -65,6 +70,17 @@ export async function runPackGenerationWorkflow(
         audioProvider: env.CONTENT_GENERATION_AUDIO_PROVIDER,
         imageEnabled: env.CONTENT_GENERATION_IMAGE_ENABLED && job.requestSnapshot.imageEnabled,
         imageModel: env.CONTENT_GENERATION_IMAGE_MODEL,
+        enforceSystemAiCredentials: aiCredentials.enforceSystemCredentials,
+        textCredentialSource:
+          env.CONTENT_GENERATION_LLM_PROVIDER === "gemini"
+            ? aiCredentials.gemini.source
+            : aiCredentials.azureFoundry.source,
+        audioCredentialSource:
+          env.CONTENT_GENERATION_AUDIO_PROVIDER === "aws-polly"
+            ? aiCredentials.awsPolly.source
+            : env.CONTENT_GENERATION_AUDIO_PROVIDER === "azure-mai"
+              ? aiCredentials.azureMai.source
+              : null,
       },
     });
 
@@ -95,6 +111,7 @@ export async function runPackGenerationWorkflow(
     const textItems = await generateTextContent({
       items: selectedItems,
       requestSnapshot: job.requestSnapshot,
+      aiCredentials,
     });
     const textByItemId = new Map<string, GeneratedTextItem>(
       textItems.map((item) => [item.analysisItemId, item]),
@@ -128,11 +145,13 @@ export async function runPackGenerationWorkflow(
       selectedItems,
       textItems,
       voiceGender: job.requestSnapshot.audioVoiceGender,
+      aiCredentials,
     });
     const imageResult = await generateImageArtifacts({
       selectedItems,
       textItems,
       requested: job.requestSnapshot.imageEnabled,
+      aiCredentials,
     });
     warnings.push(...speechResult.warnings, ...imageResult.warnings);
 

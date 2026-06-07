@@ -1,7 +1,6 @@
 import "server-only";
 
 import { AzureOpenAI } from "openai";
-import { env } from "@/lib/config/env";
 import type {
   ImageGenerationAdapter,
   ImageGenerationProviderConfig,
@@ -9,25 +8,24 @@ import type {
 
 const IMAGE_SIZE = "1792x1024" as const;
 
-function createOpenAIClient(deployment: string): AzureOpenAI {
-  if (!env.AZURE_AI_FOUNDRY_ENDPOINT || !env.AZURE_AI_FOUNDRY_API_KEY) {
-    throw new Error(
-      "Azure AI Foundry credentials (AZURE_AI_FOUNDRY_ENDPOINT, AZURE_AI_FOUNDRY_API_KEY) are not configured.",
-    );
+function createOpenAIClient(config: ImageGenerationProviderConfig): AzureOpenAI {
+  if (!config.credentials.endpoint || !config.credentials.apiKey) {
+    throw new Error("Azure AI Foundry credentials (endpoint and API key) are not configured.");
   }
 
+  // Created per adapter instance because credentials vary per user.
   return new AzureOpenAI({
-    endpoint: env.AZURE_AI_FOUNDRY_ENDPOINT,
-    apiKey: env.AZURE_AI_FOUNDRY_API_KEY,
+    endpoint: config.credentials.endpoint,
+    apiKey: config.credentials.apiKey,
     apiVersion: "2024-05-01-preview",
-    deployment,
+    deployment: config.model,
   });
 }
 
 export function createAzureFoundryImageAdapter(
   config: ImageGenerationProviderConfig,
 ): ImageGenerationAdapter {
-  const openai = createOpenAIClient(config.model);
+  const openai = createOpenAIClient(config);
 
   return {
     provider: "azure-foundry",

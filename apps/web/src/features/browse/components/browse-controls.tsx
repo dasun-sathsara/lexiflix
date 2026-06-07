@@ -1,9 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
+import { useReportNavigationPending } from "@/components/common/navigation-progress";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,7 +27,13 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
 
   // State
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
-  const [_, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const committedQuery = searchParams.get("q") || "";
+  // The debounce timer is armed whenever the input no longer matches the committed query.
+  const isSearchDirty = searchTerm !== committedQuery;
+  const isBusy = isPending || isSearchDirty;
+
+  useReportNavigationPending(isBusy);
 
   // Debounce search
   useEffect(() => {
@@ -89,7 +96,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
   const isSearching = !!searchTerm;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5" aria-busy={isBusy}>
       <Tabs
         defaultValue="movie"
         value={currentType}
@@ -117,15 +124,25 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
         className="w-full md:w-auto"
       >
         <TabsList>
-          <TabsTrigger value="movie">Movies</TabsTrigger>
-          <TabsTrigger value="tv">TV Shows</TabsTrigger>
+          <TabsTrigger value="movie" className="gap-1.5">
+            Movies
+            {isPending && currentType === "movie" ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="tv" className="gap-1.5">
+            TV Shows
+            {isPending && currentType === "tv" ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : null}
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Select
-            disabled={isSearching}
+            disabled={isSearching || isPending}
             value={currentGenre}
             onValueChange={(val) => updateParams({ with_genres: val === "all" ? null : val })}
           >
@@ -143,7 +160,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
           </Select>
 
           <Select
-            disabled={isSearching}
+            disabled={isSearching || isPending}
             value={currentSort}
             onValueChange={(val) => updateParams({ sort_by: val })}
           >
@@ -158,7 +175,7 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
           </Select>
 
           <Select
-            disabled={isSearching}
+            disabled={isSearching || isPending}
             value={currentDecade}
             onValueChange={(val) => {
               if (val === "all") {
@@ -205,10 +222,16 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
           <Input
             aria-label="Search titles"
             placeholder="Search Titles…"
-            className="pl-10"
+            className="pl-10 pr-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {isBusy ? (
+            <Loader2
+              className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       </div>
     </div>

@@ -42,6 +42,11 @@ const serverSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+    /**
+     * Optional dedicated key for encrypting user-supplied AI provider credentials.
+     * Falls back to AUTH_SECRET when unset.
+     */
+    AI_CREDENTIALS_ENCRYPTION_KEY: z.string().min(16).optional(),
     GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
     GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
     OPENSUBTITLES_API_KEY: z.string().min(1, "OPENSUBTITLES_API_KEY is required"),

@@ -2,38 +2,35 @@ import "server-only";
 
 import { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { env } from "@/lib/config/env";
+import type { AzureFoundryCredentials } from "@/lib/server/ai-credentials/types";
 import type { TextGenerationAdapter } from "@/lib/server/content-generation/providers/text/port";
 import { generatedTextBatchSchema } from "@/lib/server/content-generation/providers/text/schema";
 
-let openaiClient: AzureOpenAI | null = null;
-
-function getOpenAIClient(deployment: string): AzureOpenAI {
-  if (openaiClient) {
-    return openaiClient;
+function createOpenAIClient(input: {
+  credentials: AzureFoundryCredentials;
+  deployment: string;
+}): AzureOpenAI {
+  if (!input.credentials.apiKey || !input.credentials.endpoint) {
+    throw new Error("Azure AI Foundry credentials (endpoint and API key) are not configured.");
   }
 
-  if (!env.AZURE_AI_FOUNDRY_API_KEY || !env.AZURE_AI_FOUNDRY_ENDPOINT) {
-    throw new Error(
-      "Azure AI Foundry credentials (AZURE_AI_FOUNDRY_API_KEY, AZURE_AI_FOUNDRY_ENDPOINT) are not configured.",
-    );
-  }
-
-  openaiClient = new AzureOpenAI({
-    apiKey: env.AZURE_AI_FOUNDRY_API_KEY,
-    endpoint: env.AZURE_AI_FOUNDRY_ENDPOINT,
+  // Clients are created per request rather than cached, because credentials vary per user.
+  return new AzureOpenAI({
+    apiKey: input.credentials.apiKey,
+    endpoint: input.credentials.endpoint,
     apiVersion: "2024-05-01-preview",
-    deployment,
+    deployment: input.deployment,
   });
-
-  return openaiClient;
 }
 
-export function createAzureFoundryTextAdapter(): TextGenerationAdapter {
+export function createAzureFoundryTextAdapter(
+  credentials: AzureFoundryCredentials,
+): TextGenerationAdapter {
   return {
     provider: "azure-foundry",
     async generateBatch(request) {
-      const response = await getOpenAIClient(request.model).chat.completions.create({
+      const client = createOpenAIClient({ credentials, deployment: request.model });
+      const response = await client.chat.completions.create({
         model: request.model,
         messages: [{ role: "user", content: request.prompt }],
         response_format: zodResponseFormat(generatedTextBatchSchema, "generatedTextBatch"),

@@ -1,12 +1,13 @@
-import { Activity, Ban, Search, Sparkles, Users } from "lucide-react";
+import { Activity, Ban, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppPanel, AppStat } from "@/components/common/app-surface";
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { AdminUserRow } from "@/features/admin-users/components/admin-user-row";
+import { AdminUsersSearch } from "@/features/admin-users/components/admin-users-search";
 import type { AdminUsersQueryState, AdminUsersView } from "@/features/admin-users/types";
 import { buildAdminUsersHref } from "@/features/admin-users/utils";
 import { cn } from "@/lib/ui/cn";
@@ -61,37 +62,7 @@ export function AdminUsersWorkspace({
       />
 
       <AppPanel className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
-        <form action="/admin/users" className="flex min-w-0 flex-1 items-center gap-2">
-          {queryState.status !== "all" ? (
-            <input type="hidden" name="status" value={queryState.status} />
-          ) : null}
-          <div className="relative min-w-0 flex-1 sm:max-w-md">
-            <label htmlFor="admin-user-search" className="sr-only">
-              Search users by name or email
-            </label>
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="admin-user-search"
-              type="search"
-              name="q"
-              defaultValue={queryState.query}
-              placeholder="Search by name or email"
-              className="h-9 pl-8"
-              maxLength={100}
-            />
-          </div>
-          <Button type="submit" size="sm" variant="secondary">
-            Search
-          </Button>
-          {isFiltered ? (
-            <Button asChild size="sm" variant="ghost">
-              <Link href="/admin/users">Clear</Link>
-            </Button>
-          ) : null}
-        </form>
+        <AdminUsersSearch queryState={queryState} isFiltered={isFiltered} />
 
         <nav
           className="inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border/80 bg-muted/40 p-0.5 shadow-xs"
@@ -115,6 +86,7 @@ export function AdminUsersWorkspace({
                 <span className="rounded bg-muted px-1 text-[10px] tabular-nums text-muted-foreground">
                   {option.count}
                 </span>
+                <LinkPendingIndicator label={`Loading ${option.label} users`} />
               </Link>
             );
           })}
@@ -175,6 +147,7 @@ export function AdminUsersWorkspace({
               <Button asChild variant="outline" size="sm">
                 <Link href={buildAdminUsersHref(queryState, { page: pagination.page - 1 })}>
                   ← Previous
+                  <LinkPendingIndicator label="Loading previous page" />
                 </Link>
               </Button>
             ) : null}
@@ -187,6 +160,7 @@ export function AdminUsersWorkspace({
               <Button asChild variant="outline" size="sm">
                 <Link href={buildAdminUsersHref(queryState, { page: pagination.page + 1 })}>
                   Next →
+                  <LinkPendingIndicator label="Loading next page" />
                 </Link>
               </Button>
             ) : null}

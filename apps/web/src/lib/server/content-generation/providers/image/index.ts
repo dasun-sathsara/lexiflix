@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@trigger.dev/sdk";
 import { env } from "@/lib/config/env";
 import { DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL } from "@/lib/constants";
+import type { ResolvedAiCredentials } from "@/lib/server/ai-credentials/types";
 import type {
   GeneratedTextItem,
   SelectedGenerationItem,
@@ -17,10 +18,21 @@ import {
 
 export type { ImageArtifactsResult } from "@/lib/server/content-generation/providers/image/service";
 
-function getImageGenerationConfig(): ImageGenerationProviderConfig {
+function getImageGenerationConfig(
+  aiCredentials: ResolvedAiCredentials,
+): ImageGenerationProviderConfig {
+  const credentials = aiCredentials.azureFoundry.credentials;
+  if (!credentials) {
+    throw new Error("No Azure AI Foundry credentials are available for image generation.");
+  }
+
   return {
     provider: "azure-foundry",
-    model: env.CONTENT_GENERATION_IMAGE_MODEL ?? DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL,
+    model:
+      credentials.imageModel ??
+      env.CONTENT_GENERATION_IMAGE_MODEL ??
+      DEFAULT_AZURE_FOUNDRY_IMAGE_MODEL,
+    credentials,
   };
 }
 
@@ -41,6 +53,7 @@ export async function generateImageArtifacts(input: {
   textItems: GeneratedTextItem[];
   /** Learner-facing toggle from the generation request. */
   requested: boolean;
+  aiCredentials: ResolvedAiCredentials;
 }): Promise<ImageArtifactsResult> {
   if (!env.CONTENT_GENERATION_IMAGE_ENABLED || !input.requested) {
     return { artifacts: [], warnings: [] };
@@ -51,9 +64,8 @@ export async function generateImageArtifacts(input: {
     return { artifacts: [], warnings: [] };
   }
 
-  const config = getImageGenerationConfig();
-
   try {
+    const config = getImageGenerationConfig(input.aiCredentials);
     const adapter = createImageGenerationAdapter(config);
     return await generateImageArtifactsWithAdapter({
       textItems: candidateItems,
@@ -62,13 +74,18 @@ export async function generateImageArtifacts(input: {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const credentialLabel =
+      input.aiCredentials.azureFoundry.source === "user"
+        ? "your custom Azure AI Foundry"
+        : "Azure AI Foundry";
     logger.error("[content-generation:image] Azure AI Foundry fatal integration failure", {
       error: errorMessage,
+      credentialSource: input.aiCredentials.azureFoundry.source,
     });
     return {
       artifacts: [],
       warnings: [
-        `Image generation bypassed: Azure AI Foundry integration failure (${errorMessage})`,
+        `Image generation bypassed: ${credentialLabel} integration failure (${errorMessage})`,
       ],
     };
   }

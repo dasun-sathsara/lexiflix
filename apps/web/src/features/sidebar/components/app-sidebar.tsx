@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
@@ -135,6 +136,7 @@ function NavMenu({
                 <Link href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
+                  <LinkPendingIndicator label={`Loading ${item.title}`} />
                 </Link>
               </SidebarMenuButton>
               {badge && <SidebarMenuBadge>{badge}</SidebarMenuBadge>}

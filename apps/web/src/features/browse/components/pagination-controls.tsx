@@ -1,15 +1,15 @@
 "use client";
 
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
 } from "@/components/ui/pagination";
 
 interface PaginationControlsProps {
@@ -44,7 +44,16 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
     if (currentPage > 1) {
       items.push(
         <PaginationItem key="prev">
-          <PaginationPrevious href={createPageURL(currentPage - 1)} />
+          <PaginationLink
+            href={createPageURL(currentPage - 1)}
+            size="default"
+            aria-label="Go to previous page"
+            className="gap-1 px-2.5"
+          >
+            <ChevronLeftIcon />
+            <span className="hidden sm:block">Previous</span>
+            <LinkPendingIndicator label="Loading previous page" />
+          </PaginationLink>
         </PaginationItem>,
       );
     }
@@ -73,8 +82,14 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
       } else {
         items.push(
           <PaginationItem key={p}>
-            <PaginationLink href={createPageURL(p)} isActive={p === currentPage}>
+            <PaginationLink
+              href={createPageURL(p)}
+              isActive={p === currentPage}
+              size="default"
+              className="gap-1"
+            >
               {p}
+              <LinkPendingIndicator label={`Loading page ${p}`} />
             </PaginationLink>
           </PaginationItem>,
         );
@@ -85,7 +100,16 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
     if (currentPage < maxPage) {
       items.push(
         <PaginationItem key="next">
-          <PaginationNext href={createPageURL(currentPage + 1)} />
+          <PaginationLink
+            href={createPageURL(currentPage + 1)}
+            size="default"
+            aria-label="Go to next page"
+            className="gap-1 px-2.5"
+          >
+            <span className="hidden sm:block">Next</span>
+            <ChevronRightIcon />
+            <LinkPendingIndicator label="Loading next page" />
+          </PaginationLink>
         </PaginationItem>,
       );
     }

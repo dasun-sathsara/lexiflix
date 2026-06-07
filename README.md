@@ -75,6 +75,7 @@ Azure AI Foundry credentials are required when either `CONTENT_GENERATION_LLM_PR
 
 Optional tuning variables supported by the web app are:
 
+- `AI_CREDENTIALS_ENCRYPTION_KEY` — dedicated key for encrypting user-supplied AI provider credentials (falls back to `AUTH_SECRET`)
 - `CONTENT_GENERATION_LLM_PROVIDER` — LLM provider for pack text generation (`gemini` | `azure-foundry`, default: `gemini`)
 - `ANALYSIS_LLM_PROVIDER` — LLM provider for media-analysis phrase extraction (`gemini` | `azure-foundry`, default: `gemini`)
 - `CONTENT_GENERATION_TEXT_MODEL` — model name for text generation (default: `gemini-3.1-flash-lite`)

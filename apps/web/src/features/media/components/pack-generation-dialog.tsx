@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, Loader2, SlidersHorizontal } from "lucide-react";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -293,6 +293,7 @@ export function PackGenerationDialog({
           </Collapsible>
           <DialogFooter className="pt-4">
             <Button type="submit" disabled={isGenerating || !isValid}>
+              {isGenerating ? <Loader2 className="size-4 animate-spin" /> : null}
               {isRegeneration ? "Regenerate" : "Start"}
             </Button>
           </DialogFooter>

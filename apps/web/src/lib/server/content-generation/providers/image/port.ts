@@ -1,8 +1,11 @@
 import "server-only";
 
+import type { AzureFoundryCredentials } from "@/lib/server/ai-credentials/types";
+
 export type ImageGenerationProviderConfig = {
   provider: "azure-foundry";
   model: string;
+  credentials: AzureFoundryCredentials;
 };
 
 export type ImageGenerationResult = {

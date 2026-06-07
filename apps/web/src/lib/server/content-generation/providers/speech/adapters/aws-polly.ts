@@ -11,16 +11,16 @@ import { delay } from "@/lib/server/utils/async";
 
 type AwsPollyConfig = Extract<ActiveSpeechProviderConfig, { provider: "aws-polly" }>;
 
-function createPollyClient() {
-  if (!env.AWS_POLLY_ACCESS_KEY_ID || !env.AWS_POLLY_SECRET_ACCESS_KEY) {
+function createPollyClient(credentials: AwsPollyConfig["credentials"]) {
+  if (!credentials?.accessKeyId || !credentials.secretAccessKey) {
     throw new Error("AWS Polly credentials are required for audio generation.");
   }
 
   return new PollyClient({
-    region: env.AWS_POLLY_REGION,
+    region: credentials.region,
     credentials: {
-      accessKeyId: env.AWS_POLLY_ACCESS_KEY_ID,
-      secretAccessKey: env.AWS_POLLY_SECRET_ACCESS_KEY,
+      accessKeyId: credentials.accessKeyId,
+      secretAccessKey: credentials.secretAccessKey,
     },
   });
 }
@@ -93,7 +93,7 @@ async function synthesizeWithRetry(input: {
 }
 
 export function createAwsPollySpeechAdapter(config: AwsPollyConfig): SpeechSynthesisAdapter {
-  const client = createPollyClient();
+  const client = createPollyClient(config.credentials);
 
   return {
     provider: "aws-polly",

@@ -9,22 +9,40 @@ import {
   GENERATION_AUDIO_VOICE_GENDERS,
   GENERATION_CEFR_WINDOW_MODES,
   GENERATION_KNOWN_TERM_HANDLINGS,
+  getAiServicesSettings,
   getSettingsPreferences,
   STUDY_VOCABULARY_TYPES,
   settingsPreferenceDefaults,
 } from "@/features/settings/server/queries";
-import type {
-  UpdateProfileActionResult,
-  UpdateSettingsPreferencesActionResult,
+import {
+  type AiServiceCredentialInput,
+  type AiServicesSettingsActionResult,
+  aiServiceCredentialSchema,
+  type UpdateProfileActionResult,
+  type UpdateSettingsPreferencesActionResult,
 } from "@/features/settings/types";
-import { requireSession } from "@/lib/auth/guards";
-import { auth } from "@/lib/auth/server";
+import { requireAdmin, requireSession } from "@/lib/auth/guards";
+import { auth, type Session } from "@/lib/auth/server";
 import { CUSTOM_GENERATION_INSTRUCTIONS_MAX_LENGTH } from "@/lib/constants";
 import type { ActionResult } from "@/lib/contracts/action-result";
 import { CEFR_LEVELS } from "@/lib/domain/cefr";
 import { deleteObjectByKey, getKeyFromUrl, uploadUserAvatar } from "@/lib/integrations/storage/r2";
+import { getAiCredentialEncryptionKey } from "@/lib/server/ai-credentials/encryption-key";
+import {
+  deleteUserAiCredential,
+  getEnforceSystemCredentials,
+  setEnforceSystemCredentials,
+  setUserAiCredentialEnabled,
+  upsertUserAiCredential,
+} from "@/lib/server/ai-credentials/store";
+import {
+  AI_PROVIDER_IDS,
+  type AiCredentialMetadata,
+  type AiProviderId,
+} from "@/lib/server/ai-credentials/types";
 import { db } from "@/lib/server/db";
 import { cefrProfile, userPreferences } from "@/lib/server/db/schema";
+import { encryptSecret, maskSecret } from "@/lib/server/security/secret-box";
 
 type UpdateUserBody = Parameters<typeof auth.api.updateUser>[0]["body"];
 
@@ -317,4 +335,161 @@ export async function deleteAccountAction(): Promise<ActionResult> {
       error: "Unexpected error deleting account.",
     };
   }
+}
+
+// ---------------------------------------------------------------------------
+// AI services (bring-your-own credentials)
+// ---------------------------------------------------------------------------
+
+const aiProviderIdSchema = z.enum(AI_PROVIDER_IDS);
+
+/** Splits validated input into the encrypted secret and its non-secret metadata. */
+function toCredentialParts(input: z.output<typeof aiServiceCredentialSchema>): {
+  secret: string;
+  metadata: AiCredentialMetadata;
+} {
+  switch (input.provider) {
+    case "gemini":
+      return { secret: input.apiKey, metadata: {} };
+    case "azure-foundry":
+      return {
+        secret: input.apiKey,
+        metadata: {
+          endpoint: input.endpoint,
+          model: input.model,
+          imageModel: input.imageModel,
+        },
+      };
+    case "aws-polly":
+      return {
+        secret: input.secretAccessKey,
+        metadata: { accessKeyId: input.accessKeyId, region: input.region },
+      };
+    case "azure-mai":
+      return { secret: input.apiKey, metadata: { region: input.region } };
+  }
+}
+
+async function readAiServicesSettings(session: Session) {
+  return getAiServicesSettings({
+    userId: session.user.id,
+    isAdmin: session.user.role === "admin",
+  });
+}
+
+export async function saveAiServiceCredentialAction(
+  input: AiServiceCredentialInput,
+): Promise<AiServicesSettingsActionResult> {
+  const session = await requireSession();
+  const parsed = aiServiceCredentialSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid AI service credentials.",
+    };
+  }
+
+  if (await getEnforceSystemCredentials()) {
+    return {
+      ok: false,
+      error: "An administrator requires all AI generation to use the system configuration.",
+    };
+  }
+
+  const { secret, metadata } = toCredentialParts(parsed.data);
+
+  let secretCiphertext: string;
+  try {
+    secretCiphertext = encryptSecret(secret, getAiCredentialEncryptionKey());
+  } catch (error) {
+    console.error("Failed to encrypt AI service credential", { error });
+    return { ok: false, error: "Credential storage is unavailable on this server." };
+  }
+
+  await upsertUserAiCredential({
+    userId: session.user.id,
+    provider: parsed.data.provider,
+    secretCiphertext,
+    secretHint: maskSecret(secret),
+    metadata,
+    enabled: true,
+  });
+
+  revalidatePath("/settings");
+
+  return { ok: true, data: { aiServices: await readAiServicesSettings(session) } };
+}
+
+export async function deleteAiServiceCredentialAction(input: {
+  provider: AiProviderId;
+}): Promise<AiServicesSettingsActionResult> {
+  const session = await requireSession();
+  const parsed = aiProviderIdSchema.safeParse(input.provider);
+
+  if (!parsed.success) {
+    return { ok: false, error: "Unknown AI provider." };
+  }
+
+  await deleteUserAiCredential({ userId: session.user.id, provider: parsed.data });
+  revalidatePath("/settings");
+
+  return { ok: true, data: { aiServices: await readAiServicesSettings(session) } };
+}
+
+export async function setAiServiceCredentialEnabledAction(input: {
+  provider: AiProviderId;
+  enabled: boolean;
+}): Promise<AiServicesSettingsActionResult> {
+  const session = await requireSession();
+  const parsed = z.object({ provider: aiProviderIdSchema, enabled: z.boolean() }).safeParse(input);
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid AI provider request." };
+  }
+
+  if (await getEnforceSystemCredentials()) {
+    return {
+      ok: false,
+      error: "An administrator requires all AI generation to use the system configuration.",
+    };
+  }
+
+  await setUserAiCredentialEnabled({
+    userId: session.user.id,
+    provider: parsed.data.provider,
+    enabled: parsed.data.enabled,
+  });
+  revalidatePath("/settings");
+
+  return { ok: true, data: { aiServices: await readAiServicesSettings(session) } };
+}
+
+/**
+ * Admin-only: force every user onto the system `.env` AI configuration.
+ * Other users see the change on their next settings page load.
+ */
+export async function setAiCredentialPolicyAction(input: {
+  enforceSystemCredentials: boolean;
+}): Promise<AiServicesSettingsActionResult> {
+  const session = await requireAdmin();
+  const parsed = z.object({ enforceSystemCredentials: z.boolean() }).safeParse(input);
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid enforcement value." };
+  }
+
+  await setEnforceSystemCredentials({
+    enforceSystemCredentials: parsed.data.enforceSystemCredentials,
+    updatedByUserId: session.user.id,
+  });
+
+  console.warn("[ai-credentials] enforcement policy changed", {
+    enforceSystemCredentials: parsed.data.enforceSystemCredentials,
+    updatedByUserId: session.user.id,
+  });
+
+  revalidatePath("/settings");
+
+  return { ok: true, data: { aiServices: await readAiServicesSettings(session) } };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Layers, Trash2 } from "lucide-react";
+import { Check, Layers, Loader2, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -30,6 +30,7 @@ import { formatVocabularyKindLabel, VOCABULARY_KINDS } from "@/lib/domain/vocabu
 
 import { PackStagingCardItem } from "./pack-staging-card-item";
 import { PackStagingHero } from "./pack-staging-hero";
+import { PackStagingPagination } from "./pack-staging-pagination";
 import { PackStagingSidebar } from "./pack-staging-sidebar";
 
 const VOCABULARY_TYPE_FILTERS = VOCABULARY_KINDS;
@@ -52,6 +53,13 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
     stateFilteredCards,
     vocabularyTypeCounts,
     filtered,
+    visibleCards,
+    page,
+    pageSize,
+    totalPages,
+    pageRange,
+    setPage,
+    setPageSize,
     progressPct,
     selectedCount,
     removeCards,
@@ -77,6 +85,12 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Layers className="size-4 text-muted-foreground" />
                     Flashcards
+                    {pendingAction ? (
+                      <Loader2
+                        className="size-3.5 animate-spin text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    ) : null}
                   </CardTitle>
                 </div>
                 {isSelectionMode ? (
@@ -92,7 +106,11 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                           disabled={selectedCount === 0 || pendingAction}
                           className="gap-1.5"
                         >
-                          <Trash2 className="size-3.5" />
+                          {pendingAction ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3.5" />
+                          )}
                           Remove selected ({selectedCount})
                         </Button>
                       </AlertDialogTrigger>
@@ -137,7 +155,12 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 <TabsList className="w-full justify-start">
                   {(["all", "new", "learning", "due", "mastered", "removed"] as const).map(
                     (tab) => (
-                      <TabsTrigger key={tab} value={tab} className="gap-1.5">
+                      <TabsTrigger
+                        key={tab}
+                        value={tab}
+                        className="gap-1.5"
+                        disabled={pendingAction}
+                      >
                         {label(tab)}
                         <span className="opacity-70">
                           (
@@ -155,10 +178,25 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 <TabsContent value={activeTab} className="mt-1.5 space-y-2">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-muted-foreground">
-                      Showing <span className="font-medium text-foreground">{filtered.length}</span>{" "}
-                      of <span className="font-medium text-foreground">{cards.length}</span> cards
+                      {filtered.length > 0 ? (
+                        <>
+                          Showing{" "}
+                          <span className="font-medium text-foreground">
+                            {pageRange.start}–{pageRange.end}
+                          </span>{" "}
+                          of <span className="font-medium text-foreground">{filtered.length}</span>{" "}
+                          matching cards
+                          {filtered.length !== cards.length ? <> · {cards.length} total</> : null}
+                        </>
+                      ) : (
+                        "No cards match the current filters"
+                      )}
                     </p>
-                    <Select value={vocabularyType} onValueChange={setVocabularyType}>
+                    <Select
+                      value={vocabularyType}
+                      onValueChange={setVocabularyType}
+                      disabled={pendingAction}
+                    >
                       <SelectTrigger className="h-8 w-full sm:w-[250px]">
                         <SelectValue />
                       </SelectTrigger>
@@ -176,17 +214,23 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                     </Select>
                   </div>
                   {isSelectionMode && filtered.length > 0 ? (
-                    <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 px-3 py-2">
                       <Checkbox
                         checked={selectedIds.size === filtered.length && filtered.length > 0}
                         onCheckedChange={toggleSelectAll}
                         id="select-all"
+                        disabled={pendingAction}
                       />
                       <label htmlFor="select-all" className="text-sm text-muted-foreground">
                         {selectedIds.size === filtered.length
                           ? "Deselect all"
                           : `Select all (${filtered.length})`}
                       </label>
+                      {selectedCount > 0 ? (
+                        <span className="text-xs text-muted-foreground">
+                          {selectedCount} selected across all pages of this filter
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
                 </TabsContent>
@@ -214,7 +258,7 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                 </CardContent>
               </Card>
             ) : (
-              filtered.map((item) => {
+              visibleCards.map((item) => {
                 const itemActions = getItemActions(item);
                 return (
                   <PackStagingCardItem
@@ -237,6 +281,16 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
               })
             )}
           </div>
+
+          <PackStagingPagination
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            disabled={pendingAction}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
 
         <PackStagingSidebar

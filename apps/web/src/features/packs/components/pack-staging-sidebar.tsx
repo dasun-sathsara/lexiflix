@@ -1,6 +1,7 @@
-import { BookOpen, Layers, Play, RotateCcw, Sparkles } from "lucide-react";
+import { BookOpen, Layers, Loader2, Play, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,7 @@ export function PackStagingSidebar({
               <Link href={`/study/${pack.id}?mode=due`}>
                 <Play className="size-4" />
                 Review Due
+                <LinkPendingIndicator label="Starting review session" />
               </Link>
             </Button>
           ) : pack.studyPlan.newAvailableToday > 0 ? (
@@ -61,6 +63,7 @@ export function PackStagingSidebar({
               <Link href={`/study/${pack.id}?mode=new`}>
                 <Sparkles className="size-4" />
                 Learn New
+                <LinkPendingIndicator label="Starting learning session" />
               </Link>
             </Button>
           ) : (
@@ -139,7 +142,11 @@ export function PackStagingSidebar({
                 className="mt-2 w-full gap-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 disabled={pendingAction}
               >
-                <RotateCcw className="size-3.5" />
+                {pendingAction ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="size-3.5" />
+                )}
                 Reset Pack Progress
               </Button>
             </AlertDialogTrigger>

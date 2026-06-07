@@ -1,19 +1,27 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
+import { useReportNavigationPending } from "@/components/common/navigation-progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AiServicesSettingsCard } from "@/features/settings/components/ai-services-settings-card";
 import { DeleteAccountCard } from "@/features/settings/components/delete-account-card";
 import { PasswordSettingsCard } from "@/features/settings/components/password-settings-card";
 import { PreferencesSettingsCard } from "@/features/settings/components/preferences-settings-card";
 import { ProfileSettingsCard } from "@/features/settings/components/profile-settings-card";
 import { toSettingsTab } from "@/features/settings/lib/utils";
 import { deleteAccountAction } from "@/features/settings/server/actions";
-import type { SettingsPreferences, SettingsTab, StatusState } from "@/features/settings/types";
+import type {
+  AiServicesSettings,
+  SettingsPreferences,
+  SettingsTab,
+  StatusState,
+} from "@/features/settings/types";
 
 type SettingsClientProps = {
   user: {
@@ -22,12 +30,13 @@ type SettingsClientProps = {
     image: string | null;
   };
   preferences: SettingsPreferences;
+  aiServices: AiServicesSettings;
 };
 
 /**
  * Top-level settings page client component. Delegating form state to focused sub-components.
  */
-export function SettingsClient({ user, preferences }: SettingsClientProps) {
+export function SettingsClient({ user, preferences, aiServices }: SettingsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,6 +48,9 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
   // -- Tab state --------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => toSettingsTab(tabParam));
+  const [isSwitchingTab, startSwitchingTab] = useTransition();
+
+  useReportNavigationPending(isSwitchingTab);
 
   useEffect(() => {
     setActiveTab(toSettingsTab(tabParam));
@@ -75,8 +87,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
     }
 
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
+    startSwitchingTab(() => {
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
     });
   };
 
@@ -90,8 +104,24 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-4">
         <TabsList className="w-full justify-start sm:w-fit">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="account" className="gap-1.5">
+            Account
+            {isSwitchingTab && activeTab === "account" ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="gap-1.5">
+            Preferences
+            {isSwitchingTab && activeTab === "preferences" ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger value="ai-services" className="gap-1.5">
+            AI services
+            {isSwitchingTab && activeTab === "ai-services" ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : null}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0">
@@ -113,6 +143,10 @@ export function SettingsClient({ user, preferences }: SettingsClientProps) {
 
         <TabsContent value="preferences" className="mt-0">
           <PreferencesSettingsCard preferences={preferences} />
+        </TabsContent>
+
+        <TabsContent value="ai-services" className="mt-0">
+          <AiServicesSettingsCard aiServices={aiServices} />
         </TabsContent>
       </Tabs>
     </AppPageShell>
