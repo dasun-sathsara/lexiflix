@@ -45,6 +45,14 @@ const NotificationBell = dynamic(
   },
 );
 
+const AdminFloatingDebug = dynamic(
+  () =>
+    import("@/features/admin-tools/components/admin-floating-debug").then(
+      (m) => m.AdminFloatingDebug,
+    ),
+  { ssr: false },
+);
+
 type NavItem = {
   title: string;
   url: string;
@@ -194,6 +202,7 @@ export function AppSidebar({ user, dueCount = 0, ...props }: AppSidebarProps) {
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
+      {isAdmin && process.env.NODE_ENV === "development" && <AdminFloatingDebug />}
     </Sidebar>
   );
 }
