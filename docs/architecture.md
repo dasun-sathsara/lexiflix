@@ -14,7 +14,7 @@ That choice is deliberate. The earlier direction of Python plus Celery plus Redi
 
 ## Chosen Stack
 
-The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, strict response parsing, and provider-specific response handling. The Python service is deployed as a container to Azure Container Apps (ACA) through a GitHub Actions pipeline that builds the image to Azure Container Registry (ACR) and deploys the revision.
+The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini and Azure AI Foundry are the supported LLM providers. Either provider is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, strict response parsing, and provider-specific response handling. The Python service is deployed as a container to Azure Container Apps (ACA) through a GitHub Actions pipeline that builds the image to Azure Container Registry (ACR) and deploys the revision.
 
 This stack is intentionally asymmetric. The web app is fully managed because it should be easy to ship and preview. The workflow engine is managed because workflow orchestration is a solved problem we do not need to re-implement. The Python service runs on Azure Container Apps (ACA) because the workload is compute-heavy enough to justify controlling the runtime, and the service surface is small enough that a single managed container is still simple. The architecture does not attempt to make every component equally abstract or equally portable. That would add ceremony without adding value.
 
@@ -98,7 +98,7 @@ The reusable analysis workflow begins when a user opens a media page for a selec
 
 The workflow then proceeds through a small number of meaningful stages. It fetches subtitles, calls the Python NLP service, runs the analysis LLM pass for phrase extraction and classification, merges the results into summary metrics plus reusable content-analysis items, and finally marks the analysis run as completed or failed.
 
-The sequence matters less than the ownership model. Trigger owns the sequence. Postgres owns the durable meaning of the sequence. Python owns the NLP computation inside one stage. Gemini owns the batched phrase-classification work inside another stage. No component is allowed to “quietly” become the real source of truth for another layer.
+The sequence matters less than the ownership model. Trigger owns the sequence. Postgres owns the durable meaning of the sequence. Python owns the NLP computation inside one stage. The selected LLM provider (Gemini or Azure AI Foundry) owns the batched phrase-classification work inside another stage. No component is allowed to “quietly” become the real source of truth for another layer.
 
 ## The Pack Generation Workflow
 
@@ -136,9 +136,9 @@ The dashboard is a read model over persisted learner state, not a mock planning 
 
 ## AI Integration and Cost Control
 
-Gemini is the only LLM provider in the architecture. That is not because provider abstraction is impossible. It is because a demo project does not benefit from carrying an artificial multi-provider layer unless it solves a real problem. Right now, the real problem is reliable Gemini integration, not model routing.
+Gemini and Azure AI Foundry are the LLM providers supported in the architecture, toggleable via environment configuration. This allows switching the primary LLM pipeline from Gemini (Vertex AI) to Azure AI Foundry models like GPT 5.4 Nano to adapt to available cloud credits and resource limits.
 
-To solve that, all Gemini calls should go through one internal adapter layer. That adapter is responsible for request construction, strict response parsing, and provider-specific error handling. The application should keep Gemini integration centralized instead of scattering direct model calls across route handlers or feature code.
+To support this, all LLM calls are routed through dedicated provider adapter layers (under providers/text/). These adapters are responsible for request construction, strict response parsing (such as OpenAI strict JSON schema or Gemini responseSchema), and provider-specific error handling. The application keeps LLM integrations centralized rather than scattering direct model calls across workflows.
 
 Gemini calls are live provider calls. Cost control should come from narrow workflows, explicit user-triggered generation, batching where it is already part of the product flow, and avoiding unnecessary reruns of reusable content analysis.
 
