@@ -14,9 +14,9 @@ That choice is deliberate. The earlier direction of Python plus Celery plus Redi
 
 ## Chosen Stack
 
-The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, strict response parsing, and provider-specific response handling. The Python service is deployed as a container to Google Cloud Run through a GitHub Actions pipeline that builds the image to Artifact Registry and deploys the revision.
+The public application is built in Next.js and hosted on Vercel. Trigger.dev Cloud handles long-running workflows and job orchestration. A narrow Python FastAPI service performs NLP analysis. The primary database is Neon Postgres. Cloudflare R2 stores generated artifacts such as audio and images. Gemini is the only LLM provider. Gemini is used in two different pipeline roles: a reusable analysis LLM pass for phrase extraction/classification, and a later content-generation pass for meanings, examples, and related assets. AI requests are wrapped in internal adapters for request construction, strict response parsing, and provider-specific response handling. The Python service is deployed as a container to Azure Container Apps (ACA) through a GitHub Actions pipeline that builds the image to Azure Container Registry (ACR) and deploys the revision.
 
-This stack is intentionally asymmetric. The web app is fully managed because it should be easy to ship and preview. The workflow engine is managed because workflow orchestration is a solved problem we do not need to re-implement. The Python service runs on Cloud Run because the workload is compute-heavy enough to justify controlling the runtime, and the service surface is small enough that a single managed container is still simple. The architecture does not attempt to make every component equally abstract or equally portable. That would add ceremony without adding value.
+This stack is intentionally asymmetric. The web app is fully managed because it should be easy to ship and preview. The workflow engine is managed because workflow orchestration is a solved problem we do not need to re-implement. The Python service runs on Azure Container Apps (ACA) because the workload is compute-heavy enough to justify controlling the runtime, and the service surface is small enough that a single managed container is still simple. The architecture does not attempt to make every component equally abstract or equally portable. That would add ceremony without adding value.
 
 ## System Boundaries
 
@@ -78,7 +78,7 @@ This is the simplest reliable model for the current project. It avoids Celery. I
 
 The web app is deployed on Vercel because that is the lowest-friction hosting path for a Next.js application. Preview deployments are straightforward, production deploys are straightforward, and the hosting model aligns with the project’s need for fast iteration. There is no meaningful benefit to self-hosting the frontend for this project.
 
-The Python service is deployed to Google Cloud Run. GitHub Actions builds the image, pushes it to Artifact Registry, and deploys the revision on every relevant push. This removes the need to manage a VPS while keeping the service as a narrow, internal compute endpoint. Cloud Run provides automatic scaling to zero, built-in request logging, IAM, and revision history without the operational overhead of a self-managed instance. The deployment model stays simple: the workflow builds the container, tags it with the commit SHA, and updates the Cloud Run service. This is enough for a demo.
+The Python service is hosted on Azure Container Apps (ACA) under the Consumption plan. GitHub Actions builds the image, pushes it to Azure Container Registry (ACR), and updates the Container App revision on every push to dev or main. This provides automatic scaling to zero when not in use, built-in ingress, and a monthly free tier (180,000 vCPU-seconds and 360,000 GiB-seconds) that keeps host costs at $0 for the demo environment. The deployment remains simple and secure using a Service Principal credential stored in GitHub Secrets.
 
 ## Data Ownership
 
@@ -150,7 +150,7 @@ Temporary implementation plans are scaffolding, not competing product truth. Onc
 
 The architecture intentionally behaves differently in local development and deployed environments, but in a controlled way. Locally, the Next.js app runs on the developer machine, Trigger tasks run in local development mode, and the Python service can run on `localhost`. In that setup, the workflow can call the local FastAPI service directly.
 
-In deployed environments, the web app runs on Vercel, Trigger tasks execute in Trigger.dev Cloud, and the Python service runs on Cloud Run. The workflow then calls the deployed service URL instead of localhost. The important point is that the architecture itself does not change. Only the addresses and environment configuration change.
+In deployed environments, the web app runs on Vercel, Trigger tasks execute in Trigger.dev Cloud, and the Python service runs on Azure Container Apps (ACA). The workflow then calls the deployed service URL instead of localhost. The important point is that the architecture itself does not change. Only the addresses and environment configuration change.
 
 That consistency is valuable because it keeps the mental model stable. The workflow still calls one Python service. The frontend still polls the app. The app still reads progress from Postgres. Local development should feel like a lightweight version of the same system, not a completely different architecture.
 
@@ -160,7 +160,7 @@ Only the Next.js application is intended to be public-facing. The Python service
 
 R2 objects should also be treated conservatively. Artifact access should be controlled by the app, either through signed URLs or application-mediated access patterns. The architecture should not accidentally turn storage into an open public CDN of generated outputs.
 
-Secrets belong in environment configuration, not in the repository. For this project, the practical secret-management model is to use Doppler as the source of truth, sync the web-facing values into Vercel as needed, and inject the correct runtime configuration into the Cloud Run service through the deployment pipeline.
+Secrets belong in environment configuration, not in the repository. For this project, the practical secret-management model is to use Doppler as the source of truth, sync the web-facing values into Vercel as needed, and inject the correct runtime configuration into the Azure Container App through the deployment pipeline.
 
 ## Why This Architecture Is Right for This Project
 
