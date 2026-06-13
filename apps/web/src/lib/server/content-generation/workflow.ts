@@ -21,7 +21,8 @@ import {
 import { generateImageArtifacts } from "@/lib/server/content-generation/providers/image";
 import { generateSpeechArtifacts } from "@/lib/server/content-generation/providers/speech";
 import { getSpeechArtifactTarget } from "@/lib/server/content-generation/providers/speech/helpers";
-import { generateTextContent } from "@/lib/server/content-generation/providers/text/gemini";
+import { generateTextContent as generateTextWithAzureFoundry } from "@/lib/server/content-generation/providers/text/azure-foundry";
+import { generateTextContent as generateTextWithGemini } from "@/lib/server/content-generation/providers/text/gemini";
 import { selectGenerationItems } from "@/lib/server/content-generation/selection";
 import { db } from "@/lib/server/db";
 import {
@@ -183,11 +184,18 @@ export async function runPackGenerationWorkflow(jobId: string) {
       payload: { selectedItemCount: selectedItems.length },
     });
 
-    const textItems = await generateTextContent({
-      items: selectedItems,
-      requestSnapshot: job.requestSnapshot,
-      model: env.CONTENT_GENERATION_TEXT_MODEL,
-    });
+    const textItems =
+      env.TEXT_LLM_PROVIDER === "azure-foundry"
+        ? await generateTextWithAzureFoundry({
+            items: selectedItems,
+            requestSnapshot: job.requestSnapshot,
+            model: env.AZURE_AI_FOUNDRY_MODEL ?? "gpt-5.4-nano",
+          })
+        : await generateTextWithGemini({
+            items: selectedItems,
+            requestSnapshot: job.requestSnapshot,
+            model: env.CONTENT_GENERATION_TEXT_MODEL,
+          });
     const textMap = textByAnalysisItem(textItems);
     const missingTextItems = selectedItems.filter((item) => !textMap.has(item.analysisItemId));
     if (missingTextItems.length > 0) {
