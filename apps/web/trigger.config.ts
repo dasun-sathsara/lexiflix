@@ -51,6 +51,10 @@ export default defineConfig({
           "CONTENT_GENERATION_AUDIO_VOICE",
           "CONTENT_GENERATION_TEXT_MODEL",
           "ANALYSIS_LLM_MODEL",
+          "TEXT_LLM_PROVIDER",
+          "AZURE_AI_FOUNDRY_ENDPOINT",
+          "AZURE_AI_FOUNDRY_API_KEY",
+          "AZURE_AI_FOUNDRY_MODEL",
         ];
 
         return varsToSync
