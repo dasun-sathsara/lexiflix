@@ -60,6 +60,7 @@ include = ["app"]
 pythonVersion = "3.13"
 typeCheckingMode = "recommended"
 reportMissingImports = "warning"
+reportCallInDefaultInitializer = "none"
 reportMissingTypeStubs = "none"
 reportDeprecated = "none"
 reportUnknownVariableType = "none"
