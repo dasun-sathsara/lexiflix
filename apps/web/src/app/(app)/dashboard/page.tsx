@@ -21,7 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { getCefrProfile, shouldShowAssessmentBanner } from "@/features/assessment/server/profile";
 import { getDashboardView } from "@/features/dashboard/server/queries";
 import { reconcileDueReviewNotificationForUser } from "@/features/notifications/server/queries";
-import { getEffectiveCefrLevel } from "@/features/settings/components/_utils";
+import { getEffectiveCefrLevel } from "@/features/settings/components/utils";
 import { AppTopbar } from "@/features/sidebar/components/app-sidebar";
 import { requireSession } from "@/lib/auth-guards";
 import { cn } from "@/lib/utils";

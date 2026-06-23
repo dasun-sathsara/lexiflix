@@ -6,7 +6,7 @@ import type {
   CefrLevel,
   PosteriorSummary,
   PublicAssessmentItem,
-} from "@/features/assessment/lib/types";
+} from "./types";
 
 const MODEL_A = 1.2;
 const MODEL_C = 0.25;

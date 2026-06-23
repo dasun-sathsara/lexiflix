@@ -31,7 +31,7 @@ import type { PackCardView } from "@/features/packs/types";
 import { cn } from "@/lib/utils";
 import { formatVocabularyKindLabel } from "@/lib/vocabulary-kind-labels";
 
-import { cefrBadgeClass } from "./_utils";
+import { cefrBadgeClass } from "./utils";
 
 export type PackStagingCardItemProps = {
   item: PackCardView;

@@ -29,7 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getCountryName, getLanguageName } from "@/features/media/lib/locale-display";
 import {
   getAnalysisStatusAction,
   getPackGenerationStatusAction,
@@ -37,13 +36,13 @@ import {
   startPackGenerationAction,
 } from "@/features/media/server/actions";
 import type { GenerationDialogDefaults, MediaDetailPageData } from "@/features/media/types";
+import { getCountryName, getLanguageName } from "@/features/media/utils";
 import { retryPackGenerationAction } from "@/features/pack-generation/server/actions";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
-
-import { ANALYSIS_PIPELINE_STEPS, formatRuntime } from "./_utils";
 import { AnalysisResults } from "./analysis-results";
 import { AnalysisSidebar } from "./analysis-sidebar";
+import { ANALYSIS_PIPELINE_STEPS, formatRuntime } from "./utils";
 
 /**
  * Props for the MediaDetailClient component.

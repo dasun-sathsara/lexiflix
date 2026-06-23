@@ -1,4 +1,4 @@
-import type { CefrLevel } from "@/features/assessment/lib/types";
+import type { CefrLevel } from "@/features/assessment/types";
 import type { ActionResult } from "@/lib/action-result";
 import type {
   GenerationAudioVoiceGender,

@@ -25,7 +25,7 @@ import {
   settingsCardHeaderClass,
   settingsFieldClass,
   settingsLabelClass,
-} from "./_utils";
+} from "./utils";
 
 type ProfileSettingsCardProps = {
   displayName: string;

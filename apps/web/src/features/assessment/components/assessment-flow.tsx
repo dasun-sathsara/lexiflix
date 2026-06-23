@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { AssessmentResult, PublicAssessmentItem } from "@/features/assessment/lib/types";
 import {
   answerAssessmentAction,
   startAssessmentAction,
 } from "@/features/assessment/server/actions";
+import type { AssessmentResult, PublicAssessmentItem } from "@/features/assessment/types";
 import { cn } from "@/lib/utils";
 
 type Selection = number | "idk" | null;

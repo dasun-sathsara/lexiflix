@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signupAction } from "../actions";
 import { useGoogleSignUp } from "../mutations";
 import { type SignUpInput, SignUpSchema } from "../schemas";
+import { signupAction } from "../server/actions";
 import { FormError } from "./form-error";
 import { SocialAuthButtons } from "./social-auth-buttons";
 

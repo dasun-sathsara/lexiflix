@@ -8,13 +8,13 @@ import { toast } from "sonner";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { CefrLevel } from "@/features/assessment/lib/types";
+import type { CefrLevel } from "@/features/assessment/types";
 import {
   changePasswordAction,
   deleteAccountAction,
   updateProfileAction,
   updateSettingsPreferencesAction,
-} from "@/features/settings/actions";
+} from "@/features/settings/server/actions";
 import {
   getEffectiveCefrLevel,
   getInitials,
@@ -23,7 +23,7 @@ import {
   type SettingsTab,
   type StatusState,
   toSettingsTab,
-} from "@/features/settings/components/_utils";
+} from "@/features/settings/components/utils";
 import { DeleteAccountCard } from "@/features/settings/components/delete-account-card";
 import { PasswordSettingsCard } from "@/features/settings/components/password-settings-card";
 import { PreferencesSettingsCard } from "@/features/settings/components/preferences-settings-card";

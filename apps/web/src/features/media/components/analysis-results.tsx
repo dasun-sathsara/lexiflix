@@ -11,7 +11,7 @@ import {
   GENERATION_VOCABULARY_TYPES,
   getCefrColor,
   VOCABULARY_TYPE_LABELS,
-} from "./_utils";
+} from "./utils";
 
 /**
  * Displays a grid of summary statistics for the media analysis.

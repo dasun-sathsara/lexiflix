@@ -1,6 +1,7 @@
+import "server-only";
 import { and, asc, desc, eq, type SQL, sql } from "drizzle-orm";
 
-import type { CuratedCatalogEntry, CuratedCatalogListFilters } from "@/features/curation/lib/types";
+import type { CuratedCatalogEntry, CuratedCatalogListFilters } from "@/features/curation/types";
 import { db } from "@/lib/server/db";
 import type { CuratedGenreSnapshot, StoredCefrLevel } from "@/lib/server/db/json-contracts";
 import { curatedEntry } from "@/lib/server/db/schema";

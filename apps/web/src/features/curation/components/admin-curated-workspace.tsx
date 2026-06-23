@@ -4,12 +4,12 @@ import Link from "next/link";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppPanel, AppStat } from "@/components/common/app-surface";
+import type { CuratedCatalogEntry } from "@/features/curation/types";
 import type {
   AnnotatedTMDBResult,
   CuratedAdminCatalogFilter,
   CuratedAdminQueryState,
-} from "@/features/curation/lib/admin-query";
-import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
+} from "@/features/curation/utils";
 import type { Genre } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 

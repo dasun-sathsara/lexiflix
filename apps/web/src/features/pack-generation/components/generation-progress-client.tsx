@@ -7,15 +7,15 @@ import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
+import type { PackGenerationProgressView } from "../types";
 import {
   formatGenerationLabel,
   getGenerationProgressState,
   getGenerationStageCopy,
   getGenerationStatusMessage,
   isGenerationActive,
-} from "../lib/status";
-import { getPackGenerationProgressAction, retryPackGenerationAction } from "../server/actions";
-import type { PackGenerationProgressView } from "../types";
+} from "../utils";
 
 function formatDate(value: string | null) {
   return value

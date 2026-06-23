@@ -31,13 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CuratedCatalogEntry } from "@/features/curation/lib/types";
 import {
   deleteCuratedEntryAction,
   refreshCuratedEntryAction,
   setCuratedEntryLevelAction,
   setCuratedEntryPublishedAction,
 } from "@/features/curation/server/actions";
+import type { CuratedCatalogEntry } from "@/features/curation/types";
 import { buildTmdbImageUrl, TMDB_IMAGE_SIZES } from "@/lib/tmdb-shared";
 import { cn } from "@/lib/utils";
 

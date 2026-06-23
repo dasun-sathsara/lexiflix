@@ -18,9 +18,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signInAction } from "../actions";
 import { useGoogleSignIn } from "../mutations";
 import { type SignInInput, SignInSchema } from "../schemas";
+import { signInAction } from "../server/actions";
 import { FormError } from "./form-error";
 import { SocialAuthButtons } from "./social-auth-buttons";
 

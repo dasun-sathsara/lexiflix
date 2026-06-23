@@ -7,13 +7,13 @@ import { useEffect, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { listGenerationJobsAction } from "../server/actions";
+import type { PackGenerationProgressView } from "../types";
 import {
   getGenerationProgressState,
   getGenerationStatusMessage,
   isGenerationActive,
-} from "../lib/status";
-import { listGenerationJobsAction } from "../server/actions";
-import type { PackGenerationProgressView } from "../types";
+} from "../utils";
 
 function formatRelativeTime(value: string) {
   const diff = Date.now() - new Date(value).getTime();

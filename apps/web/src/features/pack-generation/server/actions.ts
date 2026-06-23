@@ -2,7 +2,7 @@
 
 import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
-import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/lib/status";
+import { PUBLIC_GENERATION_FAILURE_MESSAGE } from "@/features/pack-generation/utils";
 import { requireSession } from "@/lib/auth-guards";
 import { env } from "@/lib/env";
 import {

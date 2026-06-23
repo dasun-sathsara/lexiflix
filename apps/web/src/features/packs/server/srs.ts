@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { PackCardState, PackReviewRating } from "@/features/packs/types";
 
 const MINUTE_MS = 60 * 1000;

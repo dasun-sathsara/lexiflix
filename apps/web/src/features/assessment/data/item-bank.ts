@@ -1,4 +1,4 @@
-import type { AssessmentItem } from "@/features/assessment/lib/types";
+import type { AssessmentItem } from "@/features/assessment/types";
 
 export const ITEM_BANK: AssessmentItem[] = [
   {

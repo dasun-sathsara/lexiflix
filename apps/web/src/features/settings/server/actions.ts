@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 
-import { CEFR_LEVELS } from "@/features/assessment/lib/types";
+import { CEFR_LEVELS } from "@/features/assessment/types";
 import {
   FREQUENCY_PREFERENCES,
   GENERATION_AUDIO_VOICE_GENDERS,
