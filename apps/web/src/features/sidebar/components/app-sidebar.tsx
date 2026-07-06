@@ -98,7 +98,7 @@ const generalItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   {
-    title: "Curated Admin",
+    title: "Curated Catalog",
     url: "/admin/curated",
     icon: Shield,
   },
