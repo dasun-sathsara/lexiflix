@@ -1,7 +1,7 @@
 import { BookOpen, Layers, Loader2, Play, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
+import { LinkPending } from "@/components/common/link-pending";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +55,7 @@ export function PackStagingSidebar({
               <Link href={`/study/${pack.id}?mode=due`}>
                 <Play className="size-4" />
                 Review Due
-                <LinkPendingIndicator label="Starting review session" />
+                <LinkPending />
               </Link>
             </Button>
           ) : pack.studyPlan.newAvailableToday > 0 ? (
@@ -63,7 +63,7 @@ export function PackStagingSidebar({
               <Link href={`/study/${pack.id}?mode=new`}>
                 <Sparkles className="size-4" />
                 Learn New
-                <LinkPendingIndicator label="Starting learning session" />
+                <LinkPending />
               </Link>
             </Button>
           ) : (

@@ -1,8 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useTransition } from "react";
 
 import { useReportNavigationPending } from "@/components/common/navigation-progress";
 import type { CuratedAdminCatalogFilter } from "@/features/curation/types";
@@ -30,14 +29,12 @@ function FilterSegment<T extends string>({
   options,
   value,
   onChange,
-  pendingValue,
   disabled,
 }: {
   label: string;
   options: SegmentOption<T>[];
   value: T;
   onChange: (next: T) => void;
-  pendingValue: T | null;
   disabled: boolean;
 }) {
   return (
@@ -48,7 +45,6 @@ function FilterSegment<T extends string>({
       <div className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/40 p-0.5 shadow-xs">
         {options.map((opt) => {
           const isActive = value === opt.value;
-          const isPendingOption = pendingValue === opt.value;
           return (
             <button
               key={opt.value}
@@ -63,20 +59,16 @@ function FilterSegment<T extends string>({
               )}
             >
               {opt.label}
-              {isPendingOption ? (
-                <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-              ) : (
-                <span
-                  className={cn(
-                    "rounded px-1 py-0 text-[10px] tabular-nums leading-tight",
-                    isActive
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-background/50 text-muted-foreground/70",
-                  )}
-                >
-                  {opt.count}
-                </span>
-              )}
+              <span
+                className={cn(
+                  "rounded px-1 py-0 text-[10px] tabular-nums leading-tight",
+                  isActive
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-background/50 text-muted-foreground/70",
+                )}
+              >
+                {opt.count}
+              </span>
             </button>
           );
         })}
@@ -93,17 +85,8 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [pendingSelection, setPendingSelection] = useState<{ key: string; value: string } | null>(
-    null,
-  );
 
   useReportNavigationPending(isPending);
-
-  useEffect(() => {
-    if (!isPending) {
-      setPendingSelection(null);
-    }
-  }, [isPending]);
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -117,14 +100,9 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
     params.set("view", "catalog");
     params.delete("page");
 
-    setPendingSelection({ key, value });
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`);
     });
-  }
-
-  function pendingValueFor<T extends string>(key: string): T | null {
-    return pendingSelection?.key === key ? (pendingSelection.value as T) : null;
   }
 
   const typeOptions: SegmentOption<CuratedAdminCatalogFilter["mediaType"]>[] = [
@@ -149,7 +127,6 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
         options={typeOptions}
         value={filter.mediaType}
         onChange={(v) => updateFilter("cat_type", v)}
-        pendingValue={pendingValueFor<CuratedAdminCatalogFilter["mediaType"]>("cat_type")}
         disabled={isPending}
       />
       <FilterSegment
@@ -157,7 +134,6 @@ export function AdminCatalogFilters({ filter, counts }: AdminCatalogFiltersProps
         options={statusOptions}
         value={filter.status}
         onChange={(v) => updateFilter("cat_status", v)}
-        pendingValue={pendingValueFor<CuratedAdminCatalogFilter["status"]>("cat_status")}
         disabled={isPending}
       />
     </div>

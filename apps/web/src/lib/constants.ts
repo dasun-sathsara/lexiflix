@@ -142,7 +142,12 @@ export const MEDIA_ANALYSIS_FINGERPRINT = `media-analysis:${MEDIA_ANALYSIS_PIPEL
 export const OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS = 1_100;
 export const SUBTITLE_SEARCH_MAX_PAGES = 3;
 export const NLP_ANALYSIS_BATCH_SIZE = 200;
-/** Prompt window size for analysis-LLM phrase extraction over raw subtitle text. */
+/**
+ * Analysis-LLM prompt chunking. Subtitles are split into 15-minute windows of media time so
+ * every prompt covers one coherent stretch of dialogue; the character budget is the safety
+ * valve for dialogue-dense windows that would otherwise overflow the model context.
+ */
+export const ANALYSIS_LLM_WINDOW_MS = 15 * 60 * 1_000;
 export const ANALYSIS_LLM_WINDOW_CHARACTERS = 30_000;
 export const ANALYSIS_LLM_CONCURRENCY = 4;
 export const MAX_CONTEXTS_PER_ANALYSIS_ITEM = 5;

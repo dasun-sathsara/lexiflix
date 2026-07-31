@@ -124,18 +124,8 @@ export function BrowseControls({ genres }: BrowseControlsProps) {
         className="w-full md:w-auto"
       >
         <TabsList>
-          <TabsTrigger value="movie" className="gap-1.5">
-            Movies
-            {isPending && currentType === "movie" ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="tv" className="gap-1.5">
-            TV Shows
-            {isPending && currentType === "tv" ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : null}
-          </TabsTrigger>
+          <TabsTrigger value="movie">Movies</TabsTrigger>
+          <TabsTrigger value="tv">TV Shows</TabsTrigger>
         </TabsList>
       </Tabs>
 

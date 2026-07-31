@@ -85,12 +85,6 @@ export function PackStagingClient({ pack }: { pack: PackStagingView }) {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Layers className="size-4 text-muted-foreground" />
                     Flashcards
-                    {pendingAction ? (
-                      <Loader2
-                        className="size-3.5 animate-spin text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                    ) : null}
                   </CardTitle>
                 </div>
                 {isSelectionMode ? (

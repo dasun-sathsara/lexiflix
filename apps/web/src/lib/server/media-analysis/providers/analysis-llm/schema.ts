@@ -20,3 +20,25 @@ export const analysisLlmResponseSchema = z.object({
 });
 
 export type AnalysisLlmItem = z.infer<typeof analysisLlmItemSchema>;
+
+/**
+ * Wire shape requested from providers that derive a JSON Schema from the schema object
+ * (OpenAI/Azure structured outputs).
+ *
+ * It must stay free of transforms, defaults, catches and optionals: JSON Schema cannot
+ * express a transform, and strict structured outputs require every property to be present.
+ * `analysisLlmResponseSchema` above stays the lenient validation boundary for the response.
+ */
+export const analysisLlmWireResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      kind: z.enum(PHRASE_VOCABULARY_KINDS),
+      text: z.string(),
+      displayText: z.string(),
+      cefrLevel: z.enum(CEFR_LEVELS).nullable(),
+      representativeContext: z.string().nullable(),
+      contexts: z.array(z.string()),
+      rationale: z.string().nullable(),
+    }),
+  ),
+});

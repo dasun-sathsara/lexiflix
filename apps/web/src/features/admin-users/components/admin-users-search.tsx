@@ -107,7 +107,6 @@ export function AdminUsersSearch({ queryState, isFiltered }: AdminUsersSearchPro
         ) : null}
       </div>
       <Button type="submit" size="sm" variant="secondary" disabled={isPending}>
-        {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
         Search
       </Button>
       {isFiltered ? (

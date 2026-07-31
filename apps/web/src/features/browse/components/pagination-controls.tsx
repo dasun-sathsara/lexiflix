@@ -3,7 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
+import { LinkPending } from "@/components/common/link-pending";
 import {
   Pagination,
   PaginationContent,
@@ -52,7 +52,7 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
           >
             <ChevronLeftIcon />
             <span className="hidden sm:block">Previous</span>
-            <LinkPendingIndicator label="Loading previous page" />
+            <LinkPending />
           </PaginationLink>
         </PaginationItem>,
       );
@@ -82,14 +82,9 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
       } else {
         items.push(
           <PaginationItem key={p}>
-            <PaginationLink
-              href={createPageURL(p)}
-              isActive={p === currentPage}
-              size="default"
-              className="gap-1"
-            >
+            <PaginationLink href={createPageURL(p)} isActive={p === currentPage} size="default">
               {p}
-              <LinkPendingIndicator label={`Loading page ${p}`} />
+              <LinkPending />
             </PaginationLink>
           </PaginationItem>,
         );
@@ -108,7 +103,7 @@ export function PaginationControls({ currentPage, totalPages }: PaginationContro
           >
             <span className="hidden sm:block">Next</span>
             <ChevronRightIcon />
-            <LinkPendingIndicator label="Loading next page" />
+            <LinkPending />
           </PaginationLink>
         </PaginationItem>,
       );

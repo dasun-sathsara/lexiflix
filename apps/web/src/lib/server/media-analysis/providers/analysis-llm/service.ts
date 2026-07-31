@@ -1,7 +1,7 @@
 import "server-only";
 
 import { logger } from "@trigger.dev/sdk";
-import { ANALYSIS_LLM_CONCURRENCY } from "@/lib/constants";
+import { ANALYSIS_LLM_CONCURRENCY, ANALYSIS_LLM_WINDOW_MS } from "@/lib/constants";
 import { cefrNumericFromLevel } from "@/lib/domain/cefr";
 import type {
   AnalysisLlmAdapter,
@@ -12,7 +12,10 @@ import {
   type AnalysisLlmItem,
   analysisLlmResponseSchema,
 } from "@/lib/server/media-analysis/providers/analysis-llm/schema";
-import { buildPromptWindows } from "@/lib/server/media-analysis/providers/analysis-llm/windows";
+import {
+  buildPromptWindows,
+  formatWindowTimestamp,
+} from "@/lib/server/media-analysis/providers/analysis-llm/windows";
 import { mapWithConcurrency } from "@/lib/server/utils/concurrency";
 
 export type AnalysisLlmPhrase = AnalysisLlmItem & {
@@ -39,6 +42,7 @@ export async function extractSubtitlePhrasesWithAdapter(input: {
     provider: input.adapter.provider,
     model: input.config.model,
     windowCount: windows.length,
+    windowDurationMinutes: ANALYSIS_LLM_WINDOW_MS / 60_000,
     subtitleCharacters: input.subtitleText.length,
     concurrency: ANALYSIS_LLM_CONCURRENCY,
   });
@@ -46,10 +50,9 @@ export async function extractSubtitlePhrasesWithAdapter(input: {
   const settledResults = await mapWithConcurrency(
     windows,
     ANALYSIS_LLM_CONCURRENCY,
-    async (windowText, windowIndex) => {
+    async (window) => {
       const prompt = buildPhraseExtractionPrompt({
-        windowText,
-        windowIndex,
+        window,
         totalWindows: windows.length,
       });
 
@@ -67,14 +70,22 @@ export async function extractSubtitlePhrasesWithAdapter(input: {
 
   for (const [index, result] of settledResults.entries()) {
     if (result.status === "rejected") {
+      const window = windows[index];
+      const range =
+        window && window.endMs > 0
+          ? `${formatWindowTimestamp(window.startMs)}–${formatWindowTimestamp(window.endMs)}`
+          : null;
       const errorMessage =
         result.reason instanceof Error ? result.reason.message : String(result.reason);
       logger.error("[media-analysis:llm] window extraction failed", {
         provider: input.adapter.provider,
         windowIndex: index,
+        windowRange: range,
         error: errorMessage,
       });
-      warnings.push(`Subtitle window ${index + 1} analysis failed: ${errorMessage}`);
+      warnings.push(
+        `Subtitle chunk ${index + 1}${range ? ` (${range})` : ""} analysis failed: ${errorMessage}`,
+      );
       continue;
     }
 

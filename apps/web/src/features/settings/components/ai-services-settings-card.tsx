@@ -1,13 +1,12 @@
 "use client";
 
-import { Info, Loader2, ShieldCheck } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { AppPanel } from "@/components/common/app-surface";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { AiServiceProviderCard } from "@/features/settings/components/ai-service-provider-card";
+import { AiServiceProviderRow } from "@/features/settings/components/ai-service-provider-row";
 import {
   settingsCardClass,
   settingsCardContentClass,
@@ -22,20 +21,20 @@ type AiServicesSettingsCardProps = {
 
 function getLockReason(settings: AiServicesSettings): string | null {
   if (settings.enforceSystemCredentials) {
-    return "An administrator requires all AI generation to use the system configuration, so custom credentials are disabled.";
+    return "An administrator requires the system AI configuration, so your own keys are ignored.";
   }
 
   if (!settings.encryptionAvailable) {
-    return "This server is not configured to store credentials securely, so custom credentials are disabled.";
+    return "This server cannot store credentials securely, so your own keys are unavailable.";
   }
 
   return null;
 }
 
 /**
- * "AI Services" settings section. Learners can store their own provider credentials; those
- * credentials are used for their own pack generation only. Administrators can force every
- * account onto the system `.env` configuration.
+ * "AI services" settings section. Learners can store their own provider keys, which are used
+ * for their own pack generation only; administrators can force every account onto the system
+ * configuration.
  */
 export function AiServicesSettingsCard({ aiServices }: AiServicesSettingsCardProps) {
   const [settings, setSettings] = useState(aiServices);
@@ -46,7 +45,6 @@ export function AiServicesSettingsCard({ aiServices }: AiServicesSettingsCardPro
   }, [aiServices]);
 
   const lockReason = getLockReason(settings);
-  const locked = lockReason !== null;
 
   function handleEnforcementChange(checked: boolean) {
     startSavingPolicy(async () => {
@@ -58,78 +56,46 @@ export function AiServicesSettingsCard({ aiServices }: AiServicesSettingsCardPro
       }
 
       setSettings(result.data.aiServices);
-      toast.success(
-        checked
-          ? "All users now use the system AI configuration"
-          : "Users may now use their own AI credentials",
-      );
     });
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card className={settingsCardClass}>
-        <CardHeader className={settingsCardHeaderClass}>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="size-4 text-muted-foreground" />
-            AI services
-          </CardTitle>
-          <CardDescription>
-            Use your own provider credentials for pack generation, or fall back to the system
-            configuration.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className={`${settingsCardContentClass} space-y-3`}>
-          <AppPanel className="flex items-start gap-2 p-3 text-sm text-muted-foreground">
-            <Info className="mt-0.5 size-4 shrink-0" />
-            <span>
-              Credentials you save here are encrypted and used only for your own pack generation.
-              Shared subtitle analysis always runs on the system configuration, because its results
-              are reused across accounts.
-              {settings.isAdmin
-                ? " As an administrator you use the system configuration by default until you save your own key."
-                : ""}
-            </span>
-          </AppPanel>
+    <Card className={settingsCardClass}>
+      <CardHeader className={settingsCardHeaderClass}>
+        <CardTitle>AI services</CardTitle>
+        <CardDescription>
+          Optional. Add your own provider keys to run your pack generation on them; otherwise the
+          system configuration is used. Keys are encrypted and never shown again after saving.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className={`${settingsCardContentClass} space-y-3`}>
+        <div className="divide-y rounded-xl border">
+          {settings.providers.map((provider) => (
+            <AiServiceProviderRow
+              key={provider.provider}
+              provider={provider}
+              locked={lockReason !== null}
+              onSettingsChange={setSettings}
+            />
+          ))}
+        </div>
 
-          {settings.isAdmin ? (
-            <AppPanel className="flex items-start justify-between gap-4 p-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Require the system AI configuration</p>
-                <p className="text-sm text-muted-foreground">
-                  Applies to every account. Custom credentials stay saved but are ignored while this
-                  is on.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isSavingPolicy ? (
-                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                ) : null}
-                <Switch
-                  checked={settings.enforceSystemCredentials}
-                  onCheckedChange={handleEnforcementChange}
-                  disabled={isSavingPolicy}
-                  aria-label="Require the system AI configuration for all users"
-                />
-              </div>
-            </AppPanel>
-          ) : null}
+        {lockReason ? <p className="text-xs text-muted-foreground">{lockReason}</p> : null}
 
-          {lockReason ? <p className="text-sm text-muted-foreground">{lockReason}</p> : null}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {settings.providers.map((provider) => (
-          <AiServiceProviderCard
-            key={provider.provider}
-            provider={provider}
-            locked={locked}
-            lockReason={lockReason}
-            onSettingsChange={setSettings}
-          />
-        ))}
-      </div>
-    </div>
+        {settings.isAdmin ? (
+          <div className="flex items-center justify-between gap-4 border-t pt-3">
+            <Label htmlFor="enforce-system-credentials" className="text-sm font-normal">
+              Require the system configuration for all users
+            </Label>
+            <Switch
+              id="enforce-system-credentials"
+              checked={settings.enforceSystemCredentials}
+              onCheckedChange={handleEnforcementChange}
+              disabled={isSavingPolicy}
+            />
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }

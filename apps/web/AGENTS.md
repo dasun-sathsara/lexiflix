@@ -111,6 +111,15 @@ This app is TypeScript-first and already has established patterns. Follow them.
 - Do not casually churn `src/components/ui`; those primitives should remain stable unless the change belongs there.
 - Prefer focused changes over wide refactors in a demo project.
 
+### Loading and pending state
+
+One interaction gets one indicator. Do not stack them.
+
+- Route navigation and URL-filter transitions: the single global `RouteProgressBar` mounted in `src/app/(app)/layout.tsx`. Feed it by reporting local pending state through `useReportNavigationPending`, or by rendering the headless `<LinkPending />` inside a `next/link`. Links themselves stay visually unchanged — a per-link spinner element also breaks the collapsed sidebar, which hides a menu button's last child span.
+- Debounced text inputs: a muted `Loader2` inside the field.
+- Buttons running an action: swap the button's leading icon for `Loader2` and disable it; keep the label.
+- Sections waiting on refreshed server data: wrap in `PendingSection`, which only dims the content.
+
 ## Architecture Constraints
 
 The current repo-level direction is:
@@ -174,6 +183,13 @@ Learners can store their own provider credentials under Settings → AI services
 - Admins can force every account onto the system configuration from the same tab; custom credentials remain stored but are ignored while enforcement is on.
 - Only per-user pack generation uses these credentials. Subtitle analysis (`content_analysis_run`) is content-scoped and shared between users, so it always runs on system credentials.
 - `AUTH_SECRET` and `AI_CREDENTIALS_ENCRYPTION_KEY` are synced to the Trigger.dev worker (`trigger.config.ts`) because decryption happens inside the generation task.
+
+## Analysis LLM Chunking
+
+Phrase extraction (`src/lib/server/media-analysis/providers/analysis-llm`) receives raw subtitles and windows them itself:
+
+- `windows.ts` parses SRT/VTT cues, strips markup and release credits, and emits 15-minute windows of media time (`ANALYSIS_LLM_WINDOW_MS`). `ANALYSIS_LLM_WINDOW_CHARACTERS` splits a window further only when its dialogue would overflow the model context. Timestamp-free input falls back to character windows.
+- Providers that derive a JSON Schema from a Zod object (Azure structured outputs) must use `analysisLlmWireResponseSchema`, not `analysisLlmResponseSchema`: JSON Schema cannot represent the transform in `contextListSchema`, and strict structured outputs require every property to be present. Responses are still validated with the lenient schema.
 
 ## Validation Expectations
 

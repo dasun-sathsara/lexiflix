@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppPageHeader } from "@/components/common/app-page-header";
 import { AppPageShell } from "@/components/common/app-page-shell";
 import { AppEmptyState, AppPanel, AppStat } from "@/components/common/app-surface";
-import { LinkPendingIndicator } from "@/components/common/link-pending-indicator";
+import { LinkPending } from "@/components/common/link-pending";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminUserRow } from "@/features/admin-users/components/admin-user-row";
@@ -86,7 +86,7 @@ export function AdminUsersWorkspace({
                 <span className="rounded bg-muted px-1 text-[10px] tabular-nums text-muted-foreground">
                   {option.count}
                 </span>
-                <LinkPendingIndicator label={`Loading ${option.label} users`} />
+                <LinkPending />
               </Link>
             );
           })}
@@ -147,7 +147,7 @@ export function AdminUsersWorkspace({
               <Button asChild variant="outline" size="sm">
                 <Link href={buildAdminUsersHref(queryState, { page: pagination.page - 1 })}>
                   ← Previous
-                  <LinkPendingIndicator label="Loading previous page" />
+                  <LinkPending />
                 </Link>
               </Button>
             ) : null}
@@ -160,7 +160,7 @@ export function AdminUsersWorkspace({
               <Button asChild variant="outline" size="sm">
                 <Link href={buildAdminUsersHref(queryState, { page: pagination.page + 1 })}>
                   Next →
-                  <LinkPendingIndicator label="Loading next page" />
+                  <LinkPending />
                 </Link>
               </Button>
             ) : null}

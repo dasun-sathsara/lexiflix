@@ -1,6 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -104,24 +103,9 @@ export function SettingsClient({ user, preferences, aiServices }: SettingsClient
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="gap-4">
         <TabsList className="w-full justify-start sm:w-fit">
-          <TabsTrigger value="account" className="gap-1.5">
-            Account
-            {isSwitchingTab && activeTab === "account" ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="gap-1.5">
-            Preferences
-            {isSwitchingTab && activeTab === "preferences" ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : null}
-          </TabsTrigger>
-          <TabsTrigger value="ai-services" className="gap-1.5">
-            AI services
-            {isSwitchingTab && activeTab === "ai-services" ? (
-              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-            ) : null}
-          </TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="ai-services">AI services</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account" className="mt-0">

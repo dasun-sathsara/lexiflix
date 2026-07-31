@@ -42,13 +42,11 @@ function Segment<T extends string>({
   value,
   onChange,
   disabled,
-  pendingValue,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (next: T) => void;
   disabled?: boolean;
-  pendingValue?: T | null;
 }) {
   return (
     <div className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/40 p-0.5 shadow-xs">
@@ -66,9 +64,6 @@ function Segment<T extends string>({
           )}
         >
           {opt.label}
-          {pendingValue === opt.value ? (
-            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-          ) : null}
         </button>
       ))}
     </div>
@@ -88,15 +83,8 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [pendingSegment, setPendingSegment] = useState<string | null>(null);
 
   useReportNavigationPending(isPending);
-
-  useEffect(() => {
-    if (!isPending) {
-      setPendingSegment(null);
-    }
-  }, [isPending]);
 
   // Local state for search input only (needs explicit commit)
   const [query, setQuery] = useState<string>(queryState.query);
@@ -127,7 +115,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   );
 
   function handleModeChange(next: CuratedAdminMode) {
-    setPendingSegment(next);
     push({
       view: "discover",
       mode: next,
@@ -136,7 +123,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
   }
 
   function handleMediaTypeChange(next: TMDBMediaType) {
-    setPendingSegment(next);
     push({
       view: "discover",
       type: next,
@@ -193,7 +179,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
         value={queryState.mode}
         onChange={handleModeChange}
         disabled={isPending}
-        pendingValue={pendingSegment as CuratedAdminMode | null}
       />
 
       <Segment<TMDBMediaType>
@@ -204,7 +189,6 @@ export function AdminDiscoverControls({ queryState, genres }: AdminDiscoverContr
         value={queryState.mediaType}
         onChange={handleMediaTypeChange}
         disabled={isPending}
-        pendingValue={pendingSegment as TMDBMediaType | null}
       />
 
       <div className="mx-0.5 hidden h-5 w-px bg-border/60 sm:block" />

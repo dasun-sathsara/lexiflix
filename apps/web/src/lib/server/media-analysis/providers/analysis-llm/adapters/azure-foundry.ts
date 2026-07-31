@@ -4,7 +4,7 @@ import { AzureOpenAI } from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { env } from "@/lib/config/env";
 import type { AnalysisLlmAdapter } from "@/lib/server/media-analysis/providers/analysis-llm/port";
-import { analysisLlmResponseSchema } from "@/lib/server/media-analysis/providers/analysis-llm/schema";
+import { analysisLlmWireResponseSchema } from "@/lib/server/media-analysis/providers/analysis-llm/schema";
 
 let openaiClient: AzureOpenAI | null = null;
 
@@ -36,7 +36,7 @@ export function createAzureFoundryAnalysisLlmAdapter(): AnalysisLlmAdapter {
       const response = await getOpenAIClient(request.model).chat.completions.create({
         model: request.model,
         messages: [{ role: "user", content: request.prompt }],
-        response_format: zodResponseFormat(analysisLlmResponseSchema, "analysisLlmResponse"),
+        response_format: zodResponseFormat(analysisLlmWireResponseSchema, "analysisLlmResponse"),
       });
 
       const text = response.choices[0]?.message?.content;
